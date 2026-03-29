@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: deep-research
-description: v1.6.0 G-SKLL | Deep Research via Gemini. Use when user says "deep research", "research this topic", or needs comprehensive analysis with sources.
+description: Deep research via Gemini. Use when the user asks for comprehensive analysis or source-backed research.
 alias: /gemini research
 ---
 

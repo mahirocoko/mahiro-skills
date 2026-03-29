@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: forward
-description: v1.6.0 G-SKLL | Create handoff + enter planning flow for next session. Use when user says "forward", "handoff", "wrap up", or before ending session.
+description: Create a handoff and planning bridge for the next session. Use when the user asks to wrap up or hand work forward.
 ---
 
 # /forward - Handoff to Next Session

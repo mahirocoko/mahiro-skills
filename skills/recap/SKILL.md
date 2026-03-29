@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: recap
-description: v1.6.0 G-SKLL | Session orientation and awareness. Use when starting a session, after /jump, lost your place, switching context, or when user asks "now", "where are we", "what are we doing", "status".
+description: Session orientation and awareness. Use when starting work, resuming context, or answering status questions.
 trigger: /recap
 ---
 

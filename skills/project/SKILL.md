@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: project
-description: v1.6.0 G-SKLL | Clone and track external repos. Use when user shares GitHub URL to study or develop, or says "search repos", "find repo", "where is [project]". Actions - learn (clone for study), incubate (clone for development), search/find (search repos), list (show tracked).
+description: Clone and track external repos for study or development. Use for learn, incubate, find, and list flows.
 ---
 
 # project-manager

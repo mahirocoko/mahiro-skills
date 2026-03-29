@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: learn
-description: v1.6.0 G-SKLL | Explore a codebase with parallel Haiku agents — clone, read, and document. Modes — --fast (1 agent), default (3), --deep (5). Use when user says "learn [repo]", "explore codebase", "study this repo", or shares a GitHub URL to study. Do NOT trigger for finding projects (use /trace), session mining (use /dig), or cloning for active development (use /project incubate).
+description: Explore a codebase with parallel agents by cloning, reading, and documenting it. Use when the user wants to study a repo in depth.
 ---
 
 # /learn - Deep Dive Learning Pattern

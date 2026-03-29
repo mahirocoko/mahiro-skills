@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: gemini
-description: v1.6.0 G-SKLL | Control Gemini via MQTT WebSocket. Use when user says "gemini", needs to send messages to Gemini, or control the Gemini browser tab.
+description: Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed.
 ---
 
 # /gemini - Smooth MQTT Control for Gemini

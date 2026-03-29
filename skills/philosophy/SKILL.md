@@ -1,7 +1,6 @@
 ---
-installer: local-skill-bundle v1.6.0
 name: philosophy
-description: v1.6.0 G-SKLL | Display the local philosophy — the 5 Principles + Rule 6. Use when user asks about principles, "nothing deleted", "patterns over intentions", or needs alignment checks. Do NOT trigger for identity or session status questions.
+description: Display the local philosophy and alignment rules. Use when the user asks about principles or needs a philosophy check.
 disable-model-invocation: true
 ---
 
