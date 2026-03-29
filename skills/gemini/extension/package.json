@@ -1,0 +1,8 @@
+{
+  "name": "local-gemini-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild background-src.js --bundle --outfile=background.js --format=esm --platform=browser"
+  }
+}
