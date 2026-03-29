@@ -1,0 +1,19 @@
+{
+  "name": "mahiro-skills",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.2.22",
+  "bin": {
+    "mahiro-skills": "./src/cli.ts"
+  },
+  "scripts": {
+    "cli": "bun ./src/cli.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
