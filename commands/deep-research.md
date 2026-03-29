@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Deep Research via Gemini. Use when user says "deep research", "research this topic", or needs comprehensive analysis with sources.
+description: Deep research via Gemini. Use when the user asks for comprehensive analysis or source-backed research.
 allowed-tools:
   - Bash
   - Read

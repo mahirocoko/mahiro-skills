@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Create handoff + enter planning flow for next session. Use when user says "forward", "handoff", "wrap up", or before ending session.
+description: Create a handoff and planning bridge for the next session. Use when the user asks to wrap up or hand work forward.
 allowed-tools:
   - Bash
   - Read

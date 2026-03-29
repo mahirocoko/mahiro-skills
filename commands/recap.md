@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Session orientation and awareness. Use when starting a session, after /jump, lost your place, switching context, or when user asks "now", "where are we", "what are we doing", "status".
+description: Session orientation and awareness. Use when starting work, resuming context, or answering status questions.
 allowed-tools:
   - Bash
   - Read

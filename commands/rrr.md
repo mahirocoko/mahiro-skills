@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Create session retrospective with AI diary and lessons learned. Use when user says "rrr", "retrospective", "wrap up session", "session summary", or at end of work session.
+description: Create a session retrospective with lessons learned. Use at the end of a work session or when the user asks for a retrospective.
 allowed-tools:
   - Bash
   - Read

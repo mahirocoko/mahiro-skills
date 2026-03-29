@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Learn from YouTube videos via Gemini transcription. Use when user says "watch", "transcribe youtube", "learn from video", or shares a YouTube URL to study.
+description: Learn from YouTube videos via Gemini transcription. Use when the user wants to study a video or transcript a YouTube link.
 allowed-tools:
   - Bash
   - Read

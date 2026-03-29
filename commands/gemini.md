@@ -1,5 +1,5 @@
 ---
-description: v1.6.0 G-CMD | Control Gemini via MQTT WebSocket. Use when user says "gemini", needs to send messages to Gemini, or control the Gemini browser tab.
+description: Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed.
 allowed-tools:
   - Bash
   - Read
