@@ -12,6 +12,7 @@ describe("plan", () => {
     try {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
+      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
       expect(plan.skills.length).toBe(9);
       expect(plan.commands.length).toBe(9);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
@@ -36,6 +37,24 @@ describe("plan", () => {
     const temp = makeTempEnv();
     try {
       expect(() => createPlan("opencode", "local", ["does-not-exist"], temp.env)).toThrow("Unknown install item");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("skips explicit template request as non-installable", () => {
+    const temp = makeTempEnv();
+    try {
+      const plan = createPlan("opencode", "local", ["template"], temp.env);
+      expect(plan.skills).toEqual([]);
+      expect(plan.commands).toEqual([]);
+      expect(plan.skipped).toEqual([
+        {
+          item: "template",
+          kind: "item",
+          reason: "'template' is an authoring scaffold and is not installable in v0.",
+        },
+      ]);
     } finally {
       temp.cleanup();
     }

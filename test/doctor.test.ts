@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { rmSync } from "fs";
+import { join } from "path";
 
 import { doctor } from "../src/doctor";
 import { install } from "../src/install";
-import { listInstalled } from "../src/list";
 import { makeTempEnv } from "./helpers";
 
 describe("doctor", () => {
@@ -11,19 +12,117 @@ describe("doctor", () => {
     try {
       install("opencode", "local", ["recap"], false, temp.env);
       const [result] = doctor("opencode", "local", temp.env);
-      expect(result.checks.every((check) => check.ok)).toBe(true);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", ".mahiro-skills", "receipts", "local-opencode.json"),
+        },
+        {
+          label: "skill:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "recap"),
+        },
+        {
+          label: "command:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "recap.md"),
+        },
+      ]);
     } finally {
       temp.cleanup();
     }
   });
 
-  test("list returns installed receipt after install", () => {
+  test("reports missing receipt before install", () => {
+    const temp = makeTempEnv();
+    try {
+      const [result] = doctor("claude-code", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude"),
+        },
+        {
+          label: "receipt-readable",
+          ok: false,
+          detail: "Receipt not found",
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("reports missing installed skill path from receipt", () => {
     const temp = makeTempEnv();
     try {
       install("claude-code", "local", ["project"], false, temp.env);
-      const receipt = listInstalled("claude-code", "local", temp.env);
-      expect(receipt?.installedSkills).toEqual(["project"]);
-      expect(receipt?.installedCommands).toEqual(["project"]);
+      rmSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "skills", "project"), { recursive: true, force: true });
+
+      const [result] = doctor("claude-code", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", ".mahiro-skills", "receipts", "local-claude-code.json"),
+        },
+        {
+          label: "skill:project",
+          ok: false,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "skills", "project"),
+        },
+        {
+          label: "command:project",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "commands", "project.md"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("reports missing installed command path from receipt", () => {
+    const temp = makeTempEnv();
+    try {
+      install("claude-code", "local", ["project"], false, temp.env);
+      rmSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "commands", "project.md"), { force: true });
+
+      const [result] = doctor("claude-code", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", ".mahiro-skills", "receipts", "local-claude-code.json"),
+        },
+        {
+          label: "skill:project",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "skills", "project"),
+        },
+        {
+          label: "command:project",
+          ok: false,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "commands", "project.md"),
+        },
+      ]);
     } finally {
       temp.cleanup();
     }

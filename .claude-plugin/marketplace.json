@@ -6,7 +6,7 @@
   "bundles": [
     {
       "name": "mahiro-local-bundle",
-      "description": "Packaged local skills plus slash-command wrappers from the current OpenCode install.",
+      "description": "Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.",
       "skills": [
         "deep-research",
         "forward",

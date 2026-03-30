@@ -43,6 +43,7 @@ export interface InstallPlan {
   scope: InstallScope;
   root: string;
   requested: string[];
+  description?: string;
   skills: InstallTarget[];
   commands: InstallTarget[];
   skipped: SkippedItem[];
@@ -53,6 +54,7 @@ export interface InstallReceipt {
   agent: ScopedAgent;
   scope: InstallScope;
   root: string;
+  description?: string;
   sourceRepoPath: string;
   installedSkills: string[];
   installedCommands: string[];
@@ -64,6 +66,7 @@ export interface InstallResult {
   agent: ScopedAgent;
   scope: InstallScope;
   root: string;
+  description?: string;
   installed: string[];
   skipped: SkippedItem[];
   warnings: string[];

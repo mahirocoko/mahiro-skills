@@ -23,11 +23,12 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
-function resolveRequestedItems(inventory: RepoInventory, items: string[], agent: ScopedAgent): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[] } {
+function resolveRequestedItems(inventory: RepoInventory, items: string[], agent: ScopedAgent): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[]; description?: string } {
   const warnings: string[] = [];
   const skipped: SkippedItem[] = [];
   const resolvedSkills: string[] = [];
   const resolvedCommands: string[] = [];
+  let description: string | undefined;
 
   if (items.length === 0 && inventory.bundles.length === 0) {
     warnings.push("Bundle metadata missing; fell back to all packaged skills and supported commands.");
@@ -41,6 +42,7 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
       commands: unique(resolvedCommands),
       skipped,
       warnings,
+      description,
     };
   }
 
@@ -49,6 +51,9 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
   for (const item of requestedItems) {
     const bundle = inventory.bundles.find((entry) => entry.name === item);
     if (bundle) {
+      if (requestedItems.length === 1) {
+        description = bundle.description;
+      }
       resolvedSkills.push(...bundle.skills.filter((name) => inventory.skills.includes(name)));
       if (supportsCommands(agent)) {
         resolvedCommands.push(...bundle.commands.filter((name) => inventory.commands.includes(name)));
@@ -76,6 +81,15 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
       continue;
     }
 
+    if (item === "template") {
+      skipped.push({
+        item,
+        kind: "item",
+        reason: "'template' is an authoring scaffold and is not installable in v0.",
+      });
+      continue;
+    }
+
     throw new Error(`Unknown install item '${item}'.`);
   }
   return {
@@ -83,6 +97,7 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
     commands: unique(resolvedCommands),
     skipped,
     warnings,
+    description,
   };
 }
 
@@ -99,6 +114,7 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
     scope,
     root,
     requested: items,
+    description: resolved.description,
     skills,
     commands,
     skipped: resolved.skipped,

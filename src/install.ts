@@ -1,11 +1,46 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { createPlan } from "./plan";
 import type { InstallReceipt, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
+const installedDescriptionPrefix = "Mahiro Skill | ";
+
+function unique<T>(values: T[]): T[] {
+  return [...new Set(values)];
+}
+
 function ensureParent(path: string): void {
   mkdirSync(dirname(path), { recursive: true });
+}
+
+function prefixFrontmatterDescription(content: string): string {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!frontmatterMatch) {
+    return content;
+  }
+
+  const nextContent = frontmatterMatch[0].replace(/^description:\s+(.*)$/m, (_match, description: string) => {
+    if (description.startsWith(installedDescriptionPrefix)) {
+      return `description: ${description}`;
+    }
+
+    return `description: ${installedDescriptionPrefix}${description}`;
+  });
+
+  return content.replace(frontmatterMatch[0], nextContent);
+}
+
+function rewriteInstalledMarkdownDescription(stagingPath: string): void {
+  const stats = statSync(stagingPath);
+  const markdownPath = stats.isDirectory() ? join(stagingPath, "SKILL.md") : stagingPath;
+
+  const content = readFileSync(markdownPath, "utf8");
+  const nextContent = prefixFrontmatterDescription(content);
+
+  if (nextContent !== content) {
+    writeFileSync(markdownPath, nextContent);
+  }
 }
 
 function copyTarget(target: InstallTarget, overwrite: boolean): void {
@@ -17,6 +52,7 @@ function copyTarget(target: InstallTarget, overwrite: boolean): void {
   const stagingPath = `${target.target}.tmp-mahiro-skills`;
   rmSync(stagingPath, { recursive: true, force: true });
   cpSync(target.source, stagingPath, { recursive: true });
+  rewriteInstalledMarkdownDescription(stagingPath);
 
   if (overwrite && existsSync(target.target)) {
     rmSync(target.target, { recursive: true, force: true });
@@ -37,7 +73,7 @@ function resolveStatus(installedCount: number, skippedCount: number): PlanStatus
   return skippedCount > 0 ? "skipped" : "unsupported";
 }
 
-function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, installedSkills: string[], installedCommands: string[], repoRoot: string): string {
+function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, description: string | undefined, installedSkills: string[], installedCommands: string[], repoRoot: string): string {
   const receiptPath = join(root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
   ensureParent(receiptPath);
 
@@ -45,6 +81,7 @@ function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, ins
     agent,
     scope,
     root,
+    description,
     sourceRepoPath: repoRoot,
     installedSkills,
     installedCommands,
@@ -72,14 +109,15 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
 
   const installedSkills = plan.skills.map((entry) => entry.name);
   const installedCommands = plan.commands.map((entry) => entry.name);
-  const receiptPath = writeReceipt(agent, scope, plan.root, installedSkills, installedCommands, sourceRepoPath);
+  const receiptPath = writeReceipt(agent, scope, plan.root, plan.description, installedSkills, installedCommands, sourceRepoPath);
 
   return {
     status: resolveStatus(installedSkills.length + installedCommands.length, plan.skipped.length),
     agent,
     scope,
     root: plan.root,
-    installed: [...installedSkills, ...installedCommands],
+    description: plan.description,
+    installed: unique([...installedSkills, ...installedCommands]),
     skipped: plan.skipped,
     warnings: plan.warnings,
     receiptPath,
