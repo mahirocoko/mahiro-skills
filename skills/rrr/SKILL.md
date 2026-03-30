@@ -35,6 +35,26 @@ cat .agent-state/metrics/project.json 2>/dev/null
 cat .agent-state/metrics/heartbeat.json 2>/dev/null
 ```
 
+If you combine gather + pulse reads into one Bash tool call, prefer plain sequential commands or `;` separators.
+Do **not** place `&&` immediately after a heredoc terminator such as `PY`, because that can trip shell parsing in practice.
+
+Safe combined shape:
+
+```bash
+date "+%H:%M %Z (%A %d %B %Y)"
+git log --oneline -10
+git diff --stat HEAD~5
+python - <<'PY'
+from pathlib import Path
+for name in ["project", "heartbeat"]:
+    path = Path(f".agent-state/metrics/{name}.json")
+    if path.exists():
+        print(path.read_text())
+PY
+mkdir -p ".agent-state/memory/retrospectives/$(date +%Y-%m/%d)"
+mkdir -p ".agent-state/memory/learnings"
+```
+
 If files don't exist, skip silently. Never fail because pulse data is missing.
 These metrics snapshots are optional local files. If nothing generates them, skip the section entirely.
 
