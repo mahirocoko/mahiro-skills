@@ -6,11 +6,12 @@
 
 ```bash
 date "+%H:%M %Z (%A %d %B %Y)"
-ROOT="$(pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 TODAY=$(date +%Y-%m-%d)
 TIME=$(date +%H%M)
 DATE_PATH=$(date "+%Y-%m/%d")
-mkdir -p "$ROOT/.agent-state/memory/retrospectives/$DATE_PATH"
+mkdir -p "$AGENT_STATE_DIR/memory/retrospectives/$DATE_PATH"
 ```
 
 ## Step 1: Launch 5 Parallel Agents
@@ -18,7 +19,8 @@ mkdir -p "$ROOT/.agent-state/memory/retrospectives/$DATE_PATH"
 Each agent prompt must include:
 ```
 You are analyzing a coding session for retrospective.
-ROOT: [ROOT]
+REPO_ROOT: [REPO_ROOT]
+AGENT_STATE_DIR: [AGENT_STATE_DIR]
 Return your findings as text. The main agent will compile the retrospective.
 ```
 
@@ -48,7 +50,7 @@ Return: Files modified summary, architectural changes, risk areas
 ### Agent 3: Session Timeline Reconstruction
 ```
 Reconstruct the session timeline:
-- Read .agent-state/memory/logs/ for today
+- Read $AGENT_STATE_DIR/memory/logs/ for today
 - Check git commit timestamps
 - Identify session phases (start, middle, end)
 - Map activities to times
@@ -70,7 +72,7 @@ Return: Key patterns, learnings, mistakes, reusable solutions
 ### Agent 5: Local Memory Search
 ```
 Search local notes for related context:
-- Check .agent-state/memory/learnings/ for similar topics
+- Check $AGENT_STATE_DIR/memory/learnings/ for similar topics
 - Find past retrospectives on similar work
 - Find prior traces on similar work
 - What did we learn before?
@@ -82,7 +84,7 @@ Return: Related learnings, past insights, patterns to apply
 
 After all agents return, main agent compiles into full retrospective:
 
-**Location**: `.agent-state/memory/retrospectives/$DATE_PATH/${TIME}_[slug].md`
+**Location**: `$AGENT_STATE_DIR/memory/retrospectives/$DATE_PATH/${TIME}_[slug].md`
 
 Include all standard sections PLUS:
 - Deep git analysis (from Agent 1)
@@ -93,7 +95,7 @@ Include all standard sections PLUS:
 
 ## Step 3: Write Lesson Learned
 
-**Location**: `.agent-state/memory/learnings/${TODAY}_[slug].md`
+**Location**: `$AGENT_STATE_DIR/memory/learnings/${TODAY}_[slug].md`
 
 With --deep, lesson learned should be more comprehensive:
 - Multiple patterns identified

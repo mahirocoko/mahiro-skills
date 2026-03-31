@@ -31,8 +31,10 @@ git log --oneline -10 && git diff --stat HEAD~5
 ### 1.5. Read Pulse Context (optional)
 
 ```bash
-cat .agent-state/metrics/project.json 2>/dev/null
-cat .agent-state/metrics/heartbeat.json 2>/dev/null
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
+cat "$AGENT_STATE_DIR/metrics/project.json" 2>/dev/null
+cat "$AGENT_STATE_DIR/metrics/heartbeat.json" 2>/dev/null
 ```
 
 If you combine gather + pulse reads into one Bash tool call, prefer plain sequential commands or `;` separators.
@@ -41,18 +43,22 @@ Do **not** place `&&` immediately after a heredoc terminator such as `PY`, becau
 Safe combined shape:
 
 ```bash
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 date "+%H:%M %Z (%A %d %B %Y)"
 git log --oneline -10
 git diff --stat HEAD~5
 python - <<'PY'
+import os
 from pathlib import Path
+agent_state_dir = Path(os.environ["AGENT_STATE_DIR"])
 for name in ["project", "heartbeat"]:
-    path = Path(f".agent-state/metrics/{name}.json")
+    path = agent_state_dir / "metrics" / f"{name}.json"
     if path.exists():
         print(path.read_text())
 PY
-mkdir -p ".agent-state/memory/retrospectives/$(date +%Y-%m/%d)"
-mkdir -p ".agent-state/memory/learnings"
+mkdir -p "$AGENT_STATE_DIR/memory/retrospectives/$(date +%Y-%m/%d)"
+mkdir -p "$AGENT_STATE_DIR/memory/learnings"
 ```
 
 If files don't exist, skip silently. Never fail because pulse data is missing.
@@ -64,10 +70,12 @@ If found, extract:
 
 ### 2. Write Retrospective
 
-**Path**: `.agent-state/memory/retrospectives/YYYY-MM/DD/HH.MM_slug.md`
+**Path**: `$AGENT_STATE_DIR/memory/retrospectives/YYYY-MM/DD/HH.MM_slug.md`
 
 ```bash
-mkdir -p ".agent-state/memory/retrospectives/$(date +%Y-%m/%d)"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
+mkdir -p "$AGENT_STATE_DIR/memory/retrospectives/$(date +%Y-%m/%d)"
 ```
 
 Write immediately, no prompts. If pulse data was found, weave it into the narrative (don't add a separate dashboard). Include:
@@ -81,11 +89,11 @@ Write immediately, no prompts. If pulse data was found, weave it into the narrat
 
 ### 3. Write Lesson Learned
 
-**Path**: `.agent-state/memory/learnings/YYYY-MM-DD_slug.md`
+**Path**: `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md`
 
 ### 4. Durable local note
 
-After writing the lesson learned, make sure the file is stored under `.agent-state/memory/learnings/` with clear tags and a specific slug so it stays easy to rediscover locally.
+After writing the lesson learned, make sure the file is stored under `$AGENT_STATE_DIR/memory/learnings/` with clear tags and a specific slug so it stays easy to rediscover locally.
 
 ### 5. Commit (optional)
 
@@ -161,7 +169,7 @@ Also run pulse context (step 1.5 from default mode) and weave into narrative.
 
 Write the lesson learned, keep it local, and only commit if the human explicitly asks.
 
-Suggested paths remain under `.agent-state/memory/`.
+Suggested paths remain under `$AGENT_STATE_DIR/memory/`.
 
 ---
 

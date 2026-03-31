@@ -71,7 +71,8 @@ Only say “no implementation work happened today” when the broader same-day m
 Resolve local state root first:
 
 ```bash
-AGENT_STATE_DIR="${AGENT_STATE_DIR:-.agent-state}"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 TODAY_DIR="$(date +%Y-%m/%d)"
 ```
 

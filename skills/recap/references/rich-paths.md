@@ -16,7 +16,8 @@ Use rich recap when the current thread alone is not enough to explain what happe
 Resolve state root first:
 
 ```bash
-AGENT_STATE_DIR="${AGENT_STATE_DIR:-.agent-state}"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 TODAY_DIR="$(date +%Y-%m/%d)"
 ```
 

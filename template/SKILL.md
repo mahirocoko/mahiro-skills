@@ -47,6 +47,13 @@ Display results from script.
 4. Edit `scripts/main.ts` with your logic
 5. Test locally with `bun scripts/main.ts`
 
+If your skill reads or writes local `.agent-state` data, do not anchor it to raw cwd. Resolve repo root first, then default `AGENT_STATE_DIR` from that root:
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
+```
+
 ## File Structure
 
 ```

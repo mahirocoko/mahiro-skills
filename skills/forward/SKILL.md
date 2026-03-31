@@ -26,7 +26,8 @@ Create context for next session, then enter the current agent's planning flow to
 
 Resolve local state path first:
 ```bash
-AGENT_STATE_DIR="${AGENT_STATE_DIR:-.agent-state}"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 ```
 
 Write to: `$AGENT_STATE_DIR/inbox/handoff/YYYY-MM-DD_HH-MM_slug.md`

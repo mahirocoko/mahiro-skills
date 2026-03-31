@@ -145,6 +145,7 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - Source content is copied from the repo layout and treated as the canonical package source.
 - The installer rewrites only staged installed markdown descriptions; it does not mutate source markdown in the repo.
 - When a file referenced an install-local absolute path, it was normalized to a repo-local path.
+- Skills that read or write local `.agent-state` data should resolve `REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` first, then default `AGENT_STATE_DIR` to `$REPO_ROOT/.agent-state` unless the human overrides it.
 - The `gemini` skill remains the heaviest subtree and is still treated as an opaque copied tree.
 
 ## Current status
