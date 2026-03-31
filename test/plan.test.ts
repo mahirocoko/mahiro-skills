@@ -13,8 +13,8 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
-      expect(plan.skills.length).toBe(9);
-      expect(plan.commands.length).toBe(9);
+      expect(plan.skills.length).toBe(11);
+      expect(plan.commands.length).toBe(11);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
       temp.cleanup();

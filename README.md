@@ -118,6 +118,8 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - `forward`
 - `gemini`
 - `learn`
+- `mahiro-docs-rules-init`
+- `mahiro-style`
 - `philosophy`
 - `project`
 - `recap`
@@ -130,6 +132,8 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - `/forward`
 - `/gemini`
 - `/learn`
+- `/mahiro-docs-rules-init`
+- `/mahiro-style`
 - `/philosophy`
 - `/project`
 - `/recap`

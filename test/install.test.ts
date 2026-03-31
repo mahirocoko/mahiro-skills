@@ -58,7 +58,7 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
-      expect(result.installed).toEqual(["deep-research", "forward", "gemini", "learn", "philosophy", "project", "recap", "rrr", "watch"]);
+      expect(result.installed).toEqual(["deep-research", "forward", "gemini", "learn", "mahiro-docs-rules-init", "mahiro-style", "philosophy", "project", "recap", "rrr", "watch"]);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
     } finally {
       temp.cleanup();
