@@ -37,7 +37,7 @@ describe("README", () => {
     const content = readFileSync(readmePath, "utf8");
 
     expect(content).toContain("### Quick install via curl");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.2 -- --agent opencode --scope global");
+expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- --agent opencode --scope global");
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("This repo ships a private Bun CLI and installs from repo contents.");

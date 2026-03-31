@@ -30,16 +30,16 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ### Quick install via curl
 
-Install the default bundle globally for OpenCode from the `v0.1.2` tag:
+Install the default bundle globally for OpenCode from the `v0.1.4` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.2 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.2 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
