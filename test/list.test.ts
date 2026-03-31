@@ -41,7 +41,47 @@ describe("list", () => {
 
       const receipt = listInstalled("opencode", "local", temp.env);
 
-      expect(receipt?.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
+      expect(receipt?.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("returns full receipt after cursor install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("cursor", "local", ["project"], false, temp.env);
+
+      const receipt = listInstalled("cursor", "local", temp.env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("cursor");
+      expect(receipt?.scope).toBe("local");
+      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_CWD}/.cursor`);
+      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
+      expect(receipt?.installedSkills).toEqual(["project"]);
+      expect(receipt?.installedCommands).toEqual(["project"]);
+      expect(receipt?.installedAt.length).toBeGreaterThan(0);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("returns full receipt after gemini install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("gemini", "local", ["gemini"], false, temp.env);
+
+      const receipt = listInstalled("gemini", "local", temp.env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("gemini");
+      expect(receipt?.scope).toBe("local");
+      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_CWD}/.gemini`);
+      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
+      expect(receipt?.installedSkills).toEqual(["gemini"]);
+      expect(receipt?.installedCommands).toEqual(["gemini"]);
+      expect(receipt?.installedAt.length).toBeGreaterThan(0);
     } finally {
       temp.cleanup();
     }

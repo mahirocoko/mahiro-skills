@@ -1,6 +1,6 @@
-export type SupportedAgent = "opencode" | "claude-code";
+export type SupportedAgent = "opencode" | "claude-code" | "cursor" | "gemini";
 
-export type ScopedAgent = SupportedAgent | "cursor" | "gemini" | "codex";
+export type ScopedAgent = SupportedAgent | "codex";
 
 export type InstallScope = "global" | "local";
 

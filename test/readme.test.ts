@@ -19,6 +19,7 @@ describe("README", () => {
       "## Install",
       "## CLI",
       "## Repo layout",
+      "## Authoring guide",
       "## Included skills",
       "## Included commands",
       "## Packaging notes",
@@ -41,6 +42,14 @@ expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahiroco
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("This repo ships a private Bun CLI and installs from repo contents.");
+    expect(content).toContain("Cursor/Gemini compatibility matrix: [`docs/cli/cursor-gemini-compatibility-matrix-v0.md`](./docs/cli/cursor-gemini-compatibility-matrix-v0.md)");
+    expect(content).toContain("Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)");
+    expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
+    expect(content).toContain("### Supported v0 adapters");
+    expect(content).toContain("- `cursor`");
+    expect(content).toContain("- `gemini`");
+    expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.");
+    expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).not.toContain("npm install -g mahiro-skills");
     expect(content).not.toContain("bunx mahiro-skills");
   });

@@ -3,7 +3,7 @@ import { join } from "path";
 import type { InstallScope, ScopedAgent, SupportedAgent } from "./types";
 
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {
-  return agent === "opencode" || agent === "claude-code";
+  return agent === "opencode" || agent === "claude-code" || agent === "cursor" || agent === "gemini";
 }
 
 export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = process.env): string {
@@ -15,7 +15,19 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
   }
 
   if (scope === "local") {
-    return join(cwd, agent === "opencode" ? ".opencode" : ".claude");
+    if (agent === "opencode") {
+      return join(cwd, ".opencode");
+    }
+
+    if (agent === "claude-code") {
+      return join(cwd, ".claude");
+    }
+
+    if (agent === "cursor") {
+      return join(cwd, ".cursor");
+    }
+
+    return join(cwd, ".gemini");
   }
 
   if (!home) {
@@ -26,7 +38,15 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
     return join(home, ".config", "opencode");
   }
 
-  return join(home, ".claude");
+  if (agent === "claude-code") {
+    return join(home, ".claude");
+  }
+
+  if (agent === "cursor") {
+    return join(home, ".cursor");
+  }
+
+  return join(home, ".gemini");
 }
 
 export function supportsCommands(agent: ScopedAgent): boolean {

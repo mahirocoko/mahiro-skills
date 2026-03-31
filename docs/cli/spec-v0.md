@@ -64,12 +64,21 @@ The CLI must not reinterpret internal skill files beyond path planning and colli
 
 ## Supported agents in v0
 
-v0 defines adapter contracts for all researched agents, but initial implementation priority is:
+v0 defines adapter contracts for all researched agents.
+
+Currently implemented runtime targets are:
 
 1. `opencode`
 2. `claude-code`
+3. `cursor`
+4. `gemini`
 
 The other agents remain first-class in the spec so the data model does not need redesign later.
+
+For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
+
+- [`cursor-gemini-compatibility-matrix-v0.md`](./cursor-gemini-compatibility-matrix-v0.md)
+- [`adapter-implementation-plan-v0.md`](./adapter-implementation-plan-v0.md)
 
 ## Capability matrix
 
@@ -77,8 +86,8 @@ The other agents remain first-class in the spec so the data model does not need 
 |------|--------|----------|-----------------|-------------|--------------------|
 | opencode | Yes | Yes | Partial | Yes | Yes |
 | claude-code | Yes | Yes | Yes | Yes | Yes |
-| cursor | Partial | Partial | Yes | Yes | Yes |
-| gemini | Yes | Yes | Yes via extension | Yes | Yes |
+| cursor | Yes | Yes | Yes | Yes | Yes |
+| gemini | Yes | Yes | Partial | Partial | Yes |
 | codex | Yes | Partial | Yes | Yes | Yes |
 
 Interpretation rules:
@@ -95,7 +104,7 @@ Interpretation rules:
 |------|-------------|------------|
 | opencode | `~/.config/opencode` | `.opencode` |
 | claude-code | `~/.claude` | `.claude` |
-| cursor | `~/.cursor` or plugin-local root | `.cursor` |
+| cursor | `~/.cursor` | `.cursor` |
 | gemini | `~/.gemini` | `.gemini` |
 | codex | `~/.codex` | `.codex` |
 
@@ -229,8 +238,10 @@ Receipt fields:
 
 ### Gemini
 
-- Prefer extension-aware install planning when possible
-- If v0 cannot emit a valid extension bundle, install skills/commands as a documented partial adapter result
+- Install packaged skills into `<root>/skills/`
+- Install packaged commands into `<root>/commands/`
+- Preserve `skills/gemini/extension/` as an opaque copied subtree when the `gemini` skill is installed
+- Do not describe extension loading or settings setup as full adapter support in v0
 
 ### Codex
 
@@ -251,14 +262,10 @@ Example:
 
 ```json
 {
-  "status": "partially-installed",
-  "installed": ["project", "recap"],
-  "skipped": [
-    {
-      "item": "gemini",
-      "reason": "extension bundling not implemented for target"
-    }
-  ]
+  "status": "installed",
+  "installed": ["gemini", "watch"],
+  "skipped": [],
+  "warnings": []
 }
 ```
 
@@ -291,6 +298,8 @@ mahiro-skills plan gemini watch --agent gemini --scope local
 - Symlink mode
 - Automatic extension/plugin compilation
 - Full MCP manifest generation
+
+Follow-on adapter rollout planning for `cursor` and `gemini` lives in [`adapter-implementation-plan-v0.md`](./adapter-implementation-plan-v0.md).
 
 ## Acceptance criteria for implementation
 

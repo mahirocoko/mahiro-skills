@@ -77,4 +77,55 @@ describe("install.sh", () => {
       temp.cleanup();
     }
   });
+
+  test("installs one skill and paired command for cursor from a provided repo root", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+
+      const result = Bun.spawnSync(["bash", installScript, "project", "--agent", "cursor", "--scope", "local"], {
+        cwd: repoRoot,
+        env: {
+          ...temp.env,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+        },
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(decode(result.stdout)).toContain('"status": "installed"');
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "commands", "project.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", ".mahiro-skills", "receipts", "local-cursor.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs gemini from a provided repo root into the gemini local root", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+
+      const result = Bun.spawnSync(["bash", installScript, "gemini", "--agent", "gemini", "--scope", "local"], {
+        cwd: repoRoot,
+        env: {
+          ...temp.env,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+        },
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(decode(result.stdout)).toContain('"status": "installed"');
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
 });

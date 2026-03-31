@@ -25,8 +25,8 @@ Use current repo assets as fixtures.
 |------|--------|-------|----------------|
 | opencode | Yes | Yes | Yes |
 | claude-code | Yes | Yes | Yes |
-| cursor | Yes | Yes | Spec only |
-| gemini | Yes | Yes | Spec only |
+| cursor | Yes | Yes | Yes |
+| gemini | Yes | Yes | Yes |
 | codex | Yes | Yes | Spec only |
 
 ### Install unit x expected behavior
@@ -94,7 +94,9 @@ mahiro-skills plan gemini --agent gemini --scope local
 
 Expected:
 
+- root resolves to `.gemini`
 - `skills/gemini/` treated as opaque copy tree
+- `commands/gemini.md` is also planned because the adapter supports commands
 - no attempt to reinterpret extension internals during planning
 - warnings allowed if extension bundling is partial
 

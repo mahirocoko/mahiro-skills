@@ -13,6 +13,7 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
   - [What the installer actually does](#what-the-installer-actually-does)
 - [CLI](#cli)
 - [Repo layout](#repo-layout)
+- [Authoring guide](#authoring-guide)
 - [Included skills](#included-skills)
 - [Included commands](#included-commands)
 - [Packaging notes](#packaging-notes)
@@ -68,6 +69,8 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 
 - CLI spec v0: [`docs/cli/spec-v0.md`](./docs/cli/spec-v0.md)
 - CLI test matrix v0: [`docs/cli/test-matrix-v0.md`](./docs/cli/test-matrix-v0.md)
+- Cursor/Gemini compatibility matrix: [`docs/cli/cursor-gemini-compatibility-matrix-v0.md`](./docs/cli/cursor-gemini-compatibility-matrix-v0.md)
+- Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)
 - CLI entrypoint: [`src/cli.ts`](./src/cli.ts)
 
 ### Supported v0 commands
@@ -81,6 +84,8 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 
 - `opencode`
 - `claude-code`
+- `cursor`
+- `gemini`
 
 ### Example usage
 
@@ -107,10 +112,15 @@ bun ./src/cli.ts doctor --agent claude-code --scope global
 - `commands/<name>.md` — slash-command wrappers
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
+- `docs/authoring/` — maintainer notes for release, path, and inventory conventions
 - `docs/cli/` — CLI spec and acceptance matrix
 - `src/` and `test/` — Bun + TypeScript CLI implementation and tests
 
 For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./skills/gemini/extension/README.md).
+
+## Authoring guide
+
+- Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)
 
 ## Included skills
 
@@ -146,14 +156,16 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - The installer rewrites only staged installed markdown descriptions; it does not mutate source markdown in the repo.
 - When a file referenced an install-local absolute path, it was normalized to a repo-local path.
 - Skills that read or write local `.agent-state` data should resolve `REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` first, then default `AGENT_STATE_DIR` to `$REPO_ROOT/.agent-state` unless the human overrides it.
+- If you are changing release, version, inventory, or path behavior, check [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md) before publishing.
 - The `gemini` skill remains the heaviest subtree and is still treated as an opaque copied tree.
 
 ## Current status
 
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` are compatibility wrappers for agents that support slash-command entrypoints.
-- CLI v0 currently targets `opencode` and `claude-code` first.
+- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
+- Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 
 ## Source of truth
 

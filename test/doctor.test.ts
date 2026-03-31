@@ -127,4 +127,68 @@ describe("doctor", () => {
       temp.cleanup();
     }
   });
+
+  test("reports receipt and installed paths after cursor install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("cursor", "local", ["recap"], false, temp.env);
+      const [result] = doctor("cursor", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", ".mahiro-skills", "receipts", "local-cursor.json"),
+        },
+        {
+          label: "skill:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "skills", "recap"),
+        },
+        {
+          label: "command:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "commands", "recap.md"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("reports receipt and installed paths after gemini install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("gemini", "local", ["gemini"], false, temp.env);
+      const [result] = doctor("gemini", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json"),
+        },
+        {
+          label: "skill:gemini",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini"),
+        },
+        {
+          label: "command:gemini",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
 });

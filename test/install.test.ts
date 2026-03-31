@@ -57,9 +57,9 @@ describe("install", () => {
         description?: string;
       };
 
-      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
+      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
       expect(result.installed).toEqual(["deep-research", "forward", "gemini", "learn", "mahiro-docs-rules-init", "mahiro-style", "philosophy", "project", "recap", "rrr", "watch"]);
-      expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current OpenCode install.");
+      expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
     }
@@ -70,6 +70,61 @@ describe("install", () => {
     try {
       install("claude-code", "local", ["gemini"], false, temp.env);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".claude", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs one skill and paired command for cursor", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("cursor", "local", ["project"], false, temp.env);
+      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", ".mahiro-skills", "receipts", "local-cursor.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        scope: string;
+        root: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "commands", "project.md"))).toBe(true);
+      expect(existsSync(receiptPath)).toBe(true);
+      expect(receipt.agent).toBe("cursor");
+      expect(receipt.scope).toBe("local");
+      expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
+      expect(receipt.installedSkills).toEqual(["project"]);
+      expect(receipt.installedCommands).toEqual(["project"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs gemini under the gemini root and preserves extension subtree", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("gemini", "local", ["gemini"], false, temp.env);
+      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        scope: string;
+        root: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(true);
+      expect(existsSync(receiptPath)).toBe(true);
+      expect(receipt.agent).toBe("gemini");
+      expect(receipt.scope).toBe("local");
+      expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
+      expect(receipt.installedSkills).toEqual(["gemini"]);
+      expect(receipt.installedCommands).toEqual(["gemini"]);
     } finally {
       temp.cleanup();
     }
