@@ -31,16 +31,16 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ### Quick install via curl
 
-Install the default bundle globally for OpenCode from the `v0.1.4` tag:
+Install the default bundle globally for OpenCode from the `v0.1.5` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.5 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.5 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -79,6 +79,7 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 - `install`
 - `list`
 - `doctor`
+- `guided`
 
 ### Supported v0 adapters
 
@@ -104,6 +105,12 @@ bun ./src/cli.ts list --agent opencode --scope local
 
 # Run integrity checks for one adapter
 bun ./src/cli.ts doctor --agent claude-code --scope global
+
+# Launch the guided wizard and let it build the plan for you
+bun ./src/cli.ts guided
+
+# See what is already installed across agents and scopes
+bun ./src/cli.ts guided --mode list
 ```
 
 ## Repo layout
@@ -166,6 +173,9 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
+- `guided` is a thin interactive wrapper over the same planner and installer core, with non-interactive fallback when flags are fully provided.
+- guided item selection now offers a default-bundle shortcut and numbered item picks from repo inventory instead of requiring typed names.
+- guided list mode summarizes install receipts per agent and scope without forcing the human to choose a target first.
 
 ## Source of truth
 

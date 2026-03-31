@@ -78,6 +78,8 @@ Guided UX is valuable, but only after the adapter model can explain what is auto
 - output clearly labels automated actions versus human-confirmed actions
 - guided mode does not hide partial support behind optimistic wording
 
+Status: implemented in the current repo pass as a thin CLI wizard over the existing planner and installer flow, with summary and confirmation prompts in interactive mode.
+
 ## Deferred items
 
 - full Gemini extension install modeling

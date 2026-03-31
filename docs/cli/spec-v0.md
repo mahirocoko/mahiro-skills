@@ -119,7 +119,18 @@ mahiro-skills plan [items...] --agent <agent> --scope <global|local>
 mahiro-skills install [items...] --agent <agent> --scope <global|local>
 mahiro-skills list --agent <agent> --scope <global|local>
 mahiro-skills doctor --agent <agent> [--scope <global|local>]
+mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent>] [--scope <global|local>] [--overwrite] [--yes]
 ```
+
+### Guided command behavior
+
+- `guided` is an interactive wrapper over the same `createPlan()` and `install()` flow used by the direct commands
+- when stdin/stdout are interactive, it prompts for missing mode, then either prompts for agent/scope plus selectable items or shows installed summaries
+- in interactive mode, it renders a normalized plan summary before returning a plan or proceeding with install
+- install confirmation remains explicit unless `--yes` is provided
+- in non-interactive mode, it does not prompt; `plan` and `install` still require explicit flags, while `list` can summarize current receipts immediately
+- interactive item selection should offer a default-bundle shortcut and numbered individual-item picks sourced from repo inventory
+- guided `list` should summarize installed items as `agent + scope + installed[]` instead of requiring the human to preselect a target first
 
 ### Items
 

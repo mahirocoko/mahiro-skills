@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { install } from "../src/install";
-import { listInstalled } from "../src/list";
+import { listInstalled, listInstalledSummaries } from "../src/list";
 import { makeTempEnv } from "./helpers";
 
 describe("list", () => {
@@ -82,6 +82,29 @@ describe("list", () => {
       expect(receipt?.installedSkills).toEqual(["gemini"]);
       expect(receipt?.installedCommands).toEqual(["gemini"]);
       expect(receipt?.installedAt.length).toBeGreaterThan(0);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("returns installed summaries across agent and scope", () => {
+    const temp = makeTempEnv();
+    try {
+      install("cursor", "local", ["project"], false, temp.env);
+      install("gemini", "global", ["gemini"], false, temp.env);
+
+      expect(listInstalledSummaries(temp.env)).toEqual([
+        {
+          agent: "cursor",
+          scope: "local",
+          installed: ["project"],
+        },
+        {
+          agent: "gemini",
+          scope: "global",
+          installed: ["gemini"],
+        },
+      ]);
     } finally {
       temp.cleanup();
     }

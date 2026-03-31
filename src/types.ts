@@ -61,6 +61,12 @@ export interface InstallReceipt {
   installedAt: string;
 }
 
+export interface InstalledSummary {
+  agent: ScopedAgent;
+  scope: InstallScope;
+  installed: string[];
+}
+
 export interface InstallResult {
   status: PlanStatus;
   agent: ScopedAgent;
@@ -87,9 +93,11 @@ export interface DoctorResult {
 }
 
 export interface CliOptions {
-  command: "plan" | "install" | "list" | "doctor";
+  command: "plan" | "install" | "list" | "doctor" | "guided";
   items: string[];
-  agent: ScopedAgent;
+  agent?: ScopedAgent;
   scope?: InstallScope;
   overwrite: boolean;
+  mode?: "plan" | "install" | "list";
+  yes: boolean;
 }

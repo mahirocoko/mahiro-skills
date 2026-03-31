@@ -109,6 +109,17 @@ For successful install:
 - commands are omitted only with explicit adapter reasoning
 - copied trees preserve helper assets
 
+## Guided command checks
+
+- guided mode can produce a plan through prompts without changing planner semantics
+- guided install confirms before writing unless `--yes` is provided
+- collision handling in guided mode still goes through the same overwrite rules
+- guided mode offers a default-bundle shortcut without typed item names
+- guided mode can select individual items from a numbered inventory list
+- guided list mode shows installed summaries by agent and scope without asking for agent/scope first
+- non-interactive guided execution fails clearly when required flags are missing
+- non-interactive guided execution falls back to the same direct planner, installer, or list-summary behavior when flags are complete
+
 ## Failure cases
 
 ### Collision without overwrite

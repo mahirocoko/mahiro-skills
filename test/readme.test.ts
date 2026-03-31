@@ -38,7 +38,7 @@ describe("README", () => {
     const content = readFileSync(readmePath, "utf8");
 
     expect(content).toContain("### Quick install via curl");
-expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.4 -- --agent opencode --scope global");
+expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.5 -- --agent opencode --scope global");
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("This repo ships a private Bun CLI and installs from repo contents.");
@@ -46,10 +46,16 @@ expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahiroco
     expect(content).toContain("Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)");
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("### Supported v0 adapters");
+    expect(content).toContain("- `guided`");
     expect(content).toContain("- `cursor`");
     expect(content).toContain("- `gemini`");
+    expect(content).toContain("bun ./src/cli.ts guided");
+    expect(content).toContain("bun ./src/cli.ts guided --mode list");
     expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
+    expect(content).toContain("`guided` is a thin interactive wrapper over the same planner and installer core, with non-interactive fallback when flags are fully provided.");
+    expect(content).toContain("guided item selection now offers a default-bundle shortcut and numbered item picks from repo inventory instead of requiring typed names.");
+    expect(content).toContain("guided list mode summarizes install receipts per agent and scope without forcing the human to choose a target first.");
     expect(content).not.toContain("npm install -g mahiro-skills");
     expect(content).not.toContain("bunx mahiro-skills");
   });
