@@ -14,7 +14,7 @@ Use current repo assets as fixtures.
 | `skills/gemini/extension/` | opaque heavy subtree | tests copy-only handling for partial-bundle assets |
 | `commands/project.md` | command wrapper | tests command installation pathing |
 | `commands/recap.md` | command wrapper | tests paired skill + command behavior |
-| `commands-gemini/mahiro-gemini.toml` | native Gemini command | tests Gemini command installation pathing |
+| `commands-gemini/mh-gemini.toml` | native Gemini command | tests Gemini command installation pathing |
 | `.claude-plugin/marketplace.json` | bundle metadata | tests default bundle discovery |
 | `template/` | authoring-only | tests non-installable asset exclusion |
 
@@ -97,7 +97,7 @@ Expected:
 
 - root resolves to `.gemini`
 - `skills/gemini/` treated as opaque copy tree
-- `commands-gemini/mahiro-gemini.toml` is also planned because the adapter supports commands
+- `commands-gemini/mh-gemini.toml` is also planned because the adapter supports commands
 - no attempt to reinterpret extension internals during planning
 - warnings allowed if extension bundling is partial
 

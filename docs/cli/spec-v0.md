@@ -29,7 +29,7 @@ The repo is the canonical package source.
 
 - `skills/<name>/...`
 - `commands/<name>.md`
-- `commands-gemini/mahiro-<name>.toml`
+- `commands-gemini/mh-<name>.toml`
 - `.claude-plugin/marketplace.json`
 - `template/`
 
@@ -251,7 +251,7 @@ Receipt fields:
 ### Gemini
 
 - Install packaged skills into `<root>/skills/`
-- Install packaged Gemini commands from `commands-gemini/mahiro-*.toml` into namespaced `<root>/commands/mahiro-*.toml` targets
+- Install packaged Gemini commands from `commands-gemini/mh-*.toml` into namespaced `<root>/commands/mh-*.toml` targets
 - Preserve `skills/gemini/extension/` as an opaque copied subtree when the `gemini` skill is installed
 - Do not describe extension loading or settings setup as full adapter support in v0
 

@@ -86,12 +86,12 @@ describe("plan", () => {
       expect(plan.skills.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
       expect(plan.commands.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
       expect(plan.commands.map((entry) => entry.source)).toEqual([
-        join(repoRoot, "commands-gemini", "mahiro-gemini.toml"),
-        join(repoRoot, "commands-gemini", "mahiro-watch.toml"),
+        join(repoRoot, "commands-gemini", "mh-gemini.toml"),
+        join(repoRoot, "commands-gemini", "mh-watch.toml"),
       ]);
       expect(plan.commands.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mahiro-gemini.toml"),
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mahiro-watch.toml"),
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mh-gemini.toml"),
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mh-watch.toml"),
       ]);
     } finally {
       temp.cleanup();

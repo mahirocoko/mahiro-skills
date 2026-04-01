@@ -10,7 +10,7 @@ Keep it short in practice: update the repo-first source files, keep version and 
 
 - `skills/<name>/...` is the canonical source for packaged skill behavior.
 - `commands/<name>.md` is the canonical source for non-Gemini slash-command wrappers.
-- `commands-gemini/mahiro-<name>.toml` is the canonical source for native Gemini custom commands.
+- `commands-gemini/mh-<name>.toml` is the canonical source for native Gemini custom commands.
 - `.claude-plugin/marketplace.json` is the bundle manifest used for default bundle discovery.
 - `template/` is an authoring scaffold, not an installable item.
 
@@ -41,7 +41,7 @@ When you add, rename, or remove packaged assets, update the inventory surfaces i
 
 ### If you change a command source only
 
-- Update `commands/<name>.md` for non-Gemini wrappers or `commands-gemini/mahiro-<name>.toml` for Gemini native commands
+- Update `commands/<name>.md` for non-Gemini wrappers or `commands-gemini/mh-<name>.toml` for Gemini native commands
 - Confirm the command is still represented correctly in `.claude-plugin/marketplace.json` when bundle output should include it
 - Update `README.md` if the included command set changed
 

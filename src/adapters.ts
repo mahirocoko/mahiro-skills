@@ -9,7 +9,7 @@ export interface CommandArtifact {
 }
 
 function formatGeminiCommandFileName(name: string): string {
-  return `${name.startsWith("mahiro-") ? name : `mahiro-${name}`}.toml`;
+  return `mh-${name}.toml`;
 }
 
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {

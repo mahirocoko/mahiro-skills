@@ -16,8 +16,8 @@ describe("repo inventory", () => {
     mkdirSync(join(repoRoot, "commands-gemini"), { recursive: true });
 
     writeFileSync(join(repoRoot, "commands", "project.md"), "# project\n");
-    writeFileSync(join(repoRoot, "commands-gemini", "mahiro-watch.toml"), 'description = "watch"\n');
-    writeFileSync(join(repoRoot, "commands-gemini", "mahiro-style.toml"), 'description = "style"\n');
+    writeFileSync(join(repoRoot, "commands-gemini", "mh-watch.toml"), 'description = "watch"\n');
+    writeFileSync(join(repoRoot, "commands-gemini", "mh-mahiro-style.toml"), 'description = "style"\n');
 
     const inventory = getRepoInventory(repoRoot);
 

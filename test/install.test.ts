@@ -118,9 +118,9 @@ describe("install", () => {
       expect(result.status).toBe("installed");
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mahiro-gemini.toml"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(false);
-      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mahiro-gemini.toml"), "utf8")).toContain(
+      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"), "utf8")).toContain(
         'description = "Mahiro Skill | Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed."',
       );
       expect(existsSync(receiptPath)).toBe(true);

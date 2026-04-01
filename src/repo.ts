@@ -67,7 +67,7 @@ export function getRepoInventory(repoRoot = getRepoRoot()): RepoInventory {
       return name;
     }
 
-    const strippedName = name.replace(/^mahiro-/, "");
+    const strippedName = name.replace(/^mh-/, "");
     return knownCommandNames.has(strippedName) ? strippedName : name;
   });
   const commands = [...new Set([...markdownCommands, ...geminiCommands])].sort();
