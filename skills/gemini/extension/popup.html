@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: linear-gradient(160deg, #0f1e1d 0%, #122826 52%, #102120 100%);
+      --card: rgba(229, 255, 250, 0.05);
+      --card-border: rgba(110, 231, 183, 0.24);
+      --text: #e7f8f2;
+      --muted: #93bdb3;
+      --primary: #14b8a6;
+      --primary-hover: #0ea393;
+      --success: #2dd4bf;
+      --danger: #f87171;
+      --shadow: 0 12px 28px rgba(3, 20, 18, 0.4);
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 16px;
+      font-family: 'Avenir Next', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .panel {
+      max-width: 420px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      font-size: 16px;
+      letter-spacing: 0.2px;
+    }
+
+    .badge {
+      font-size: 11px;
+      color: #b6c6df;
+      border: 1px solid rgba(182, 198, 223, 0.35);
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      border: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .status.online {
+      border-color: rgba(45, 212, 191, 0.45);
+    }
+
+    .status.offline {
+      border-color: rgba(248, 113, 113, 0.4);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+    }
+
+    .online .status-dot { background: var(--success); }
+    .offline .status-dot { background: var(--danger); }
+
+    .status-meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .card {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #b9c6da;
+      margin-bottom: 8px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .view-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .view-tab {
+      background: rgba(116, 132, 161, 0.36);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #d9ebf7;
+    }
+
+    .view-tab.active {
+      background: rgba(20, 184, 166, 0.42);
+      border-color: rgba(45, 212, 191, 0.62);
+      color: #f2fffc;
+    }
+
+    .view-section {
+      display: none;
+      gap: 12px;
+    }
+
+    .view-section.active {
+      display: grid;
+    }
+
+    .model-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 10px;
+      border: none;
+      border-radius: 9px;
+      background: var(--primary);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    button:disabled { background: #4f6287; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: rgba(116, 132, 161, 0.55);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(116, 132, 161, 0.72);
+    }
+
+    .btn-model {
+      background: rgba(20, 184, 166, 0.28);
+      border: 1px solid rgba(45, 212, 191, 0.35);
+      color: #dffaf5;
+      font-size: 12px;
+      padding: 9px 6px;
+    }
+
+    .btn-model:hover {
+      background: rgba(20, 184, 166, 0.45);
+    }
+
+    .tabs-list {
+      list-style: none;
+      display: grid;
+      gap: 6px;
+      max-height: 180px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .tabs-sections {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tabs-block-title {
+      font-size: 11px;
+      color: #b9c6da;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tabs-list li {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 12px;
+    }
+
+    .tabs-list li.active {
+      border-color: rgba(45, 212, 191, 0.55);
+      background: rgba(45, 212, 191, 0.09);
+    }
+
+    .tab-title {
+      color: #dce6f7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .tab-meta {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .muted {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .account-row {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .flow-grid.full {
+      grid-template-columns: 1fr;
+    }
+
+    .flow-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .flow-option-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .flow-option-row input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--primary);
+    }
+
+    .flow-attach-grid {
+      margin-top: 8px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow-attach-grid.hidden {
+      display: none;
+    }
+
+    .flow-frame-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .flow-frame-grid.hidden {
+      display: none;
+    }
+
+    .flow-asset-list-wrap.hidden {
+      display: none;
+    }
+
+    textarea#flow-asset-list {
+      width: 100%;
+      min-height: 64px;
+      max-height: 120px;
+      resize: vertical;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 30, 29, 0.85);
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    select,
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 30, 29, 0.85);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    input[type="number"]:disabled {
+      opacity: 0.55;
+    }
+
+    .error {
+      color: #ffd5d5;
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      border-radius: 8px;
+      padding: 7px 8px;
+      font-size: 11px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    @media (max-width: 360px) {
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="hero">
+      <h1>🔮 Oracle Gemini Proxy</h1>
+      <span class="badge">Sidebar</span>
+    </div>
+
+    <div id="status" class="status offline">
+      <div class="status-left">
+        <span class="status-dot"></span>
+        <span id="status-text">Checking connection...</span>
+      </div>
+      <span id="status-meta" class="status-meta">MQTT ws://localhost:9001</span>
+    </div>
+
+    <div class="card">
+      <h2>Quick Actions</h2>
+      <div class="actions">
+        <button id="reconnect" class="btn-secondary">Reconnect</button>
+        <button id="open-tab" class="btn-secondary">Open Gemini</button>
+        <button id="refresh-tabs-global" class="btn-secondary">Refresh All Tabs</button>
+      </div>
+      <div id="error" class="error"></div>
+    </div>
+
+    <div class="card">
+      <h2>Workspace</h2>
+      <div class="view-tabs">
+        <button id="view-gemini-tab" class="view-tab active">Gemini</button>
+        <button id="view-flow-tab" class="view-tab">Flow</button>
+      </div>
+    </div>
+
+    <div id="view-gemini" class="view-section active">
+      <div class="card">
+        <h2>Account Target</h2>
+        <div class="account-row">
+          <select id="account-select">
+            <option value="0">Default (/u/0)</option>
+            <option value="1">Work (/u/1)</option>
+            <option value="2">/u/2</option>
+            <option value="custom">Custom</option>
+          </select>
+          <input id="account-custom" type="number" min="0" step="1" value="0" disabled />
+        </div>
+        <div id="account-hint" class="muted" style="margin-top:8px;">Using /u/0</div>
+      </div>
+
+      <div class="card">
+        <h2>Select Model</h2>
+        <div class="model-actions">
+          <button id="model-fast" class="btn-model">Fast</button>
+          <button id="model-thinking" class="btn-model">Thinking</button>
+          <button id="model-pro" class="btn-model">Pro</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Detected Gemini Tabs</h2>
+        <ul id="tabs-list" class="tabs-list"></ul>
+      </div>
+    </div>
+
+    <div id="view-flow" class="view-section">
+      <div class="card">
+        <h2>Flow Project</h2>
+        <div class="account-row">
+          <input id="flow-project-id" type="text" placeholder="project UUID" />
+          <button id="save-flow-project" class="btn-secondary">Save</button>
+        </div>
+        <div id="flow-project-hint" class="muted" style="margin-top:8px;">No project ID selected</div>
+      </div>
+
+      <div class="card">
+        <h2>Flow Controls</h2>
+        <div class="flow-grid">
+          <select id="flow-mode-select">
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select>
+          <select id="flow-video-submode-select">
+            <option value="">Video Type (auto)</option>
+            <option value="frames">Frames</option>
+            <option value="ingredients">Ingredients</option>
+          </select>
+          <select id="flow-aspect-ratio">
+            <option value="">Ratio (keep)</option>
+            <option value="landscape">Landscape</option>
+            <option value="portrait">Portrait</option>
+          </select>
+          <select id="flow-multiplier-select">
+            <option value="">Multiplier (keep)</option>
+            <option value="x1">x1</option>
+            <option value="x2">x2</option>
+            <option value="x3">x3</option>
+            <option value="x4">x4</option>
+          </select>
+          <select id="flow-model-select">
+            <option value="">Model (keep)</option>
+            <option value="Nano Banana Pro">Nano Banana Pro</option>
+            <option value="Nano Banana 2">Nano Banana 2</option>
+            <option value="Imagen 4">Imagen 4</option>
+          </select>
+          <button id="flow-apply-controls">Apply Controls</button>
+        </div>
+        <div class="flow-grid full" style="margin-top: 8px;">
+          <input id="flow-prompt-input" type="text" placeholder="Prompt..." />
+        </div>
+        <div id="flow-attach-grid" class="flow-attach-grid">
+          <select id="flow-attachment-mode">
+            <option value="none">Attach Images (none)</option>
+            <option value="frames">Frames: Start + End</option>
+            <option value="ingredients">Ingredients: append many</option>
+            <option value="ref">Ref images: append many</option>
+          </select>
+          <div id="flow-frame-grid" class="flow-frame-grid hidden">
+            <input id="flow-frame-start-asset" type="text" placeholder="Start image ID" />
+            <input id="flow-frame-end-asset" type="text" placeholder="End image ID" />
+          </div>
+          <div id="flow-asset-list-wrap" class="flow-asset-list-wrap hidden">
+            <textarea id="flow-asset-list" placeholder="Image IDs (comma or new line)"></textarea>
+          </div>
+          <div id="flow-attachment-hint" class="muted">Frames uses Start/End slots. Ingredients and Ref append selected assets.</div>
+        </div>
+        <label class="flow-option-row" for="flow-clear-before-type">
+          <input id="flow-clear-before-type" type="checkbox" />
+          <span>Clear existing prompt before typing</span>
+        </label>
+        <div class="flow-actions">
+          <button id="flow-send" >Send</button>
+          <button id="open-flow" class="btn-secondary">Open Flow</button>
+          <button id="open-flow-project" class="btn-secondary">Open Project ID</button>
+          <button id="flow-refresh-project" class="btn-secondary">Read Current Project</button>
+          <button id="refresh-tabs">Refresh All Tabs</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Detected Flow Tabs</h2>
+        <ul id="flow-tabs-list" class="tabs-list"></ul>
+      </div>
+    </div>
+
+    <div class="card muted">
+      Topics: <code>claude/browser/command</code>, <code>claude/browser/response</code>, <code>claude/browser/status</code>
+      <br>
+      Tip: keep this side panel open while controlling Gemini from the skill.
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
