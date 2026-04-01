@@ -8,6 +8,10 @@ export interface CommandArtifact {
   targetRelativePath: string;
 }
 
+function formatGeminiCommandFileName(name: string): string {
+  return `${name.startsWith("mahiro-") ? name : `mahiro-${name}`}.toml`;
+}
+
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {
   return agent === "opencode" || agent === "claude-code" || agent === "cursor" || agent === "gemini";
 }
@@ -61,10 +65,12 @@ export function supportsCommands(agent: ScopedAgent): boolean {
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {
   if (agent === "gemini") {
+    const fileName = formatGeminiCommandFileName(name);
+
     return {
       extension: ".toml",
-      sourceRelativePath: join("commands-gemini", `${name}.toml`),
-      targetRelativePath: join("commands", `${name}.toml`),
+      sourceRelativePath: join("commands-gemini", fileName),
+      targetRelativePath: join("commands", fileName),
     };
   }
 

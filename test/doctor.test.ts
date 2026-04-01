@@ -184,7 +184,7 @@ describe("doctor", () => {
         {
           label: "command:gemini",
           ok: true,
-          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.toml"),
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mahiro-gemini.toml"),
         },
       ]);
     } finally {

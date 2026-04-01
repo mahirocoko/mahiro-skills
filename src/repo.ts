@@ -15,9 +15,24 @@ function readDirNames(path: string): string[] {
 }
 
 function readCommandNames(path: string): string[] {
+  if (!existsSync(path)) {
+    return [];
+  }
+
   return readdirSync(path, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
     .map((entry) => entry.name.replace(/\.md$/, ""))
+    .sort();
+}
+
+function readGeminiCommandFileNames(path: string): string[] {
+  if (!existsSync(path)) {
+    return [];
+  }
+
+  return readdirSync(path, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".toml"))
+    .map((entry) => entry.name.replace(/\.toml$/, ""))
     .sort();
 }
 
@@ -44,8 +59,18 @@ function readBundles(repoRoot: string): RepoBundle[] {
 
 export function getRepoInventory(repoRoot = getRepoRoot()): RepoInventory {
   const skills = readDirNames(join(repoRoot, "skills"));
-  const commands = readCommandNames(join(repoRoot, "commands"));
+  const markdownCommands = readCommandNames(join(repoRoot, "commands"));
   const bundles = readBundles(repoRoot);
+  const knownCommandNames = new Set([...skills, ...markdownCommands, ...bundles.flatMap((bundle) => bundle.commands)]);
+  const geminiCommands = readGeminiCommandFileNames(join(repoRoot, "commands-gemini")).map((name) => {
+    if (knownCommandNames.has(name)) {
+      return name;
+    }
+
+    const strippedName = name.replace(/^mahiro-/, "");
+    return knownCommandNames.has(strippedName) ? strippedName : name;
+  });
+  const commands = [...new Set([...markdownCommands, ...geminiCommands])].sort();
   const defaultBundle = bundles[0] ?? {
     name: "fallback-all",
     description: "Fallback bundle generated from repo contents",

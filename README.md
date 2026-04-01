@@ -31,16 +31,16 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ### Quick install via curl
 
-Install the default bundle globally for OpenCode from the `v0.1.6` tag:
+Install the default bundle globally for OpenCode from the `v0.1.7` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.6 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.7 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.6 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.7 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -118,7 +118,7 @@ bun ./src/cli.ts guided --mode list
 
 - `skills/<name>/...` — packaged skills and helper resources
 - `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
-- `commands-gemini/<name>.toml` — native Gemini custom commands
+- `commands-gemini/mahiro-<name>.toml` — native Gemini custom commands
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
 - `docs/authoring/` — maintainer notes for release, path, and inventory conventions
@@ -172,7 +172,7 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` remain compatibility wrappers for non-Gemini slash-command entrypoints.
-- `commands-gemini/` is the native Gemini custom-command source, installed as `.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
+- `commands-gemini/` is the native Gemini custom-command source, installed as namespaced `.toml` files like `mahiro-watch.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
 - CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
