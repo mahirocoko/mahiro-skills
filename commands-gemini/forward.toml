@@ -1,0 +1,8 @@
+description = "Create a handoff and planning bridge for the next session. Use when the user asks to wrap up or hand work forward."
+prompt = """
+Execute the `forward` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"forward\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/forward/SKILL.md` for local installs or `~/.gemini/skills/forward/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

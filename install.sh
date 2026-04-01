@@ -9,7 +9,7 @@ usage() {
 Usage: install.sh [--version <ref>] [--repo <git-url>] [--help] [--] [install args...]
 
 Examples:
-  bash install.sh --version v0.1.5 -- project --agent opencode --scope global
+  bash install.sh --version v0.1.6 -- project --agent opencode --scope global
   MAHIRO_SKILLS_REPO_ROOT=/path/to/mahiro-skills bash install.sh -- project --agent opencode --scope local
 EOF
 }
@@ -30,6 +30,7 @@ validate_repo_root() {
   [ -f "$repo_root/src/cli.ts" ] || die "Invalid repo root '$repo_root': missing src/cli.ts"
   [ -d "$repo_root/skills" ] || die "Invalid repo root '$repo_root': missing skills/"
   [ -d "$repo_root/commands" ] || die "Invalid repo root '$repo_root': missing commands/"
+  [ -d "$repo_root/commands-gemini" ] || die "Invalid repo root '$repo_root': missing commands-gemini/"
 }
 
 while [ $# -gt 0 ]; do

@@ -1,6 +1,6 @@
 # mahiro-skills
 
-`mahiro-skills` packages Mahiro's local agent bundle as repo-managed `skills/`, `commands/`, and a Bun CLI that installs those assets into supported agent roots.
+`mahiro-skills` packages Mahiro's local agent bundle as repo-managed `skills/`, agent-specific command sources, and a Bun CLI that installs those assets into supported agent roots.
 
 This repo ships a private Bun CLI and installs from repo contents. It is not an npm-published binary package.
 
@@ -31,16 +31,16 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ### Quick install via curl
 
-Install the default bundle globally for OpenCode from the `v0.1.5` tag:
+Install the default bundle globally for OpenCode from the `v0.1.6` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.5 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.6 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.5 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.6 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -64,6 +64,7 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 - If `MAHIRO_SKILLS_REPO_ROOT` is set, it installs from that checkout directly.
 - Otherwise it clones the requested repo ref into a temp directory, runs `bun ./src/cli.ts install ...`, then cleans up the temp clone.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
+- Installed Gemini TOML command descriptions are also prefixed at install time, while source TOML in the repo stays unchanged.
 
 ## CLI
 
@@ -116,7 +117,8 @@ bun ./src/cli.ts guided --mode list
 ## Repo layout
 
 - `skills/<name>/...` — packaged skills and helper resources
-- `commands/<name>.md` — slash-command wrappers
+- `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
+- `commands-gemini/<name>.toml` — native Gemini custom commands
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
 - `docs/authoring/` — maintainer notes for release, path, and inventory conventions
@@ -169,7 +171,8 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 ## Current status
 
 - `skills/` is the source of truth for packaged agent behavior.
-- `commands/` are compatibility wrappers for agents that support slash-command entrypoints.
+- `commands/` remain compatibility wrappers for non-Gemini slash-command entrypoints.
+- `commands-gemini/` is the native Gemini custom-command source, installed as `.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
 - CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.

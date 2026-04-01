@@ -25,7 +25,7 @@ This page does not redefine the whole CLI spec. It exists to make the next rollo
 | Agent | Project-local artifacts | User/global artifacts | Command surface | MCP/config surface | Automation safety | Recommended support level in next pass | Notes |
 |------|--------------------------|-----------------------|-----------------|-------------------|------------------|----------------------------------------|-------|
 | Cursor | `.cursor/skills`, `.cursor/commands` | `~/.cursor/skills`, `~/.cursor/commands` | Supported through the current boolean adapter capability model | `.cursor/mcp.json` and related confirmation flows remain follow-on surfaces | High for the currently modeled file outputs, medium when confirmation is required | First-class for current install outputs | Runtime support currently models packaged skills, commands, and receipts under the resolved Cursor root |
-| Gemini | `.gemini/skills`, `.gemini/commands` | `~/.gemini/skills`, `~/.gemini/commands` | Supported through the current boolean adapter capability model | Extension, settings, and MCP surfaces remain partial follow-on work | High for the currently modeled file outputs, lower for extension/setup flows | First-class for current install outputs, partial for extension/setup flows | Runtime support currently models packaged skills, commands, receipts, and opaque extension subtree copying under the resolved Gemini root |
+| Gemini | `.gemini/skills`, `.gemini/commands/*.toml` | `~/.gemini/skills`, `~/.gemini/commands/*.toml` | Supported through the current boolean adapter capability model, with native TOML command artifacts | Extension, settings, and MCP surfaces remain partial follow-on work | High for the currently modeled file outputs, lower for extension/setup flows | First-class for current install outputs, partial for extension/setup flows | Runtime support currently models packaged skills, native Gemini commands, receipts, and opaque extension subtree copying under the resolved Gemini root |
 
 ## Cursor
 
@@ -47,6 +47,7 @@ This page does not redefine the whole CLI spec. It exists to make the next rollo
 
 - project-local skill and command installation under `.gemini/`
 - user-scoped skill and command installation under `~/.gemini/`
+- packaged Gemini commands install natively as `.toml` files under the resolved `commands/` directory
 - receipt writing and doctor/list verification under the resolved Gemini root
 - opaque copying of the packaged Gemini extension subtree as part of the `gemini` skill payload
 

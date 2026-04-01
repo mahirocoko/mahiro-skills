@@ -1,0 +1,8 @@
+description = "Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed."
+prompt = """
+Execute the `gemini` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"gemini\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/gemini/SKILL.md` for local installs or `~/.gemini/skills/gemini/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

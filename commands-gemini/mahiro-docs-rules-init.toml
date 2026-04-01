@@ -1,0 +1,8 @@
+description = "Bootstrap AGENTS.md and a Mahiro-style docs family from reference grammar plus local repo reality. Use when a project is new, under-documented, or needs an init pass for docs and rules with Mahiro doctrine."
+prompt = """
+Execute the `mahiro-docs-rules-init` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"mahiro-docs-rules-init\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mahiro-docs-rules-init/SKILL.md` for local installs or `~/.gemini/skills/mahiro-docs-rules-init/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

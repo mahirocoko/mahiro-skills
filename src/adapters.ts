@@ -2,6 +2,12 @@ import { join } from "path";
 
 import type { InstallScope, ScopedAgent, SupportedAgent } from "./types";
 
+export interface CommandArtifact {
+  extension: ".md" | ".toml";
+  sourceRelativePath: string;
+  targetRelativePath: string;
+}
+
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {
   return agent === "opencode" || agent === "claude-code" || agent === "cursor" || agent === "gemini";
 }
@@ -51,4 +57,20 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
 
 export function supportsCommands(agent: ScopedAgent): boolean {
   return isImplementedAgent(agent);
+}
+
+export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {
+  if (agent === "gemini") {
+    return {
+      extension: ".toml",
+      sourceRelativePath: join("commands-gemini", `${name}.toml`),
+      targetRelativePath: join("commands", `${name}.toml`),
+    };
+  }
+
+  return {
+    extension: ".md",
+    sourceRelativePath: join("commands", `${name}.md`),
+    targetRelativePath: join("commands", `${name}.md`),
+  };
 }

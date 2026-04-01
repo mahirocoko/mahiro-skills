@@ -1,13 +1,21 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import { resolveRoot, supportsCommands } from "./adapters";
+import { resolveCommandArtifact, resolveRoot, supportsCommands } from "./adapters";
 import { getRepoInventory } from "./repo";
 import type { InstallPlan, InstallScope, InstallTarget, RepoInventory, ScopedAgent, SkippedItem } from "./types";
 
-function makeTarget(root: string, name: string, kind: "skill" | "command", sourceRoot: string): InstallTarget {
-  const source = kind === "skill" ? join(sourceRoot, "skills", name) : join(sourceRoot, "commands", `${name}.md`);
-  const target = kind === "skill" ? join(root, "skills", name) : join(root, "commands", `${name}.md`);
+function makeTarget(root: string, name: string, kind: "skill" | "command", sourceRoot: string, agent: ScopedAgent): InstallTarget {
+  const source = kind === "skill"
+    ? join(sourceRoot, "skills", name)
+    : join(sourceRoot, resolveCommandArtifact(agent, name).sourceRelativePath);
+  const target = kind === "skill"
+    ? join(root, "skills", name)
+    : join(root, resolveCommandArtifact(agent, name).targetRelativePath);
+
+  if (!existsSync(source)) {
+    throw new Error(`Missing packaged ${kind} source '${source}'.`);
+  }
 
   return {
     name,
@@ -106,8 +114,8 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
   const root = resolveRoot(agent, scope, env);
   const resolved = resolveRequestedItems(inventory, items, agent);
 
-  const skills = resolved.skills.map((name) => makeTarget(root, name, "skill", inventory.repoRoot));
-  const commands = resolved.commands.map((name) => makeTarget(root, name, "command", inventory.repoRoot));
+  const skills = resolved.skills.map((name) => makeTarget(root, name, "skill", inventory.repoRoot, agent));
+  const commands = resolved.commands.map((name) => makeTarget(root, name, "command", inventory.repoRoot, agent));
 
   return {
     agent,

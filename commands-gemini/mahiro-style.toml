@@ -1,0 +1,8 @@
+description = "Mahiro cross-repo code style doctrine. Encodes Mahiro's preferences for naming, file structure, interface/type usage, constants plus i18n, component boundaries, UI structure restraint, and review heuristics. Use when implementing, reviewing, refactoring, or aligning code to Mahiro style."
+prompt = """
+Execute the `mahiro-style` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"mahiro-style\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mahiro-style/SKILL.md` for local installs or `~/.gemini/skills/mahiro-style/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

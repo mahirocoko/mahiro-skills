@@ -1,0 +1,8 @@
+description = "Explore a codebase with parallel agents by cloning, reading, and documenting it. Use when the user wants to study a repo in depth."
+prompt = """
+Execute the `learn` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"learn\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/learn/SKILL.md` for local installs or `~/.gemini/skills/learn/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

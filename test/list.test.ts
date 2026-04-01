@@ -41,7 +41,7 @@ describe("list", () => {
 
       const receipt = listInstalled("opencode", "local", temp.env);
 
-      expect(receipt?.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(receipt?.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
     }

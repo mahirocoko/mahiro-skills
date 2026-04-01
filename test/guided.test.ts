@@ -92,7 +92,7 @@ describe("guided", () => {
       const result = expectInstallPlan(await runGuided(makeOptions(), temp.env, prompt.io));
 
       expect(result.requested).toEqual([]);
-      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
     }

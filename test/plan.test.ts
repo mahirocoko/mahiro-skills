@@ -12,7 +12,7 @@ describe("plan", () => {
     try {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
-      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(11);
       expect(plan.commands.length).toBe(11);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
@@ -38,7 +38,7 @@ describe("plan", () => {
     try {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
-      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(11);
       expect(plan.commands.length).toBe(11);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
@@ -54,6 +54,10 @@ describe("plan", () => {
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor"));
       expect(plan.skills.map((entry) => entry.name)).toEqual(["project", "recap"]);
       expect(plan.commands.map((entry) => entry.name)).toEqual(["project", "recap"]);
+      expect(plan.commands.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "project.md"),
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "recap.md"),
+      ]);
     } finally {
       temp.cleanup();
     }
@@ -64,7 +68,7 @@ describe("plan", () => {
     try {
       const plan = createPlan("gemini", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
-      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(11);
       expect(plan.commands.length).toBe(11);
       expect(plan.skills.some((entry) => entry.name === "gemini")).toBe(true);
@@ -77,9 +81,18 @@ describe("plan", () => {
     const temp = makeTempEnv();
     try {
       const plan = createPlan("gemini", "global", ["gemini", "watch"], temp.env);
+      const repoRoot = join(import.meta.dir, "..");
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini"));
       expect(plan.skills.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
       expect(plan.commands.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
+      expect(plan.commands.map((entry) => entry.source)).toEqual([
+        join(repoRoot, "commands-gemini", "gemini.toml"),
+        join(repoRoot, "commands-gemini", "watch.toml"),
+      ]);
+      expect(plan.commands.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "gemini.toml"),
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "watch.toml"),
+      ]);
     } finally {
       temp.cleanup();
     }

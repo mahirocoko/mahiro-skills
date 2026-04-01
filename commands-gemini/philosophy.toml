@@ -1,0 +1,8 @@
+description = "Display the local philosophy and alignment rules. Use when the user asks about principles or needs a philosophy check."
+prompt = """
+Execute the `philosophy` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"philosophy\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/philosophy/SKILL.md` for local installs or `~/.gemini/skills/philosophy/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

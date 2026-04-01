@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
-import { resolveRoot } from "./adapters";
+import { resolveCommandArtifact, resolveRoot } from "./adapters";
 import type { DoctorCheck, DoctorResult, InstallReceipt, InstallScope, ScopedAgent } from "./types";
 
 function receiptPath(root: string, agent: ScopedAgent, scope: InstallScope): string {
@@ -39,7 +39,7 @@ function checkScope(agent: ScopedAgent, scope: InstallScope, env = process.env):
     }
 
     for (const command of receipt.installedCommands) {
-      const commandPath = join(root, "commands", `${command}.md`);
+      const commandPath = join(root, resolveCommandArtifact(agent, command).targetRelativePath);
       checks.push({
         label: `command:${command}`,
         ok: existsSync(commandPath),

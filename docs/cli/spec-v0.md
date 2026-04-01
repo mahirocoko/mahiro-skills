@@ -29,6 +29,7 @@ The repo is the canonical package source.
 
 - `skills/<name>/...`
 - `commands/<name>.md`
+- `commands-gemini/<name>.toml`
 - `.claude-plugin/marketplace.json`
 - `template/`
 
@@ -38,7 +39,7 @@ The repo is the canonical package source.
 |------|---------|-------------------|
 | bundle | Logical group of skills/commands | Yes |
 | skill | A directory under `skills/` | Yes |
-| command | A markdown wrapper under `commands/` | Yes, if adapter supports commands |
+| command | A packaged command artifact resolved by the adapter | Yes, if adapter supports commands |
 | template | Authoring scaffold | No |
 | plugin metadata | Source metadata for bundle discovery | Adapter-dependent |
 
@@ -250,7 +251,7 @@ Receipt fields:
 ### Gemini
 
 - Install packaged skills into `<root>/skills/`
-- Install packaged commands into `<root>/commands/`
+- Install packaged Gemini commands from `commands-gemini/*.toml` into `<root>/commands/*.toml`
 - Preserve `skills/gemini/extension/` as an opaque copied subtree when the `gemini` skill is installed
 - Do not describe extension loading or settings setup as full adapter support in v0
 

@@ -1,5 +1,5 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
+import { dirname, extname, join } from "path";
 
 import { createPlan } from "./plan";
 import type { InstallReceipt, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
@@ -31,15 +31,36 @@ function prefixFrontmatterDescription(content: string): string {
   return content.replace(frontmatterMatch[0], nextContent);
 }
 
-function rewriteInstalledMarkdownDescription(stagingPath: string): void {
-  const stats = statSync(stagingPath);
-  const markdownPath = stats.isDirectory() ? join(stagingPath, "SKILL.md") : stagingPath;
+function prefixTomlDescription(content: string): string {
+  return content.replace(/^description\s*=\s*"([^"]*)"/m, (_match, description: string) => {
+    if (description.startsWith(installedDescriptionPrefix)) {
+      return `description = "${description}"`;
+    }
 
-  const content = readFileSync(markdownPath, "utf8");
-  const nextContent = prefixFrontmatterDescription(content);
+    return `description = "${installedDescriptionPrefix}${description}"`;
+  });
+}
+
+function rewriteInstalledDescription(stagingPath: string, targetPath: string): void {
+  const stats = statSync(stagingPath);
+  if (stats.isDirectory()) {
+    const markdownPath = join(stagingPath, "SKILL.md");
+    const content = readFileSync(markdownPath, "utf8");
+    const nextContent = prefixFrontmatterDescription(content);
+
+    if (nextContent !== content) {
+      writeFileSync(markdownPath, nextContent);
+    }
+
+    return;
+  }
+
+  const content = readFileSync(stagingPath, "utf8");
+  const extension = extname(targetPath);
+  const nextContent = extension === ".toml" ? prefixTomlDescription(content) : prefixFrontmatterDescription(content);
 
   if (nextContent !== content) {
-    writeFileSync(markdownPath, nextContent);
+    writeFileSync(stagingPath, nextContent);
   }
 }
 
@@ -52,7 +73,7 @@ function copyTarget(target: InstallTarget, overwrite: boolean): void {
   const stagingPath = `${target.target}.tmp-mahiro-skills`;
   rmSync(stagingPath, { recursive: true, force: true });
   cpSync(target.source, stagingPath, { recursive: true });
-  rewriteInstalledMarkdownDescription(stagingPath);
+  rewriteInstalledDescription(stagingPath, target.target);
 
   if (overwrite && existsSync(target.target)) {
     rmSync(target.target, { recursive: true, force: true });

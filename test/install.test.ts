@@ -57,9 +57,9 @@ describe("install", () => {
         description?: string;
       };
 
-      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(result.installed).toEqual(["deep-research", "forward", "gemini", "learn", "mahiro-docs-rules-init", "mahiro-style", "philosophy", "project", "recap", "rrr", "watch"]);
-      expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.");
+      expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
     }
@@ -118,7 +118,11 @@ describe("install", () => {
       expect(result.status).toBe("installed");
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.toml"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(false);
+      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.toml"), "utf8")).toContain(
+        'description = "Mahiro Skill | Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed."',
+      );
       expect(existsSync(receiptPath)).toBe(true);
       expect(receipt.agent).toBe("gemini");
       expect(receipt.scope).toBe("local");

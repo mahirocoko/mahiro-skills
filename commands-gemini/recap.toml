@@ -1,0 +1,8 @@
+description = "Session orientation and awareness. Use when starting work, resuming context, or answering status questions."
+prompt = """
+Execute the `recap` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"recap\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/recap/SKILL.md` for local installs or `~/.gemini/skills/recap/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

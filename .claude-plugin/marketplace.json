@@ -2,11 +2,11 @@
   "schema_version": 1,
   "name": "mahiro-skills",
   "publisher": "mahirocoko",
-  "description": "Mahiro's packaged OpenCode skills and command wrappers.",
+  "description": "Mahiro's packaged skills and agent-native command entrypoints.",
   "bundles": [
     {
       "name": "mahiro-local-bundle",
-      "description": "Mahiro Skill | Packaged local skills plus slash-command wrappers from the current mahiro-skills bundle.",
+      "description": "Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.",
       "skills": [
         "deep-research",
         "forward",
