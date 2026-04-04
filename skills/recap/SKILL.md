@@ -27,7 +27,7 @@ Use this evidence order every time:
 2. **Other same-day session context** — if available from the current agent
 3. **Same-day retrospective memory** — `.agent-state/memory/retrospectives/YYYY-MM/DD/*.md`
 4. **Latest retrospective fallback** — newest file anywhere under `.agent-state/memory/retrospectives/`
-5. **Same-day handoff / durable memory** — `.agent-state/inbox/handoff/*.md`, `.agent-state/memory/logs/`, `.agent-state/metrics/heartbeat.json`
+5. **Same-day handoff / durable memory** — `.agent-state/inbox/handoff/*.md`, `.agent-state/memory/logs/`, `.agent-state/metrics/project.json`, `.agent-state/metrics/heartbeat.json`
 6. **Current git state** — what is uncommitted or currently staged
 
 Only say “no implementation work happened today” when the broader same-day memory layer is empty. If today is empty but an older retrospective exists, report it as the latest known work instead of pretending there is no recent context.
@@ -39,11 +39,13 @@ Only say “no implementation work happened today” when the broader same-day m
 - Build a rich summary of what happened today in this repo.
 - Always check same-day retrospectives before falling back to git-only conclusions.
 - If there is no same-day retrospective, discover the newest retrospective anywhere in the retrospectives tree and surface it as the latest known work.
+- If pulse data exists, use it as supporting context for momentum, streak, and branch activity, but never let it outrank richer retrospective evidence.
 - Include, when available:
   - completed work from today
   - major files changed
   - architecture or pattern decisions
   - next steps or open threads
+  - pulse context from `project.json` / `heartbeat.json`
   - current git state
 
 ### `/recap --quick`
@@ -58,6 +60,7 @@ Only say “no implementation work happened today” when the broader same-day m
 - Still check whether same-day retrospective memory contradicts a “nothing happened today” conclusion.
 - If today is empty, use the newest older retrospective only as continuity context, not as proof that work is active right now.
 - If current activity is light but same-day retrospectives show substantive work, say that clearly: for example, “Right now this session is mostly orientation, but earlier today the repo had substantive implementation work.”
+- If pulse data exists, it may help distinguish a thin current thread from a still-active workday; mention both instead of flattening to one source.
 
 ### `/recap --now deep`
 
@@ -65,6 +68,7 @@ Only say “no implementation work happened today” when the broader same-day m
 - Include retrospective takeaways, handoff connections, open follow-ups, and current git state.
 - If today is empty, walk backward to the newest retrospective in the tree and label it explicitly as latest known context.
 - If there is tension between current-session thinness and earlier same-day work, explain both rather than flattening to one source.
+- If pulse data exists, use it to qualify the scale of today rather than to replace the narrative from memory artifacts.
 
 ## Same-Day Memory Paths
 
@@ -83,8 +87,20 @@ $AGENT_STATE_DIR/memory/retrospectives/$TODAY_DIR/*.md
 $AGENT_STATE_DIR/memory/retrospectives/**/**/*.md
 $AGENT_STATE_DIR/inbox/handoff/*.md
 $AGENT_STATE_DIR/memory/logs/
+$AGENT_STATE_DIR/metrics/project.json
 $AGENT_STATE_DIR/metrics/heartbeat.json
 ```
+
+## Pulse Rules
+
+If pulse files exist, treat them as compact derived context:
+
+- `project.json` = scale and structure of work across sessions
+- `heartbeat.json` = recent momentum, streak, and today's activity
+
+Use pulse to enrich a recap with short facts like total sessions, today's session count, streak length, weekly session change, or current branch activity.
+
+Do not let pulse override newer and richer evidence from same-day retrospectives, handoffs, or the active thread. If pulse appears stale or disagrees with fresher memory artifacts, trust the fresher artifact and mention the tension briefly.
 
 For retrospectives, prioritize the newest same-day file and extract:
 
