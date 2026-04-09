@@ -1,38 +1,50 @@
 import { describe, expect, test } from "bun:test";
 
 import { runGuided } from "../src/guided";
-import { getRepoInventory } from "../src/repo";
+import type { PromptOption } from "../src/prompt";
 import type { CliOptions, InstalledSummary, InstallPlan, InstallResult } from "../src/types";
+import type { GuidedOutcome } from "../src/guided";
 import { makeTempEnv } from "./helpers";
 
-function expectInstallPlan(result: InstallPlan | InstallResult | InstalledSummary[]): InstallPlan {
+function expectInstallPlan(result: GuidedOutcome): InstallPlan {
   expect(Array.isArray(result)).toBe(false);
   expect("requested" in result).toBe(true);
   return result as InstallPlan;
 }
 
-function expectInstallResult(result: InstallPlan | InstallResult | InstalledSummary[]): InstallResult {
+function expectInstallPlans(result: GuidedOutcome): InstallPlan[] {
+  expect(Array.isArray(result)).toBe(true);
+  return result as InstallPlan[];
+}
+
+function expectInstallResult(result: GuidedOutcome): InstallResult {
   expect(Array.isArray(result)).toBe(false);
   expect("status" in result).toBe(true);
   return result as InstallResult;
 }
 
-function expectInstalledSummaries(result: InstallPlan | InstallResult | InstalledSummary[]): InstalledSummary[] {
+function expectInstalledSummaries(result: GuidedOutcome): InstalledSummary[] {
   expect(Array.isArray(result)).toBe(true);
   return result as InstalledSummary[];
 }
 
 function makeOptions(overrides: Partial<CliOptions> = {}): CliOptions {
   return {
-    command: "guided",
+    command: "tui",
     items: [],
+    agents: [],
     overwrite: false,
     yes: false,
     ...overrides,
   };
 }
 
-function makePromptIo(answers: string[], isInteractive = true) {
+function makePromptIo(
+  selections: string[] = [],
+  multiSelections: string[][] = [],
+  confirmations: boolean[] = [],
+  isInteractive = true,
+) {
   const writes: string[] = [];
 
   return {
@@ -42,35 +54,68 @@ function makePromptIo(answers: string[], isInteractive = true) {
       write(message: string) {
         writes.push(message);
       },
-      async ask(question: string) {
+      note(message: string, title?: string) {
+        writes.push(title ? `[note:${title}] ${message}` : `[note] ${message}`);
+      },
+      async select<T extends string>(label: string, options: readonly PromptOption<T>[]) {
+        writes.push(label);
+        const answer = selections.shift();
+        expect(answer).toBeDefined();
+        expect(options.some((option) => option.value === answer)).toBe(true);
+        return answer as T;
+      },
+      async multiselect<T extends string>(label: string, options: readonly PromptOption<T>[]) {
+        writes.push(label);
+        const answer = multiSelections.shift() ?? [];
+        expect(answer.length).toBeGreaterThan(0);
+        expect(answer.every((value) => options.some((option) => option.value === value))).toBe(true);
+        return answer as T[];
+      },
+      async confirm(question: string) {
         writes.push(question);
-        return answers.shift() ?? "";
+        return confirmations.shift() ?? false;
       },
       close() {},
     },
   };
 }
 
-function makeItemSelectionAnswer(...items: string[]): string {
-  const inventory = getRepoInventory();
-  const selectable = [
-    ...inventory.skills,
-    ...inventory.commands.filter((command) => !inventory.skills.includes(command)),
-  ];
-
-  return items
-    .map((item) => {
-      const index = selectable.indexOf(item);
-      expect(index).toBeGreaterThanOrEqual(0);
-      return String(index + 1);
-    })
-    .join(", ");
-}
-
 describe("guided", () => {
-  test("runs interactive plan flow with prompted agent and numbered item selection", async () => {
+  test("runs interactive plan for multiple selected agents", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["2", "3", "1", "2", makeItemSelectionAnswer("project", "recap")]);
+    const prompt = makePromptIo(["plan", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]]);
+
+    try {
+      const result = expectInstallPlans(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toHaveLength(2);
+      expect(result.map((plan) => plan.agent).sort()).toEqual(["cursor", "gemini"]);
+      expect(result[0].requested).toEqual(["project"]);
+      expect(result[1].requested).toEqual(["project"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("uses the All agents shortcut for a batch plan", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["plan", "all", "local", "custom-items", "exit"], [["project"]]);
+
+    try {
+      const result = expectInstallPlans(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toHaveLength(4);
+      expect(result.map((plan) => plan.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("runs interactive plan flow with prompted agent and TUI item selection", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["plan", "pick", "local", "custom-items", "exit"], [["cursor"], ["project", "recap"]]);
 
     try {
       const result = expectInstallPlan(await runGuided(makeOptions(), temp.env, prompt.io));
@@ -79,6 +124,7 @@ describe("guided", () => {
       expect(result.scope).toBe("local");
       expect(result.requested).toEqual(["project", "recap"]);
       expect(result.skills.length).toBeGreaterThan(0);
+      expect(prompt.writes.some((entry) => entry === "Home")).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -86,7 +132,7 @@ describe("guided", () => {
 
   test("uses default bundle selection without typed item names", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["2", "1", "1", "1"]);
+    const prompt = makePromptIo(["plan", "pick", "local", "default-bundle", "exit"], [["opencode"]]);
 
     try {
       const result = expectInstallPlan(await runGuided(makeOptions(), temp.env, prompt.io));
@@ -100,7 +146,7 @@ describe("guided", () => {
 
   test("runs interactive install flow and confirms install", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["1", "4", "1", "2", makeItemSelectionAnswer("gemini"), "y"]);
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["gemini"], ["gemini"]], [true]);
 
     try {
       const result = expectInstallResult(await runGuided(makeOptions(), temp.env, prompt.io));
@@ -108,6 +154,8 @@ describe("guided", () => {
       expect(result.status).toBe("installed");
       expect(result.agent).toBe("gemini");
       expect(result.installed).toEqual(["gemini"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Install preview]"))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes(" -> "))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -115,7 +163,7 @@ describe("guided", () => {
 
   test("skips final confirmation when --yes is provided", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["1", "1", "1", "2", makeItemSelectionAnswer("project")]);
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["opencode"], ["project"]]);
 
     try {
       const result = expectInstallResult(await runGuided(makeOptions({ yes: true }), temp.env, prompt.io));
@@ -129,8 +177,8 @@ describe("guided", () => {
 
   test("prompts for overwrite when collisions exist", async () => {
     const temp = makeTempEnv();
-    const firstPrompt = makePromptIo(["1", "3", "1", "2", makeItemSelectionAnswer("project"), "y"]);
-    const secondPrompt = makePromptIo(["1", "3", "1", "2", makeItemSelectionAnswer("project"), "y", "y"]);
+    const firstPrompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor"], ["project"]], [true]);
+    const secondPrompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor"], ["project"]], [true, true]);
 
     try {
       await runGuided(makeOptions(), temp.env, firstPrompt.io);
@@ -143,12 +191,12 @@ describe("guided", () => {
     }
   });
 
-  test("shows installed summaries in guided list mode without prompting for agent or scope", async () => {
+  test("shows installed summaries in guided list mode after agent multiselect", async () => {
     const temp = makeTempEnv();
-    const listPrompt = makePromptIo(["3"]);
+    const listPrompt = makePromptIo(["list", "pick", "exit"], [["cursor"]]);
 
     try {
-      await runGuided(makeOptions({ mode: "install", agent: "cursor", scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], false).io);
+      await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
 
       const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, listPrompt.io));
 
@@ -156,11 +204,121 @@ describe("guided", () => {
         {
           agent: "cursor",
           scope: "local",
+          installedSkills: ["project"],
+          installedCommands: ["project"],
           installed: ["project"],
         },
       ]);
-      expect(listPrompt.writes.some((entry) => entry.includes("Agent"))).toBe(false);
+      expect(listPrompt.writes.some((entry) => entry.includes("Home"))).toBe(true);
+      expect(listPrompt.writes.some((entry) => entry.includes("Toggle agents"))).toBe(true);
       expect(listPrompt.writes.some((entry) => entry.includes("Scope"))).toBe(false);
+      expect(listPrompt.writes.some((entry) => entry.includes("[note:cursor (local)]"))).toBe(true);
+      expect(listPrompt.writes.some((entry) => entry.includes("Skills\n- project"))).toBe(true);
+      expect(listPrompt.writes.some((entry) => entry.includes("Commands\n- project"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("shows receipt detail for a chosen agent and scope", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+
+    const detailPrompt = makePromptIo(["detail", "pick", "local", "exit"], [["gemini"]]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, detailPrompt.io));
+
+      expect(result).toEqual([
+        {
+          agent: "gemini",
+          scope: "local",
+          installedSkills: ["gemini"],
+          installedCommands: ["gemini"],
+          installed: ["gemini"],
+        },
+      ]);
+      expect(detailPrompt.writes.some((entry) => entry.includes("[note:Receipt: gemini (local)]"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("sourceRepoPath:"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("Reconstructed install targets"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes(" -> "))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("home loop returns to Home when final install is declined", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["gemini"], ["gemini"]], [false]);
+
+    try {
+      await runGuided(makeOptions(), temp.env, prompt.io);
+
+      const homeLabels = prompt.writes.filter((entry) => entry === "Home");
+      expect(homeLabels.length).toBeGreaterThanOrEqual(2);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Home] Install cancelled."))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("keeps completed installs visible when a later batch agent is declined", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]], [true, false]);
+
+    try {
+      const result = await runGuided(makeOptions(), temp.env, prompt.io);
+      const installs = result as InstallResult[];
+
+      expect(installs).toHaveLength(1);
+      expect(installs[0]?.agent).toBe("cursor");
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch install partial] Batch install stopped after 1 completed agent(s). Earlier installs were kept."))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch install summary]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("home loop returns to Home when overwrite is declined after a collision", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor"], ["project"]], [false]);
+
+    try {
+      await runGuided(makeOptions(), temp.env, prompt.io);
+
+      expect(prompt.writes.some((entry) => entry.includes("Collisions detected. Overwrite existing targets?"))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Home] Install cancelled (overwrite not approved)."))).toBe(true);
+      const homeLabels = prompt.writes.filter((entry) => entry === "Home");
+      expect(homeLabels.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("explicit interactive --mode install still throws when final install is declined", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo([], [], [false]);
+
+    try {
+      await expect(
+        runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"] }), temp.env, prompt.io),
+      ).rejects.toThrow("Guided install cancelled.");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("interactive explicit --mode list skips home menu", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo([], [], [], true);
+
+    try {
+      await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+      await expectInstalledSummaries(await runGuided(makeOptions({ mode: "list", agents: ["cursor"] }), temp.env, prompt.io));
+
+      expect(prompt.writes.some((entry) => entry.includes("Home"))).toBe(false);
     } finally {
       temp.cleanup();
     }
@@ -168,10 +326,10 @@ describe("guided", () => {
 
   test("falls back to direct execution in non-interactive plan mode when inputs are complete", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo([], false);
+    const prompt = makePromptIo([], [], [], false);
 
     try {
-      const result = expectInstallPlan(await runGuided(makeOptions({ mode: "plan", agent: "opencode", scope: "local" }), temp.env, prompt.io));
+      const result = expectInstallPlan(await runGuided(makeOptions({ mode: "plan", agents: ["opencode"], scope: "local" }), temp.env, prompt.io));
 
       expect(result.agent).toBe("opencode");
       expect(result.scope).toBe("local");
@@ -183,17 +341,43 @@ describe("guided", () => {
 
   test("runs non-interactive guided list mode with mode only", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo([], false);
+    const prompt = makePromptIo([], [], [], false);
 
     try {
-      await runGuided(makeOptions({ mode: "install", agent: "gemini", scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], false).io);
+      await runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
       const result = expectInstalledSummaries(await runGuided(makeOptions({ mode: "list" }), temp.env, prompt.io));
 
       expect(result).toEqual([
         {
           agent: "gemini",
           scope: "local",
+          installedSkills: ["gemini"],
+          installedCommands: ["gemini"],
           installed: ["gemini"],
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("filters non-interactive guided list mode when agents are provided", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo([], [], [], false);
+
+    try {
+      await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+      await runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+
+      const result = expectInstalledSummaries(await runGuided(makeOptions({ mode: "list", agents: ["cursor"] }), temp.env, prompt.io));
+
+      expect(result).toEqual([
+        {
+          agent: "cursor",
+          scope: "local",
+          installedSkills: ["project"],
+          installedCommands: ["project"],
+          installed: ["project"],
         },
       ]);
     } finally {
@@ -203,7 +387,7 @@ describe("guided", () => {
 
   test("fails in non-interactive mode when mode is missing", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo([], false);
+    const prompt = makePromptIo([], [], [], false);
 
     try {
       await expect(runGuided(makeOptions(), temp.env, prompt.io)).rejects.toThrow(
@@ -216,7 +400,7 @@ describe("guided", () => {
 
   test("fails in non-interactive plan/install mode when agent and scope are missing", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo([], false);
+    const prompt = makePromptIo([], [], [], false);
 
     try {
       await expect(runGuided(makeOptions({ mode: "install" }), temp.env, prompt.io)).rejects.toThrow(
