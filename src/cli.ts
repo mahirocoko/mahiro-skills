@@ -7,12 +7,33 @@ import { runGuided } from "./guided";
 import { createPromptIO } from "./prompt";
 import type { CliOptions, InstallScope, ScopedAgent } from "./types";
 
-function requireAgent(options: CliOptions): ScopedAgent {
-  if (!options.agent) {
+const VALID_CLI_AGENTS = new Set<ScopedAgent>(["opencode", "claude-code", "cursor", "gemini"]);
+
+function pushAgentTokens(agents: ScopedAgent[], raw: string): void {
+  for (const part of raw.split(",")) {
+    const token = part.trim();
+    if (token.length === 0) {
+      continue;
+    }
+
+    if (!VALID_CLI_AGENTS.has(token as ScopedAgent)) {
+      throw new Error(`Unsupported agent '${token}'.`);
+    }
+
+    agents.push(token as ScopedAgent);
+  }
+}
+
+function dedupeAgents(agents: ScopedAgent[]): ScopedAgent[] {
+  return [...new Set(agents)];
+}
+
+function requireAgents(options: CliOptions): ScopedAgent[] {
+  if (options.agents.length === 0) {
     throw new Error("Missing required flag --agent.");
   }
 
-  return options.agent;
+  return options.agents;
 }
 
 function requireScope(options: CliOptions): InstallScope {
@@ -25,15 +46,21 @@ function requireScope(options: CliOptions): InstallScope {
 
 function parseArgs(argv: string[]): CliOptions {
   if (argv.length === 0) {
-    throw new Error("Missing command. Use: plan | install | list | doctor | guided");
+    return {
+      command: "tui",
+      items: [],
+      agents: [],
+      overwrite: false,
+      yes: false,
+    };
   }
 
   const [commandRaw, ...rest] = argv;
-  if (!["plan", "install", "list", "doctor", "guided"].includes(commandRaw)) {
+  if (!["plan", "install", "list", "doctor", "guided", "tui"].includes(commandRaw)) {
     throw new Error(`Unsupported command '${commandRaw}'.`);
   }
 
-  let agent: ScopedAgent | undefined;
+  const agents: ScopedAgent[] = [];
   let scope: InstallScope | undefined;
   let overwrite = false;
   let mode: CliOptions["mode"];
@@ -43,7 +70,12 @@ function parseArgs(argv: string[]): CliOptions {
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
     if (token === "--agent") {
-      agent = rest[i + 1] as ScopedAgent;
+      const next = rest[i + 1];
+      if (next === undefined) {
+        throw new Error("Missing value for --agent.");
+      }
+
+      pushAgentTokens(agents, next);
       i += 1;
       continue;
     }
@@ -73,18 +105,20 @@ function parseArgs(argv: string[]): CliOptions {
     items.push(token);
   }
 
-  if (commandRaw !== "guided" && !agent) {
+  const resolvedAgents = dedupeAgents(agents);
+
+  if (commandRaw !== "guided" && commandRaw !== "tui" && resolvedAgents.length === 0) {
     throw new Error("Missing required flag --agent.");
   }
 
-  if (commandRaw !== "doctor" && commandRaw !== "guided" && !scope) {
+  if (commandRaw !== "doctor" && commandRaw !== "guided" && commandRaw !== "tui" && !scope) {
     throw new Error("Missing required flag --scope.");
   }
 
   return {
     command: commandRaw as CliOptions["command"],
     items,
-    agent,
+    agents: resolvedAgents,
     scope,
     overwrite,
     mode,
@@ -97,25 +131,37 @@ async function main(): Promise<void> {
 
   switch (options.command) {
     case "plan": {
-      console.log(JSON.stringify(createPlan(requireAgent(options), requireScope(options), options.items), null, 2));
+      const agents = requireAgents(options);
+      const scope = requireScope(options);
+      const plans = agents.map((agent) => createPlan(agent, scope, options.items));
+      console.log(JSON.stringify(plans.length === 1 ? plans[0] : plans, null, 2));
       return;
     }
     case "install": {
-      console.log(JSON.stringify(install(requireAgent(options), requireScope(options), options.items, options.overwrite), null, 2));
+      const agents = requireAgents(options);
+      const scope = requireScope(options);
+      const results = agents.map((agent) => install(agent, scope, options.items, options.overwrite));
+      console.log(JSON.stringify(results.length === 1 ? results[0] : results, null, 2));
       return;
     }
     case "list": {
-      const agent = requireAgent(options);
+      const agents = requireAgents(options);
       const scope = requireScope(options);
-      const receipt = listInstalled(agent, scope);
-      console.log(JSON.stringify(receipt ?? { agent: options.agent, scope: options.scope, installedSkills: [], installedCommands: [] }, null, 2));
+      const receipts = agents.map((agent) => {
+        const receipt = listInstalled(agent, scope);
+        return receipt ?? { agent, scope, installedSkills: [], installedCommands: [] };
+      });
+      console.log(JSON.stringify(receipts.length === 1 ? receipts[0] : receipts, null, 2));
       return;
     }
     case "doctor": {
-      console.log(JSON.stringify(doctor(requireAgent(options), options.scope), null, 2));
+      const agents = requireAgents(options);
+      const results = agents.flatMap((agent) => doctor(agent, options.scope));
+      console.log(JSON.stringify(results, null, 2));
       return;
     }
-    case "guided": {
+    case "guided":
+    case "tui": {
       const io = createPromptIO();
       const result = await runGuided(options, process.env, io);
       if (!io.isInteractive) {
