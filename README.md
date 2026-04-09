@@ -1,8 +1,8 @@
 # mahiro-skills
 
-`mahiro-skills` packages Mahiro's local agent bundle as repo-managed `skills/`, agent-specific command sources, and a Bun CLI that installs those assets into supported agent roots.
+Install Mahiro's packaged skills and commands into OpenCode, Claude Code, Cursor, and Gemini.
 
-This repo ships a private Bun CLI and installs from repo contents. It is not an npm-published binary package.
+`mahiro-skills` is a repo-managed skill bundle plus a Bun CLI/TUI for planning, installing, listing, and checking agent integrations. This repo ships a private Bun CLI and installs from repo contents. It is not an npm-published binary package.
 
 ## Table of Contents
 
@@ -22,6 +22,14 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ## Install
 
+If you want the shortest path, open the TUI:
+
+```bash
+bun ./src/cli.ts
+```
+
+From there you can plan, install, list, and inspect receipts without leaving the session.
+
 ### Prerequisites
 
 - `bun`
@@ -30,6 +38,8 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 - `curl`
 
 ### Quick install via curl
+
+Use this when you want to install from a tagged release without cloning the repo first.
 
 Install the default bundle globally for OpenCode from the `v0.1.12` tag:
 
@@ -44,6 +54,8 @@ curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/insta
 ```
 
 ### Install from a local checkout
+
+Use this when you want the full repo locally, want to hack on the installer, or prefer running the CLI directly.
 
 Clone the repo, then run the Bun CLI directly:
 
@@ -68,6 +80,11 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 
 ## CLI
 
+The CLI has two main styles:
+
+- `tui` for an interactive home menu
+- direct commands like `plan`, `install`, `list`, and `doctor` for explicit scripted usage
+
 - CLI spec v0: [`docs/cli/spec-v0.md`](./docs/cli/spec-v0.md)
 - CLI test matrix v0: [`docs/cli/test-matrix-v0.md`](./docs/cli/test-matrix-v0.md)
 - Cursor/Gemini compatibility matrix: [`docs/cli/cursor-gemini-compatibility-matrix-v0.md`](./docs/cli/cursor-gemini-compatibility-matrix-v0.md)
@@ -83,6 +100,15 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 - `tui`
 - `guided`
 
+### Which command should I use?
+
+- `tui`: best default if you want to browse options and keep working in one interactive session
+- `plan`: preview what would be installed without writing anything
+- `install`: write skills and commands into an agent root
+- `list`: show what is currently installed
+- `doctor`: verify roots, receipts, and installed targets
+- `guided`: compatibility alias for the same interactive TUI flow
+
 ### Supported v0 adapters
 
 - `opencode`
@@ -93,6 +119,9 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 ### Example usage
 
 ```bash
+# Open the TUI home menu
+bun ./src/cli.ts
+
 # Show a dry-run plan for the default bundle in the current project
 bun ./src/cli.ts plan --agent opencode --scope local
 
@@ -101,6 +130,9 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 
 # Plan for multiple agents in one CLI call
 bun ./src/cli.ts plan project --agent cursor --agent gemini --scope local
+
+# Install for multiple agents in one CLI call
+bun ./src/cli.ts install project --agent cursor,gemini --scope local
 
 # Install the default bundle globally for Claude Code
 bun ./src/cli.ts install --agent claude-code --scope global
@@ -111,7 +143,7 @@ bun ./src/cli.ts list --agent opencode --scope local
 # Run integrity checks for one adapter
 bun ./src/cli.ts doctor --agent claude-code --scope global
 
-# Launch the terminal UI and let it build the plan for you
+# Launch the terminal UI explicitly
 bun ./src/cli.ts tui
 
 # Launch the terminal UI by default
@@ -122,6 +154,8 @@ bun ./src/cli.ts guided --mode list
 ```
 
 ## Repo layout
+
+At a glance:
 
 - `skills/<name>/...` — packaged skills and helper resources
 - `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
@@ -135,6 +169,8 @@ bun ./src/cli.ts guided --mode list
 For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./skills/gemini/extension/README.md).
 
 ## Authoring guide
+
+If you are maintaining the repo rather than just installing from it, start here:
 
 - Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)
 
@@ -167,6 +203,8 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - `/watch`
 
 ## Packaging notes
+
+These are the repo-maintainer details that matter most when changing installer behavior:
 
 - Source content is copied from the repo layout and treated as the canonical package source.
 - The installer rewrites only staged installed markdown descriptions; it does not mutate source markdown in the repo.
