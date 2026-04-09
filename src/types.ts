@@ -64,6 +64,8 @@ export interface InstallReceipt {
 export interface InstalledSummary {
   agent: ScopedAgent;
   scope: InstallScope;
+  installedSkills: string[];
+  installedCommands: string[];
   installed: string[];
 }
 
@@ -93,9 +95,10 @@ export interface DoctorResult {
 }
 
 export interface CliOptions {
-  command: "plan" | "install" | "list" | "doctor" | "guided";
+  command: "plan" | "install" | "list" | "doctor" | "guided" | "tui";
   items: string[];
-  agent?: ScopedAgent;
+  /** From repeated `--agent` and/or comma-separated values; empty when omitted (interactive TUI). */
+  agents: ScopedAgent[];
   scope?: InstallScope;
   overwrite: boolean;
   mode?: "plan" | "install" | "list";

@@ -97,11 +97,15 @@ describe("list", () => {
         {
           agent: "cursor",
           scope: "local",
+          installedSkills: ["project"],
+          installedCommands: ["project"],
           installed: ["project"],
         },
         {
           agent: "gemini",
           scope: "global",
+          installedSkills: ["gemini"],
+          installedCommands: ["gemini"],
           installed: ["gemini"],
         },
       ]);

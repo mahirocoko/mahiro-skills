@@ -11,6 +11,10 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+function sortNames(values: string[]): string[] {
+  return unique(values).sort();
+}
+
 function receiptPath(root: string, agent: ScopedAgent, scope: InstallScope): string {
   return join(root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
 }
@@ -38,7 +42,9 @@ export function listInstalledSummaries(env = process.env): InstalledSummary[] {
       summaries.push({
         agent,
         scope,
-        installed: unique([...receipt.installedSkills, ...receipt.installedCommands]).sort(),
+        installedSkills: sortNames(receipt.installedSkills),
+        installedCommands: sortNames(receipt.installedCommands),
+        installed: sortNames([...receipt.installedSkills, ...receipt.installedCommands]),
       });
     }
   }
