@@ -173,6 +173,7 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 If you are maintaining the repo rather than just installing from it, start here:
 
 - Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)
+- Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)
 
 ## Included skills
 
