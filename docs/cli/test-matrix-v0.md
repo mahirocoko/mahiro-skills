@@ -110,16 +110,21 @@ For successful install:
 - commands are omitted only with explicit adapter reasoning
 - copied trees preserve helper assets
 
-## Guided command checks
+## Guided / TUI command checks
 
-- guided mode can produce a plan through prompts without changing planner semantics
-- guided install confirms before writing unless `--yes` is provided
-- collision handling in guided mode still goes through the same overwrite rules
-- guided mode offers a default-bundle shortcut without typed item names
-- guided mode can select individual items from a numbered inventory list
-- guided list mode shows installed summaries by agent and scope without asking for agent/scope first
-- non-interactive guided execution fails clearly when required flags are missing
-- non-interactive guided execution falls back to the same direct planner, installer, or list-summary behavior when flags are complete
+- TUI/home flow can produce a plan through prompts without changing planner semantics
+- TUI install confirms before writing unless `--yes` is provided
+- collision handling uses the same overwrite rules as direct `install`
+- interactive item selection offers a default-bundle shortcut and multiselect over inventory (not numbered picks)
+- interactive agent selection offers either **All agents** or checkbox-style agent multiselect
+- without `--mode`, the home menu can run Install, Plan, List, Receipt detail, and Exit in one session; with `--mode`, a single action runs and exits
+- declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
+- interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
+- receipt detail shows receipt metadata plus reconstructed `source -> target` rows from the planner when installed names are present
+- direct CLI plan/install/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested
+- multi-agent plan/install in the TUI end with a batch summary note card
+- non-interactive guided/tui execution fails clearly when required flags are missing
+- non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete
 
 ## Failure cases
 

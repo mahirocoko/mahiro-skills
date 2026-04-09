@@ -116,22 +116,28 @@ If an agent has multiple valid roots, the adapter must resolve one canonical roo
 ### Default command surface
 
 ```text
-mahiro-skills plan [items...] --agent <agent> --scope <global|local>
-mahiro-skills install [items...] --agent <agent> --scope <global|local>
-mahiro-skills list --agent <agent> --scope <global|local>
-mahiro-skills doctor --agent <agent> [--scope <global|local>]
-mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent>] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills plan [items...] --agent <agent> [--agent <agent> ...] --scope <global|local>
+mahiro-skills install [items...] --agent <agent> [--agent <agent> ...] --scope <global|local>
+mahiro-skills list --agent <agent> [--agent <agent> ...] --scope <global|local>
+mahiro-skills doctor --agent <agent> [--agent <agent> ...] [--scope <global|local>]
+mahiro-skills tui [items...] [--mode <plan|install|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
 ```
 
-### Guided command behavior
+### Guided / TUI command behavior
 
-- `guided` is an interactive wrapper over the same `createPlan()` and `install()` flow used by the direct commands
-- when stdin/stdout are interactive, it prompts for missing mode, then either prompts for agent/scope plus selectable items or shows installed summaries
-- in interactive mode, it renders a normalized plan summary before returning a plan or proceeding with install
-- install confirmation remains explicit unless `--yes` is provided
-- in non-interactive mode, it does not prompt; `plan` and `install` still require explicit flags, while `list` can summarize current receipts immediately
-- interactive item selection should offer a default-bundle shortcut and numbered individual-item picks sourced from repo inventory
-- guided `list` should summarize installed items as `agent + scope + installed[]` instead of requiring the human to preselect a target first
+- `tui` and `guided` invoke the same implementation; both are interactive wrappers over the same `createPlan()` and `install()` flow used by the direct commands
+- **Interactive home session (no `--mode`):** when stdin/stdout are interactive and no `--mode` is passed, the CLI opens a **home menu** first: Install, Plan (dry run), List installed, Receipt detail, Exit. The human can run multiple actions in one process; choosing Exit returns the last completed result (or an empty result if nothing ran yet)
+- **Single-pass interactive (`--mode`):** with `--mode plan`, `--mode install`, or `--mode list`, the CLI runs that action once and returns (no home menu). Declining overwrite or final install confirmation **ends with an error** (same as today), not a home loop
+- **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
+- Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install`, `--agent` and `--scope`. `list` may run with `--mode list` only
+- Item selection uses a default-bundle shortcut plus **checkbox-style multiselect** (space to toggle, enter to confirm) over repo inventory, not numbered readline picks
+- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, and `gemini`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
+- Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
+- When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent
+- Install confirmation remains explicit unless `--yes` is provided
+- Interactive `list` summarizes installed items per agent and scope (grouped cards) **filtered to the agents you select**; non-interactive `guided --mode list` still lists all receipts without an agent prompt
+- **Receipt detail** prompts for one scope, then one or more agents, and shows receipt metadata (roots, paths, timestamps, installed skill and command names) **for each agent that has a receipt**, and **reconstructs install targets** per receipt by running the same planner over the union of installed names so `source -> target` rows appear alongside each receipt (same shape as the install preview)
 
 ### Items
 

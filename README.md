@@ -31,16 +31,16 @@ This repo ships a private Bun CLI and installs from repo contents. It is not an 
 
 ### Quick install via curl
 
-Install the default bundle globally for OpenCode from the `v0.1.11` tag:
+Install the default bundle globally for OpenCode from the `v0.1.12` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.11 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.12 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.11 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.12 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -80,6 +80,7 @@ bun ./src/cli.ts install project recap --agent opencode --scope local
 - `install`
 - `list`
 - `doctor`
+- `tui`
 - `guided`
 
 ### Supported v0 adapters
@@ -98,6 +99,9 @@ bun ./src/cli.ts plan --agent opencode --scope local
 # Install selected skills locally for OpenCode
 bun ./src/cli.ts install project recap --agent opencode --scope local
 
+# Plan for multiple agents in one CLI call
+bun ./src/cli.ts plan project --agent cursor --agent gemini --scope local
+
 # Install the default bundle globally for Claude Code
 bun ./src/cli.ts install --agent claude-code --scope global
 
@@ -107,8 +111,11 @@ bun ./src/cli.ts list --agent opencode --scope local
 # Run integrity checks for one adapter
 bun ./src/cli.ts doctor --agent claude-code --scope global
 
-# Launch the guided wizard and let it build the plan for you
-bun ./src/cli.ts guided
+# Launch the terminal UI and let it build the plan for you
+bun ./src/cli.ts tui
+
+# Launch the terminal UI by default
+bun ./src/cli.ts
 
 # See what is already installed across agents and scopes
 bun ./src/cli.ts guided --mode list
@@ -176,9 +183,16 @@ For the Gemini extension subtree, see [`skills/gemini/extension/README.md`](./sk
 - CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
-- `guided` is a thin interactive wrapper over the same planner and installer core, with non-interactive fallback when flags are fully provided.
-- guided item selection now offers a default-bundle shortcut and numbered item picks from repo inventory instead of requiring typed names.
-- guided list mode summarizes install receipts per agent and scope without forcing the human to choose a target first.
+- `tui` is the primary interactive entrypoint over the same planner and installer core, with non-interactive fallback when flags are fully provided.
+- `guided` remains as a compatibility alias for the same interactive TUI flow.
+- Interactive TUI without `--mode` opens a home menu (install, plan, list, receipt detail, exit) so you can run multiple actions in one session; explicit `--mode` or non-interactive runs stay single-pass.
+- TUI list mode now renders installed items in grouped agent/scope cards with separate skill and command sections.
+- interactive item selection now uses checkbox-style multiselect with space-to-toggle guidance instead of numbered readline prompts.
+- In the interactive TUI (home menu or without `--agent`), plan, install, list, and receipt detail use checkbox-style **agent multiselect** with an explicit **All agents** shortcut; the direct CLI also accepts repeated `--agent` flags or comma-separated agent values and runs batch plan/install/list sequentially per agent for the same scope and items.
+- guided list mode summarizes install receipts per agent and scope; when agents are chosen interactively, the list is filtered to those agents (use `--agent` on a single-pass run to skip the agent prompt).
+- Receipt detail mode prompts for one or more agents and one scope, then shows each matching install receipt (paths, timestamps, installed skill and command names).
+- Install mode shows an install preview after the plan summary with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts.
+- Multi-agent plan and install runs end with a lightweight batch summary card so the combined result is easier to scan before leaving the TUI.
 
 ## Source of truth
 
