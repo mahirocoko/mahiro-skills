@@ -23,6 +23,19 @@ afterEach(() => {
 });
 
 describe("install.sh", () => {
+  test("help text shows the current patch release example", () => {
+    const repoRoot = join(import.meta.dir, "..");
+    const installScript = join(repoRoot, "install.sh");
+
+    const result = Bun.spawnSync(["bash", installScript, "--help"], {
+      cwd: repoRoot,
+      env: process.env,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(decode(result.stdout)).toContain("v0.1.12");
+  });
+
   test("installs one skill and paired command from a provided repo root", () => {
     const temp = makeTempEnv();
 
