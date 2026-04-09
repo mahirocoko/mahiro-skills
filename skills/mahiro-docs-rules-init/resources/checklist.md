@@ -23,3 +23,6 @@ Use this before declaring the init pass complete.
 - Does each page answer a real repo question?
 - Would a new engineer trust this docs set after reading it?
 - Does any page feel like generic AI filler?
+- If the repo uses Lingui or similar i18n, do the docs distinguish extracted `msg`-style messages from translation at the render boundary?
+- Do any pages recommend shared UI, variant helpers, or styling abstractions before there is real cross-owner need?
+- Is owner-local posture still clear for single-owner copy, styling, and small helpers?
