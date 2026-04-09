@@ -51,6 +51,8 @@ Rules:
 - do not present blueprint guidance as if it is already enforced or fully established
 - label observed behavior separately from suggested or preferred shape when both appear
 - if the target repo is clearly aligned to a house style, preserve that guiding posture instead of flattening the page into pure observation
+- if the repo uses Lingui or a similar message-descriptor flow, encode the ownership doctrine explicitly: render-bound copy stays local, extracted user-facing config uses translation-safe messages such as `msg`, and translation happens at the render boundary
+- do not recommend shared UI, variant helpers, or extracted styling layers from repetition alone; require repeated cross-owner need plus a clearly domain-neutral boundary
 
 ## Boilerplate Rule
 
@@ -70,7 +72,9 @@ Rules:
 
 - `docs/commit-guide.md` must not invent enforced conventions from thin air. If there is no `.git` history, no commitlint, and no hook config, keep the guide explicitly conservative and say it reflects a suggested local baseline rather than observed enforced policy.
 - `docs/development-commands.md` should mirror the reference grammar closely: prefer `Quick Start`, `Building`, `Linting & Formatting`, `Type Checking`, `Internationalization`, `Dependency Management`, and `Verification Cadence` when they fit the repo.
+- `docs/i18n-guidelines.md` must not encourage extracting user-facing copy into plain-string constants. For Lingui-style repos, it should distinguish message descriptors such as `msg` from translation at render via `t(...)`, `i18n._(...)`, or `<Trans>`.
 - `docs/patterns/services-pattern.md` should keep the service-doc shape even when the repo's service layer is still small; trim sections carefully instead of collapsing the page into a short summary.
+- `docs/best-practices.md` must stay conservative about shared abstractions. Repetition by itself is not enough; prefer owner-local composition until a cross-owner, domain-neutral boundary is visible.
 - `docs/code-style/formatting.md` may intentionally establish a stronger formatting blueprint for the repo or house style, but any actual commands or enforced config still need to be verified locally.
 
 ## Reality Labels

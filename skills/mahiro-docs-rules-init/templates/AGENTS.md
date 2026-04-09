@@ -78,7 +78,7 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Match the existing file and export posture before introducing a new pattern.
 - Keep route or screen files thin if the repo already separates feature logic.
-- Extract shared code only after repeated usage across multiple owners.
+- Extract shared code only after repeated usage across multiple owners and a clearly domain-neutral boundary.
 - Keep constants, placeholder data, and copy with the owner when they are used in one place.
 - When confidence is low, choose the simpler local pattern and document uncertainty.
 
@@ -108,7 +108,7 @@ This section should read like practical review guidance. Every bullet should hel
 ## Change Heuristics
 
 - **Add a new file** when one file starts mixing multiple responsibilities.
-- **Extract a shared component or hook** when the same pattern appears in multiple owners.
+- **Extract a shared component or hook** when the same pattern appears across multiple real owners and the boundary is clearly generic.
 - **Keep code local** when reuse is still speculative.
 - **Document preferred future shape** only when there is already a visible migration direction.
 

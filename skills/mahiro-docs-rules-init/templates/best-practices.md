@@ -79,6 +79,14 @@ const CardFooter = ({ children }: ICardFooterProps) => <footer>{children}</foote
 
 Keep examples aligned with the repo's intended component typing posture, including `I`-prefixed interface props when that is part of the house style.
 
+### Keep Shared UI Conservative
+
+Repetition alone is not enough to justify a shared component, variant helper, or styling abstraction.
+
+- Prefer owner-local composition, styling, and small local helpers first.
+- Extract shared UI only after the same need appears across real owners and the boundary is clearly domain-neutral.
+- If reuse is still confined to one owner or one route cluster, keep it local.
+
 ## Service Best Practices
 
 ### Keep Transport Out of Components
@@ -170,3 +178,4 @@ Before committing:
 - Keep this page opinionated enough to transfer house style into early repos.
 - Prefer repo-faithful examples, but do not erase useful blueprint guidance just because the repo is still small.
 - Separate established repo behavior from suggested best-practice posture whenever the codebase is still immature.
+- Keep owner-local code as the default posture until cross-owner need and a clearly generic boundary justify extraction.
