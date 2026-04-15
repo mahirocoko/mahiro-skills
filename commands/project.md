@@ -1,5 +1,5 @@
 ---
-description: Clone and track external repos for study or development. Use for learn, incubate, find, and list flows.
+description: Clone and track external repos for study or development with ghq plus .agent-state-backed tracking. Use for learn, incubate, search/find, list, and related project lifecycle flows.
 allowed-tools:
   - Bash
   - Read

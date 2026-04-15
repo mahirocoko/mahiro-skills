@@ -30,10 +30,10 @@ describe("install", () => {
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "project.md"))).toBe(true);
       expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Clone and track external repos for study or development.");
       expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Clone and track external repos for study or development.");
+      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Clone and track external repos for study or development with ghq plus .agent-state-backed tracking.");
       expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
       expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development.");
-      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development.");
+      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development with ghq plus .agent-state-backed tracking.");
       expect(existsSync(receiptPath)).toBe(true);
       expect(receipt.agent).toBe("opencode");
       expect(receipt.scope).toBe("local");
@@ -171,7 +171,7 @@ describe("install", () => {
       expect(existsSync(join(target, "scripts", "utils.ts"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "project.md"))).toBe(true);
       expect(readFileSync(join(target, "SKILL.md"), "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development.");
-      expect(readFileSync(commandTarget, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development.");
+      expect(readFileSync(commandTarget, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development with ghq plus .agent-state-backed tracking.");
     } finally {
       temp.cleanup();
     }
