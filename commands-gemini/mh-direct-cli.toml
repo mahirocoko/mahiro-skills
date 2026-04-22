@@ -5,4 +5,8 @@ Execute the `direct-cli` skill with args: {{args}}
 If you have a Skill tool available: Use it directly with `skill: \"direct-cli\"` instead of reading the file manually.
 
 Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/direct-cli/SKILL.md` for local installs or `~/.gemini/skills/direct-cli/SKILL.md` for global installs) and follow ALL instructions in it.
+
+Prefer the known-good interactive tmux launch commands and tested examples from the skill playbook first.
+
+If model or flag availability is uncertain on this machine, it is acceptable to validate with commands such as `agent --list-models`, `agent --help`, or `gemini --help` before launching the direct lane.
 """

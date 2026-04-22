@@ -20,6 +20,17 @@ Use direct `gemini` CLI or Cursor CLI sessions when you want a fresh executor la
 - Gemini CLI or Cursor CLI acts as the direct executor
 - Tmux pane output is treated as the nearest source of execution truth
 
+## Default Lane Contract
+
+- Use a fresh interactive tmux lane by default
+- Prefer the known-good launch commands first instead of spending the first move on discovery
+- It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
+- Do not use Cursor headless mode such as `agent -p`; stay pane-first and interactive
+- Use yolo-style approvals by default: Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`
+- If the direct lane shows a workspace trust prompt for the intended repo, either accept it in the pane and continue or let the user accept it directly
+- That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded
+- If the prompt appears unsent in the pane, send `Enter` once and re-check the pane before changing course
+
 ## Quick Commands
 
 ```text
@@ -36,6 +47,6 @@ Use direct `gemini` CLI or Cursor CLI sessions when you want a fresh executor la
 
 ## Working Rule
 
-Start from `playbook.md`. Keep prompts narrow, continue from the current worktree only, do not restart from scratch, and trust pane output over assumptions.
+Start from `playbook.md`. Use the known-good launch commands and tested examples there first, keep prompts narrow, continue from the current worktree only, do not restart from scratch, and trust pane output over assumptions.
 
 ARGUMENTS: $ARGUMENTS

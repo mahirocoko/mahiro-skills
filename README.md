@@ -41,16 +41,16 @@ From there you can plan, install, list, and inspect receipts without leaving the
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.15` tag:
+Install the default bundle globally for OpenCode from the `v0.1.16` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.15 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.16 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.15 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.16 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
