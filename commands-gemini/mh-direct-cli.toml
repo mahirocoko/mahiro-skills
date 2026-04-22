@@ -1,0 +1,8 @@
+description = "Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."
+prompt = """
+Execute the `direct-cli` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"direct-cli\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/direct-cli/SKILL.md` for local installs or `~/.gemini/skills/direct-cli/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

@@ -58,7 +58,7 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(result.installed).toEqual(["deep-research", "forward", "gemini", "learn", "mahiro-docs-rules-init", "mahiro-style", "philosophy", "project", "recap", "rrr", "watch"]);
+      expect(result.installed).toEqual(["deep-research", "direct-cli", "forward", "gemini", "learn", "mahiro-docs-rules-init", "mahiro-style", "philosophy", "project", "recap", "rrr", "watch"]);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
@@ -129,6 +129,55 @@ describe("install", () => {
       expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
       expect(receipt.installedSkills).toEqual(["gemini"]);
       expect(receipt.installedCommands).toEqual(["gemini"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("copies direct-cli skill, preserved playbook, and paired command", () => {
+    const temp = makeTempEnv();
+    try {
+      const sourceSkillPath = join(import.meta.dir, "..", "skills", "direct-cli", "SKILL.md");
+      const sourceCommandPath = join(import.meta.dir, "..", "commands", "direct-cli.md");
+      const result = install("opencode", "local", ["direct-cli"], false, temp.env);
+      const installedSkillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "direct-cli", "SKILL.md");
+      const installedPlaybookPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "direct-cli", "playbook.md");
+      const installedCommandPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "direct-cli.md");
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(installedPlaybookPath)).toBe(true);
+      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions");
+      expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
+      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions");
+      expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
+      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions");
+      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Gemini CLI direct playbook");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh session, narrow scope, pane-first truth**");
+      expect(result.installed).toEqual(["direct-cli"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs direct-cli under the gemini root with namespaced command", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("gemini", "local", ["direct-cli"], false, temp.env);
+      const installedSkillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "direct-cli", "SKILL.md");
+      const installedPlaybookPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "direct-cli", "playbook.md");
+      const installedCommandPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-direct-cli.toml");
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(installedSkillPath)).toBe(true);
+      expect(existsSync(installedPlaybookPath)).toBe(true);
+      expect(existsSync(installedCommandPath)).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "direct-cli.md"))).toBe(false);
+      expect(readFileSync(installedCommandPath, "utf8")).toContain(
+        'description = "Mahiro Skill | Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."',
+      );
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
+      expect(result.installed).toEqual(["direct-cli"]);
     } finally {
       temp.cleanup();
     }
