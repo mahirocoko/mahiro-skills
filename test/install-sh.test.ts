@@ -33,7 +33,7 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.16");
+    expect(decode(result.stdout)).toContain("v0.1.17");
   });
 
   test("installs one skill and paired command from a provided repo root", () => {
@@ -56,6 +56,30 @@ describe("install.sh", () => {
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "project", "SKILL.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "project.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", ".mahiro-skills", "receipts", "local-opencode.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("uses the caller working directory for local installs when MAHIRO_SKILLS_CWD is unset", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+      const { MAHIRO_SKILLS_CWD: _cwd, ...envWithoutCwd } = temp.env;
+
+      const result = Bun.spawnSync(["bash", installScript, "project", "--agent", "opencode", "--scope", "local"], {
+        cwd: temp.env.MAHIRO_SKILLS_CWD,
+        env: {
+          ...envWithoutCwd,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+        },
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(repoRoot, ".opencode", "skills", "project", "SKILL.md"))).toBe(false);
     } finally {
       temp.cleanup();
     }

@@ -1,0 +1,33 @@
+# mahiro-skills skill index
+
+Use this file as a compact discovery map. Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`; this index is for humans and agents deciding which skill to load.
+
+## Skills
+
+- `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
+- `direct-cli` — Direct executor playbook for Gemini CLI and Cursor CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
+- `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
+- `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
+- `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.
+- `mahiro-docs-rules-init` — Bootstrap AGENTS.md and a Mahiro-style docs family. Trigger on: initialize repo rules, create AGENTS.md, bootstrap project docs, under-documented repo.
+- `mahiro-style` — Mahiro cross-repo code style doctrine. Trigger on: align to Mahiro style, review code shape, refactor style, naming/file structure/i18n boundaries.
+- `philosophy` — Display local philosophy and alignment rules. Trigger on: principles, philosophy check, alignment rules, how should we think about this.
+- `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
+- `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
+- `rrr` — Session retrospective with lessons learned. Trigger on: retrospective, end of session, lessons learned, durable memory note.
+- `watch` — Learn from YouTube videos via Gemini transcription. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
+
+## Common bundles
+
+- **Orientation bundle**: `recap`, `rrr`, `forward`
+- **Project tracking bundle**: `project`, `learn`
+- **Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`
+- **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `philosophy`
+
+## Install examples
+
+```bash
+bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
+bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
+bun ./src/cli.ts install --agent opencode --scope global
+```

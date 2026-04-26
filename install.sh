@@ -3,13 +3,14 @@ set -euo pipefail
 
 REPO_URL="${MAHIRO_SKILLS_REPO_URL:-https://github.com/mahirocoko/mahiro-skills.git}"
 REPO_REF="${MAHIRO_SKILLS_VERSION:-main}"
+caller_cwd="$PWD"
 
 usage() {
   cat <<'EOF'
 Usage: install.sh [--version <ref>] [--repo <git-url>] [--help] [--] [install args...]
 
 Examples:
-  bash install.sh --version v0.1.16 -- project --agent opencode --scope global
+  bash install.sh --version v0.1.17 -- project --agent opencode --scope global
   MAHIRO_SKILLS_REPO_ROOT=/path/to/mahiro-skills bash install.sh -- project --agent opencode --scope local
 EOF
 }
@@ -76,5 +77,5 @@ validate_repo_root "$repo_root"
 
 (
   cd "$repo_root"
-  MAHIRO_SKILLS_REPO_ROOT="$repo_root" bun ./src/cli.ts install "$@"
+  MAHIRO_SKILLS_REPO_ROOT="$repo_root" MAHIRO_SKILLS_CWD="${MAHIRO_SKILLS_CWD:-$caller_cwd}" bun ./src/cli.ts install "$@"
 )
