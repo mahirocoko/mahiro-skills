@@ -6,6 +6,12 @@ import type { CliOptions, InstalledSummary, InstallPlan, InstallResult } from ".
 import type { GuidedOutcome } from "../src/guided";
 import { makeTempEnv } from "./helpers";
 
+const ansiPattern = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+
+function stripAnsi(value: string): string {
+  return value.replace(ansiPattern, "");
+}
+
 function expectInstallPlan(result: GuidedOutcome): InstallPlan {
   expect(Array.isArray(result)).toBe(false);
   expect("requested" in result).toBe(true);
@@ -353,7 +359,10 @@ describe("guided", () => {
       const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
 
       expect(result).toEqual([]);
-      expect(prompt.writes.some((entry) => entry.includes("mahiro-skills") && entry.includes("plan | install | list | doctor | tui") && entry.includes("Ctrl+C cancel"))).toBe(true);
+      expect(prompt.writes.some((entry) => {
+        const plainEntry = stripAnsi(entry);
+        return plainEntry.includes("███╗   ███╗") && plainEntry.includes("          ███████╗██╗  ██╗") && plainEntry.includes("Ctrl+C cancel");
+      })).toBe(true);
       expect(prompt.writes.some((entry) => entry.includes("\\u2588"))).toBe(false);
       expect(prompt.writes).toContain("[outro] Goodbye.");
     } finally {

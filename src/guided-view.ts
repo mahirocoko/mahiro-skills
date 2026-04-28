@@ -20,11 +20,61 @@ export const homeActionOptions = [
 ] satisfies readonly PromptOption<HomeAction>[];
 
 const keyboardHint = "Ctrl+C cancel | choose Back to Home inside a wizard";
-const logoLines = [
-  "mahiro-skills",
-  "packaged agent skills + command wrappers",
-  "plan | install | list | doctor | tui",
+const ansiReset = "\x1b[0m";
+const logoGradientStart = { red: 255, green: 82, blue: 190 };
+const logoGradientEnd = { red: 98, green: 225, blue: 255 };
+const LOGO_LINES = [
+  "███╗   ███╗ █████╗ ██╗  ██╗██╗██████╗  ██████╗ ",
+  "████╗ ████║██╔══██╗██║  ██║██║██╔══██╗██╔═══██╗",
+  "██╔████╔██║███████║███████║██║██████╔╝██║   ██║",
+  "██║╚██╔╝██║██╔══██║██╔══██║██║██╔══██╗██║   ██║",
+  "██║ ╚═╝ ██║██║  ██║██║  ██║██║██║  ██║╚██████╔╝",
+  "╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝ ╚═════╝ ",
+  "          ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗",
+  "          ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝",
+  "          ███████╗█████╔╝ ██║██║     ██║     ███████╗",
+  "          ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║",
+  "          ███████║██║  ██╗██║███████╗███████╗███████║",
+  "          ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝",
 ];
+
+function shouldUseLogoGradient(io: PromptIO): boolean {
+  return io.isInteractive && !process.env.NO_COLOR && process.env.TERM !== "dumb";
+}
+
+function interpolateColor(start: number, end: number, ratio: number): number {
+  return Math.round(start + (end - start) * ratio);
+}
+
+function gradientLogoText(text: string): string {
+  const chars = [...text];
+  const colorableCount = chars.filter((char) => char !== "\n").length;
+  let colorableIndex = 0;
+
+  return `${chars.map((char) => {
+    if (char === "\n") {
+      return `${ansiReset}\n`;
+    }
+
+    const ratio = colorableCount <= 1 ? 0 : colorableIndex / (colorableCount - 1);
+    colorableIndex += 1;
+    const red = interpolateColor(logoGradientStart.red, logoGradientEnd.red, ratio);
+    const green = interpolateColor(logoGradientStart.green, logoGradientEnd.green, ratio);
+    const blue = interpolateColor(logoGradientStart.blue, logoGradientEnd.blue, ratio);
+
+    return `\x1b[38;2;${red};${green};${blue}m${char}`;
+  }).join("")}${ansiReset}`;
+}
+
+function formatLogo(io: PromptIO): string {
+  const logo = LOGO_LINES.join("\n");
+
+  if (!shouldUseLogoGradient(io)) {
+    return logo;
+  }
+
+  return gradientLogoText(logo);
+}
 
 function withBack<T extends string>(options: readonly PromptOption<T>[], allowBack: boolean): readonly PromptOption<T | BackValue>[] {
   if (!allowBack) {
@@ -38,7 +88,7 @@ function withBack<T extends string>(options: readonly PromptOption<T>[], allowBa
 }
 
 export function writeHomeIntro(io: PromptIO): void {
-  io.note(`${logoLines.join("\n")}\n\n${keyboardHint}`, "mahiro-skills");
+  io.note(`${formatLogo(io)}\n\n${keyboardHint}`, "mahiro-skills");
 }
 
 export function agentPickOptions(agents: readonly ScopedAgent[], allowBack = false): readonly PromptOption<AgentPickMode>[] {
