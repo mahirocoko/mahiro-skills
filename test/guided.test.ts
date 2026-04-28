@@ -57,6 +57,12 @@ function makePromptIo(
       note(message: string, title?: string) {
         writes.push(title ? `[note:${title}] ${message}` : `[note] ${message}`);
       },
+      cancel(message: string) {
+        writes.push(`[cancel] ${message}`);
+      },
+      outro(message: string) {
+        writes.push(`[outro] ${message}`);
+      },
       async select<T extends string>(label: string, options: readonly PromptOption<T>[]) {
         writes.push(label);
         const answer = selections.shift();
@@ -334,6 +340,55 @@ describe("guided", () => {
       expect(result.agent).toBe("opencode");
       expect(result.scope).toBe("local");
       expect(result.requested).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("uses outro for empty home exit", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["exit"]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toEqual([]);
+      expect(prompt.writes.some((entry) => entry.includes("mahiro-skills") && entry.includes("plan | install | list | doctor | tui") && entry.includes("Ctrl+C cancel"))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes("\\u2588"))).toBe(false);
+      expect(prompt.writes).toContain("[outro] Goodbye.");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("returns to Home from the agent picker Back option", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["install", "__back", "exit"]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toEqual([]);
+      expect(prompt.writes.filter((entry) => entry === "Home")).toHaveLength(2);
+      expect(prompt.writes).toContain("Agents");
+      expect(prompt.writes.some((entry) => entry.includes("Install preview"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("returns to Home from nested wizard Back options", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["plan", "pick", "__back", "plan", "pick", "local", "__back", "exit"], [["cursor"], ["cursor"]]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toEqual([]);
+      expect(prompt.writes.filter((entry) => entry === "Home")).toHaveLength(3);
+      expect(prompt.writes.filter((entry) => entry === "Scope")).toHaveLength(2);
+      expect(prompt.writes).toContain("Items");
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(false);
     } finally {
       temp.cleanup();
     }

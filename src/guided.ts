@@ -1,7 +1,25 @@
 import { install } from "./install";
+import {
+  agentPickOptions,
+  backValue,
+  formatInstallTargets,
+  formatInstalledSection,
+  homeActionOptions,
+  itemPickOptions,
+  scopePickOptions,
+  writeBatchInstallSummary,
+  writeBatchPlanSummary,
+  writeHomeIntro,
+  writeInstallReview,
+  writeListSummary,
+  writePlanSummary,
+  type AgentPickMode,
+  type GuidedMode,
+  type HomeAction,
+} from "./guided-view";
 import { listInstalled, listInstalledSummaries } from "./list";
 import { createPlan } from "./plan";
-import { createPromptIO, type PromptIO, type PromptOption } from "./prompt";
+import { createPromptIO, type PromptIO } from "./prompt";
 import { getRepoInventory } from "./repo";
 import { supportedAgents } from "./types";
 import type {
@@ -9,7 +27,6 @@ import type {
   InstallPlan,
   InstallReceipt,
   InstallResult,
-  InstallTarget,
   InstalledSummary,
   InstallScope,
   RepoInventory,
@@ -17,11 +34,6 @@ import type {
 } from "./types";
 
 const guidedAgents = supportedAgents;
-const guidedScopes = ["local", "global"] as const;
-const homeActions = ["install", "plan", "list", "detail", "exit"] as const;
-
-type GuidedMode = "install" | "plan" | "list";
-type HomeAction = (typeof homeActions)[number];
 
 export type GuidedOutcome =
   | InstallPlan
@@ -33,14 +45,6 @@ export type GuidedOutcome =
 interface SelectableItem {
   label: string;
   value: string;
-}
-
-function formatInstalledSection(label: string, values: string[]): string[] {
-  if (values.length === 0) {
-    return [label, "- none"];
-  }
-
-  return [label, ...values.map((value) => `- ${value}`)];
 }
 
 function sortNames(values: string[]): string[] {
@@ -62,23 +66,18 @@ function getSelectableItems(inventory: RepoInventory): SelectableItem[] {
   ];
 }
 
-async function promptChoice<T extends string>(io: PromptIO, label: string, options: readonly T[]): Promise<T> {
-  return io.select(
-    label,
-    options.map((option) => ({
-      label: option,
-      value: option,
-    })),
-  );
+async function promptScope(io: PromptIO, allowBack: boolean): Promise<InstallScope | null> {
+  const scope = await io.select("Scope", scopePickOptions(allowBack));
+
+  return scope === backValue ? null : scope;
 }
 
-type AgentPickMode = "all" | "pick";
+async function promptAgents(io: PromptIO, allowBack: boolean): Promise<ScopedAgent[] | null> {
+  const mode = await io.select<AgentPickMode>("Agents", agentPickOptions(guidedAgents, allowBack));
 
-async function promptAgents(io: PromptIO): Promise<ScopedAgent[]> {
-  const mode = await io.select<AgentPickMode>("Agents", [
-    { label: `All agents (${guidedAgents.join(", ")})`, value: "all", hint: "shortcut for the full v0 adapter set" },
-    { label: "Choose specific agents…", value: "pick", hint: "checkbox multiselect" },
-  ]);
+  if (mode === backValue) {
+    return null;
+  }
 
   if (mode === "all") {
     return [...guidedAgents];
@@ -99,21 +98,16 @@ async function promptConfirm(io: PromptIO, question: string): Promise<boolean> {
   return io.confirm(question);
 }
 
-async function promptItems(io: PromptIO, inventory: RepoInventory): Promise<string[]> {
+async function promptItems(io: PromptIO, inventory: RepoInventory, allowBack: boolean): Promise<string[] | null> {
   const defaultBundleLabel = inventory.defaultBundle?.name ?? "fallback-all";
   const selectionMode = await io.select(
     "Items",
-    [
-      {
-        label: `default bundle (${defaultBundleLabel})`,
-        value: "default-bundle",
-      },
-      {
-        label: "select individual items",
-        value: "custom-items",
-      },
-    ] satisfies readonly PromptOption<"default-bundle" | "custom-items">[],
+    itemPickOptions(defaultBundleLabel, allowBack),
   );
+
+  if (selectionMode === backValue) {
+    return null;
+  }
 
   if (selectionMode === "default-bundle") {
     return [];
@@ -131,79 +125,6 @@ async function promptItems(io: PromptIO, inventory: RepoInventory): Promise<stri
   );
 }
 
-function writePlanSummary(io: PromptIO, mode: GuidedMode, plan: InstallPlan): void {
-  const lines = [
-    `mode: ${mode}`,
-    `agent: ${plan.agent}`,
-    `scope: ${plan.scope}`,
-    `requested: ${plan.requested.length > 0 ? plan.requested.join(", ") : "default bundle"}`,
-    `skills: ${plan.skills.length}`,
-    `commands: ${plan.commands.length}`,
-  ];
-
-  if (plan.skipped.length > 0) {
-    lines.push(`skipped: ${plan.skipped.length}`);
-  }
-
-  if (plan.warnings.length > 0) {
-    lines.push(`warnings: ${plan.warnings.join(" | ")}`);
-  }
-
-  if (plan.skills.some((entry) => entry.collision) || plan.commands.some((entry) => entry.collision)) {
-    lines.push("collisions: detected");
-  }
-
-  io.note(lines.join("\n"), "Install plan");
-}
-
-function formatInstallTargets(plan: InstallPlan): string {
-  const blocks: string[] = [];
-
-  const formatTargets = (heading: string, targets: InstallTarget[]): void => {
-    if (targets.length === 0) {
-      return;
-    }
-
-    const lines = [heading];
-    for (const entry of targets) {
-      const tag = entry.collision ? " [collision]" : "";
-      lines.push(`${entry.source} -> ${entry.target}${tag}`);
-    }
-
-    blocks.push(lines.join("\n"));
-  };
-
-  formatTargets("Skills", plan.skills);
-  formatTargets("Commands", plan.commands);
-
-  return blocks.length > 0 ? blocks.join("\n\n") : "No file targets (empty plan).";
-}
-
-function writeInstallReview(io: PromptIO, plan: InstallPlan): void {
-  io.note(formatInstallTargets(plan), "Install preview");
-}
-
-function writeBatchPlanSummary(io: PromptIO, plans: InstallPlan[]): void {
-  const lines = [
-    `agents: ${plans.length}`,
-    ...plans.map(
-      (plan) =>
-        `${plan.agent}: ${plan.skills.length} skills, ${plan.commands.length} commands${plan.warnings.length > 0 ? `, ${plan.warnings.length} warning(s)` : ""}`,
-    ),
-  ];
-
-  io.note(lines.join("\n"), "Batch plan summary");
-}
-
-function writeBatchInstallSummary(io: PromptIO, results: InstallResult[]): void {
-  const lines = [
-    `agents: ${results.length}`,
-    ...results.map((result) => `${result.agent}: ${result.status} (${result.installed.length} installed)`),
-  ];
-
-  io.note(lines.join("\n"), "Batch install summary");
-}
-
 function filterSummariesByAgents(summaries: InstalledSummary[], agents: ScopedAgent[]): InstalledSummary[] {
   if (agents.length === 0) {
     return summaries;
@@ -211,23 +132,6 @@ function filterSummariesByAgents(summaries: InstalledSummary[], agents: ScopedAg
 
   const agentSet = new Set(agents);
   return summaries.filter((summary) => agentSet.has(summary.agent));
-}
-
-function writeListSummary(io: PromptIO, summaries: InstalledSummary[]): void {
-  if (summaries.length === 0) {
-    io.note("No skills or commands installed yet.", "Installed items");
-    return;
-  }
-
-  for (const summary of summaries) {
-    const body = [
-      ...formatInstalledSection("Skills", summary.installedSkills),
-      "",
-      ...formatInstalledSection("Commands", summary.installedCommands),
-    ].join("\n");
-
-    io.note(body, `${summary.agent} (${summary.scope})`);
-  }
 }
 
 function receiptToSummary(receipt: InstallReceipt): InstalledSummary {
@@ -278,9 +182,17 @@ function receiptDetailBody(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAg
   return receiptToSummary(receipt);
 }
 
-async function runDetailView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions): Promise<InstalledSummary[]> {
-  const agents = options.agents.length > 0 ? options.agents : await promptAgents(io);
-  const scope = options.scope ?? (await promptChoice(io, "Scope", guidedScopes));
+async function runDetailView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions, allowBack: boolean): Promise<InstalledSummary[] | null> {
+  const agents = options.agents.length > 0 ? options.agents : await promptAgents(io, allowBack);
+  if (agents === null) {
+    return null;
+  }
+
+  const scope = options.scope ?? (await promptScope(io, allowBack));
+  if (scope === null) {
+    return null;
+  }
+
   const summaries: InstalledSummary[] = [];
 
   for (const agent of agents) {
@@ -360,11 +272,15 @@ async function runInteractiveSegment(
   softCancelReturnsToHome = false,
 ): Promise<GuidedOutcome | null> {
   if (mode === "detail") {
-    return runDetailView(io, env, options);
+    return runDetailView(io, env, options, softCancelReturnsToHome);
   }
 
   if (mode === "list") {
-    const agents = options.agents.length > 0 ? options.agents : await promptAgents(io);
+    const agents = options.agents.length > 0 ? options.agents : await promptAgents(io, softCancelReturnsToHome);
+    if (agents === null) {
+      return null;
+    }
+
     const allSummaries = listInstalledSummaries(env);
     const summaries = filterSummariesByAgents(allSummaries, agents);
 
@@ -382,9 +298,20 @@ async function runInteractiveSegment(
     return summaries;
   }
 
-  const agents = options.agents.length > 0 ? options.agents : await promptAgents(io);
-  const scope = options.scope ?? (await promptChoice(io, "Scope", guidedScopes));
-  const items = options.items.length > 0 ? options.items : await promptItems(io, getRepoInventory(env.MAHIRO_SKILLS_REPO_ROOT));
+  const agents = options.agents.length > 0 ? options.agents : await promptAgents(io, softCancelReturnsToHome);
+  if (agents === null) {
+    return null;
+  }
+
+  const scope = options.scope ?? (await promptScope(io, softCancelReturnsToHome));
+  if (scope === null) {
+    return null;
+  }
+
+  const items = options.items.length > 0 ? options.items : await promptItems(io, getRepoInventory(env.MAHIRO_SKILLS_REPO_ROOT), softCancelReturnsToHome);
+  if (items === null) {
+    return null;
+  }
 
   if (agents.length === 1) {
     return runSinglePlanOrInstall(io, env, options, mode, agents[0], scope, items, softCancelReturnsToHome);
@@ -431,27 +358,19 @@ async function runInteractiveSegment(
 }
 
 async function promptHomeAction(io: PromptIO): Promise<HomeAction> {
-  return io.select(
-    "Home",
-    [
-      { label: "Install", value: "install", hint: "copy skills/commands into the agent tree" },
-      { label: "Plan (dry run)", value: "plan", hint: "preview plan without installing" },
-      { label: "List installed", value: "list", hint: "filter by one or more agents" },
-      { label: "Receipt detail", value: "detail", hint: "one or more agents, one scope" },
-      { label: "Exit", value: "exit", hint: "leave the TUI" },
-    ] satisfies readonly PromptOption<HomeAction>[],
-  );
+  return io.select("Home", homeActionOptions);
 }
 
 async function runInteractiveHomeLoop(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions): Promise<GuidedOutcome> {
   let lastResult: GuidedOutcome | undefined;
+  writeHomeIntro(io);
 
   for (;;) {
     const action = await promptHomeAction(io);
 
     if (action === "exit") {
       if (lastResult === undefined) {
-        io.note("Goodbye.", "Home");
+        io.outro("Goodbye.");
         return [];
       }
 

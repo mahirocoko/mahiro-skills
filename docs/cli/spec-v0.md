@@ -126,6 +126,7 @@ mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ..
 ### Guided / TUI command behavior
 
 - `tui` and `guided` invoke the same implementation; both are interactive wrappers over the same `createPlan()` and `install()` flow used by the direct commands
+- The TUI keeps workflow logic separate from menu/summary rendering: prompt I/O owns TTY detection/cancel/outro behavior, while view helpers own the compact startup wordmark, keyboard hints, menu options, and preview/summary text
 - **Interactive home session (no `--mode`):** when stdin/stdout are interactive and no `--mode` is passed, the CLI opens a **home menu** first: Install, Plan (dry run), List installed, Receipt detail, Exit. The human can run multiple actions in one process; choosing Exit returns the last completed result (or an empty result if nothing ran yet)
 - **Single-pass interactive (`--mode`):** with `--mode plan`, `--mode install`, or `--mode list`, the CLI runs that action once and returns (no home menu). Declining overwrite or final install confirmation **ends with an error** (same as today), not a home loop
 - **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
@@ -135,6 +136,8 @@ mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ..
 - Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
 - When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent
 - Install confirmation remains explicit unless `--yes` is provided
+- Prompt cancellation is centralized and exits before side effects; the empty home exit uses a terminal outro instead of a note card
+- Home-loop wizard prompts include a `Back to Home` option for keyboard navigation; choosing it returns to Home without planning, installing, or listing
 - Interactive `list` summarizes installed items per agent and scope (grouped cards) **filtered to the agents you select**; non-interactive `guided --mode list` still lists all receipts without an agent prompt
 - **Receipt detail** prompts for one scope, then one or more agents, and shows receipt metadata (roots, paths, timestamps, installed skill and command names) **for each agent that has a receipt**, and **reconstructs install targets** per receipt by running the same planner over the union of installed names so `source -> target` rows appear alongside each receipt (same shape as the install preview)
 

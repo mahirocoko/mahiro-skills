@@ -1,4 +1,4 @@
-import { confirm as clackConfirm, isCancel, multiselect as clackMultiselect, note as clackNote, select as clackSelect } from "@clack/prompts";
+import { cancel as clackCancel, confirm as clackConfirm, isCancel, multiselect as clackMultiselect, note as clackNote, outro as clackOutro, select as clackSelect } from "@clack/prompts";
 import type { Option as ClackOption } from "@clack/prompts";
 import type { Readable, Writable } from "stream";
 
@@ -10,6 +10,8 @@ export interface PromptIO {
   isInteractive: boolean;
   write(message: string): void;
   note(message: string, title?: string): void;
+  cancel(message: string): void;
+  outro(message: string): void;
   select<T extends string>(label: string, options: readonly PromptOption<T>[]): Promise<T>;
   multiselect<T extends string>(label: string, options: readonly PromptOption<T>[]): Promise<T[]>;
   confirm(question: string): Promise<boolean>;
@@ -37,8 +39,9 @@ function toClackOption<T extends string>(option: PromptOption<T>): ClackOption<T
   } as ClackOption<T>;
 }
 
-function unwrapPromptValue<T>(value: T | symbol, cancelMessage: string): T {
+function unwrapPromptValue<T>(value: T | symbol, cancelMessage: string, onCancel: () => void): T {
   if (isCancel(value)) {
+    onCancel();
     throw new Error(cancelMessage);
   }
 
@@ -63,6 +66,22 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
 
       output.write(title ? `${title}\n${message}\n` : `${message}\n`);
     },
+    cancel(message: string) {
+      if (isInteractive) {
+        clackCancel(message);
+        return;
+      }
+
+      output.write(`${message}\n`);
+    },
+    outro(message: string) {
+      if (isInteractive) {
+        clackOutro(message);
+        return;
+      }
+
+      output.write(`${message}\n`);
+    },
     async select<T extends string>(label: string, options: readonly PromptOption<T>[]) {
       if (!isInteractive) {
         throw new Error("Interactive prompt unavailable.");
@@ -74,6 +93,7 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
           options: options.map(toClackOption),
         }),
         "Guided TUI cancelled.",
+        () => clackCancel("Guided TUI cancelled."),
       );
     },
     async multiselect<T extends string>(label: string, options: readonly PromptOption<T>[]) {
@@ -88,6 +108,7 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
           required: true,
         }),
         "Guided TUI cancelled.",
+        () => clackCancel("Guided TUI cancelled."),
       );
     },
     async confirm(question: string) {
@@ -95,7 +116,7 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
         throw new Error("Interactive prompt unavailable.");
       }
 
-      return unwrapPromptValue(await clackConfirm({ message: question }), "Guided TUI cancelled.");
+      return unwrapPromptValue(await clackConfirm({ message: question }), "Guided TUI cancelled.", () => clackCancel("Guided TUI cancelled."));
     },
     close() {
       return;

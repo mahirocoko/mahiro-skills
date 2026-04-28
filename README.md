@@ -44,7 +44,7 @@ bun ./src/cli.ts install --agent opencode --scope local
 For a tagged install without keeping a clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.19 -- --agent opencode --scope global
 ```
 
 ## Choose your install path
@@ -73,16 +73,16 @@ Some installed skills need extra runtime tools. See [Runtime prerequisites by wo
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.18` tag:
+Install the default bundle globally for OpenCode from the `v0.1.19` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.19 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.19 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -137,6 +137,8 @@ Batch plan summary → opencode, claude-code, cursor, gemini, codex
 ```
 
 The non-interactive fallback uses the same planner and installer core, so scripted commands and the TUI stay aligned.
+
+The TUI is intentionally a standard wizard instead of a full-screen dashboard: prompt I/O handles TTY detection, cancellation, and outro messages, while separate view helpers own the compact startup wordmark, keyboard hints, menu labels, preview, and summary text. Home-loop prompts include a `Back to Home` escape so humans can navigate without side effects.
 
 ## CLI examples
 
