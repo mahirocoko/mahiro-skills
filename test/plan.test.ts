@@ -115,6 +115,26 @@ describe("plan", () => {
     }
   });
 
+  test("resolves codex roots and markdown command compatibility output", () => {
+    const temp = makeTempEnv();
+    try {
+      const localPlan = createPlan("codex", "local", ["project"], temp.env);
+      const globalPlan = createPlan("codex", "global", ["recap"], temp.env);
+
+      expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".codex"));
+      expect(localPlan.skills.map((entry) => entry.name)).toEqual(["project"]);
+      expect(localPlan.commands.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "commands", "project.md"),
+      ]);
+      expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".codex"));
+      expect(globalPlan.commands.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".codex", "commands", "recap.md"),
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("fails planning for unknown items", () => {
     const temp = makeTempEnv();
     try {

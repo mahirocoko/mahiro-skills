@@ -87,11 +87,32 @@ describe("list", () => {
     }
   });
 
+  test("returns full receipt after codex install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("codex", "local", ["project"], false, temp.env);
+
+      const receipt = listInstalled("codex", "local", temp.env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("codex");
+      expect(receipt?.scope).toBe("local");
+      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_CWD}/.codex`);
+      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
+      expect(receipt?.installedSkills).toEqual(["project"]);
+      expect(receipt?.installedCommands).toEqual(["project"]);
+      expect(receipt?.installedAt.length).toBeGreaterThan(0);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("returns installed summaries across agent and scope", () => {
     const temp = makeTempEnv();
     try {
       install("cursor", "local", ["project"], false, temp.env);
       install("gemini", "global", ["gemini"], false, temp.env);
+      install("codex", "local", ["recap"], false, temp.env);
 
       expect(listInstalledSummaries(temp.env)).toEqual([
         {
@@ -107,6 +128,13 @@ describe("list", () => {
           installedSkills: ["gemini"],
           installedCommands: ["gemini"],
           installed: ["gemini"],
+        },
+        {
+          agent: "codex",
+          scope: "local",
+          installedSkills: ["recap"],
+          installedCommands: ["recap"],
+          installed: ["recap"],
         },
       ]);
     } finally {

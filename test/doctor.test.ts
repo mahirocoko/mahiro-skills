@@ -191,4 +191,36 @@ describe("doctor", () => {
       temp.cleanup();
     }
   });
+
+  test("reports receipt and installed paths after codex install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("codex", "local", ["recap"], false, temp.env);
+      const [result] = doctor("codex", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".codex"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", ".mahiro-skills", "receipts", "local-codex.json"),
+        },
+        {
+          label: "skill:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "skills", "recap"),
+        },
+        {
+          label: "command:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "commands", "recap.md"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
 });

@@ -73,8 +73,7 @@ Currently implemented runtime targets are:
 2. `claude-code`
 3. `cursor`
 4. `gemini`
-
-The other agents remain first-class in the spec so the data model does not need redesign later.
+5. `codex`
 
 For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
 
@@ -132,7 +131,7 @@ mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ..
 - **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
 - Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install`, `--agent` and `--scope`. `list` may run with `--mode list` only
 - Item selection uses a default-bundle shortcut plus **checkbox-style multiselect** (space to toggle, enter to confirm) over repo inventory, not numbered readline picks
-- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, and `gemini`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
+- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, `gemini`, and `codex`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
 - Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
 - When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent
 - Install confirmation remains explicit unless `--yes` is provided
@@ -263,8 +262,8 @@ Receipt fields:
 
 ### Codex
 
-- Install skills to the codex skill root
-- Treat commands as optional compatibility output
+- Install packaged skills into `<root>/skills/`
+- Install packaged markdown commands into `<root>/commands/*.md` as compatibility output
 - `AGENTS.md` integration is adapter-specific and deferred unless explicitly requested
 
 ## Result model

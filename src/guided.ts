@@ -3,6 +3,7 @@ import { listInstalled, listInstalledSummaries } from "./list";
 import { createPlan } from "./plan";
 import { createPromptIO, type PromptIO, type PromptOption } from "./prompt";
 import { getRepoInventory } from "./repo";
+import { supportedAgents } from "./types";
 import type {
   CliOptions,
   InstallPlan,
@@ -15,7 +16,7 @@ import type {
   ScopedAgent,
 } from "./types";
 
-const guidedAgents = ["opencode", "claude-code", "cursor", "gemini"] as const;
+const guidedAgents = supportedAgents;
 const guidedScopes = ["local", "global"] as const;
 const homeActions = ["install", "plan", "list", "detail", "exit"] as const;
 
@@ -75,7 +76,7 @@ type AgentPickMode = "all" | "pick";
 
 async function promptAgents(io: PromptIO): Promise<ScopedAgent[]> {
   const mode = await io.select<AgentPickMode>("Agents", [
-    { label: "All agents (opencode, claude-code, cursor, gemini)", value: "all", hint: "shortcut for the full v0 adapter set" },
+    { label: `All agents (${guidedAgents.join(", ")})`, value: "all", hint: "shortcut for the full v0 adapter set" },
     { label: "Choose specific agents…", value: "pick", hint: "checkbox multiselect" },
   ]);
 

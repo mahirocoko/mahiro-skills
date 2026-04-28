@@ -1,6 +1,6 @@
 # mahiro-skills
 
-Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, and Gemini.
+Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, Gemini, and Codex.
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for planning, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
@@ -44,7 +44,7 @@ bun ./src/cli.ts install --agent opencode --scope local
 For a tagged install without keeping a clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.17 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- --agent opencode --scope global
 ```
 
 ## Choose your install path
@@ -73,16 +73,16 @@ Some installed skills need extra runtime tools. See [Runtime prerequisites by wo
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.17` tag:
+Install the default bundle globally for OpenCode from the `v0.1.18` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.17 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.17 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -133,7 +133,7 @@ Home → Plan (dry run)
 Agents → All agents
 Scope → local
 Items → default bundle
-Batch plan summary → opencode, claude-code, cursor, gemini
+Batch plan summary → opencode, claude-code, cursor, gemini, codex
 ```
 
 The non-interactive fallback uses the same planner and installer core, so scripted commands and the TUI stay aligned.
@@ -171,7 +171,7 @@ bun ./src/cli.ts guided --mode list
 
 Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.
 
-Supported v0 adapters: `opencode`, `claude-code`, `cursor`, and `gemini`.
+Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, and `codex`.
 
 CLI references:
 
@@ -283,7 +283,7 @@ These are the repo-maintainer details that matter most when changing installer b
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` remain compatibility wrappers for non-Gemini slash-command entrypoints.
 - `commands-gemini/` is the native Gemini custom-command source, installed as namespaced `.toml` files like `mh-watch.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
-- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.
+- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, and `codex` for packaged skill and command installs.
 - Global and local installation scopes are first-class in the current scaffold and tests.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 - `tui` is the primary interactive entrypoint over the same planner and installer core, with non-interactive fallback when flags are fully provided.

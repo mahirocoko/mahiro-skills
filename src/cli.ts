@@ -5,9 +5,9 @@ import { listInstalled } from "./list";
 import { doctor } from "./doctor";
 import { runGuided } from "./guided";
 import { createPromptIO } from "./prompt";
-import type { CliOptions, InstallScope, ScopedAgent } from "./types";
+import { supportedAgents, type CliOptions, type InstallScope, type ScopedAgent } from "./types";
 
-const VALID_CLI_AGENTS = new Set<ScopedAgent>(["opencode", "claude-code", "cursor", "gemini"]);
+const VALID_CLI_AGENTS = new Set<ScopedAgent>(supportedAgents);
 
 function pushAgentTokens(agents: ScopedAgent[], raw: string): void {
   for (const part of raw.split(",")) {

@@ -51,14 +51,18 @@ describe("cli", () => {
     }
   });
 
-  test("rejects spec-only agents in the direct CLI surface", () => {
+  test("supports codex in the direct CLI surface", () => {
     const temp = makeTempEnv();
 
     try {
       const result = runCli(["plan", "project", "--agent", "codex", "--scope", "local"], temp.env);
 
-      expect(result.exitCode).toBe(1);
-      expect(new TextDecoder().decode(result.stderr)).toContain("Unsupported agent 'codex'.");
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { agent: string; root: string; skills: Array<{ name: string }>; commands: Array<{ name: string }> };
+      expect(payload.agent).toBe("codex");
+      expect(payload.root.endsWith(".codex")).toBe(true);
+      expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
+      expect(payload.commands.map((entry) => entry.name)).toEqual(["project"]);
     } finally {
       temp.cleanup();
     }

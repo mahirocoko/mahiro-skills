@@ -33,7 +33,7 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.17");
+    expect(decode(result.stdout)).toContain("v0.1.18");
   });
 
   test("installs one skill and paired command from a provided repo root", () => {

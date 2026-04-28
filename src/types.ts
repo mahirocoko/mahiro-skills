@@ -1,6 +1,8 @@
-export type SupportedAgent = "opencode" | "claude-code" | "cursor" | "gemini";
+export const supportedAgents = ["opencode", "claude-code", "cursor", "gemini", "codex"] as const;
 
-export type ScopedAgent = SupportedAgent | "codex";
+export type SupportedAgent = (typeof supportedAgents)[number];
+
+export type ScopedAgent = SupportedAgent;
 
 export type InstallScope = "global" | "local";
 

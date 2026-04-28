@@ -134,6 +134,33 @@ describe("install", () => {
     }
   });
 
+  test("installs one skill and markdown command for codex", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("codex", "local", ["project"], false, temp.env);
+      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", ".mahiro-skills", "receipts", "local-codex.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        scope: string;
+        root: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "commands", "project.md"))).toBe(true);
+      expect(existsSync(receiptPath)).toBe(true);
+      expect(receipt.agent).toBe("codex");
+      expect(receipt.scope).toBe("local");
+      expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".codex"));
+      expect(receipt.installedSkills).toEqual(["project"]);
+      expect(receipt.installedCommands).toEqual(["project"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("copies direct-cli skill, preserved playbook, and paired command", () => {
     const temp = makeTempEnv();
     try {

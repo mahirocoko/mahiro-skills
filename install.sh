@@ -10,7 +10,7 @@ usage() {
 Usage: install.sh [--version <ref>] [--repo <git-url>] [--help] [--] [install args...]
 
 Examples:
-  bash install.sh --version v0.1.17 -- project --agent opencode --scope global
+  bash install.sh --version v0.1.18 -- project --agent opencode --scope global
   MAHIRO_SKILLS_REPO_ROOT=/path/to/mahiro-skills bash install.sh -- project --agent opencode --scope local
 EOF
 }

@@ -1,6 +1,6 @@
 import { join } from "path";
 
-import type { InstallScope, ScopedAgent, SupportedAgent } from "./types";
+import { supportedAgents, type InstallScope, type ScopedAgent, type SupportedAgent } from "./types";
 
 export interface CommandArtifact {
   extension: ".md" | ".toml";
@@ -13,7 +13,7 @@ function formatGeminiCommandFileName(name: string): string {
 }
 
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {
-  return agent === "opencode" || agent === "claude-code" || agent === "cursor" || agent === "gemini";
+  return supportedAgents.includes(agent);
 }
 
 export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = process.env): string {
@@ -37,6 +37,10 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
       return join(cwd, ".cursor");
     }
 
+    if (agent === "codex") {
+      return join(cwd, ".codex");
+    }
+
     return join(cwd, ".gemini");
   }
 
@@ -54,6 +58,10 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
 
   if (agent === "cursor") {
     return join(home, ".cursor");
+  }
+
+  if (agent === "codex") {
+    return join(home, ".codex");
   }
 
   return join(home, ".gemini");

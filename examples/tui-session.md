@@ -20,7 +20,7 @@ bun ./src/cli.ts tui
 Home
   → Plan (dry run)
 Agents
-  → All agents (opencode, claude-code, cursor, gemini)
+  → All agents (opencode, claude-code, cursor, gemini, codex)
 Scope
   → local
 Items

@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 import { resolveRoot } from "./adapters";
-import type { InstalledSummary, InstallReceipt, InstallScope, ScopedAgent, SupportedAgent } from "./types";
+import { supportedAgents, type InstalledSummary, type InstallReceipt, type InstallScope, type ScopedAgent } from "./types";
 
-const installedAgents: SupportedAgent[] = ["opencode", "claude-code", "cursor", "gemini"];
+const installedAgents = supportedAgents;
 const installedScopes: InstallScope[] = ["local", "global"];
 
 function unique<T>(values: T[]): T[] {

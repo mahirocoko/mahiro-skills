@@ -40,10 +40,10 @@ describe("README", () => {
   test("documents curl install and local checkout usage truthfully", () => {
     const content = readFileSync(readmePath, "utf8");
 
-    expect(content).toContain("Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, and Gemini.");
+    expect(content).toContain("Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, Gemini, and Codex.");
     expect(content).toContain("## Choose your install path");
     expect(content).toContain("### Quick install via curl");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.17 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.18 -- --agent opencode --scope global");
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -58,12 +58,12 @@ describe("README", () => {
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
     expect(content).toContain("Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.");
-    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, and `gemini`.");
+    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, and `codex`.");
     expect(content).toContain("bun ./src/cli.ts tui");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts guided --mode list");
     expect(content).toContain("bun ./src/cli.ts plan project --agent cursor --agent gemini --scope local");
-    expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, and `gemini` for packaged skill and command installs.");
+    expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, and `codex` for packaged skill and command installs.");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("`tui` is the primary interactive entrypoint over the same planner and installer core, with non-interactive fallback when flags are fully provided.");
     expect(content).toContain("`guided` remains as a compatibility alias for the same interactive TUI flow.");

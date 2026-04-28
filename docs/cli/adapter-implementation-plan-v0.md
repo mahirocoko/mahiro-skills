@@ -85,7 +85,7 @@ Status: implemented in the current repo pass as a thin CLI wizard over the exist
 - full Gemini extension install modeling
 - automated settings orchestration for confirmation-heavy tool flows
 - any target-specific plugin build pipeline that goes beyond file planning and copied assets
-- expansion to other spec-only targets before Cursor and Gemini are stable
+- expansion to future spec-only targets before Cursor, Gemini, and Codex are stable
 
 ## File and module focus for the first implementation pass
 

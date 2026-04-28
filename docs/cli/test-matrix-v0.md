@@ -28,7 +28,7 @@ Use current repo assets as fixtures.
 | claude-code | Yes | Yes | Yes |
 | cursor | Yes | Yes | Yes |
 | gemini | Yes | Yes | Yes |
-| codex | Yes | Yes | Spec only |
+| codex | Yes | Yes | Yes |
 
 ### Install unit x expected behavior
 
