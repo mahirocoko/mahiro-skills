@@ -4,7 +4,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 
 ## Skills
 
-- `asset-designer` — Personal designer workflow for website image assets. Trigger on: cutout assets, background removal, layer separation, transparent PNG packs, web asset manifests.
+- `asset-designer` — Asset director for production-ready website image assets and manifests. Trigger on: cutout/background removal, layer separation, transparent PNG packs, missing web assets, asset QA/delivery notes.
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
 - `direct-cli` — Direct executor playbook for Gemini CLI and Cursor CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
@@ -16,8 +16,8 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
 - `rrr` — Session retrospective with lessons learned. Trigger on: retrospective, end of session, lessons learned, durable memory note.
-- `uncodixify` — Doctrine-first frontend taste filter that prevents generic AI/Codex UI output. Trigger on: frontend UI generation, styling, layout, AI-looking UI, fake premium SaaS polish.
-- `web-asset-prompts` — Production-ready prompts for website image assets. Trigger on: transparent cutouts, overlay-safe hero/card images, crop-safe image generation, web-ready asset prompts.
+- `uncodixify` — Doctrine-first frontend taste and UI calibration filter that prevents generic AI/Codex output. Trigger on: frontend UI generation/review, reference leakage, AI-looking layouts, fake-premium SaaS polish, unsupported motion/filler UI.
+- `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
 - `watch` — Learn from YouTube videos via Gemini transcription. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
 
 ## Common bundles
