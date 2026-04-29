@@ -1,0 +1,8 @@
+description = "Use when generating or revamping frontend UI in HTML, CSS, React, Vue, Svelte, Tailwind, prompt-driven design output, or component code where generic GPT/Codex aesthetics, fake premium SaaS styling, metric-card grids, soft gradients, pill overload, decorative copy, or AI-default layout moves must be actively prevented."
+prompt = """
+Execute the `uncodixify` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"uncodixify\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/uncodixify/SKILL.md` for local installs or `~/.gemini/skills/uncodixify/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

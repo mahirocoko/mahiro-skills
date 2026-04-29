@@ -44,7 +44,7 @@ bun ./src/cli.ts install --agent opencode --scope local
 For a tagged install without keeping a clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.20 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- --agent opencode --scope global
 ```
 
 ## Choose your install path
@@ -73,16 +73,16 @@ Some installed skills need extra runtime tools. See [Runtime prerequisites by wo
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.20` tag:
+Install the default bundle globally for OpenCode from the `v0.1.21` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.20 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.20 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -189,6 +189,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 
 | Skill | Command | Use when |
 | --- | --- | --- |
+| `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
 | `direct-cli` | `/direct-cli` | You need a direct Gemini or Cursor CLI lane in tmux. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
@@ -200,6 +201,8 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
+| `uncodixify` | `/uncodixify` | You need to prevent generic AI-looking frontend UI and fake premium styling. |
+| `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
 
 ## Common workflows
@@ -227,6 +230,14 @@ bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode 
 ```
 
 Use this when a task needs Gemini, Cursor, transcript, or browser-tab orchestration outside the normal agent runtime.
+
+### Frontend design and web assets
+
+```bash
+bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local
+```
+
+Use `/uncodixify` to filter generated UI away from generic AI/Codex aesthetics, `/asset-designer` to plan web-ready asset packs and cutout workflows, and `/web-asset-prompts` to rewrite individual image prompts into production website asset specs.
 
 ### Multi-agent install
 

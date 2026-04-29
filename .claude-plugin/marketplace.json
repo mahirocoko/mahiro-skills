@@ -8,6 +8,7 @@
       "name": "mahiro-local-bundle",
       "description": "Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.",
       "skills": [
+        "asset-designer",
         "deep-research",
         "direct-cli",
         "forward",
@@ -19,9 +20,12 @@
         "project",
         "recap",
         "rrr",
+        "uncodixify",
+        "web-asset-prompts",
         "watch"
       ],
       "commands": [
+        "asset-designer",
         "deep-research",
         "direct-cli",
         "forward",
@@ -33,6 +37,8 @@
         "project",
         "recap",
         "rrr",
+        "uncodixify",
+        "web-asset-prompts",
         "watch"
       ]
     }

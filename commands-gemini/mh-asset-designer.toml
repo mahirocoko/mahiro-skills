@@ -1,0 +1,8 @@
+description = "Personal designer workflow for website image assets. Use when users want to cut out/dicut images, remove backgrounds, separate layers, clean edges, create transparent PNG assets, generate missing web assets, or prepare production-ready asset packs for UI/web projects."
+prompt = """
+Execute the `asset-designer` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"asset-designer\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/asset-designer/SKILL.md` for local installs or `~/.gemini/skills/asset-designer/SKILL.md` for global installs) and follow ALL instructions in it.
+"""
