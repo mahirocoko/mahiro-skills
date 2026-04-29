@@ -44,6 +44,16 @@ Every asset must have a clear role:
 
 If the role is unclear, infer the likely web role from the page, component, or surrounding copy before asking for more detail.
 
+## Plan before production
+
+When the user wants an asset pack, define the expected output before any generation or cleanup work starts.
+
+- write the manifest first
+- keep the first pass to the minimal useful asset set
+- include `filename`, `role`, `ratio`, `format`, `source strategy`, and `expected QA checks` before production begins
+- treat background fit, crop behavior, and delivery size as part of the asset definition
+- if the manifest is missing a required field, stop and resolve that decision before making files
+
 ## Operating modes
 
 ### 1. User provides an image
@@ -162,6 +172,7 @@ Keep shadow subtle, neutral, and independent from the subject alpha when possibl
 
 When generating missing assets:
 
+- define the expected output before generation or editing
 - specify the web role first
 - specify ratio/canvas and output format
 - specify crop safety and padding
@@ -169,6 +180,17 @@ When generating missing assets:
 - for cutouts, choose true alpha or chroma-key source explicitly
 - for photo assets, reserve overlay-safe negative space when needed
 - generate fewer, more useful assets over many generic images
+- no placeholder assets, no dummy fillers, no empty shells
+
+## Acceptance checks
+
+Before delivery, verify the asset pack against the intended use.
+
+- check the outputs on light, dark, and real page backgrounds
+- check the outputs inside the target crop containers
+- confirm the subject is not clipped and the padding still works
+- confirm every manifest row maps to a real delivered file
+- confirm no placeholder assets remain in the pack
 
 ## Response format
 
@@ -187,8 +209,8 @@ Prompts needed: <yes/no; use web-asset-prompts if yes>
 For a concrete asset pack, return a manifest:
 
 ```md
-| filename | role | ratio | format | source strategy | notes |
-| --- | --- | --- | --- | --- | --- |
+| filename | role | ratio | format | source strategy | expected QA checks | notes |
+| --- | --- | --- | --- | --- | --- | --- |
 ```
 
 ## Examples
@@ -230,12 +252,12 @@ Create assets for a botanical nutrition landing page ingredient grid.
 Asset-designer response:
 
 ```md
-| filename | role | ratio | format | source strategy | notes |
-| --- | --- | --- | --- | --- | --- |
-| olive-leaf-source.png | chroma-key cutout source | 1:1 | PNG | generate via web-asset-prompts | use #ff00ff key for green subject |
-| tonic-vessel-source.png | chroma-key cutout source | 4:5 | PNG | generate via web-asset-prompts | no labels, no floor plane |
-| avocado-card.jpg | full-bleed photo card | 4:5 | JPG/PNG | generate via web-asset-prompts | crop-safe with no text |
-| mineral-powder-source.png | chroma-key cutout source | 1:1 | PNG | generate via web-asset-prompts | preserve generous padding |
+| filename | role | ratio | format | source strategy | expected QA checks | notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| olive-leaf-source.png | chroma-key cutout source | 1:1 | PNG | generate via web-asset-prompts | clean key edge, no crop loss, works on light and dark backgrounds | use #ff00ff key for green subject |
+| tonic-vessel-source.png | chroma-key cutout source | 4:5 | PNG | generate via web-asset-prompts | label-free, stable silhouette, crop-safe on card frame | no labels, no floor plane |
+| avocado-card.jpg | full-bleed photo card | 4:5 | JPG/PNG | generate via web-asset-prompts | text-safe area, no clipped subject, works in narrow card crops | crop-safe with no text |
+| mineral-powder-source.png | chroma-key cutout source | 1:1 | PNG | generate via web-asset-prompts | generous padding, edge clarity, no placeholder fill | preserve generous padding |
 ```
 
 ## When to ask one question

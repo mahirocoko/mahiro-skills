@@ -72,6 +72,6 @@ If rules conflict, explicit beats implicit, specific beats general, and repeated
 
 ## Working Rule
 
-Start from the matching canonical page, then branch only when the prompt crosses ownership boundaries. Keep repo-local doctrine first, keep Mahiro doctrine as fallback, and keep this file as the index.
+Start from the matching canonical page, then branch only when the prompt crosses ownership boundaries. Before applying fallback doctrine, define the repo-local acceptance checks that prove the local rule or shape is satisfied. Keep repo-local doctrine first, keep Mahiro doctrine as fallback, and keep this file as the index.
 
 ARGUMENTS: $ARGUMENTS

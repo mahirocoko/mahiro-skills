@@ -20,6 +20,16 @@ Use it when UI output is drifting toward generic GPT/Codex taste and needs to be
 
 The goal is not to erase product direction. The goal is to prevent the easy AI move: decorative, median, fake-premium UI that looks generated instead of designed.
 
+## UI calibration dials
+
+Use these as pre-generation and review dials. They are not a premium-style generator. They exist to keep UI choices intentional, product-shaped, and harder than the default AI move.
+
+- `DESIGN_VARIANCE`: default 4/10. Ask: is the layout variation solving hierarchy, brand clarity, or scanability, or is it just avoiding normal structure to look designed?
+- `MOTION_INTENSITY`: default 2/10. Ask: does the motion explain state, causality, or affordance, or is it unsupported choreography added because static UI felt too plain?
+- `VISUAL_DENSITY`: default 5/10. Ask: does density match the information value, or did filler panels, badges, notes, fake charts, and empty metric cards creep in to make the screen look finished?
+
+If a dial moves away from the default, justify it with product need, brand direction, design-system precedent, or accessibility. If there is no justification, return to the calmer baseline.
+
 ## Pairing with `frontend-design brief`
 
 When `frontend-design brief` is used, apply `uncodixify` **after** the brief has named the page job, structure, reference anatomy, and asset needs.
@@ -85,7 +95,7 @@ If it does not improve one of those, remove it.
 
 ## When generating visual refs with image models
 
-Image models are good at section composition and bad at full-page pacing.
+Image models are good at section composition and reference-board atmosphere. They are bad at full-page pacing, implementation proof, responsive behavior, accessibility, and component-state truth.
 
 Do not assume one generated image can represent the spacing, rhythm, and scroll behavior of a full landing page or full dashboard accurately.
 
@@ -95,6 +105,10 @@ Default assumption:
 - they compress spacing before they drop content
 - they preserve visibility before they preserve pacing
 - they tend to turn a scroll experience into a poster composition
+- they may make impossible motion, illegible type scale, or fake product states look convincing
+- they cannot prove that a code implementation is correct
+
+Generated images may inspire composition, relative hierarchy, mood, or section grouping. They are not acceptance criteria. Implementation proof must come from the actual UI respecting product constraints, design-system rules, responsive behavior, and readable content hierarchy.
 
 ### Default workflow for image-model UI refs
 
@@ -115,6 +129,7 @@ Default assumption:
 - If the model keeps compressing the layout, increase internal section padding and section-to-section spacing in the prompt.
 - If the model still compresses, split the page again into smaller clusters instead of tightening the language forever.
 - Treat generated UI images as reference boards, not as exact full-page pacing proofs.
+- Extract the useful visual idea, then re-check it against normal UI standards before implementation.
 
 ### What to avoid with image models
 
@@ -122,6 +137,7 @@ Default assumption:
 - Do not confuse “everything is visible” with “the design pacing is correct.”
 - Do not use a single full-page image as the only truth source for implementation spacing.
 - Do not let the model shrink section padding just to fit all requested content into one ratio.
+- Do not cite a generated image as proof that the UI works, ships, animates correctly, or handles real content.
 
 ## Canonical doctrine
 
@@ -391,5 +407,17 @@ When using this doctrine with `frontend-design`:
 Do not use this skill to erase intentional brand direction.
 
 Use it to stop the AI from reaching for the same default aesthetics every time.
+
+## Final uncodixify self-check
+
+Before calling UI work done, run this check and fix failures immediately:
+
+- Fake-premium shortcuts: did any glow, glass, gradient, oversized radius, cinematic dark SaaS move, or decorative shadow survive without a product reason?
+- Placeholder/filler UI: did any fake chart, empty metric grid, ornamental badge, generic startup copy, mini-note, or decorative section block appear only to fill space?
+- Unsupported motion: did any hover transform, bouncy transition, scroll choreography, or animated flourish appear without explaining state, causality, or affordance?
+- Typography scale misuse: did large type compensate for weak layout, repeat hero-scale emphasis too deep in the page, shrink body copy unfairly, or break the project’s type hierarchy?
+- Reference leakage: did a generated image or borrowed reference become implementation proof instead of a board to reinterpret through the product and design system?
+
+If one answer is yes, the UI is still codexy. Normalize it before final output.
 
 ARGUMENTS: $ARGUMENTS

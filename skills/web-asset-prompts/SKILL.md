@@ -39,10 +39,27 @@ frontend-design brief
 ## Workflow
 
 1. Identify the web role: transparent cutout, product transparent cutout, ingredient transparent cutout, chroma-key cutout source, overlay photo, journal image, hero image, or full-bleed card photo.
-2. Choose the output shape: true transparent PNG, chroma-key cutout source, or full-bleed photo.
+2. Run the single-asset preflight and lock these inputs before writing the prompt:
+   - Asset mode: pick one mode only.
+   - Ratio and canvas: state the exact aspect ratio or canvas shape.
+   - Output type: choose transparent PNG, chroma-key source, or full-bleed photo.
+   - Crop and overlay safety: call out safe padding, subject placement, and any text-safe negative space.
+   - Forbidden artifacts: no text, logos, watermarks, labels, clipped edges, or other unusable output.
+   - Delivery intent: say whether the result is a production asset or reference-only.
 3. Add the correct aspect ratio and crop-safety requirements.
-4. Add constraints that prevent unusable output: no text, no logo, no watermark, no clipped subject, no busy overlay area.
-5. Return the final image-generation prompt or rewrite the user's prompt directly.
+4. Write the final image-generation prompt so it stands on its own.
+5. Apply the final prompt QA check before returning it.
+
+## Single-asset preflight
+
+Use this as a compact gate for one asset only:
+
+- Asset mode: confirm the exact mode and do not mix modes.
+- Ratio and canvas: specify the exact ratio or canvas, such as `1:1`, `4:5`, `16:9`, or `21:9`.
+- Output type: state whether the target is a transparent PNG, chroma-key cutout source, or full-bleed raster image.
+- Crop and overlay safety: require safe padding, a fully visible subject, and text-safe negative space when the asset will sit under copy.
+- Forbidden artifacts: ban generated text, fake labels, logos, watermarks, clipped subjects, and messy edges.
+- Delivery intent: label the result as either a production asset or reference-only.
 
 ## Response format
 
@@ -52,11 +69,22 @@ When using this skill, return a compact production spec:
 Asset mode: <mode>
 Recommended ratio: <ratio>
 Output format: <PNG with alpha | JPG/PNG full-bleed photo>
+Delivery intent: <production asset | reference-only>
 Final prompt: <ready-to-use image generation prompt>
 Implementation notes: <crop, padding, overlay, or save-location notes if relevant>
 ```
 
 For batches, repeat the same shape per asset and keep filenames stable.
+
+## Final prompt QA
+
+Before returning the prompt, check that it is:
+
+- free of generated text, fake logos, and watermarks
+- free of clipped subjects or edge-cut objects
+- free of busy overlay areas where text would fight the image
+- free of chroma-key color bleeding into the subject
+- usable as-is, without needing extra cleanup instructions
 
 ## Production web asset rules
 
