@@ -44,7 +44,7 @@ bun ./src/cli.ts install --agent opencode --scope local
 For a tagged install without keeping a clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.22 -- --agent opencode --scope global
 ```
 
 ## Choose your install path
@@ -73,16 +73,16 @@ Some installed skills need extra runtime tools. See [Runtime prerequisites by wo
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.21` tag:
+Install the default bundle globally for OpenCode from the `v0.1.22` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.22 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.21 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.22 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
