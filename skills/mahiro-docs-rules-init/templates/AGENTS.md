@@ -13,10 +13,11 @@ If the repo is still early, say what it currently is, not what it may become lat
 ## Stack Snapshot
 
 - Package manager: `[pnpm/npm/bun/yarn]`
-- Framework or runtime: `[React Router / Next.js / Remix / Vite React / etc.]`
+- Framework or runtime: `[Next.js App Router / React Router Framework / Remix / Vite React / etc.]`
 - Language: `[TypeScript / JavaScript]`
 - Styling: `[Tailwind / CSS Modules / plain CSS / etc.]`
-- Data or state: `[TanStack Query / Zustand / Context / etc.]`
+- Data access: `[REST services / Supabase-direct hooks / route loaders/actions / none established]`
+- State: `[TanStack Query / Zustand / Context / local state / none established]`
 - i18n: `[Lingui / react-i18next / none / etc.]`
 
 Only include tools that the repo actually uses today.
@@ -42,7 +43,7 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - List only directories that actually exist and matter.
 - For each one, say what belongs there in one line.
-- Keep this section concrete. Prefer `src/routes - route entry files and page wiring` over vague labels like `source code`.
+- Keep this section concrete. Prefer `app/ - route segments, layouts, loading states, and route handlers`, `app/routes.ts + app/routes/ - React Router route discovery and route modules`, or `src/routes/ - route modules and page wiring` over vague labels like `source code`.
 - Prefer app and product-facing directories first. Mention local tooling directories only if contributors genuinely need to know them to work safely.
 
 ### Not Established Yet
@@ -54,6 +55,34 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Describe the preferred future shape without pretending it already exists.
 - Keep this short. AGENTS should guide future change, not read like an architecture proposal.
+
+## Boundary Map
+
+### Route ownership
+
+- Next App Router, if present, keeps route files thin and lets the route own orchestration, layouts, loading/error files, server actions, and route handlers that already belong there.
+- React Router Framework, if present, keeps route modules honest about route discovery, loaders/actions when used, route gates, and page wiring.
+
+### Data ownership
+
+- REST or API repos should favor service modules or service-like helpers when a shared transport boundary already exists or is clearly growing.
+- Supabase-direct repos can keep data access in hooks or route modules when that is the local pattern.
+- Do not invent a shared service layer just because one file talks to an API.
+
+### State ownership
+
+- Keep local UI state local.
+- Promote server state or shared client state only when the repo already proves that boundary.
+
+### i18n ownership
+
+- Keep copy local until extraction is useful.
+- Move message descriptors or shared translation helpers only when the repo already uses that posture.
+
+### Styling ownership
+
+- Keep styling close to the owner unless repeated cross-owner reuse already exists.
+- Shared styling is a payoff, not a default.
 
 ## Working Rules
 
@@ -68,19 +97,24 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Capture the direction new work should follow, even if the codebase is still uneven.
 - Write this as a near-term coding posture, not a broad team aspiration.
+- Use section comments and section dividers as a shortcut when a file starts mixing route, data, state, and UI concerns.
+- Keep those comments useful and sparse, not mandatory everywhere.
 
 ### Adoption Triggers
 
 - Note when to introduce new layers such as services, shared UI, or shared state.
 - Triggers should be observable, such as repeated logic across owners, not subjective taste.
+- Add a service layer when REST or API logic repeats across owners and the calls belong to one transport boundary.
+- Keep direct hook-owned access when Supabase-direct or similar SDK calls stay local to one route or module owner.
 
 ## How To Change This Repo Safely
 
 - Match the existing file and export posture before introducing a new pattern.
-- Keep route or screen files thin if the repo already separates feature logic.
+- Keep route or screen files thin if the repo already separates domain or module logic.
 - Extract shared code only after repeated usage across multiple owners and a clearly domain-neutral boundary.
 - Keep constants, placeholder data, and copy with the owner when they are used in one place.
 - When confidence is low, choose the simpler local pattern and document uncertainty.
+- If a file starts needing several local-only dividers beyond the repo's established section labels, that is a sign to split it, not a sign to invent new labels everywhere.
 
 This section should read like practical review guidance. Every bullet should help answer "what should I do when editing this repo?"
 
@@ -119,6 +153,9 @@ Avoid filler heuristics. If a heuristic is too generic to guide a review, rewrit
 - `docs/onboarding.md` - setup and first-run flow
 - `docs/project-overview.md` - stack and runtime shape
 - `docs/file-organization.md` - where code should live
+- `docs/api-data-fetching.md` - data ownership and fetch shape
+- `docs/patterns/services-pattern.md` - service layer posture when it exists
+- `docs/patterns/hooks-pattern.md` - hook ownership, section comments, and data access shape
 
 Add only the docs pages that this repo actually has after generation.
 
@@ -142,6 +179,15 @@ Explicit local evidence beats imported preference.
 - Verify commands against repo scripts before documenting them.
 - Do not describe planned architecture as if it already exists.
 - Do not let reference repo taste override explicit local evidence.
+- Do not require services in repos whose stable pattern is hook-owned direct SDK access.
+
+## Quick Rules
+
+- Keep route files thin when the route already owns orchestration.
+- Keep data access where the repo already puts it, then move it only when repetition proves the boundary.
+- Use section comments or dividers as a readability shortcut, especially in long route, hook, or service files.
+- Keep local copy, styling, and one-off constants with the owner until cross-owner reuse is real.
+- Default to the simplest local pattern when the repo is still small.
 
 ## Writing Standard For Generated AGENTS
 

@@ -1,6 +1,6 @@
 # mahiro-style skill
 
-`/mahiro-style` is Mahiro's cross-repo code-shape doctrine.
+`/mahiro-style` is Mahiro's code, review, and implementation doctrine.
 
 It is a human-facing overview for the skill, not the doctrine itself. Use it to understand what the skill does, how it should be read, and where the real topic guidance now lives.
 
@@ -15,6 +15,8 @@ Use it when you want AI to:
 - shape shared error handling across enums, constants, hooks, services, and render owners
 - preserve translation-safe and Lingui-safe patterns when refactoring
 - apply Mahiro defaults only where the current repo has not already decided the rule
+
+In short: this is Mahiro's default taste and review lens. It should make implementation feel intentional, restrained, and locally compatible.
 
 ## What this skill is not
 
@@ -36,12 +38,24 @@ When rules conflict, use this order:
 
 That means `/mahiro-style` is strongest when the repo is silent, partial, or drifting. It should fill gaps and sharpen reviews, not bulldoze local decisions.
 
+## Reality labels
+
+Use these labels when applying the skill to a real repo:
+
+- `Current Reality` - proven by code, config, docs, commands, or repeated active patterns in the target repo
+- `Preferred Direction` - Mahiro-style fallback for new work when local reality is absent, weak, or intentionally transitional
+- `Not Established Yet` - a layer, package, service, store, or workflow the repo has not earned yet
+- `Adoption Triggers` - the concrete conditions that would justify introducing a preferred Mahiro-style shape later
+
+`/mahiro-style` may define `Preferred Direction` and `Adoption Triggers`. It must not pretend they are `Current Reality`.
+
 ## How to read the docs
 
 The root docs stay thin on purpose:
 
 - `SKILL.md` is the agent hub and retrieval map
 - `README.md` is this human overview
+- `PROJECT-GUIDE.md` is the practical playbook for shaping a new project in Mahiro-style
 - `foundations/` holds stable doctrine about how to read repo rules, structure work, and review drift
 - `patterns/` holds practical implementation guidance for components, hooks, services, state, naming, i18n-adjacent choices, and shared error flow
 
@@ -52,8 +66,9 @@ If you need the actual doctrine, start from the canonical pages under `foundatio
 Start with these pages depending on the question:
 
 - `foundations/overview.md` for the mental model and why the skill exists
+- `PROJECT-GUIDE.md` for a practical start-to-finish project-building guide
 - `foundations/precedence.md` for rule priority and conflict resolution
-- `foundations/project-structure.md` for repo and feature layout
+- `foundations/project-structure.md` for repo, app, and domain/module layout
 - `foundations/code-style.md` for imports, TypeScript surface choices, section order, and export posture
 - `foundations/review-checklist.md` for review prompts and drift detection
 - `patterns/*.md` for topic-specific implementation guidance such as components, hooks, route boundaries, shared UI boundaries, services, stores/state, naming, constants+i18n, error handling, and best practices
@@ -62,7 +77,7 @@ Start with these pages depending on the question:
 
 ```text
 /mahiro-style "review this diff for Mahiro-style drift"
-/mahiro-style structure "help shape this feature tree in my style"
+/mahiro-style structure "help shape this app/module tree in my style"
 /mahiro-style error "review this failure flow and where the error message should be owned"
 /mahiro-style i18n "extract constants without breaking translation posture"
 /mahiro-style review "list the places this still does not feel like my style"
@@ -71,3 +86,5 @@ Start with these pages depending on the question:
 ## Working rule
 
 Keep this skill broad enough to travel across Mahiro repos, but narrow enough to stay useful in real reviews and refactors. The README should orient humans quickly; the canonical topic pages should carry the doctrine.
+
+For repo bootstrapping, pair it with `/mahiro-docs-rules-init`: docs-init records what the repo actually is, while mahiro-style supplies the fallback lens where the repo is silent.

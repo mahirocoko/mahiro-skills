@@ -1,5 +1,5 @@
 ---
-description: Mahiro cross-repo code style doctrine. Encodes Mahiro's preferences for naming, file structure, interface/type usage, constants plus i18n, component boundaries, UI structure restraint, and review heuristics. Use when implementing, reviewing, refactoring, or aligning code to Mahiro style.
+description: Mahiro's code, review, and implementation doctrine. Use as a fallback lens for naming, structure, i18n, boundaries, state, services, UI restraint, and review heuristics when repo-local reality is silent, partial, or drifting.
 allowed-tools:
   - Bash
   - Read

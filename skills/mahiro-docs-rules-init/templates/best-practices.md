@@ -16,10 +16,10 @@ Always export types alongside implementations:
 
 ```tsx
 // Correct
-export { MyComponent, type IMyComponentProps }
+export { ProfileCard, type IProfileCardProps }
 
 // Incorrect
-export { MyComponent }
+export { ProfileCard }
 ```
 
 If the repo follows Mahiro-style interface naming, keep the `I` prefix in examples instead of flattening the type posture away.
@@ -36,7 +36,7 @@ const data: any = fetchData()
 const data: unknown = fetchData()
 
 // Best
-const data: IMyData = fetchData()
+const data: IProfileData = fetchData()
 ```
 
 ## Component Best Practices
@@ -72,9 +72,13 @@ interface IComplexCardProps extends ComponentProps<'div'> {
 }
 
 // Better composition
-const Card = ({ children }: ICardProps) => <div>{children}</div>
-const CardHeader = ({ children }: ICardHeaderProps) => <header>{children}</header>
-const CardFooter = ({ children }: ICardFooterProps) => <footer>{children}</footer>
+interface ICardSlotProps {
+  children: ComponentProps<'div'>['children']
+}
+
+const Card = ({ children }: ICardSlotProps) => <div>{children}</div>
+const CardHeader = ({ children }: ICardSlotProps) => <header>{children}</header>
+const CardFooter = ({ children }: ICardSlotProps) => <footer>{children}</footer>
 ```
 
 Keep examples aligned with the repo's intended component typing posture, including `I`-prefixed interface props when that is part of the house style.
@@ -94,12 +98,20 @@ Repetition alone is not enough to justify a shared component, variant helper, or
 ```tsx
 // Avoid ad hoc direct calls once a shared query pattern exists
 const handleSubmit = async () => {
-  await EmployeeService.update(id, payload)
+  await ProfileService.update(id, payload)
 }
 
 // Prefer the repo's query or mutation pattern
 const mutation = useMutation({
-  mutationFn: (payload) => EmployeeService.update(id, payload),
+  mutationFn: (payload) => ProfileService.update(id, payload),
+})
+```
+
+For Supabase-direct or backend-SDK repos, keep the same rule but make the hook the owner instead of inventing a service layer:
+
+```tsx
+const mutation = useMutation({
+  mutationFn: (payload) => supabase.from('profiles').update(payload),
 })
 ```
 
@@ -157,10 +169,10 @@ If the repo does not have a server-state or client-state layer yet, say so direc
 
 ```tsx
 // Type not exported
-export { MyComponent }
+export { ProfileCard }
 
 // Type exported
-export { MyComponent, type IMyComponentProps }
+export { ProfileCard, type IProfileCardProps }
 ```
 
 ## Summary Checklist

@@ -16,10 +16,10 @@ Use local config as the source of truth for compiler behavior, but allow the nam
 
 ### Interfaces
 
-- **Prefix**: `I` by default for interface names unless the target repo clearly rejects it
+- **Prefix**: `I` for interfaces when the repo follows Mahiro-style TypeScript.
 - **PascalCase**: Rest of the name
 
-Treat `I`-prefixed interface naming as the preferred Mahiro-style doctrine for new or still-forming repos. Only soften this when the target repo already shows a strong repeated non-`I` pattern.
+Treat `I`-prefixed interface naming as the preferred Mahiro-style posture for new or still-forming repos. Only soften this when the target repo already shows a strong repeated non-`I` pattern.
 
 ```ts
 // Correct
@@ -27,11 +27,11 @@ interface IButtonProps extends ComponentProps<'button'> {
   variant?: 'primary' | 'secondary'
 }
 
-// Avoid
+// Avoid unless the repo explicitly rejects Mahiro-style interface naming
 interface ButtonProps {}
 ```
 
-If the target repo already has a stable non-`I` posture, document that explicitly instead of silently flattening the example. Otherwise, keep `I`-prefixed interfaces visible throughout the page.
+If the target repo already has a stable non-`I` posture, document that explicitly instead of silently forcing the prefix. Otherwise, keep `I`-prefixed interfaces visible throughout the page.
 
 ### Types
 
@@ -72,8 +72,8 @@ Use barrel files to re-export when the repo actually uses them.
 Use `type` keyword for type-only imports when possible.
 
 ```ts
-import type { IButtonProps } from './types'
-import { Button } from './Button'
+import type { IButtonProps } from './button.types'
+import { Button } from './button'
 ```
 
 ## Path Aliases
@@ -84,7 +84,7 @@ import { Button } from './Button'
 
 ### Component Props
 
-Prefer interface-based props with the `I` prefix when the repo follows Mahiro-style React conventions.
+Prefer interface-based props with the repo's current naming posture. For Mahiro-style repos, keep the `I` prefix.
 
 ```tsx
 interface IButtonProps extends ComponentProps<'button'> {
@@ -98,7 +98,7 @@ export const Button = ({ variant = 'primary', ...props }: IButtonProps) => {
 
 ### Store State / Service Response / Domain Payload
 
-Use names that keep domain signal clear. Interface payloads may keep the `I` prefix; plain aliases should usually stay unprefixed.
+Use names that keep domain signal clear. Interface payloads keep the `I` prefix in Mahiro-style repos; plain aliases should usually stay unprefixed.
 
 ```ts
 interface IUpdateProfilePayload {

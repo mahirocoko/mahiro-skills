@@ -28,12 +28,24 @@ This page defines the exact rule order for `/mahiro-style`.
 - Prefer explicit local doctrine over active-code snapshots when the repo is mid-migration or applying a rule unevenly.
 - Prefer one winning rule over compromise blends between conflicting layers.
 - Prefer topic-specific local rules over broad local philosophy statements.
+- Prefer labeling uncertain guidance as `Preferred Direction`, `Not Established Yet`, or `Adoption Triggers` instead of treating fallback doctrine as present-tense repo fact.
+
+## Reality Labels
+
+When applying the precedence order, keep the claim type explicit:
+
+- `Current Reality`: the repo proves this through active code, config, scripts, docs, or repeated patterns.
+- `Preferred Direction`: Mahiro-style fallback is the recommended shape for future work because the repo is silent, weak, or drifting.
+- `Not Established Yet`: the repo has not earned this layer or convention; do not implement or document it as current.
+- `Adoption Triggers`: the threshold that would make the preferred shape worth introducing later.
+
+If a review cannot identify the claim type, the review is not ready to demand a style change.
 
 ## Contextual
 
 Use the same winner order in every repo, but let the local evidence change the outcome.
 
-- In a monorepo app, explicit `AGENTS.md` rules about service classes, section comments, Lingui macros, and state ownership win before any fallback preference.
+- In a multi-app repo, explicit `AGENTS.md` rules about service classes, section comments, Lingui macros, and state ownership win before any fallback preference.
 - In a responsibility-first single app, file structure, named export conventions, and route-file patterns in `AGENTS.md` beat fallback doctrine even when the fallback would often shape the code differently elsewhere.
 - In a lean route-first app, the local rule that quality checks and formatter posture are part of done-ness wins before cross-repo taste.
 - In any repo where `AGENTS.md` explicitly defines component section order, that explicit doc wins over a partial active-code snapshot, even if the migration is still uneven.
@@ -42,7 +54,7 @@ Use the same winner order in every repo, but let the local evidence change the o
 
 - `AGENTS.md` says route files stay thin. A lower local file suggests thicker route logic. The winner is `AGENTS.md`.
 - `AGENTS.md` is silent on exports, but `CLAUDE.md` or another repo-local instruction says named exports. The repo-local instruction wins.
-- Local docs are silent, but the repo repeatedly keeps query hooks near domain services inside feature folders. The repeated repo pattern wins.
+- Local docs are silent, but the repo repeatedly keeps query hooks near domain services inside module folders. The repeated repo pattern wins.
 - Local docs require translation-safe copy but do not define the extracted config shape. The local boundary stays fixed, and Mahiro fallback doctrine fills the remaining detail.
 
 ## Anti-Examples

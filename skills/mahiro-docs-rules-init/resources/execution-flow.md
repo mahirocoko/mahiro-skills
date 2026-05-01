@@ -25,6 +25,13 @@ Use this flow for `init` mode.
 
 For each topic, mark it as `implemented`, `partial`, `planned`, or `not established`.
 
+Also classify the data ownership shape when it matters:
+
+- Next App Router plus REST/API services
+- React Router Framework plus hook-owned Supabase-direct access
+- mixed
+- not established
+
 ## 5. Build File Plan
 
 For each possible output file, decide `create`, `create with soft wording`, or `skip`.
@@ -49,6 +56,8 @@ Stop exploring here. Once the file plan is clear, move to writing.
 
 Write from templates directly. Replace facts and trim sections. Do not invent a new page structure.
 
+When the repo is Next App Router plus REST/API, let the generated docs lean service-forward. When the repo is React Router Framework plus Supabase-direct, let the generated docs lean hook-owned and keep service language soft unless a real shared layer exists.
+
 ## 8. Cross-Link The Set
 
 - make `docs/onboarding.md` the main hub
@@ -61,6 +70,7 @@ Write from templates directly. Replace facts and trim sections. Do not invent a 
 - check that no page is obvious filler
 - verify the tone feels like one docs family
 - verify no external-research assumptions leaked into the docs
+- verify no unsupported folder-path example snuck in
 
 ## 10. Report Outcome
 

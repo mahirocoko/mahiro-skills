@@ -1,4 +1,4 @@
-description = "Bootstrap AGENTS.md and a Mahiro-style docs family from reference grammar plus local repo reality. Use when a project is new, under-documented, or needs an init pass for docs and rules with Mahiro doctrine."
+description = "Repo-reality-first AGENTS.md and docs-family bootstrapper. Uses reference grammar for shape and layers Mahiro-style only as preferred direction or fallback when the target repo is silent, partial, or ambiguous."
 prompt = """
 Execute the `mahiro-docs-rules-init` skill with args: {{args}}
 

@@ -123,15 +123,14 @@ If there are no matches, print: `No matching projects found.`
 
 ### list
 
-Show all tracked projects.
+Show tracked learn and incubate projects only.
 
-Do not paste raw shell output directly. Always render the final answer in three sections with stable formatting.
+Do not paste raw shell output directly. Always render the final answer in two sections with stable formatting.
 
 ### Required Output Shape
 
 1. `## 📚 Learn`
 2. `## 🌱 Incubate`
-3. `## 🏠 External (ghq)`
 
 For `Learn` and `Incubate`, render markdown tables with this schema:
 
@@ -146,15 +145,29 @@ For `Learn` and `Incubate`, render markdown tables with this schema:
 - `Target` = resolved symlink target
 - `Status` = `✅ ok` if the target exists, `⚠️ broken` if the symlink is broken
 
-For `External (ghq)`, render a compact table:
+If a section has no entries, print `(none)` under that section instead of a table.
 
-```markdown
-| Repo |
-|------|
-| github.com/owner/repo |
+### Discovery Rules
+
+When listing learned projects, discover repo entries by walking exactly this shape:
+
+```text
+$LEARN_DIR/<owner>/<repo>/origin
 ```
 
-If a section has no entries, print `(none)` under that section instead of a table.
+- Treat every `origin` symlink or directory at depth three under `$LEARN_DIR` as one learned project.
+- Derive `Project` from the two path segments immediately before `origin`: `<owner>/<repo>`.
+- Do not compare `origin.parent.parent` directly to `$LEARN_DIR`; that misses valid entries because `origin.parent.parent` is `$LEARN_DIR/<owner>`.
+- If `$LEARN_DIR/.origins` exists, use it only as a secondary cross-check, not as the sole source of truth.
+
+When listing incubated projects, discover entries by walking exactly this shape:
+
+```text
+$INCUBATE_DIR/<owner>/<repo>
+```
+
+- Treat every repo path at depth two under `$INCUBATE_DIR` as one incubated project.
+- Derive `Project` from the two path segments under `$INCUBATE_DIR`: `<owner>/<repo>`.
 
 After the sections, if any broken symlinks exist, print:
 

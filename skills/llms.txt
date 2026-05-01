@@ -10,8 +10,8 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
 - `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
 - `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.
-- `mahiro-docs-rules-init` — Bootstrap AGENTS.md and a Mahiro-style docs family. Trigger on: initialize repo rules, create AGENTS.md, bootstrap project docs, under-documented repo.
-- `mahiro-style` — Mahiro cross-repo code style doctrine. Trigger on: align to Mahiro style, review code shape, refactor style, naming/file structure/i18n boundaries.
+- `mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction or fallback. Trigger on: initialize repo rules, create AGENTS.md, bootstrap project docs, under-documented repo.
+- `mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens. Trigger on: align to Mahiro style, review code shape, refactor style, naming/file structure/i18n boundaries.
 - `philosophy` — Display local philosophy and alignment rules. Trigger on: principles, philosophy check, alignment rules, how should we think about this.
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.

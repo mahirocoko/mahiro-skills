@@ -27,13 +27,15 @@ If the repo follows Mahiro-style component structure, keep that posture visible 
 | `// _State` | `useState` or local UI state declarations |
 | `// _Query` | query hooks or data fetching |
 | `// _Mutation` | mutation hooks or write actions |
-| `// _Memo` | `useMemo` for computed values |
+| `// _Memo` | derived/computed values; use `useMemo` only when memoization has a clear purpose |
 | `// _Callback` | `useCallback` for memoized functions |
 | `// _Form` | form schemas and form instances |
 | `// _Event` | event handler functions |
 | `// _Effect` | `useEffect` hooks |
 
 ### Example
+
+`// _Memo` can group simple local derivations. Do not add `useMemo` by habit; reserve it for measurable performance, stable values for memoized children, or effect-dependency control.
 
 ```tsx
 [repo-faithful example using the repo's real data, i18n, and state libraries]
@@ -64,11 +66,11 @@ export const ProfileCard = ({ name, description }: IProfileCardProps) => {
 
 ## Route Components
 
-- Route files should stay thin and primarily connect URL structure to layout or feature partials.
+- Route files should stay thin and primarily connect URL structure to layout or domain/module partials.
 
-## Feature Partials
+## Domain or Module Partials
 
-When a page grows beyond a single clean file, extract partials into a feature-owned folder.
+When a page grows beyond a single clean file, extract partials into an owner-local domain or module folder.
 
 ## Owner-Local Data
 

@@ -10,7 +10,7 @@ Use it when the problem crosses boundaries, such as deciding between route extra
 
 - Code crosses two or more ownership boundaries (e.g., transport + state + rendering in one file)
 - New abstraction created (hook, component, shared UI) without checking if the current owner is still the right home
-- Feature-specific code promoted to shared package or `ui/` folder after only one usage
+- Domain-specific code promoted to shared package or `ui/` folder after only one usage
 - Refactor makes files smaller but ownership less obvious
 - UI structure gets deeper, but no new semantic, layout, state, or ownership boundary was earned
 
@@ -18,13 +18,20 @@ Use it when the problem crosses boundaries, such as deciding between route extra
 
 The main question is not "how do I shrink this file". The main question is "which owner makes this code easiest to understand and change later".
 
+Before choosing the owner, classify the rule source:
+
+- `Current Reality`: follow the repo's active folders, scripts, docs, and repeated patterns.
+- `Preferred Direction`: use Mahiro-style when the repo is silent, partial, or clearly drifting.
+- `Not Established Yet`: do not create a layer just because a template or another Mahiro repo has it.
+- `Adoption Triggers`: introduce a broader owner only after repeated cross-owner pressure, stable contracts, or explicit migration intent.
+
 ## Ownership Decision Tree
 
 ```
 Where should this code live?
 │
 ├── API transport, request/response shaping?
-│   └── services.md → service module
+│   └── services.md → existing service module, or module-local backend SDK/Supabase-direct transport when that is current repo reality
 │
 ├── Shared failure flow, stable error code, or final fallback ownership?
 │   └── error-handling.md → service normalization + hook surfacing + render-boundary translation
@@ -35,11 +42,11 @@ Where should this code live?
 ├── Server state (remote data, cache)?
 │   └── stores-state.md → query cache (React Query), not client store
 │
-├── Reusable UI primitive used across features?
-│   └── shared-ui-boundaries.md → shared UI + feature wrapper
+├── Reusable UI primitive used across domains?
+│   └── shared-ui-boundaries.md → shared UI + domain wrapper
 │
-├── Feature-specific UI section or domain component?
-│   └── components.md → feature component
+├── Domain-specific UI section or domain component?
+│   └── components.md → domain component
 │
 ├── Reusable stateful behavior or query wiring?
 │   └── hooks.md → custom hook
@@ -62,15 +69,16 @@ Where should this code live?
 - Use the more specific canonical pattern page when the decision clearly belongs there.
 - Keep examples here short and cross-cutting instead of turning this page into a framework tutorial.
 - Treat UI structure depth as an ownership signal too; if a layer has no job, remove it or name the real owner.
+- Do not promote Mahiro-style fallback into `Current Reality`; label it as preferred direction until the repo proves it.
 
 ## Preference
 
 - Prefer the smallest scope that keeps ownership clear.
 - Prefer extraction that improves searchability, naming, and reviewability together.
 - Prefer keeping data transport, client state, and presentational UI in separate homes even when one file could technically hold all three.
-- Prefer feature wrappers around shared primitives when domain meaning starts to leak.
+- Prefer domain wrappers around shared primitives when domain meaning starts to leak.
 - Prefer shallow, explicit UI structure over deep anonymous element trees, pass-through wrapper chains, and fragile descendant styling.
-- Prefer query-backed feature hooks over domain-heavy providers when the real question is how to resolve remote entities, workflow state, or active business context.
+- Prefer query-backed domain hooks over domain-heavy providers when the real question is how to resolve remote entities, workflow state, or active business context.
 - Prefer preserving the intended product feel of an existing screen during refactors. A change that is structurally cleaner but visually heavier, more explanatory, or less intentional is still a regression.
 - Prefer shared component defaults first. Reach for spacing and padding overrides only after proving that the screen truly needs them.
 - Prefer UI copy that helps the next user action, not copy that explains internal architecture or permission rules.
@@ -78,14 +86,15 @@ Where should this code live?
 ## Contextual
 
 - In a larger app, ownership mistakes compound quickly. Respect the service, hook, store, and route layers before adding new abstractions.
-- In a leaner app, proportionality matters. Do not create enterprise layers before the feature volume asks for them.
-- In a monorepo, package boundaries add another ownership layer. Check whether something is truly shared across apps before promoting it into a shared package.
+- In a leaner app, proportionality matters. Do not create enterprise layers before the module volume asks for them.
+- In a multi-app repo, package boundaries add another ownership layer. Check whether something is truly shared across apps before promoting it into a shared package.
 - If a local repo has stronger snippet, package, or export rules, follow them. This page is about choosing the owner, not overriding local mechanics.
+- If one Mahiro repo uses hook-owned transport and another uses service classes, preserve the target repo's current boundary first. The preferred fallback is contextual, not one rigid architecture.
 
 ## Examples
 
 - A thick route mixes config, types, and rendering. Split by ownership: section into a component, config into domain constants, route stays as compositor.
-- A remote domain flow keeps the backend as the source of truth, lets a feature hook own query and mutation wiring, and uses a small store only for lightweight runtime selection.
+- A remote domain flow keeps the backend as the source of truth, lets a domain hook own query and mutation wiring, and uses a small store only for lightweight runtime selection.
 - A screen regains its original form after a workflow change by restoring layout, density, and tone, not merely by reconnecting the same fields to new logic.
 
 ```tsx
@@ -146,13 +155,13 @@ const GoalSummaryCard = () => {
 }
 ```
 
-- A shared primitive starts speaking domain vocabulary. Wrap it with a feature component instead of polluting the primitive.
+- A shared primitive starts speaking domain vocabulary. Wrap it with a domain component instead of polluting the primitive.
 
 ```tsx
 // shared: stays generic
 const ProgressBar = ({ value, max, tone }: IProgressBarProps) => { ... }
 
-// feature wrapper: carries domain meaning
+// domain wrapper: carries domain meaning
 const AttendanceProgressBar = ({ rate }: { rate: number }) => {
   const tone = rate >= 0.9 ? 'success' : rate >= 0.7 ? 'warning' : 'danger'
   return <ProgressBar value={rate} max={1} tone={tone} />
@@ -176,7 +185,7 @@ const useSettingsRedirect = () => {
 // better: keep the redirect inline in the route where it is the only consumer
 ```
 
-- Promoting one feature-specific widget into shared UI after a single usage because reuse feels possible.
+- Promoting one domain-specific widget into shared UI after a single usage because reuse feels possible.
 
 ```tsx
 // premature: only used by the payroll page

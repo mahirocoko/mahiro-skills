@@ -2,13 +2,13 @@
 
 `foundations/` is the stable doctrine layer for `/mahiro-style`.
 
-Use this directory when the question is about how to read repo rules, how to choose the winning rule, how to shape repo and feature layout, or how to keep code-style decisions aligned before topic-specific pattern rules start.
+Use this directory when the question is about how to read repo rules, how to choose the winning rule, how to shape repo, app, and module layout, or how to keep code-style decisions aligned before topic-specific pattern rules start.
 
 ## What belongs here
 
 - `overview.md` for the hybrid mental model, reference-project grounding, and why this skill exists
 - `precedence.md` for the exact winner order when sources conflict
-- `project-structure.md` for repo layout, feature layout, and file ownership at project level
+- `project-structure.md` for repo layout, app/module layout, and file ownership at project level
 - `code-style.md` for formatting posture, imports, TypeScript surface choices, section order, and export conventions
 - `review-checklist.md` for review prompts and drift detection
 
@@ -26,7 +26,7 @@ Start with `overview.md` if you need the mental model.
 
 Go to `precedence.md` when local docs, repo patterns, and Mahiro defaults might disagree.
 
-Go to `project-structure.md` when the question is about where code should live at repo or feature level.
+Go to `project-structure.md` when the question is about where code should live at repo, app, or module level.
 
 Go to `code-style.md` when the question is about imports, TypeScript shape, section order, exports, or formatter posture.
 

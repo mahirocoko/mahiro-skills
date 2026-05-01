@@ -27,6 +27,13 @@ The component that renders UI text owns the final translation call.
 - Use `msg` for extracted descriptors and shared config. Use `t` or `i18n._` inside render owners that already own a live translation context. Use `<Trans>` when the rendered output needs JSX composition, inline markup, or rich text.
 - When a component already owns the UI text directly, prefer `const { t } = useLingui()` as the default posture before reaching for a broader extracted-config shape.
 
+## Current Reality vs Preferred Direction
+
+- `Current Reality`: follow the repo's active i18n API, catalog flow, source language, and extraction command.
+- `Preferred Direction`: extracted reusable user-facing config should use descriptor-safe values such as Lingui `msg`, and render owners should perform the final `t(...)`, `i18n._(...)`, or `<Trans>` call.
+- `Not Established Yet`: if the repo has no i18n system, do not invent Lingui-specific files as current architecture. Document it as a possible future direction only when useful.
+- `Adoption Triggers`: extract copy when several owners share the same labels, route metadata, table columns, status maps, or stable error-code copy. Keep one-owner JSX copy local.
+
 ## Non-negotiable
 
 - Follow repo-local doctrine first, then other repo-local instruction files, then established repo patterns, and only then use Mahiro fallback doctrine.
@@ -36,6 +43,7 @@ The component that renders UI text owns the final translation call.
 - When extracted config contains user-facing copy, store translation-safe descriptors such as `msg`, not plain source-locale strings with no Lingui path.
 - Make the render boundary explicit. Constants define descriptors, renderers translate them.
 - Do not extract copy only to reduce line count or make a file look tidier.
+- Do not claim a descriptor flow is current reality unless the repo actually uses one.
 - Do not leave `msg` versus `t` versus `<Trans>` ambiguous in review comments or refactors. The rule is descriptor at definition, translation at render.
 
 ## Preference
@@ -62,7 +70,7 @@ The component that renders UI text owns the final translation call.
 
 Repo-local posture decides the final shape.
 
-- In a route-first app with Lingui, extracted feature config can store shared labels as `MessageDescriptor` values created with `msg`, while owner render components perform the final translation at the render boundary.
+- In a route-first app with Lingui, extracted domain config can store shared labels as `MessageDescriptor` values created with `msg`, while owner render components perform the final translation at the render boundary.
 - That same pattern also shows the limit of extraction. If layout or section copy is only consumed by one owner, moving it back into the owning component can improve readability when the extracted constants are not buying real reuse.
 - In owner-local render files, `const { t } = useLingui()` is usually the clearest posture when the copy stays inside the component instead of traveling through shared descriptor config.
 - A later section-level refactor sharpened the mock-data boundary too: section owners kept `mock*` collections as plain API-shaped values, while headings, placeholders, table headers, and computed badge labels used `t` at render time.

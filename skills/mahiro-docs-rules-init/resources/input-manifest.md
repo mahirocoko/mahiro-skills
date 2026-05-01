@@ -9,13 +9,15 @@ Every item below refers to the target repo being initialized, not the repo that 
 - repo name
 - app or product name
 - short purpose
-- monorepo or single app
+- workspace shape: single app, multi-app repo, package workspace, or other
+- app source root: `src/`, `app/`, `apps/*/src`, or other
+- route root: `src/app`, `app/routes.ts`, `app/routes`, `src/routes`, `src/pages`, or no routing yet
 
 ## Toolchain
 
 - package manager
 - framework and runtime
-- router model
+- router model and app directory shape
 - language
 - lint, format, and test tools
 
@@ -32,20 +34,24 @@ Every item below refers to the target repo being initialized, not the repo that 
 - component library
 - design-token usage
 - i18n usage
+- section comment or divider posture, if any
 
 ## State and Data Signals
 
+- route ownership for data loading
+- data access model, such as REST/API services or direct SDK calls
 - server-state library
 - client-state library
-- route-level data loading
 - API helpers or clients
 - service-layer presence or absence
+- hook-owned data access, especially for Supabase-direct repos
 
 ## Existing Doctrine Signals
 
 - current `AGENTS.md`
 - existing docs pages
 - repeated structural or naming patterns in code
+- route, data, state, i18n, and styling boundaries already repeated in the repo
 
 ## Developer Workflow
 
@@ -63,6 +69,13 @@ For each topic the skill may document, classify it as:
 - `implemented`
 - `partial`
 - `planned`
+- `not established`
+
+For data ownership topics, classify the dominant shape too, such as:
+
+- `Next App Router + REST/API services`
+- `React Router Framework + hook-owned Supabase-direct access`
+- `mixed`
 - `not established`
 
 Use that classification to decide whether to create the file, soften the wording, or skip it.

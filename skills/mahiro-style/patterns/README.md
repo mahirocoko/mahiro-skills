@@ -2,16 +2,16 @@
 
 `patterns/` is the canonical implementation layer for `/mahiro-style`.
 
-Use this directory when the question is about how code should be shaped inside a feature: component boundaries, hook responsibilities, route thickness, shared UI leakage, naming, service ownership, state placement, provider scope, and cross-cutting implementation heuristics.
+Use this directory when the question is about how code should be shaped inside an app, route, or domain module: component boundaries, hook responsibilities, route thickness, shared UI leakage, naming, service ownership, state placement, provider scope, and cross-cutting implementation heuristics.
 
 ## What belongs here
 
 - `components.md` for component shape, extraction posture, and presentational versus domain-aware component boundaries
 - `hooks.md` for hook responsibility, orchestration boundaries, and reusable hook shape
 - `error-handling.md` for stable failure signals, resolver ownership, and render-boundary fallback flow
-- `route-boundaries.md` for thin route rules and route-to-feature extraction boundaries
+- `route-boundaries.md` for thin route rules and route-to-module extraction boundaries
 - `shared-ui-boundaries.md` for reusable UI seams and business-logic leakage checks
-- `naming.md` for domain naming across files, symbols, hooks, components, query keys, and feature folders
+- `naming.md` for domain naming across files, symbols, hooks, components, query keys, and module folders
 - `services.md` for transport boundaries, mapping ownership, and service contracts
 - `stores-state.md` for state placement, store scope, provider scope, and server versus client state separation
 - `constants-i18n.md` for Lingui-safe constants extraction and render-boundary translation rules
@@ -21,7 +21,7 @@ Use this directory when the question is about how code should be shaped inside a
 
 - repo-wide precedence rules or conflict resolution, those live in `foundations/precedence.md`
 - formatter defaults, import grouping mechanics, or `interface` versus `type`, those live in `foundations/code-style.md`
-- repo and feature tree layout at project level, that lives in `foundations/project-structure.md`
+- repo, app, and module tree layout at project level, that lives in `foundations/project-structure.md`
 
 ## Reference posture
 
@@ -29,7 +29,7 @@ These pages are grounded in repeated patterns across a few stable repo archetype
 
 - A responsibility-first single app shows the heavier shape with explicit services, stores, providers, and domain hooks.
 - A lean route-first app shows that boundaries still need to stay explicit even when the tree is smaller.
-- A monorepo with shared packages shows the same ownership rules at package level, especially for shared UI, service classes, and query-state patterns.
+- A multi-app repo shows the same ownership rules inside each product app before anything graduates to shared packages.
 
 ## How to use Patterns
 

@@ -20,7 +20,7 @@ Use it when the question is whether code should stay in a route or screen, move 
 Mahiro-style components should make ownership visible.
 
 - A presentational component mostly explains structure, styling, and slots.
-- A domain-aware component can know feature concepts, domain copy, and screen-specific composition.
+- A domain-aware component can know domain concepts, domain copy, and screen-specific composition.
 - Long props are not a smell by themselves. They can still be correct when they express one clear presentational contract.
 - The component boundary should reduce noise without hiding where the business decision really lives.
 
@@ -29,14 +29,14 @@ Mahiro-style components should make ownership visible.
 - Keep component files responsible for one clear UI job.
 - Extract a component when it clarifies ownership, not just when a file gets long.
 - Keep presentational components free from transport logic, store mutation wiring, and route orchestration.
-- Let domain-aware components carry feature vocabulary when the UI is meaningfully tied to that domain.
+- Let domain-aware components carry domain vocabulary when the UI is meaningfully tied to that domain.
 - Do not add UI depth unless the extra layer has a visible job such as layout, semantics, accessibility, state boundary, or ownership boundary.
-- Do not use this page to decide shared UI reuse thresholds across features, that belongs to `shared-ui-boundaries.md`.
+- Do not use this page to decide shared UI reuse thresholds across domains; that belongs to `shared-ui-boundaries.md`.
 
 ## Preference
 
 - Prefer components whose names reveal the screen section or domain job, such as `ApprovalOverviewSection` or `DashboardLayoutHeader`.
-- Prefer passing already-shaped props instead of making a component derive feature meaning from raw backend payloads.
+- Prefer passing already-shaped props instead of making a component derive domain meaning from raw backend payloads.
 - Prefer judging a component boundary by contract clarity, not raw prop count alone.
 - Prefer extracting large visual sections, card groups, filter bars, and tables into components before a route becomes difficult to scan.
 - Prefer small wrapper components when a shared primitive needs domain-specific labels, icons, or mapping.
@@ -45,9 +45,9 @@ Mahiro-style components should make ownership visible.
 
 ## Contextual
 
-- A token-first app can keep shared primitives generic while screen-specific layout wrappers and domain sections stay feature-aware.
+- A token-first app can keep shared primitives generic while screen-specific layout wrappers and domain sections stay domain-aware.
 - A larger app can let domain components, layout components, and reusable UI all coexist as long as each tier keeps a readable job.
-- A monorepo can keep package-level shared UI while app-level components still own product wording and feature composition.
+- A multi-app repo can keep package-level shared UI while app-level components still own product wording and domain composition.
 - Local snippet, formatter, and export conventions are repo-owned concerns. Follow those locally, then shape the component boundary with this doctrine.
 
 ## Examples
@@ -67,7 +67,7 @@ const Page = () => {
 }
 ```
 
-- A presentational component accepts domain-neutral props. A feature wrapper maps domain meaning into those props.
+- A presentational component accepts domain-neutral props. A domain wrapper maps domain meaning into those props.
 
 ```tsx
 interface IStatusBadgeProps {

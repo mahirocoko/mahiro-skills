@@ -43,7 +43,7 @@ describe("README", () => {
     expect(content).toContain("Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, Gemini, and Codex.");
     expect(content).toContain("## Choose your install path");
     expect(content).toContain("### Quick install via curl");
-expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.22 -- --agent opencode --scope global");
+expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.23 -- --agent opencode --scope global");
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -83,6 +83,8 @@ expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahiroco
     expect(index).toContain("# mahiro-skills skill index");
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
+    expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens.");
+    expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction or fallback.");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");

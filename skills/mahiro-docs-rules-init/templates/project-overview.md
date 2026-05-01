@@ -2,10 +2,11 @@
 
 ## Tech Stack
 
-- **App / Runtime**: [React app shape, such as React Router SPA, Next.js app, or Vite React app]
+- **App / Runtime**: [React app shape, such as Next.js App Router, React Router Framework, Remix, or Vite React app]
 - **UI**: [React version + TypeScript posture]
 - **Styling**: [TailwindCSS / CSS Modules / plain CSS / design-system primitives]
-- **State**: [TanStack Query + Zustand / local state / repo-specific mix]
+- **Data access**: [REST services / Supabase-direct hooks / route loaders/actions / none established]
+- **State**: [TanStack Query / Zustand / Context / local state / none established]
 - **i18n**: [Lingui / react-i18next / none established]
 - **Tooling**: [Vite + Biome / Next.js + Biome / other verified toolchain]
 
@@ -27,7 +28,7 @@ Only include versions that can be verified locally.
 - **Class utilities**: `[cn helpers, clsx, tailwind-merge, or equivalent]`
 - **Build plugins**: `[verified Vite/Next plugins if useful]`
 - **Forms**: `[react-hook-form, valibot, zod, or remove if not relevant]`
-- **HTTP / Data layer**: `[native fetch, service wrapper, query layer, or remove if not relevant]`
+- **HTTP / Data layer**: `[native fetch, service wrapper, query layer, Supabase client, or remove if not relevant]`
 
 Remove bullets that are not relevant instead of leaving a full generic inventory.
 
@@ -46,8 +47,10 @@ Show only the folders and config files that help explain how this repo is put to
 
 ## Package Dependencies
 
-- [Document alias mapping, workspace dependency rules, or key package-boundary rules]
-- [Call out where query setup, i18n setup, route config, or app providers live]
+- [Document alias mapping, package-boundary rules, or key runtime ownership rules]
+- [Call out where query setup, i18n setup, route config, service helpers, or app providers live]
+
+If the repo is Next App Router plus REST/API, note where the service boundary and route orchestration live. If the repo is React Router Framework plus Supabase-direct, note where hooks or route modules own the calls.
 
 If the repo is a single-package starter, keep this section short. Do not inflate it into monorepo or architecture language.
 
@@ -63,6 +66,8 @@ Prefer concrete statements such as:
 - [Short bullets for what is still missing or intentionally small]
 
 Favor "what exists" and "what is not established yet" over aspirational roadmap language.
+
+If the repo is small, keep the status short instead of filling it with speculative layers.
 
 ## Writing Rules
 

@@ -1,12 +1,12 @@
 ---
 name: mahiro-docs-rules-init
-description: Bootstrap AGENTS.md and a Mahiro-style docs family from reference grammar plus local repo reality. Use when a project is new, under-documented, or needs an init pass for docs and rules with Mahiro doctrine.
+description: Repo-reality-first AGENTS.md and docs-family bootstrapper. Uses reference grammar for shape and layers Mahiro-style only as preferred direction or fallback when the target repo is silent, partial, or ambiguous.
 user-invocable: true
 ---
 
 # /mahiro-docs-rules-init - Bootstrap Docs and Rules
 
-Create an initial `AGENTS.md` plus a coherent docs family for a repo that has no docs, weak docs, or scattered rules. This hub stays thin on purpose. Use the resource pages and templates instead of duplicating their guidance here.
+Create an initial `AGENTS.md` plus a coherent docs family for a repo that has no docs, weak docs, or scattered rules. This is repo-reality-first documentation generation, not a style override. The hub stays thin on purpose. Use the resource pages and templates instead of duplicating their guidance here.
 
 Terminology note: this skill may be packaged in one repo, but it always inspects and writes docs for the target repo you are currently working on.
 
@@ -16,6 +16,19 @@ Terminology note: this skill may be packaged in one repo, but it always inspects
 - Adding `AGENTS.md` to a repo that only has `README.md`
 - Creating a first-pass docs family for a repo with weak or inconsistent docs
 - Rebuilding docs from a known reference grammar while keeping the target repo honest
+
+## Relationship to `/mahiro-style`
+
+`mahiro-docs-rules-init` records what the target repo actually is. `/mahiro-style` supplies Mahiro's implementation and review doctrine when the repo is silent, partial, or drifting.
+
+Use this split in generated docs:
+
+- `Current Reality` - repo-proven code, config, scripts, docs, and repeated patterns
+- `Preferred Direction` - Mahiro-style fallback or house direction for new work
+- `Not Established Yet` - a layer, convention, or workflow the repo has not earned
+- `Adoption Triggers` - the conditions that justify introducing a preferred shape later
+
+Never promote Mahiro-style preference into `Current Reality` unless the target repo proves it.
 
 ## V1 Scope
 
@@ -81,9 +94,11 @@ When sources conflict, use this winner order:
 1. Local repo reality
 2. Existing local `AGENTS.md`
 3. Chosen reference grammar
-4. Portable fallback doctrine
+4. Portable fallback doctrine, including Mahiro-style
 
 Explicit beats implicit. Repeated repo patterns beat isolated examples. If confidence is low, soften the wording instead of inventing certainty.
+
+Mahiro-style can shape `Preferred Direction`, blueprint-allowed examples, and adoption triggers. It cannot override local repo reality.
 
 ## Output Contract
 
@@ -127,6 +142,7 @@ The skill should aim to create these files. See `resources/file-matrix.md` for t
 - No docs that feel like generic AI filler
 - One consistent docs-family voice across files
 - Template grammar should be mirrored closely for the final docs shape
+- Mahiro-style fallback must be labeled as preferred or future-facing unless the repo proves it is current
 
 Use `resources/checklist.md` for the full self-check.
 
@@ -137,6 +153,7 @@ Use `resources/checklist.md` for the full self-check.
 - Treating a half-migrated snapshot as stronger than explicit local doctrine
 - Generating every possible docs page just because the template has them
 - Hiding uncertainty instead of marking a pattern as partial or not established
+- Using Mahiro-style to overwrite target-repo reality instead of documenting the local winner first
 
 ## Recommended Working Posture
 

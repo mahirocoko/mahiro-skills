@@ -22,6 +22,17 @@ Always review in this winner order before making style judgments:
 
 If a diff feels wrong, first identify which layer it violates. Do not jump straight to Mahiro taste when the repo already decided the rule.
 
+## Truth Labels for Reviews
+
+Before writing a review comment, label the claim:
+
+- `Current Reality` - the diff violates a proven local rule or repeated pattern.
+- `Preferred Direction` - the diff is acceptable locally, but Mahiro-style gives a better default for future work.
+- `Not Established Yet` - the diff introduces a layer or abstraction the repo has not earned.
+- `Adoption Triggers` - the diff should wait until the repo has repeated cross-owner need, stable contracts, or documented migration intent.
+
+Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how style reviews become fiction.
+
 ## Non-negotiable
 
 - Check the diff against the exact four-level precedence order: `AGENTS.md` -> other repo-local instruction files -> established repo patterns -> Mahiro fallback doctrine.
@@ -29,8 +40,8 @@ If a diff feels wrong, first identify which layer it violates. Do not jump strai
 - Flag route or screen files that grow into mixed ownership modules containing orchestration, domain contracts, config, helper maps, mock data, and rendering in one place.
 - Flag extracted constants or config if the move weakens translation posture, especially in repos that already use Lingui or another explicit i18n flow.
 - Flag naming that hides domain meaning behind vague buckets such as `data`, `items`, `list`, `meta`, or `config` when the business concept can be named directly.
-- Flag nested feature exports that become too generic for code search, such as `Sidebar` or `Avatar` from `profile/sidebar.tsx` or `profile/avatar.tsx`.
-- Flag shared UI changes that absorb page-specific business rules just to reduce line count in a route or feature file.
+- Flag nested module exports that become too generic for code search, such as `Sidebar` or `Avatar` from `profile/sidebar.tsx` or `profile/avatar.tsx`.
+- Flag shared UI changes that absorb page-specific business rules just to reduce line count in a route or module file.
 - Flag UI trees that get deeper without earning a real semantic, layout, accessibility, state, or ownership boundary.
 - Flag refactors that preserve logic but noticeably drift from the established product feel of a screen, such as turning a sparse premium surface into a verbose instructional one.
 - Flag spacing overrides on shared primitives when they appear reflexive rather than driven by a clear visual requirement.
@@ -61,6 +72,8 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - If local docs are partial, does the active codebase repeat one stable pattern three or more times?
 - Is this diff following a migration leftover or an actually repeated current pattern?
 - Am I about to request a Mahiro-style cleanup before proving that the repo has not already chosen a different rule?
+- Am I calling something current repo style when it is actually Mahiro fallback preference?
+- If this is a new abstraction, what exact adoption trigger did it satisfy?
 
 ### Mahiro-shape drift prompts
 
@@ -89,17 +102,18 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - Error ownership: transport normalization, shared resolvers, and render-time fallback copy should not collapse into one local helper.
 - Naming and contracts: names should reveal business meaning, and contracts should live with clear owners.
 - Repo-local doctrine first: check local rules before asking for fallback Mahiro cleanup.
-- Owner-local versus shared extraction: if a layout child or feature child is the only consumer, prefer keeping the data and translation close to that owner.
+- Owner-local versus shared extraction: if a layout child or module child is the only consumer, prefer keeping the data and translation close to that owner.
 - UI structure restraint: extra wrappers need a reason; do not approve anonymous nesting or wrapper components that do not earn a real boundary.
 - Product-feel preservation: if the screen used to feel spare, premium, or direct, refactors should not make it louder or more instructional by accident.
+- Truth labeling: separate current repo evidence from preferred Mahiro fallback so the review stays honest.
 
 ## Examples
 
 - "`AGENTS.md` says routes stay thin, but this diff moves view config, route metadata, and rendering back into the route entry file. Keep orchestration in the route and move owned data back to a domain file." 
 - "The repo already repeats `useLingui` and render-boundary translation. This constants extraction introduces plain string blobs without preserving that posture. Keep the extraction, but preserve the repo's i18n boundary." 
 - "`UserList` and `employeeRows` are clearer than `data` and `items` here because the diff is shaping domain contracts, not generic collections." 
-- "This shared component now knows page-specific approval rules. Keep the reusable shell generic and move the approval logic back to the feature-owned layer." 
-- "No local doc covers this exact hook split, but the repo repeatedly keeps query hooks near feature services. Review against that repeated pattern before applying Mahiro fallback taste." 
+- "This shared component now knows page-specific approval rules. Keep the reusable shell generic and move the approval logic back to the domain-owned layer."
+- "No local doc covers this exact hook split, but the repo repeatedly keeps query hooks near domain services. Review against that repeated pattern before applying Mahiro fallback taste."
 - "This refactor added three wrapper layers, but none of them own layout, semantics, state, or a real boundary. Keep the UI flatter and let the real section or row own the structure directly." 
 - "The filename `profile/sidebar.tsx` is fine, but the export should still carry folder context. Prefer `ProfileSidebar` over `Sidebar` so the component stays searchable outside this folder." 
 - "The route got shorter, but the new hook still owns one-off selection, disclosure, and URL-state logic for a single route. Keep that orchestration inline until a reusable boundary actually appears." 

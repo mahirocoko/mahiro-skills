@@ -20,10 +20,10 @@ If the repo does not auto-sort imports, say that directly and present the prefer
 // Correct
 import { useMemo } from 'react'
 
-import type { IProfileCardProps } from '@/features/profile/types'
-import { Avatar } from '@/components/Avatar'
+import type { IProfileCardProps } from '@/components/profile/profile-card'
+import { Avatar } from '@/components/avatar'
 
-import { formatDisplayName } from './formatDisplayName'
+import { formatDisplayName } from './format-display-name'
 ```
 
 ## Type Imports
@@ -33,11 +33,11 @@ Use `type` keyword for type-only imports:
 ```ts
 // Correct
 import type { ComponentProps } from 'react'
-import type { IProfileCardProps } from '@/features/profile/types'
+import type { IProfileCardProps } from '@/components/profile/profile-card'
 import { useState } from 'react'
 ```
 
-If the repo uses `I`-prefixed interfaces, keep that naming visible in import examples instead of flattening it away.
+If the repo uses Mahiro-style TypeScript, keep `I`-prefixed interfaces visible in import examples instead of flattening the type posture away. If the target repo proves a different posture, document that as local reality.
 
 ## Path Aliases
 
@@ -46,6 +46,8 @@ Document the real alias mapping used by the repo.
 ```ts
 [repo-faithful alias examples]
 ```
+
+Common examples may include `@/components`, `@/hooks`, `@/lib`, `@/routes`, `@/services`, or `@/types`, but only keep the ones the repo actually uses.
 
 ## Relative Imports
 
@@ -118,3 +120,4 @@ Avoid side effect imports unless necessary:
 - Separate enforced ordering from suggested ordering when the repo is still young.
 - Prefer examples that look like real project code, not generic linter documentation.
 - Do not flatten `I`-prefixed interface imports out of examples when that posture is part of the house style.
+- Do not introduce folder paths that the repo does not already use.

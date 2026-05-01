@@ -10,7 +10,7 @@
 [verified dev command]
 ```
 
-If this is a monorepo or multi-surface repo, add the most useful app-specific commands here too.
+If the repo has more than one app or package surface, add the most useful app-specific commands here too.
 
 Do not pad this section with secondary commands if the repo only has one normal way to start development.
 

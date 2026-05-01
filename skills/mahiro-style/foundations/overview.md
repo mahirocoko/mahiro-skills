@@ -6,6 +6,12 @@
 
 This page explains the mental model for the skill and why the Foundations docs exist. It is the entry point for reading the doctrine correctly before applying any narrower pattern page.
 
+## Role Boundary
+
+`mahiro-style` is Mahiro's implementation and review lens. It is where agents look for code-shape defaults, extraction discipline, route/component/hook/service/store boundaries, i18n posture, naming, and anti-slop review heuristics.
+
+It is not the source of truth for a target repo's current state. A repo's `Current Reality` must come from local docs, code, config, scripts, or repeated active patterns. Mahiro-style becomes `Preferred Direction` only when local reality is silent, partial, or drifting.
+
 ## Non-negotiable
 
 - Treat this skill as fallback doctrine, not as permission to override repo-local rules.
@@ -26,16 +32,27 @@ This page explains the mental model for the skill and why the Foundations docs e
 
 The shape stays stable across repos, but the concrete rules still depend on local context.
 
-- A monorepo with shared packages can still keep package purpose, state boundaries, and shared UI ownership explicit.
-- A responsibility-first single app can keep `routes`, `services`, `stores`, and `constants` visible without collapsing into one giant feature bucket.
+- A multi-app repo can still keep each product app's ownership explicit before promoting anything into shared packages.
+- A responsibility-first single app can keep router root, `components`, `hooks`, `services`, `stores`, and `constants` visible without collapsing into one giant bucket.
 - A lean route-first app can still document route files, root providers, tests, and formatter rules clearly in `AGENTS.md`.
 
 Those repos differ in shape, but the shared pattern is consistent: local doctrine wins, repeated structure matters, and fallback style should sharpen the repo's existing direction instead of flattening it.
 
+## Reality Vocabulary
+
+Use the same vocabulary as `mahiro-docs-rules-init` when applying this doctrine:
+
+- `Current Reality` - what the repo proves today
+- `Preferred Direction` - Mahiro's fallback for new work or cleanup
+- `Not Established Yet` - what should not be documented or implemented as if it already exists
+- `Adoption Triggers` - when the preferred direction becomes justified
+
+This vocabulary prevents the main failure mode: converting Mahiro preference into fake repo fact.
+
 ## Examples
 
 - A repo with strong local docs uses `/mahiro-style` to fill gaps and review drift, not to replace those docs.
-- A repo with partial docs but repeated feature folders uses the observed feature layout as the starting rule before fallback doctrine adds detail.
+- A repo with partial docs but repeated app/module folders uses the observed layout as the starting rule before fallback doctrine adds detail.
 - A new refactor starts from Foundations first, then jumps into `patterns/` only when the question becomes about a specific implementation domain.
 
 ## Anti-Examples

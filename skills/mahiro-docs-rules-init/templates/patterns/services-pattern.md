@@ -1,17 +1,19 @@
 # Services Pattern
 
-This page can act as both a reality check and a bootstrap blueprint. Keep the service-doc shape even when the repo is still small, but label clearly what exists today versus what is the preferred service posture.
+This page can act as both a reality check and a bootstrap blueprint. Keep the service-doc shape when the repo really has a service layer, but do not force one into repos that own data in hooks or route modules.
 
 ## Current Status
 
-- **Current reality**: [Say clearly whether the repo already has a shared service layer, owner-local service files, hook-owned fetch logic, or no service abstraction yet.]
-- **Confidence**: [Established / Partial / Not established yet]
+- **Current Reality**: [Say clearly whether the repo already has a shared service layer, owner-local service files, hook-owned fetch logic, or no service abstraction yet.]
+- **Confidence**: [Established / Partial / Not Established Yet]
 
 If the repo does not have a real shared service layer yet, keep the document shape but say so directly. The blueprint may still show the intended service posture, but it must not be mislabeled as current architecture.
 
+For Next App Router plus REST/API repos, services are often the preferred home for transport and request helpers. For React Router Framework plus Supabase-direct repos, hook-owned data access may be the truthful home, and that is fine.
+
 ## BaseService
 
-If the repo uses a shared transport wrapper, document the real one here. If it does not, replace this section with a short explicit note such as "No shared BaseService is established yet; calls currently live in feature-owned files."
+If the repo uses a shared transport wrapper, document the real one here. If it does not, replace this section with a short explicit note such as "No shared BaseService is established yet; calls currently live in route-owned or hook-owned files."
 
 ### BaseService Methods
 
@@ -43,6 +45,8 @@ Document this only if the repo uses shared request options, headers, abort signa
 
 If the repo does not use request config or fallbacks, keep these sections only as short explicit notes.
 
+If the repo is Supabase-direct and hooks own the calls, this page may stay very small or may focus on the small helper surface that exists today instead of a larger service abstraction.
+
 ## Service File Structure
 
 Mirror the smallest real structure that the repo supports today, or the smallest truthful blueprint when the page is intentionally setting a service shape for future work.
@@ -60,12 +64,13 @@ If the service layer is minimal, keep the real one-file structure instead of for
 
 ## Adoption Triggers
 
-Promote feature-local transport into a shared service layer only when the repo starts repeating one or more of these patterns:
+Promote owner-local transport into a shared service layer only when the repo starts repeating one or more of these patterns:
 
 - repeated endpoint construction across multiple owners
 - repeated auth/header/error handling logic
 - multiple hooks or screens calling the same transport function
-- shared request/response typing that no longer belongs to a single feature
+- shared request/response typing that no longer belongs to a single owner
+- a direct SDK or REST call surface that is getting copied into more than one owner
 
 ## Best Practices
 
@@ -87,7 +92,7 @@ Always specify request and response types when the repo has shared service data.
 
 ### 3. Payload Interfaces
 
-Define payload interfaces in the repo's shared or owner-local type layer. Keep the type next to the owner when only one feature needs it; extract it only after real reuse appears.
+Define payload interfaces in the repo's shared or owner-local type layer. Keep the type next to the owner when only one module needs it; extract it only after real reuse appears.
 
 ```ts
 [repo-faithful payload typing example]
@@ -123,6 +128,8 @@ Document the real error posture here.
 
 Prefer showing the real usage owner for this repo: component, route loader, custom hook, store action, or query hook.
 
+If the repo uses Supabase-direct hook ownership, show the hook as the owner and keep this section short.
+
 ```tsx
 [repo-faithful component or hook usage example]
 ```
@@ -130,9 +137,10 @@ Prefer showing the real usage owner for this repo: component, route loader, cust
 ## Preferred Direction
 
 - Keep raw transport details out of unrelated UI files once repetition starts.
-- Let feature owners keep small service helpers local before introducing shared folders.
+- Let module owners keep small service helpers local before introducing shared folders.
 - Extract shared request logic only when the repo has enough repeated evidence to support it.
 - When the skill is bootstrapping a repo, preserve the intended service blueprint even if the current repo only shows fragments of that shape.
+- Do not make services mandatory in repos whose stable pattern is hook-owned direct SDK access.
 
 ## Best Practices Summary
 

@@ -101,7 +101,7 @@ Document this only if the repo actually uses inline ignore comments or file-leve
 
 ```ts
 // [real ignore syntax]
-const data: any = fetchData()
+const data: unknown = fetchData()
 ```
 
 If the repo has no local override syntax in use, replace this block with a short note instead of inventing one.
