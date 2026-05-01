@@ -144,6 +144,53 @@ function receiptToSummary(receipt: InstallReceipt): InstalledSummary {
   };
 }
 
+async function runUpdateView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions, allowBack: boolean): Promise<InstallResult[] | null> {
+  const summaries = listInstalledSummaries(env);
+  if (summaries.length === 0) {
+    io.note("No install receipts found; skipping update.", "Update installed");
+    return [];
+  }
+
+  const updates: { summary: InstalledSummary; items: string[] }[] = [];
+
+  for (const summary of summaries) {
+    const items = sortNames(summary.installed);
+    if (items.length === 0) {
+      io.note(`Install receipt for ${summary.agent} (${summary.scope}) has no recorded skills or commands; skipping update.`, "Update installed");
+      continue;
+    }
+
+    const plan = createPlan(summary.agent, summary.scope, items, env);
+    writePlanSummary(io, "update", plan);
+    writeInstallReview(io, plan);
+    updates.push({ summary, items });
+  }
+
+  if (updates.length === 0) {
+    return [];
+  }
+
+  if (!options.yes) {
+    const shouldProceed = await promptConfirm(io, "Proceed with update?");
+    if (!shouldProceed) {
+      if (allowBack) {
+        io.note("Update cancelled.", "Home");
+        return null;
+      }
+
+      throw new Error("Guided update cancelled.");
+    }
+  }
+
+  const results = updates.map(({ summary, items }) => install(summary.agent, summary.scope, items, true, env));
+
+  if (results.length > 0) {
+    writeBatchInstallSummary(io, results);
+  }
+
+  return results;
+}
+
 function receiptDetailBody(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAgent, scope: InstallScope): InstalledSummary | null {
   const receipt = listInstalled(agent, scope, env);
 
@@ -268,11 +315,15 @@ async function runInteractiveSegment(
   io: PromptIO,
   env: NodeJS.ProcessEnv,
   options: CliOptions,
-  mode: GuidedMode | "detail",
+  mode: GuidedMode | "detail" | "update",
   softCancelReturnsToHome = false,
 ): Promise<GuidedOutcome | null> {
   if (mode === "detail") {
     return runDetailView(io, env, options, softCancelReturnsToHome);
+  }
+
+  if (mode === "update") {
+    return runUpdateView(io, env, options, softCancelReturnsToHome);
   }
 
   if (mode === "list") {

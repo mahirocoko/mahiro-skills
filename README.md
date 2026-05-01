@@ -33,7 +33,7 @@ Open the interactive TUI from a local checkout:
 bun ./src/cli.ts
 ```
 
-The TUI lets you plan, install, list, and inspect install receipts without remembering every flag.
+The TUI lets you plan, install, update installed items from receipts, list, and inspect install receipts without remembering every flag.
 
 For a direct non-interactive install into the current project:
 
@@ -44,7 +44,7 @@ bun ./src/cli.ts install --agent opencode --scope local
 For a tagged install without keeping a clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.23 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.24 -- --agent opencode --scope global
 ```
 
 ## Choose your install path
@@ -73,16 +73,16 @@ Some installed skills need extra runtime tools. See [Runtime prerequisites by wo
 
 Use this when you want to install from a tagged release without cloning the repo first.
 
-Install the default bundle globally for OpenCode from the `v0.1.23` tag:
+Install the default bundle globally for OpenCode from the `v0.1.24` tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.23 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.24 -- --agent opencode --scope global
 ```
 
 Install a selected skill locally instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.23 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.24 -- project --agent opencode --scope local
 ```
 
 ### Install from a local checkout
@@ -119,11 +119,11 @@ bun ./src/cli.ts tui
 
 Flow:
 
-1. **Home** — choose `Install`, `Plan (dry run)`, `List installed`, `Receipt detail`, or `Exit`.
-2. **Agents** — pick all agents or select specific agents with checkbox-style multiselect.
-3. **Scope** — choose `local` for the current project or `global` for the user agent root.
-4. **Items** — install the default bundle or select individual skills/commands.
-5. **Install preview** — review `source -> target` lines and `[collision]` markers before writing.
+1. **Home** — choose `Install`, `Update installed`, `Plan (dry run)`, `List installed`, `Receipt detail`, or `Exit`. `Update installed` automatically refreshes every non-empty install receipt without asking for agent, scope, or item choices.
+2. **Agents** — for plan/install/list/detail flows, pick all agents or select specific agents with checkbox-style multiselect.
+3. **Scope** — for plan/install/detail flows, choose `local` for the current project or `global` for the user agent root.
+4. **Items** — for plan/install flows, install the default bundle or select individual skills/commands.
+5. **Install preview** — review `source -> target` lines and `[collision]` markers before writing. `Update installed` shows one preview per receipt, then asks one batch `Proceed with update?` confirmation unless `--yes` is provided.
 6. **Receipt detail** — inspect installed paths, timestamps, skills, commands, and reconstructed targets.
 
 Example session:

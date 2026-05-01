@@ -43,7 +43,7 @@ describe("README", () => {
     expect(content).toContain("Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, Gemini, and Codex.");
     expect(content).toContain("## Choose your install path");
     expect(content).toContain("### Quick install via curl");
-expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.23 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.24 -- --agent opencode --scope global");
     expect(content).toContain("### Install from a local checkout");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");

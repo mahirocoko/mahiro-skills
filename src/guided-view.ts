@@ -2,7 +2,8 @@ import type { PromptIO, PromptOption } from "./prompt";
 import type { InstallPlan, InstallResult, InstalledSummary, InstallScope, InstallTarget, ScopedAgent } from "./types";
 
 export type GuidedMode = "install" | "plan" | "list";
-export type HomeAction = "install" | "plan" | "list" | "detail" | "exit";
+export type PlanSummaryMode = GuidedMode | "update";
+export type HomeAction = "install" | "plan" | "update" | "list" | "detail" | "exit";
 export const backValue = "__back";
 export type BackValue = typeof backValue;
 export type AgentPickMode = "all" | "pick" | BackValue;
@@ -14,6 +15,7 @@ export const guidedScopes = ["local", "global"] as const;
 export const homeActionOptions = [
   { label: "Install", value: "install", hint: "copy skills/commands into the agent tree" },
   { label: "Plan (dry run)", value: "plan", hint: "preview plan without installing" },
+  { label: "Update installed", value: "update", hint: "refresh items recorded in install receipts" },
   { label: "List installed", value: "list", hint: "filter by one or more agents" },
   { label: "Receipt detail", value: "detail", hint: "one or more agents, one scope" },
   { label: "Exit", value: "exit", hint: "leave the TUI" },
@@ -149,7 +151,7 @@ export function formatInstallTargets(plan: InstallPlan): string {
   return blocks.length > 0 ? blocks.join("\n\n") : "No file targets (empty plan).";
 }
 
-export function writePlanSummary(io: PromptIO, mode: GuidedMode, plan: InstallPlan): void {
+export function writePlanSummary(io: PromptIO, mode: PlanSummaryMode, plan: InstallPlan): void {
   const lines = [
     `mode: ${mode}`,
     `agent: ${plan.agent}`,

@@ -117,7 +117,7 @@ For successful install:
 - collision handling uses the same overwrite rules as direct `install`
 - interactive item selection offers a default-bundle shortcut and multiselect over inventory (not numbered picks)
 - interactive agent selection offers either **All agents** or checkbox-style agent multiselect
-- without `--mode`, the home menu can run Install, Plan, List, Receipt detail, and Exit in one session; with `--mode`, a single action runs and exits
+- without `--mode`, the home menu can run Install, Update installed, Plan, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/list run once and exit
 - declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
 - interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
 - receipt detail shows receipt metadata plus reconstructed `source -> target` rows from the planner when installed names are present

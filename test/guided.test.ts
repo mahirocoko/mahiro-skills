@@ -259,6 +259,76 @@ describe("guided", () => {
     }
   });
 
+  test("updates all installed receipt items without prompting for agent scope items or overwrite", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    await runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+
+    const updatePrompt = makePromptIo(["update", "exit"], [], [true]);
+
+    try {
+      const result = await runGuided(makeOptions(), temp.env, updatePrompt.io);
+      const updates = result as InstallResult[];
+
+      expect(updates).toHaveLength(2);
+      expect(updates.map((update) => update.agent).sort()).toEqual(["cursor", "gemini"]);
+      expect(updates.find((update) => update.agent === "cursor")?.installed).toEqual(["project"]);
+      expect(updates.find((update) => update.agent === "gemini")?.installed).toEqual(["gemini"]);
+      expect(updatePrompt.writes.some((entry) => entry.includes("[note:Install plan] mode: update"))).toBe(true);
+      expect(updatePrompt.writes.filter((entry) => entry.includes("[note:Install preview]"))).toHaveLength(2);
+      expect(updatePrompt.writes.filter((entry) => entry === "Proceed with update?")).toHaveLength(1);
+      expect(updatePrompt.writes).not.toContain("Agents");
+      expect(updatePrompt.writes).not.toContain("Scope");
+      expect(updatePrompt.writes).not.toContain("Items");
+      expect(updatePrompt.writes).not.toContain("Toggle agents");
+      expect(updatePrompt.writes).not.toContain("Choose items");
+      expect(updatePrompt.writes.some((entry) => entry.includes("Collisions detected. Overwrite existing targets?"))).toBe(false);
+      expect(updatePrompt.writes.some((entry) => entry.includes("[note:Batch install summary]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("skips update when no install receipts exist without prompting for agent scope or items", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["update", "exit"]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toEqual([]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Update installed] No install receipts found; skipping update."))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes("Install preview"))).toBe(false);
+      expect(prompt.writes).not.toContain("Proceed with update?");
+      expect(prompt.writes).not.toContain("Agents");
+      expect(prompt.writes).not.toContain("Scope");
+      expect(prompt.writes).not.toContain("Items");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("skips update confirmation when --yes is provided", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+
+    const prompt = makePromptIo(["update", "exit"]);
+
+    try {
+      const result = await runGuided(makeOptions({ yes: true }), temp.env, prompt.io);
+      const updates = result as InstallResult[];
+
+      expect(updates).toHaveLength(1);
+      expect(updates[0]?.agent).toBe("cursor");
+      expect(prompt.writes).not.toContain("Proceed with update?");
+      expect(prompt.writes).not.toContain("Agents");
+      expect(prompt.writes).not.toContain("Scope");
+      expect(prompt.writes).not.toContain("Items");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("home loop returns to Home when final install is declined", async () => {
     const temp = makeTempEnv();
     const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["gemini"], ["gemini"]], [false]);

@@ -2,6 +2,8 @@
 
 The TUI is the safest default when you want to browse agents, scopes, and install targets before writing files.
 
+The home menu also includes `Update installed`, which refreshes every non-empty receipt-recorded install automatically. It does not ask for agent, scope, or item choices.
+
 ## Launch
 
 ```bash
@@ -12,6 +14,17 @@ Equivalent explicit command:
 
 ```bash
 bun ./src/cli.ts tui
+```
+
+## Update installed walkthrough
+
+```text
+Home
+  → Update installed
+Install preview
+  → review each receipt-recorded update plan
+Proceed with update?
+  → yes
 ```
 
 ## Plan-only walkthrough
