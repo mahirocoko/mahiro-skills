@@ -18,6 +18,7 @@
 - Check official docs or source for the relevant version when the answer depends on current package, framework, CLI, SDK, external-service, browser, platform, protocol, language-feature, generated-convention, or public-standard behavior.
 - If local repo usage and upstream docs disagree, prefer local evidence for compatibility, call out the mismatch, and do not silently force a remembered pattern.
 - Do not force older patterns onto repos that already use newer package versions, newer generated conventions, or newer documented APIs.
+- Verification does not mean always choosing the newest pattern; choose the pattern that matches the target repo's versions, generated files, migration state, and compatibility constraints.
 - This applies beyond code: product facts, pricing, legal/compliance assumptions, infrastructure behavior, security guidance, public standards, and third-party service behavior also require current evidence when they affect decisions.
 - Separate exact search coverage from semantic coverage. A recursive keyword scan proves absence of named strings, not absence of every possible hidden assumption.
 - If evidence is missing, say so directly and soften the wording instead of inventing certainty.

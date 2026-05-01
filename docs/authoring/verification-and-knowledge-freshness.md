@@ -30,6 +30,7 @@ When working with a dependency:
 3. Check official docs or source for that version when the answer depends on current behavior.
 4. If local usage and upstream docs disagree, prefer local evidence for compatibility and call out the mismatch.
 5. Do not force older remembered patterns onto repos that already use newer versions, newer generated conventions, or newer documented APIs.
+6. Verification does not mean always choosing the newest pattern; choose the pattern that matches the target repo's versions, generated files, migration state, and compatibility constraints.
 
 ## Search Coverage Honesty
 
