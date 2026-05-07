@@ -25,11 +25,31 @@ Use direct `gemini` CLI or Cursor CLI sessions when you want a fresh executor la
 - Use a fresh interactive tmux lane by default
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
+- Gemini headless mode is a hard block: never use `gemini -p`, `gemini --prompt`, or any non-interactive Gemini execution path
+- Gemini must stay pane-first and interactive through tmux with `gemini -m "<model>" --approval-mode yolo -i "<prompt>"`
 - Do not use Cursor headless mode such as `agent -p`; stay pane-first and interactive
 - Use yolo-style approvals by default: Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`
 - If the direct lane shows a workspace trust prompt for the intended repo, either accept it in the pane and continue or let the user accept it directly
 - That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded
 - If the prompt appears unsent in the pane, send `Enter` once and re-check the pane before changing course
+
+## Hard Block: No Gemini Headless Mode
+
+Never use Gemini headless mode, even for recovery or a quick finish.
+
+Forbidden:
+
+- `gemini -p "..."`
+- `gemini --prompt "..."`
+- non-interactive Gemini execution outside a tmux pane
+
+Required:
+
+- start or reuse a tmux lane
+- launch Gemini with `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo -i "..."`
+- verify progress and completion with `tmux capture-pane`
+
+Reason: headless Gemini bypasses this skill's pane-first execution contract and is more prone to capacity / `429` failures. If interactive Gemini stalls, recover inside tmux or start a fresh interactive tmux lane; do not switch to headless.
 
 ## Quick Commands
 

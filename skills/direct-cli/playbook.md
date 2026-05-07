@@ -22,6 +22,8 @@ Use this path when you want:
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
 - Use discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
 - Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
+- Gemini headless mode is forbidden. Do not use `gemini -p` or `gemini --prompt`, even for recovery or a quick finish.
+- Gemini must be launched pane-first with `-i` / `--prompt-interactive`, for example `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo -i "..."`.
 - Use yolo approvals by default: Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`.
 - Remember that yolo approvals do not bypass workspace trust prompts. If the pane shows a trust prompt for the intended repo, either accept it in the pane or hand it to the user to accept before assuming the launch failed.
 - Use **very narrow prompts** with explicit file scope.
@@ -37,8 +39,29 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Gemini model: `gemini-3.1-pro-preview`
 - Cursor heavy review / deep reasoning model: `claude-opus-4-7-high`
 - Cursor lighter cleanup model: `composer-2`
-- Gemini launch style: interactive tmux lane with `--approval-mode yolo`
+- Gemini launch style: interactive tmux lane with `--approval-mode yolo` and `-i` / `--prompt-interactive`
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`
+
+## Gemini headless hard block
+
+Gemini must never be run in headless mode from this skill.
+
+Forbidden:
+
+```bash
+gemini -p "..."
+gemini --prompt "..."
+```
+
+Required:
+
+```bash
+tmux new-session -d -s "gemini-task"
+tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo -i "Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>"' Enter
+tmux capture-pane -p -t "gemini-task" -S -120
+```
+
+Reason: headless Gemini bypasses the pane-first execution contract and is more likely to hit model-capacity / `429` failures. Recovery must stay interactive.
 
 ## Tested examples
 
@@ -134,6 +157,8 @@ tmux send-keys -t gemini-task C-c
 tmux send-keys -t gemini-task "Continue from the current worktree only. Keep scope narrow. Finish only the pending change in <file>." Enter
 ```
 
+Do not switch to `gemini -p` / `gemini --prompt` when Gemini thinks too long. Stay inside the interactive pane or start a fresh interactive pane.
+
 ### If Gemini session looks broken
 
 If you see errors like API 400 function-call mismatch, abandon the old session and start a new one.
@@ -143,6 +168,18 @@ tmux kill-session -t gemini-task
 tmux new-session -d -s "gemini-task-fresh"
 tmux send-keys -t gemini-task-fresh 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo -i "Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>"' Enter
 ```
+
+Allowed recovery actions:
+
+1. `tmux send-keys -t <session> C-c`
+2. send a shorter follow-up prompt in the same interactive pane
+3. if still unhealthy, kill the session and start a fresh interactive lane
+
+Forbidden recovery actions:
+
+- switching to `gemini -p`
+- switching to `gemini --prompt`
+- using non-interactive Gemini execution to finish faster
 
 ---
 
@@ -209,7 +246,7 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 This works well when Gemini is stronger at producing the initial UI direction, while Cursor is stronger at tightening code structure afterward.
 
-The default direct path is still interactive for both tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture.
+The default direct path is still interactive for both tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Gemini into headless `-p` / `--prompt` mode at all.
 
 ---
 
@@ -287,8 +324,9 @@ Symptoms:
 Mitigation:
 
 - abandon the session
-- create a fresh session
+- create a fresh interactive tmux session
 - resend a shorter prompt with narrower scope
+- never recover by switching Gemini to `-p` / `--prompt`
 
 ### Prompt not actually submitted
 
@@ -345,13 +383,26 @@ tmux new-session -d -s "cursor-task-fresh"
 
 ## Short operator checklist
 
+Before launching Gemini:
+
+1. Am I using tmux?
+2. Am I using `-i` / `--prompt-interactive`, not `-p` / `--prompt`?
+3. Is `--approval-mode yolo` present?
+4. Is the scope narrow and current-worktree-only?
+5. Will I verify with `tmux capture-pane`?
+
+If any answer is no, do not launch Gemini yet.
+
+## Stuck lane checklist
+
 When a direct CLI lane looks stuck:
 
 1. Check the pane.
 2. Decide whether it is thinking, blocked on approval, or unhealthy.
 3. If unhealthy, abandon the old session.
-4. Start a fresh session.
+4. Start a fresh interactive tmux session.
 5. Use a shorter, narrower prompt.
 6. Confirm the new prompt was actually submitted.
+7. Never switch Gemini to headless mode.
 
 The key rule is simple: **fresh session, narrow scope, pane-first truth**.
