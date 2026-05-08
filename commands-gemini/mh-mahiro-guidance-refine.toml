@@ -1,0 +1,8 @@
+description = "Refine repo docs, AGENTS.md, and Mahiro-style guidance from session feedback. Use when the user corrects agent behavior, identifies preferred patterns, or asks to update rules from lessons learned."
+prompt = """
+Execute the `mahiro-guidance-refine` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"mahiro-guidance-refine\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mahiro-guidance-refine/SKILL.md` for local installs or `~/.gemini/skills/mahiro-guidance-refine/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

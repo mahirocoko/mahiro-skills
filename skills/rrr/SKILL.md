@@ -19,6 +19,34 @@ description: Create a session retrospective with lessons learned. Use at the end
 
 ---
 
+## Mode Gates
+
+- `/rrr` and `/rrr --detail` write a current-session retrospective from available conversation, git, and local `.agent-state` context.
+- `/rrr --dig` may reconstruct from available session-history export, but still uses the main agent only.
+- `/rrr --deep` is the only mode allowed to dispatch subagents; read `DEEP.md` before doing so.
+- If session history, git history, or pulse metrics are missing, continue with available evidence and label the missing source. Do not invent timeline details.
+- Commit is optional and only allowed when the human explicitly asks for a commit.
+
+## Output Contract
+
+Every non-`--deep` run must produce:
+
+1. A retrospective under `$AGENT_STATE_DIR/memory/retrospectives/YYYY-MM/DD/HH.MM_slug.md`.
+2. A durable lesson note under `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md`.
+3. Updated pulse metrics when `python3` and local retrospective data are available.
+4. A brief final response with written file paths, missing evidence if any, and whether a commit was intentionally skipped.
+
+## Validation / Self-check
+
+Before finishing:
+
+- Confirm the retrospective and lesson note paths are under `$AGENT_STATE_DIR`, not the source tree unless the human configured that state root.
+- Confirm `--deep` was the only path that used subagents.
+- Confirm pulse metrics are described as derived snapshots, not canonical telemetry.
+- Rerun pulse generation after writing the retrospective when the runtime supports it.
+
+---
+
 ## /rrr (Default)
 
 ### 1. Gather
@@ -238,7 +266,7 @@ mkdir -p "$AGENT_STATE_DIR/memory/retrospectives/$(date +%Y-%m/%d)"
 mkdir -p "$AGENT_STATE_DIR/memory/learnings"
 ```
 
-If pulse generation fails because a dependency like `python3` is unavailable, skip silently and continue the retrospective.
+If pulse generation fails because a dependency like `python3` is unavailable, skip pulse generation, continue the retrospective, and mention the missing pulse source in the final response.
 
 If found, extract:
 - From `project.json`: `totalSessions`, `todaySessions`, `activeDays`, `sizes.today`, `branches.current`

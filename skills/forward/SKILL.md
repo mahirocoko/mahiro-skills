@@ -11,7 +11,7 @@ Create context for next session, then enter the current agent's planning flow to
 
 ```
 /forward              # Create handoff + enter planning flow (default)
-/forward asap         # Create handoff + commit immediately (no approval needed)
+/forward asap         # Create handoff fast; commit/push only if a tracked handoff artifact is configured
 /forward --only       # Create handoff only, skip planning flow
 ```
 
@@ -21,6 +21,14 @@ Create context for next session, then enter the current agent's planning flow to
 2. **Session summary**: What we did (from memory)
 3. **Pending items**: What's left
 4. **Next steps**: Specific actions
+
+## Approval Gates
+
+- `/forward` creates the handoff and planning bridge, then asks before any commit or push unless the current agent has already received an explicit commit/push instruction in this turn.
+- `/forward asap` is explicit approval to create the handoff fast and to commit/push only when the handoff artifact is tracked by git. Do not force-add ignored `.agent-state` files.
+- `/forward --only` creates the handoff only. Do not commit, push, or enter planning flow.
+- Never delete branches, merge PRs, close issues, or remove files from cleanup context without a separate explicit human approval.
+- If git status shows unrelated user work or possible secrets, stop before staging and ask.
 
 ## Output
 
@@ -60,9 +68,10 @@ Use `AGENT_STATE_DIR` for local-only state. It should point at a hidden, gitigno
 ## Then
 
 After creating handoff:
-1. Commit: `git add -A && git commit -m "handoff: [slug]"`
-2. Push: `git push origin main`
-3. **Gather cleanup context** before entering planning flow:
+1. For default `/forward`, present the handoff path and ask before committing or pushing.
+2. If commit/push is approved and the handoff artifact is tracked by git, commit only that tracked artifact: `git add [tracked-handoff-path] && git commit -m "handoff: [slug]"`.
+3. Push only after explicit approval or `asap`, and only if a commit was actually created: `git push origin [current-branch]`.
+4. **Gather cleanup context** before entering planning flow:
 
 ```bash
 git status --short
@@ -71,11 +80,11 @@ gh pr list --state open --json number,title,headRefName --jq '.[] | "#\(.number)
 gh issue list --state open --limit 5 --json number,title --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null
 ```
 
-4. **Enter planning flow** for next session planning
+5. **Enter planning flow** for next session planning
 
 ## Planning Flow (REQUIRED)
 
-After commit & push succeeds, enter the planning flow available in the current agent.
+After the handoff is written, and after any approved commit/push decision is handled, enter the planning flow available in the current agent unless `asap` or `--only` was used.
 
 If the current agent has a `plan` mode or `/plan` command, use it.
 If the current agent has no dedicated planning mode, write the plan directly.
@@ -118,14 +127,23 @@ If the current agent has no dedicated planning mode, write the plan directly.
 
 If user says `/forward asap`:
 - Write handoff file
-- Immediately commit and push — no approval needed
+- Treat `asap` as approval to commit/push only a tracked handoff artifact; if the handoff lives under ignored `.agent-state`, do not force-add it and report that no tracked handoff commit was created
 - Skip planning flow
 - User wants to close fast
 
 ## Skip Planning Flow
 
 If user says `/forward --only`:
-- Skip planning flow after commit
+- Skip commit, push, and planning flow
 - Tell user: "Run /plan or /recap to plan next session"
+
+## Verification / Self-check
+
+Before final output:
+
+- Confirm the handoff file exists at `$AGENT_STATE_DIR/inbox/handoff/YYYY-MM-DD_HH-MM_slug.md`.
+- Confirm whether commit/push happened, was skipped, or is awaiting approval.
+- Confirm any cleanup list is context only, not executed cleanup.
+- Report the next recommended entrypoint: `/recap`, `/recap --quick`, or the generated plan.
 
 ARGUMENTS: $ARGUMENTS

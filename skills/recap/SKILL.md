@@ -144,6 +144,22 @@ when same-day retrospective memory or other durable same-day artifacts clearly s
 
 Also avoid the opposite mistake: acting like a stale retrospective from many days ago is equivalent to active in-flight work today.
 
+## Stop Gates
+
+- Stop before making a “nothing happened today” claim unless the current session, same-day retrospective path, same-day handoff/memory paths, and git state have all been checked or intentionally skipped by `--quick`.
+- In `--quick`, do not make broad historical claims. Say that the mode intentionally skipped deeper memory reads.
+- If same-day artifacts and current-session evidence disagree, report the tension instead of choosing the emptier source.
+- If a memory path is unavailable or unreadable, label the recap as partial and say which source could not be checked.
+
+## Evidence Self-check
+
+Before final output, verify:
+
+1. The response distinguishes current-session evidence from same-day durable memory.
+2. Any stale retrospective is labeled as latest known context, not active work.
+3. Pulse metrics, when present, enrich the narrative but do not outrank richer same-day artifacts.
+4. Every strong claim about “today” is backed by at least one checked source or softened as uncertainty.
+
 ## Output Shape
 
 Structure the response in this order:

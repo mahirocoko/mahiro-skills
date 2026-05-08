@@ -1,11 +1,12 @@
-# Workflow: `mahiro-docs-rules-init` + `mahiro-style`
+# Workflow: `mahiro-docs-rules-init` + `mahiro-guidance-refine` + `mahiro-style`
 
 ## Goal
 
-Use these two skills together with a clear division of labor:
+Use these skills together with a clear division of labor:
 
 - `mahiro-docs-rules-init` sets the baseline docs and rules.
-- `mahiro-style` reviews, aligns, and catches targeted drift.
+- `mahiro-guidance-refine` turns real session feedback into targeted docs/rules/style proposals.
+- `mahiro-style` reviews, aligns, and catches code/style drift.
 
 They should not replace each other directly because they solve different problems.
 
@@ -35,7 +36,43 @@ Best for:
 - repos with only `README.md`
 - repos with scattered or very weak docs
 
-## 2. Incremental Repo Growth
+## 2. Session Feedback or User-Corrected Pattern
+
+Examples:
+
+- user says the agent output did not match their preferred pattern
+- user corrects communication style, code style, review style, or workflow order
+- a session reveals repeat friction that should become a repo-local rule proposal
+- the agent needs to preserve a lesson without turning a one-off preference into global doctrine
+
+Use first:
+
+- `mahiro-guidance-refine`
+
+Goal:
+
+- classify the feedback as durable or transient
+- separate repo-local guidance from global Mahiro doctrine
+- propose the smallest docs/rules/style update
+- require approval before editing `AGENTS.md`, docs, skills, or style guidance
+
+Recommended flow:
+
+1. Capture the exact correction or desired pattern.
+2. Inspect repo-local docs/rules before using fallback style.
+3. Classify evidence: direct user feedback, repo-proven pattern, repeated friction, inference, or transient context.
+4. Produce a proposal with target file, rationale, confidence, and rollback note.
+5. Edit only after approval.
+6. Use `rrr` or `forward` if the lesson should stay as session memory or next-session work instead of a durable rule.
+
+Best for:
+
+- refining docs after real feedback
+- keeping rules aligned with what the user actually wants
+- preventing transient session context from leaking into durable doctrine
+- patching existing docs without full regeneration
+
+## 3. Incremental Repo Growth
 
 Examples:
 
@@ -83,7 +120,9 @@ Best for:
 - repos evolving incrementally
 - repos that do not want a full docs regeneration pass
 
-## 3. Major Restructure
+If the incremental change came from explicit user feedback about how agents should behave, run `mahiro-guidance-refine` before editing docs so the feedback is classified and approval-gated.
+
+## 4. Major Restructure
 
 Examples:
 
@@ -127,7 +166,7 @@ Best for:
 - repos where several docs pages are stale at once
 - repos that want a docs-family reset without losing Mahiro-style quality
 
-## 4. Shortcut Decision Tree
+## 5. Shortcut Decision Tree
 
 Ask these questions first.
 
@@ -136,17 +175,22 @@ Ask these questions first.
 - yes -> use `mahiro-docs-rules-init`
 - no -> go to question B
 
-### B. Did only a few layers or patterns change?
+### B. Did the user correct agent behavior or state a preferred pattern to preserve?
 
-- yes -> use `mahiro-style` and update docs selectively
+- yes -> use `mahiro-guidance-refine`
 - no -> go to question C
 
-### C. Did the repo structure change enough that multiple pages are stale together?
+### C. Did only a few layers or patterns change?
+
+- yes -> use `mahiro-style` and update docs selectively
+- no -> go to question D
+
+### D. Did the repo structure change enough that multiple pages are stale together?
 
 - yes -> run `mahiro-docs-rules-init`, then `mahiro-style`
 - no -> `mahiro-style` is enough
 
-## 5. Recommended Practical Policy
+## 6. Recommended Practical Policy
 
 Use `mahiro-docs-rules-init` when:
 
@@ -163,16 +207,24 @@ Use `mahiro-style` when:
 - you want targeted docs updates
 - you want to check whether wording drifted away from Mahiro-style
 
-## 6. Best Combined Workflow
+Use `mahiro-guidance-refine` when:
+
+- feedback from a session should become a proposed rule or doc update
+- the user says the agent missed their desired pattern
+- a code-style/workflow/communication correction might be durable
+- you need approval-gated docs/rules maintenance from lessons learned
+
+## 7. Best Combined Workflow
 
 The most practical default is:
 
 1. Use `mahiro-docs-rules-init` once to bootstrap.
-2. After that, use `mahiro-style` as the default maintenance tool.
-3. Return to `mahiro-docs-rules-init` only when the repo changes shape in a major way.
-4. In the future, consider adding a `sync` mode to `mahiro-docs-rules-init`.
+2. Use `mahiro-guidance-refine` when real session feedback should become a proposal or approved docs/rules patch.
+3. Use `mahiro-style` as the default alignment and drift-review lens.
+4. Return to `mahiro-docs-rules-init` only when the repo changes shape in a major way.
+5. In the future, consider adding a `sync` mode to `mahiro-docs-rules-init`.
 
-## 7. Future Improvement Suggestion
+## 8. Future Improvement Suggestion
 
 The clean long-term shape is three explicit modes for `mahiro-docs-rules-init`.
 
@@ -199,7 +251,8 @@ The clean long-term shape is three explicit modes for `mahiro-docs-rules-init`.
 Default workflow:
 
 - first pass: `mahiro-docs-rules-init`
-- normal maintenance: `mahiro-style`
+- feedback-driven rules refinement: `mahiro-guidance-refine`
+- normal alignment review: `mahiro-style`
 - major restructure: `mahiro-docs-rules-init` -> `mahiro-style`
 
 This gives the best balance between:

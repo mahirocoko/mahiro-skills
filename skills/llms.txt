@@ -11,6 +11,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
 - `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.
 - `mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction or fallback. Trigger on: initialize repo rules, create AGENTS.md, bootstrap project docs, under-documented repo.
+- `mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow. Trigger on: user corrects agent behavior, preferred pattern discovered, docs/rules update from lesson, code-style feedback to preserve.
 - `mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens. Trigger on: align to Mahiro style, review code shape, refactor style, naming/file structure/i18n boundaries.
 - `philosophy` — Display local philosophy and alignment rules. Trigger on: principles, philosophy check, alignment rules, how should we think about this.
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
@@ -25,7 +26,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Orientation bundle**: `recap`, `rrr`, `forward`
 - **Project tracking bundle**: `project`, `learn`
 - **Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`
-- **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `philosophy`
+- **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`
 
 ## Install examples
