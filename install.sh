@@ -10,7 +10,7 @@ usage() {
 Usage: install.sh [--version <ref>] [--repo <git-url>] [--help] [--] [install args...]
 
 Examples:
-bash install.sh --version v0.1.26 -- project --agent opencode --scope global
+bash install.sh --version v0.1.27 -- project --agent opencode --scope global
   MAHIRO_SKILLS_REPO_ROOT=/path/to/mahiro-skills bash install.sh -- project --agent opencode --scope local
 EOF
 }
@@ -64,6 +64,7 @@ require_command bun
 
 repo_root="${MAHIRO_SKILLS_REPO_ROOT:-}"
 cleanup_dir=""
+bootstrap_dependencies=false
 
 if [ -z "$repo_root" ]; then
   require_command git
@@ -71,11 +72,15 @@ if [ -z "$repo_root" ]; then
   trap 'rm -rf "$cleanup_dir"' EXIT INT TERM
   repo_root="$cleanup_dir/mahiro-skills"
   git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$repo_root" >/dev/null 2>&1 || die "Unable to clone '$REPO_URL' at '$REPO_REF'"
+  bootstrap_dependencies=true
 fi
 
 validate_repo_root "$repo_root"
 
 (
   cd "$repo_root"
+  if [ "$bootstrap_dependencies" = true ]; then
+    bun install --frozen-lockfile --production
+  fi
   MAHIRO_SKILLS_REPO_ROOT="$repo_root" MAHIRO_SKILLS_CWD="${MAHIRO_SKILLS_CWD:-$caller_cwd}" bun ./src/cli.ts install "$@"
 )
