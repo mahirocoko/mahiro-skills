@@ -19,6 +19,6 @@ Execute the `direct-cli` skill with args: `$ARGUMENTS`
 
 **Otherwise**: Read the skill file at `skills/direct-cli/SKILL.md` and follow ALL instructions in it.
 
-Prefer the known-good interactive tmux launch commands and tested examples from the skill playbook first.
+Prefer the known-good tmux launch commands from the skill playbook first, then wait for pane readiness and send the task prompt with `tmux send-keys`.
 
 If model or flag availability is uncertain on this machine, it is acceptable to validate with commands such as `agent --list-models`, `agent --help`, or `gemini --help` before launching the direct lane.

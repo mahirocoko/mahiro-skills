@@ -2,9 +2,9 @@
 
 `/direct-cli` is the packaged playbook for running Gemini CLI and Cursor CLI directly through tmux-managed executor lanes.
 
-It is for situations where you want to bypass the usual orchestration runtime but still keep good operator posture: narrow scope, current-worktree continuation, pane-first verification, and fresh-session recovery when the lane looks unhealthy.
+It is for situations where you want to bypass the usual orchestration runtime but still keep good operator posture: narrow scope, current-worktree continuation, pane-first verification, launch first then send the task prompt, and fresh-session recovery when the lane looks unhealthy.
 
-The default posture is now explicit: use known-good interactive tmux launch commands first, avoid Cursor headless mode, and run both Gemini and Cursor lanes in yolo-style approval mode. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help`. If the intended workspace shows a trust prompt, either accept it in the pane or let the user accept it directly. That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded.
+The default posture is now explicit: launch in tmux with yolo-style approval flags, do not attach the task prompt inline, capture the pane until it is ready, then send the real prompt with `tmux send-keys`. Avoid Cursor headless mode. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help`. If the intended workspace shows a trust prompt, accept it in the pane before sending the task prompt. That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded.
 
 ## What this skill is for
 
@@ -14,7 +14,7 @@ Use it when you want AI to:
 - keep work limited to the current worktree
 - inspect tmux pane output as execution truth
 - recover cleanly from approval blocking, session corruption, or unsent prompts
-- launch Gemini with `--approval-mode yolo` and Cursor with `--yolo --approve-mcps`
+- launch Gemini with `--approval-mode yolo` and Cursor with `--yolo --approve-mcps`, then send the task prompt after readiness
 
 ## What this skill is not
 
@@ -39,4 +39,4 @@ Use it when you want AI to:
 
 ## Working rule
 
-Keep the executor lane narrow, current-worktree-only, pane-verified, and interactive. Use the known-good launch commands and tested examples in `playbook.md` first, then fall back to CLI discovery if model or flag validation is needed. If the lane becomes unhealthy, prefer a fresh session over heroic recovery.
+Keep the executor lane narrow, current-worktree-only, pane-verified, and interactive. Use the known-good launch commands in `playbook.md` first, wait for pane readiness, then send the task prompt. If the lane becomes unhealthy, prefer a fresh session over heroic recovery.

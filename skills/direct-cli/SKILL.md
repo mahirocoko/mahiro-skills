@@ -26,12 +26,12 @@ Use direct `gemini` CLI or Cursor CLI sessions when you want a fresh executor la
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
 - Gemini headless mode is a hard block: never use `gemini -p`, `gemini --prompt`, or any non-interactive Gemini execution path
-- Gemini must stay pane-first and interactive through tmux with `gemini -m "<model>" --approval-mode yolo -i "<prompt>"`
-- Do not use Cursor headless mode such as `agent -p`; stay pane-first and interactive
-- Use yolo-style approvals by default: Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`
-- If the direct lane shows a workspace trust prompt for the intended repo, either accept it in the pane and continue or let the user accept it directly
+- Launch Gemini and Cursor in tmux with yolo-style flags only, not with the task prompt inline
+- Capture the pane and confirm readiness before sending the real task prompt with `tmux send-keys`
+- If the direct lane shows a workspace trust prompt for the intended repo, accept it in the pane or let the user accept it directly before sending the task prompt
 - That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded
 - If the prompt appears unsent in the pane, send `Enter` once and re-check the pane before changing course
+- Do not use Cursor headless mode such as `agent -p`; stay pane-first and interactive
 
 ## Hard Block: No Gemini Headless Mode
 
@@ -46,7 +46,8 @@ Forbidden:
 Required:
 
 - start or reuse a tmux lane
-- launch Gemini with `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo -i "..."`
+- launch Gemini with `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo` and no task prompt inline
+- verify the pane is ready, then send the task prompt with `tmux send-keys`
 - verify progress and completion with `tmux capture-pane`
 
 Reason: headless Gemini bypasses this skill's pane-first execution contract and is more prone to capacity / `429` failures. If interactive Gemini stalls, recover inside tmux or start a fresh interactive tmux lane; do not switch to headless.
@@ -67,6 +68,6 @@ Reason: headless Gemini bypasses this skill's pane-first execution contract and 
 
 ## Working Rule
 
-Start from `playbook.md`. Use the known-good launch commands and tested examples there first, keep prompts narrow, continue from the current worktree only, do not restart from scratch, and trust pane output over assumptions.
+Start from `playbook.md`. Use the known-good launch commands there first, wait for pane readiness, then send the task prompt, keep prompts narrow, continue from the current worktree only, do not restart from scratch, and trust pane output over assumptions.
 
 ARGUMENTS: $ARGUMENTS
