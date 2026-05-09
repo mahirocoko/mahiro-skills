@@ -100,6 +100,14 @@ Before writing docs/rules, confirm all of these are true:
 
 If any condition fails, output a proposal only.
 
+If any proposal has **Needs approval: yes**, proposal-only mode must not end after listing proposals. The final response must include an explicit approval handoff in the same response. The handoff must:
+
+- Name the target file or files when known.
+- Summarize the exact edit scope in one concise sentence.
+- Ask a direct approval question, such as “Do you want me to apply these targeted docs/rules updates now?” or “I recommend applying this to `AGENTS.md` and `docs/patterns/component-conventions.md` to add the approval gate and self-check wording. Approve?”
+
+Do not include an approval ask when no durable docs/rules/style edit is recommended.
+
 ## Integration With Related Skills
 
 - **`mahiro-docs-rules-init`** owns initial repo docs/rules bootstrap. This skill owns targeted refinements after real feedback.
@@ -124,6 +132,16 @@ For proposal-only mode:
 **Confidence**: high | medium | low
 **Needs approval**: yes | no
 ```
+
+When any proposal says `**Needs approval**: yes`, append:
+
+```markdown
+## Approval Handoff
+
+I recommend applying this to `<target file(s)>` to `<exact edit scope>`. Approve?
+```
+
+If target files are not yet known, ask directly whether to apply the targeted docs/rules updates now and state what scope would be changed once targets are confirmed. If every proposal says `**Needs approval**: no`, omit the approval handoff.
 
 For approved edit mode:
 
@@ -156,5 +174,6 @@ Before final output:
 3. Confirm repo-local facts are labeled separately from preferred direction.
 4. Confirm edits, if any, touched only approved target files.
 5. Confirm paired docs/indexes are updated only when their public description changed.
+6. Confirm proposal-only output with any `Needs approval: yes` includes a direct approval handoff naming target files and exact edit scope; omit it only when no durable edit is recommended.
 
 ARGUMENTS: $ARGUMENTS
