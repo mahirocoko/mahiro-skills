@@ -1,0 +1,8 @@
+description = "Book macOS Calendar events safely after explicit user confirmation."
+prompt = """
+Execute the `mac-calendar-booking` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"mac-calendar-booking\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mac-calendar-booking/SKILL.md` for local installs or `~/.gemini/skills/mac-calendar-booking/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

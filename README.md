@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.29 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.30 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.29 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.30 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -110,6 +110,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
+| `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |
 | `mahiro-guidance-refine` | `/mahiro-guidance-refine` | You need to turn session feedback into approved docs, rules, or style guidance updates. |
 | `mahiro-style` | `/mahiro-style` | You need Mahiro's cross-repo code style doctrine. |
