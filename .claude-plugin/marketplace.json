@@ -9,6 +9,7 @@
       "description": "Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.",
       "skills": [
         "asset-designer",
+        "cocoindex-rules-init",
         "deep-research",
         "direct-cli",
         "forward",
@@ -28,6 +29,7 @@
       ],
       "commands": [
         "asset-designer",
+        "cocoindex-rules-init",
         "deep-research",
         "direct-cli",
         "forward",

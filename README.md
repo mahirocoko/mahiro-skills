@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.30 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.31 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.30 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.31 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -105,6 +105,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Skill | Command | Use when |
 | --- | --- | --- |
 | `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
+| `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
 | `direct-cli` | `/direct-cli` | You need a direct Gemini or Cursor CLI lane in tmux. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
@@ -127,8 +128,9 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Bundle | Install | Use |
 | --- | --- | --- |
 | Orientation | `bun ./src/cli.ts install recap rrr forward --agent opencode --scope local` | `/recap --now`, `/rrr`, `/forward` |
+| CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
-| Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, refine rules from feedback, apply Mahiro style lens |
+| Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, research, transcript lanes |
 | Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local` | UI taste filtering, asset packs, image prompts |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini --scope local` | Install one skill across adapters |

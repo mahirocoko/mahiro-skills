@@ -5,6 +5,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 ## Skills
 
 - `asset-designer` — Asset director for production-ready website image assets and manifests. Trigger on: cutout/background removal, layer separation, transparent PNG packs, missing web assets, asset QA/delivery notes.
+- `cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Trigger on: create or patch `AGENTS.md` for `ccc` / `cocoindex-code`, semantic code-search doctrine, repo-local search rules, make agents prefer CocoIndex, `ดู repo หน่อย` / `หาโค้ดส่วนนี้` routing rules.
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
 - `direct-cli` — Direct executor playbook for Gemini CLI and Cursor CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
@@ -28,6 +29,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Project tracking bundle**: `project`, `learn`
 - **Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
+- **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
 - **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`
 
 ## Install examples
