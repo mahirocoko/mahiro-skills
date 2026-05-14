@@ -134,6 +134,33 @@ describe("install", () => {
     }
   });
 
+  test("installs one skill for Letta Code without command output", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("letta-code", "local", ["project"], false, temp.env);
+      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-letta-code.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        scope: string;
+        root: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands", "project.md"))).toBe(false);
+      expect(existsSync(receiptPath)).toBe(true);
+      expect(receipt.agent).toBe("letta-code");
+      expect(receipt.scope).toBe("local");
+      expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
+      expect(receipt.installedSkills).toEqual(["project"]);
+      expect(receipt.installedCommands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("installs one skill and markdown command for codex", () => {
     const temp = makeTempEnv();
     try {

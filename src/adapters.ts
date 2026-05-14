@@ -41,6 +41,10 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
       return join(cwd, ".codex");
     }
 
+    if (agent === "letta-code") {
+      return join(cwd, ".agents");
+    }
+
     return join(cwd, ".gemini");
   }
 
@@ -64,11 +68,15 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
     return join(home, ".codex");
   }
 
+  if (agent === "letta-code") {
+    return join(home, ".letta");
+  }
+
   return join(home, ".gemini");
 }
 
 export function supportsCommands(agent: ScopedAgent): boolean {
-  return isImplementedAgent(agent);
+  return isImplementedAgent(agent) && agent !== "letta-code";
 }
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {

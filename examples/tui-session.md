@@ -33,7 +33,7 @@ Proceed with update?
 Home
   → Plan (dry run)
 Agents
-  → All agents (opencode, claude-code, cursor, gemini, codex)
+  → All agents (opencode, claude-code, cursor, gemini, codex, letta-code)
 Scope
   → local
 Items

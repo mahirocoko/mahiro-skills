@@ -192,6 +192,33 @@ describe("doctor", () => {
     }
   });
 
+  test("reports receipt and installed skill path after Letta Code install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("letta-code", "local", ["recap"], false, temp.env);
+      const [result] = doctor("letta-code", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-letta-code.json"),
+        },
+        {
+          label: "skill:recap",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "recap"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("reports receipt and installed paths after codex install", () => {
     const temp = makeTempEnv();
     try {

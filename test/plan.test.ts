@@ -115,6 +115,27 @@ describe("plan", () => {
     }
   });
 
+  test("resolves Letta Code roots as skills-only Agent Skills output", () => {
+    const temp = makeTempEnv();
+    try {
+      const localPlan = createPlan("letta-code", "local", ["project"], temp.env);
+      const globalPlan = createPlan("letta-code", "global", ["recap"], temp.env);
+
+      expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project"),
+      ]);
+      expect(localPlan.commands).toEqual([]);
+      expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".letta"));
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "recap"),
+      ]);
+      expect(globalPlan.commands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("resolves codex roots and markdown command compatibility output", () => {
     const temp = makeTempEnv();
     try {

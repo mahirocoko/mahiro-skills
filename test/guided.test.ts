@@ -117,8 +117,8 @@ describe("guided", () => {
     try {
       const result = expectInstallPlans(await runGuided(makeOptions(), temp.env, prompt.io));
 
-      expect(result).toHaveLength(5);
-      expect(result.map((plan) => plan.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex"]);
+      expect(result).toHaveLength(6);
+      expect(result.map((plan) => plan.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code"]);
       expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(true);
     } finally {
       temp.cleanup();

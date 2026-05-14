@@ -29,6 +29,7 @@ Use current repo assets as fixtures.
 | cursor | Yes | Yes | Yes |
 | gemini | Yes | Yes | Yes |
 | codex | Yes | Yes | Yes |
+| letta-code | Yes | Yes | Yes |
 
 ### Install unit x expected behavior
 
@@ -85,6 +86,20 @@ Expected:
 - `skills/project/` is planned
 - `commands/project.md` is also planned because the adapter supports commands
 
+### Case 2c — Letta Code local Agent Skills output
+
+Input:
+
+```text
+mahiro-skills plan project --agent letta-code --scope local
+```
+
+Expected:
+
+- root resolves to `.agents`
+- `skills/project/` is planned for `.agents/skills/project`
+- no command artifact is planned because Letta Code support is skills-only in v0
+
 ### Case 3 — Gemini local opaque subtree
 
 Input:
@@ -121,7 +136,7 @@ For successful install:
 - declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
 - interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
 - receipt detail shows receipt metadata plus reconstructed `source -> target` rows from the planner when installed names are present
-- direct CLI plan/install/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested
+- direct CLI plan/install/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`
 - multi-agent plan/install in the TUI end with a batch summary note card
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete

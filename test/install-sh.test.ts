@@ -38,7 +38,7 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.31");
+    expect(decode(result.stdout)).toContain("v0.1.32");
   });
 
   test("installs one skill and paired command from a provided repo root", () => {
@@ -255,6 +255,31 @@ exit 1
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "skills", "project", "SKILL.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", "commands", "project.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor", ".mahiro-skills", "receipts", "local-cursor.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs one skill for Letta Code from a provided repo root", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+
+      const result = Bun.spawnSync(["bash", installScript, "project", "--agent", "letta-code", "--scope", "local"], {
+        cwd: repoRoot,
+        env: {
+          ...temp.env,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+        },
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(decode(result.stdout)).toContain('"status": "installed"');
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands", "project.md"))).toBe(false);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-letta-code.json"))).toBe(true);
     } finally {
       temp.cleanup();
     }

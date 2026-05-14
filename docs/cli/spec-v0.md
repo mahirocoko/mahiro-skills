@@ -56,7 +56,7 @@ The CLI must not reinterpret internal skill files beyond path planning and colli
 
 ## Terminology
 
-- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, or `codex`
+- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, or `letta-code`
 - **scope**: `global` or `local`
 - **adapter**: target-specific planner and installer for one agent
 - **bundle**: named install group defined by manifest or default repo bundle
@@ -74,6 +74,7 @@ Currently implemented runtime targets are:
 3. `cursor`
 4. `gemini`
 5. `codex`
+6. `letta-code`
 
 For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
 
@@ -89,6 +90,7 @@ For the current Cursor and Gemini rollout history plus the remaining follow-on p
 | cursor | Yes | Yes | Yes | Yes | Yes |
 | gemini | Yes | Yes | Partial | Partial | Yes |
 | codex | Yes | Partial | Yes | Yes | Yes |
+| letta-code | Yes | No | Partial | Partial | Yes |
 
 Interpretation rules:
 
@@ -107,6 +109,7 @@ Interpretation rules:
 | cursor | `~/.cursor` | `.cursor` |
 | gemini | `~/.gemini` | `.gemini` |
 | codex | `~/.codex` | `.codex` |
+| letta-code | `~/.letta` | `.agents` |
 
 If an agent has multiple valid roots, the adapter must resolve one canonical root and report it in the plan.
 
@@ -132,7 +135,7 @@ mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ..
 - **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
 - Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install`, `--agent` and `--scope`. `list` may run with `--mode list` only
 - Item selection uses a default-bundle shortcut plus **checkbox-style multiselect** (space to toggle, enter to confirm) over repo inventory, not numbered readline picks
-- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, `gemini`, and `codex`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
+- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
 - Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
 - When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent
 - Update installed returns an empty result with a note when no receipts exist, and skips empty receipts with a note instead of prompting for replacement choices
@@ -269,6 +272,12 @@ Receipt fields:
 - Install packaged skills into `<root>/skills/`
 - Install packaged markdown commands into `<root>/commands/*.md` as compatibility output
 - `AGENTS.md` integration is adapter-specific and deferred unless explicitly requested
+
+### Letta Code
+
+- Install packaged skills into `<root>/skills/`, which resolves to `.agents/skills/` locally and `~/.letta/skills/` globally
+- Do not install command wrappers in v0 because Letta Code's documented Agent Skills surface defines skill directories, not a slash-command artifact directory
+- Preserve skill directories as opaque Agent Skills-compatible trees with each `SKILL.md` and bundled resources intact
 
 ## Result model
 

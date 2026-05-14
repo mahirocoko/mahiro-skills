@@ -87,6 +87,26 @@ describe("list", () => {
     }
   });
 
+  test("returns full receipt after Letta Code install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("letta-code", "local", ["project"], false, temp.env);
+
+      const receipt = listInstalled("letta-code", "local", temp.env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("letta-code");
+      expect(receipt?.scope).toBe("local");
+      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_CWD}/.agents`);
+      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
+      expect(receipt?.installedSkills).toEqual(["project"]);
+      expect(receipt?.installedCommands).toEqual([]);
+      expect(receipt?.installedAt.length).toBeGreaterThan(0);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("returns full receipt after codex install", () => {
     const temp = makeTempEnv();
     try {
@@ -113,6 +133,7 @@ describe("list", () => {
       install("cursor", "local", ["project"], false, temp.env);
       install("gemini", "global", ["gemini"], false, temp.env);
       install("codex", "local", ["recap"], false, temp.env);
+      install("letta-code", "global", ["project"], false, temp.env);
 
       expect(listInstalledSummaries(temp.env)).toEqual([
         {
@@ -135,6 +156,13 @@ describe("list", () => {
           installedSkills: ["recap"],
           installedCommands: ["recap"],
           installed: ["recap"],
+        },
+        {
+          agent: "letta-code",
+          scope: "global",
+          installedSkills: ["project"],
+          installedCommands: [],
+          installed: ["project"],
         },
       ]);
     } finally {

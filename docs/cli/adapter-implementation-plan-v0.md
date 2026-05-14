@@ -6,7 +6,7 @@ The design constraint is simple: do not fork the product into per-agent installe
 
 ## Goal
 
-Finish the follow-on adapter rollout for `cursor` and `gemini` without weakening the current guarantees around `plan`, install receipts, collision handling, and opaque skill-tree copying.
+Finish the follow-on adapter rollout for `cursor`, `gemini`, and skills-only Letta Code support without weakening the current guarantees around `plan`, install receipts, collision handling, and opaque skill-tree copying.
 
 ## Current starting point
 
@@ -80,12 +80,34 @@ Guided UX is valuable, but only after the adapter model can explain what is auto
 
 Status: implemented in the current repo pass as a thin CLI wizard over the existing planner and installer flow, with summary and confirmation prompts in interactive mode.
 
+## Phase 4: Letta Code Agent Skills support
+
+### Why now
+
+Letta Code implements the open Agent Skills directory contract, so the existing opaque `skills/<name>/` copy model maps cleanly onto its documented local and global skill directories.
+
+### Scope
+
+- implement `letta-code` as a skills-only adapter target
+- resolve local installs to `.agents/skills/<name>/` via the adapter root `.agents`
+- resolve global installs to `~/.letta/skills/<name>/` via the adapter root `~/.letta`
+- skip command wrappers because Letta Code's documented skills surface does not define a command artifact directory
+
+### Exit criteria
+
+- `plan` can produce deterministic Letta Code skill-only output
+- `install`, `list`, and `doctor` work for Letta Code receipts and installed skill paths
+- tests cover root resolution, omitted commands, receipts, and CLI/guided selection
+- docs describe Letta Code as Agent Skills-compatible rather than slash-command-compatible
+
+Status: implemented in the current repo pass for packaged Agent Skills trees and receipts.
+
 ## Deferred items
 
 - full Gemini extension install modeling
 - automated settings orchestration for confirmation-heavy tool flows
 - any target-specific plugin build pipeline that goes beyond file planning and copied assets
-- expansion to future spec-only targets before Cursor, Gemini, and Codex are stable
+- expansion to future spec-only targets before Cursor, Gemini, Codex, and Letta Code are stable
 
 ## File and module focus for the first implementation pass
 

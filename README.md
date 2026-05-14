@@ -1,6 +1,6 @@
 # mahiro-skills
 
-Mahiro's packaged agent skills and slash commands for OpenCode, Claude Code, Cursor, Gemini, and Codex.
+Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for planning, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.31 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.32 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.31 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.32 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -72,7 +72,7 @@ The TUI wraps the same planner and installer core. Use it when you want menus fo
 
 Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.
 
-Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, and `codex`.
+Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
 
 Common commands:
 
@@ -85,10 +85,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope local
 
 # Install selected skills for multiple agents
-bun ./src/cli.ts install project --agent cursor,gemini --scope local
+bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local
 
 # Check installed files
 bun ./src/cli.ts doctor --agent opencode --scope local
+
+# Install Agent Skills for Letta Code
+bun ./src/cli.ts install project --agent letta-code --scope local
 ```
 
 More detail lives in:
@@ -133,7 +136,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, research, transcript lanes |
 | Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local` | UI taste filtering, asset packs, image prompts |
-| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini --scope local` | Install one skill across adapters |
+| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites
 
@@ -151,6 +154,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - `skills/llms.txt` — compact skill discovery index for agents and humans
 - `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
 - `commands-gemini/mh-<name>.toml` — native Gemini custom commands
+- Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`
 - `examples/` — runnable or copyable workflow examples for the CLI/TUI surface
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
@@ -181,6 +185,6 @@ Packaging facts to preserve:
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` are compatibility wrappers for non-Gemini slash-command entrypoints.
 - `commands-gemini/` is the native Gemini custom-command source, installed as namespaced `.toml` files like `mh-watch.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
-- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, and `codex` for packaged skill and command installs.
+- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code` for packaged skill installs; Letta Code is skills-only in v0 because its documented Agent Skills surface does not define a command-wrapper directory.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 - Prefer the source files in this repository and tagged releases over installed copies. Installed copies are useful evidence when debugging drift, but they are not the canonical authoring surface.

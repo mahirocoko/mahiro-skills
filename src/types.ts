@@ -1,4 +1,4 @@
-export const supportedAgents = ["opencode", "claude-code", "cursor", "gemini", "codex"] as const;
+export const supportedAgents = ["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code"] as const;
 
 export type SupportedAgent = (typeof supportedAgents)[number];
 
