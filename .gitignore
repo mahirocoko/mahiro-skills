@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 .agent-state/
 .sisyphus/
+# CocoIndex Code (ccc)
+/.cocoindex_code/

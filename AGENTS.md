@@ -32,6 +32,15 @@
 - `mahiro-style` is fallback taste doctrine, not a replacement for target repo evidence.
 - Keep examples repo-neutral. Do not leak evidence repo names into generated skill templates.
 
+## Codebase Search
+
+- Prefer `cocoindex-code` MCP `search` when available for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar-module investigation.
+- If the MCP tool is unavailable but the CLI exists, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
+- Use `rg` for exact text, regex, symbol, filename, and string-presence checks.
+- Use AST-aware tools for syntax-shaped or structure-aware searches.
+- Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, `หาโค้ดส่วนนี้`, and `สรุปไฟล์นี้` as CocoIndex-first triggers when available.
+- After meaningful code changes, refresh or re-index before relying on semantic results that may be stale.
+
 ## Release Checklist
 
 Before a patch release, keep these surfaces aligned:
