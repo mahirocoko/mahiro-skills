@@ -4,3 +4,4 @@ node_modules/
 .sisyphus/
 # CocoIndex Code (ccc)
 /.cocoindex_code/
+.letta
