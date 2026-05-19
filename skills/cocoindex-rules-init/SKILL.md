@@ -1,6 +1,6 @@
 ---
 name: cocoindex-rules-init
-description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance that makes agents prefer cocoindex-code / ccc for semantic codebase search, repo exploration, and index maintenance.
+description: Mahiro Skill | Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance that makes agents prefer cocoindex-code / ccc for semantic codebase search, repo exploration, and index maintenance.
 user-invocable: true
 ---
 
@@ -22,6 +22,7 @@ Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoInde
 - Inspect the target repo's current instruction surface.
 - Create or surgically update repo-local `AGENTS.md`.
 - Add a high-signal rule block that explains when to use `cocoindex-code` MCP `search`, when to use `ccc search` / `ccc index`, and when to keep using `rg` or AST tools.
+- Add a high-signal rule block that explains the normal workflow: semantic search locates candidate files/line ranges, then agents read the matched files or ranges for full context before editing or making strong claims.
 - Preserve existing local doctrine and merge the CocoIndex rules into it.
 
 ### Out of scope
@@ -66,14 +67,17 @@ When you write or patch `AGENTS.md`, ensure the final repo-local rules encode al
 2. Fall back to `ccc search` and `ccc index` when the MCP tool is unavailable but the CLI exists.
 3. Keep `rg` for exact text, symbol, filename, and regex search.
 4. Keep AST tools for syntax-shaped or structure-aware search.
-5. Mention both English and Thai trigger examples where helpful, such as:
+5. State that semantic search does **not** replace reading files: after `ccc search` returns paths and line ranges, read the relevant file/range with the available file-read tool or `sed -n` before editing or making strong claims.
+6. State that exact known paths/symbols can go directly to `Read`, `rg`, or AST-aware tools; do not force CocoIndex for tiny known-file lookups.
+7. Mention that `ccc search` scopes to the current working directory by default; run from repo root or pass `--path` when the intended scope is broader or narrower.
+8. Mention both English and Thai trigger examples where helpful, such as:
    - `search the codebase`
    - `find where X is implemented`
    - `how does this repo work`
    - `ดู repo หน่อย`
    - `หาโค้ดส่วนนี้`
    - `สรุปไฟล์นี้`
-6. Include an index-freshness rule: after meaningful code changes, prefer refreshing or re-indexing before relying on stale semantic results.
+9. Include an index-freshness rule: after meaningful code changes, prefer refreshing or re-indexing before relying on stale semantic results.
 
 ## Write Strategy
 
@@ -102,8 +106,11 @@ Use a compact block close to this shape, adapted to the target repo's wording:
 
 - Prefer `cocoindex-code` MCP `search` for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar modules.
 - If the MCP tool is unavailable, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
+- Run semantic search from the repo root, or pass `--path`, because `ccc search` defaults to the current working directory scope.
+- Treat semantic results as candidate locations: read the returned file/ranges with the available file-read tool or `sed -n` before editing or making strong claims.
 - Use `rg` for exact text, regex, symbol, and filename search.
 - Use AST-aware search for syntax-shaped queries.
+- Go directly to `Read`/`rg`/AST tools for known files, exact symbols, or tiny lookups; CocoIndex is a locator, not a replacement for source reads.
 - Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, and `หาโค้ดส่วนนี้` as CocoIndex-first triggers when available.
 ```
 
@@ -138,6 +145,8 @@ Before declaring done:
 
 - Confirm the repo-local instruction file exists at the intended path.
 - Confirm the final wording distinguishes semantic search from exact-match search.
+- Confirm the final wording makes the search → read/verify loop explicit.
+- Confirm scope behavior is covered if the rule mentions `ccc search` directly: repo root or `--path` for intended search scope.
 - Confirm no claim assumes CocoIndex is installed unless a local file proves it.
 - Confirm the new rules are concise and not a generic tutorial dump.
 - Confirm existing repo-local doctrine was preserved unless the human asked for replacement.
