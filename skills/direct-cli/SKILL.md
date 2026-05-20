@@ -25,6 +25,10 @@ Use direct `gemini` CLI or Cursor CLI sessions when you want a fresh executor la
 - Use a fresh interactive tmux lane by default
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
+- Default models: Gemini `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor heavy review / deep reasoning `claude-opus-4-7-high`
+- If the user invokes `/direct-cli gemini ...` or `/direct-cli cursor ...` without an explicit model, stop and ask which skill-defined model to use before launching the lane; do not show the full CLI model list unless requested or troubleshooting
+- For Gemini, the only normal skill-defined choice is `gemini-3.1-pro-preview`; treat it as the recommended/default choice and use other Gemini models only if the user explicitly names one
+- For Cursor, ask among `composer-2.5-fast`, `composer-2.5`, and `claude-opus-4-7-high`; mention `composer-2-fast` only as a fallback if the current preferred models fail
 - Gemini headless mode is a hard block: never use `gemini -p`, `gemini --prompt`, or any non-interactive Gemini execution path
 - Launch Gemini and Cursor in tmux with yolo-style flags only, not with the task prompt inline
 - Capture the pane and confirm readiness before sending the real task prompt with `tmux send-keys`
@@ -46,7 +50,7 @@ Forbidden:
 Required:
 
 - start or reuse a tmux lane
-- launch Gemini with `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo` and no task prompt inline
+- launch Gemini with `gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust` and no task prompt inline
 - verify the pane is ready, then send the task prompt with `tmux send-keys`
 - verify progress and completion with `tmux capture-pane`
 
@@ -58,6 +62,8 @@ Reason: headless Gemini bypasses this skill's pane-first execution contract and 
 /direct-cli
 /direct-cli gemini
 /direct-cli cursor
+/direct-cli cursor --model composer-2.5-fast
+/direct-cli gemini --model gemini-3.1-pro-preview
 /direct-cli recovery
 ```
 

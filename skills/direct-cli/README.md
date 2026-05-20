@@ -4,7 +4,11 @@
 
 It is for situations where you want to bypass the usual orchestration runtime but still keep good operator posture: narrow scope, current-worktree continuation, pane-first verification, launch first then send the task prompt, and fresh-session recovery when the lane looks unhealthy.
 
-The default posture is now explicit: launch in tmux with yolo-style approval flags, do not attach the task prompt inline, capture the pane until it is ready, then send the real prompt with `tmux send-keys`. Avoid Cursor headless mode. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help`. If the intended workspace shows a trust prompt, accept it in the pane before sending the task prompt. That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded.
+The default posture is now explicit: launch in tmux with yolo-style approval flags, do not attach the task prompt inline, capture the pane until it is ready, then send the real prompt with `tmux send-keys`. Avoid Cursor headless mode. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent models`, `agent --help`, or `gemini --help`. Gemini should launch with `--skip-trust` when appropriate for the intended workspace.
+
+Default models are explicit too: Gemini uses `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup uses `composer-2.5-fast`; Cursor balanced implementation uses `composer-2.5`; Cursor heavy review / deep reasoning uses `claude-opus-4-7-high`.
+
+If a command-style invocation names the lane but not the model — for example `/direct-cli gemini ...` or `/direct-cli cursor ...` — ask the user which skill-defined model to use before launching. Do not present the full CLI model list unless the user requests it or a preferred model fails. For Gemini, confirm the single normal default `gemini-3.1-pro-preview`; for Cursor, offer `composer-2.5-fast`, `composer-2.5`, and `claude-opus-4-7-high`.
 
 ## What this skill is for
 
@@ -34,6 +38,7 @@ Use it when you want AI to:
 /direct-cli "use Gemini CLI directly for a narrow UI follow-up"
 /direct-cli gemini "fresh session for current-worktree-only visual pass"
 /direct-cli cursor "cleanup pass after a Gemini UI run"
+/direct-cli cursor --model composer-2.5-fast "cleanup pass after a Gemini UI run"
 /direct-cli recovery "the direct lane looks stuck"
 ```
 

@@ -22,6 +22,8 @@ Use this path when you want:
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
 - Use discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
 - Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
+- If the invocation is `/direct-cli gemini ...` or `/direct-cli cursor ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
+- Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
 - Gemini headless mode is forbidden. Do not use `gemini -p` or `gemini --prompt`, even for recovery or a quick finish.
 - Launch Gemini and Cursor in tmux with yolo approvals, but without the task prompt inline.
 - Capture the pane and confirm the session is ready before sending the real task prompt with `tmux send-keys`.
@@ -38,9 +40,24 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 
 - Gemini model: `gemini-3.1-pro-preview`
 - Cursor heavy review / deep reasoning model: `claude-opus-4-7-high`
-- Cursor lighter cleanup model: `composer-2`
-- Gemini launch style: interactive tmux lane with `--approval-mode yolo`, then send the prompt after readiness
+- Cursor quick implementation / cleanup model: `composer-2.5-fast`
+- Cursor balanced implementation model: `composer-2.5`
+- Cursor fallback default model: `composer-2-fast` (the CLI account default as of 2026-05-19)
+- Gemini launch style: interactive tmux lane with `--approval-mode yolo --skip-trust`, then send the prompt after readiness
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
+
+### Model selection rule
+
+- If `/direct-cli gemini ...` has no explicit model, ask the user to confirm `gemini-3.1-pro-preview` as the Gemini direct-lane model. This is the always-preferred Gemini default; use other Gemini models only when the user explicitly names one.
+- If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
+  1. `composer-2.5-fast` — recommended for ordinary Cursor direct-lane work: quick implementation, cleanup, narrow refactors, and follow-up fixes.
+  2. `composer-2.5` — balanced reasoning when the task needs more than fast cleanup but not a full heavy review lane.
+  3. `claude-opus-4-7-high` — high-stakes review, deep reasoning, or ambiguous architecture/debugging.
+- Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined.
+- If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
+- Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
+- Use `agent --list-models` or `agent models` before changing Cursor model names; Cursor's list changes faster than this playbook.
+- Gemini CLI has no confirmed `--list-models` equivalent in `0.42.0`; use known working model names or current Gemini CLI docs/package evidence before changing Gemini defaults.
 
 ## Gemini headless hard block
 
@@ -57,7 +74,7 @@ Required:
 
 ```bash
 tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo' Enter
+tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
 tmux capture-pane -p -t "gemini-task" -S -120
 tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -88,7 +105,7 @@ CURSOR_DIRECT_CLI_OK
 
 ```bash
 tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo' Enter
+tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
 tmux capture-pane -p -t "gemini-task" -S -120
 tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly GEMINI_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "gemini-task" -S -120
@@ -127,7 +144,7 @@ gemini --help
 
 ```bash
 tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo' Enter
+tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
 tmux capture-pane -p -t "gemini-task" -S -120
 tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -174,7 +191,7 @@ If you see errors like API 400 function-call mismatch, abandon the old session a
 ```bash
 tmux kill-session -t gemini-task
 tmux new-session -d -s "gemini-task-fresh"
-tmux send-keys -t gemini-task-fresh 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo' Enter
+tmux send-keys -t gemini-task-fresh 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
 tmux capture-pane -p -t gemini-task-fresh -S -120
 tmux send-keys -t gemini-task-fresh 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -208,15 +225,23 @@ Use the known-good Cursor defaults first. If the model or flags are in doubt on 
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "claude-opus-4-7-high" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "composer-2.5-fast" --yolo --approve-mcps' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a lighter pass:
+For a balanced Composer pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "composer-2" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps' Enter
+tmux capture-pane -p -t cursor-task -S -120
+tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
+```
+
+For a heavy review / deep reasoning pass:
+
+```bash
+tmux send-keys -t cursor-task 'agent --model "claude-opus-4-7-high" --yolo --approve-mcps' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
