@@ -1,11 +1,11 @@
 # Direct CLI Playbook
 
-This playbook is for using `gemini` CLI and `cursor` CLI directly, without going through the usual orchestration runtime.
+This playbook is for using `gemini` CLI, Cursor CLI, and Antigravity CLI (`agy`) directly, without going through the usual orchestration runtime.
 
 The intended model is simple:
 
 - Sisyphus stays the conversation owner.
-- Gemini CLI or Cursor CLI acts as the direct executor.
+- Gemini CLI, Cursor CLI, or Antigravity CLI acts as the direct executor.
 - Tmux pane output is treated as the nearest source of execution truth.
 
 ## When to use direct CLI
@@ -20,12 +20,13 @@ Use this path when you want:
 
 - Prefer a **fresh tmux session** when an old session looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
-- Use discovery commands such as `agent --list-models`, `agent --help`, or `gemini --help` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
+- Use discovery commands such as `agent --list-models`, `agent --help`, `gemini --help`, or `agy --help` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
 - Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
-- If the invocation is `/direct-cli gemini ...` or `/direct-cli cursor ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
+- Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
+- If the invocation is `/direct-cli gemini ...`, `/direct-cli cursor ...`, or `/direct-cli agy ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
 - Gemini headless mode is forbidden. Do not use `gemini -p` or `gemini --prompt`, even for recovery or a quick finish.
-- Launch Gemini and Cursor in tmux with yolo approvals, but without the task prompt inline.
+- Launch Gemini, Cursor, and Antigravity in tmux with yolo approvals, but without the task prompt inline.
 - Capture the pane and confirm the session is ready before sending the real task prompt with `tmux send-keys`.
 - Remember that yolo approvals do not bypass workspace trust prompts. If the pane shows a trust prompt for the intended repo, accept it in the pane or hand it to the user to accept before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
@@ -43,8 +44,12 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Cursor quick implementation / cleanup model: `composer-2.5-fast`
 - Cursor balanced implementation model: `composer-2.5`
 - Cursor fallback default model: `composer-2-fast` (the CLI account default as of 2026-05-19)
+- Antigravity default/current model: `Gemini 3.5 Flash (High)`
+- Antigravity stronger Gemini model: `Gemini 3.1 Pro (High)`
+- Antigravity heavy review model: `Claude Opus 4.6 (Thinking)`
 - Gemini launch style: interactive tmux lane with `--approval-mode yolo --skip-trust`, then send the prompt after readiness
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
+- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions`, then send the prompt after readiness
 
 ### Model selection rule
 
@@ -54,6 +59,12 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   2. `composer-2.5` — balanced reasoning when the task needs more than fast cleanup but not a full heavy review lane.
   3. `claude-opus-4-7-high` — high-stakes review, deep reasoning, or ambiguous architecture/debugging.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined.
+- If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
+  1. `Gemini 3.5 Flash (High)` — recommended/current fast Antigravity lane.
+  2. `Gemini 3.1 Pro (High)` — stronger Gemini reasoning.
+  3. `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
+- Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
+- Antigravity CLI `1.0.0` has no confirmed command-line model flag; if the chosen model is not already active in the pane, use `/model` in the TUI before sending the task prompt, or ask the user to select it.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
 - Use `agent --list-models` or `agent models` before changing Cursor model names; Cursor's list changes faster than this playbook.
@@ -127,6 +138,7 @@ Use these when you need to validate local behavior rather than guessing:
 agent --list-models
 agent --help
 gemini --help
+agy --help
 ```
 
 ---
@@ -274,6 +286,69 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ---
 
+## Antigravity CLI direct playbook
+
+### Best for
+
+- fast terminal-first agent experiments
+- repo inspection and pre-release verification
+- trying Antigravity subagents, MCP, skills, and slash-command behavior
+- using Google Antigravity's shared agent harness without opening the full desktop UI
+
+### Fresh session
+
+Use the known-good Antigravity defaults first. Antigravity currently stores its active model in `~/.gemini/antigravity-cli/settings.json` and model switching is done through the `/model` TUI.
+
+```bash
+tmux new-session -d -s "agy-task"
+tmux send-keys -t agy-task 'agy --dangerously-skip-permissions' Enter
+tmux capture-pane -p -t agy-task -S -120
+tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
+```
+
+### Model selection
+
+If a non-current Antigravity model is required, switch inside the pane before sending the task prompt:
+
+```bash
+tmux send-keys -t agy-task '/model' Enter
+tmux capture-pane -p -t agy-task -S -120
+```
+
+Then choose one of the skill-defined labels in the TUI:
+
+- `Gemini 3.5 Flash (High)` — current/default fast lane.
+- `Gemini 3.1 Pro (High)` — stronger Gemini reasoning.
+- `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
+
+### Prompt template
+
+```text
+Continue from the current worktree only.
+Do not restart from scratch.
+Do not use local wrappers such as rtk; use raw repo commands only.
+
+Scope:
+- <file1>
+- <file2>
+
+Task:
+<inspect / implement / verify>
+
+Rules:
+- keep changes minimal
+- do not touch unrelated files
+- report changed files and rationale
+```
+
+### Check current pane output
+
+```bash
+tmux capture-pane -p -t "agy-task" -S -120
+```
+
+---
+
 ## Recommended combined flow
 
 ### Gemini first, Cursor second
@@ -285,7 +360,11 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 This works well when Gemini is stronger at producing the initial UI direction, while Cursor is stronger at tightening code structure afterward.
 
-The default direct path is still interactive for both tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Gemini into headless `-p` / `--prompt` mode at all. Launch first, check readiness, then send the task prompt.
+### Antigravity as a verification or exploration lane
+
+Use Antigravity CLI after implementation when you want another agent harness to inspect the repo, run raw verification commands, or test agent/subagent behavior. Keep prompts explicit about not using local wrappers such as `rtk` in user-facing snippets.
+
+The default direct path is still interactive for all tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Gemini into headless `-p` / `--prompt` mode at all. Do not switch Antigravity into `agy -p` / `--print` / `--prompt` mode by default. Launch first, check readiness, then send the task prompt.
 
 ---
 
@@ -396,6 +475,7 @@ Capture pane output:
 ```bash
 tmux capture-pane -p -t "gemini-task" -S -120
 tmux capture-pane -p -t "cursor-task" -S -120
+tmux capture-pane -p -t "agy-task" -S -120
 ```
 
 Interrupt current task:
@@ -403,6 +483,7 @@ Interrupt current task:
 ```bash
 tmux send-keys -t gemini-task C-c
 tmux send-keys -t cursor-task C-c
+tmux send-keys -t agy-task C-c
 ```
 
 Kill session:
@@ -410,6 +491,7 @@ Kill session:
 ```bash
 tmux kill-session -t gemini-task
 tmux kill-session -t cursor-task
+tmux kill-session -t agy-task
 ```
 
 Create fresh session:
@@ -417,6 +499,7 @@ Create fresh session:
 ```bash
 tmux new-session -d -s "gemini-task-fresh"
 tmux new-session -d -s "cursor-task-fresh"
+tmux new-session -d -s "agy-task-fresh"
 ```
 
 ---
@@ -444,5 +527,6 @@ When a direct CLI lane looks stuck:
 5. Confirm the launch is ready, then send a shorter, narrower prompt.
 6. Confirm the new prompt was actually submitted.
 7. Never switch Gemini to headless mode.
+8. Keep Antigravity pane-first unless the user explicitly asks for print/headless output.
 
 The key rule is simple: **fresh session, narrow scope, pane-first truth**.

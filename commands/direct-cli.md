@@ -1,5 +1,5 @@
 ---
-description: Direct executor playbook for using gemini CLI and Cursor CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery.
+description: Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery.
 allowed-tools:
   - Bash
   - Read
@@ -21,6 +21,6 @@ Execute the `direct-cli` skill with args: `$ARGUMENTS`
 
 Prefer the known-good tmux launch commands from the skill playbook first, then wait for pane readiness and send the task prompt with `tmux send-keys`.
 
-If `$ARGUMENTS` names a lane (`gemini` or `cursor`) but does not explicitly name a model, ask the user which skill-defined model to use before launching. Do not show the full CLI model list unless requested or troubleshooting. Use the skill-defined choices: Gemini `gemini-3.1-pro-preview`; Cursor `composer-2.5-fast`, `composer-2.5`, or `claude-opus-4-7-high`.
+If `$ARGUMENTS` names a lane (`gemini`, `cursor`, or `agy`) but does not explicitly name a model, ask the user which skill-defined model to use before launching. Do not show the full CLI model list unless requested or troubleshooting. Use the skill-defined choices: Gemini `gemini-3.1-pro-preview`; Cursor `composer-2.5-fast`, `composer-2.5`, or `claude-opus-4-7-high`; Antigravity `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, or `Claude Opus 4.6 (Thinking)`.
 
-If model or flag availability is uncertain on this machine, it is acceptable to validate with commands such as `agent --list-models`, `agent --help`, or `gemini --help` before launching the direct lane.
+If model or flag availability is uncertain on this machine, it is acceptable to validate with commands such as `agent --list-models`, `agent --help`, `gemini --help`, or `agy --help` before launching the direct lane.
