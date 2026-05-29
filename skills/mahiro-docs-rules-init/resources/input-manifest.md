@@ -62,6 +62,13 @@ Every item below refers to the target repo being initialized, not the repo that 
 - typecheck command
 - test commands
 
+## Search and Agent Guidance
+
+- whether the repo has `.cocoindex_code/` or other CocoIndex/`ccc` setup
+- whether existing `AGENTS.md` or docs already require semantic search first
+- exact search commands that work locally, such as `ccc search --refresh <query>` or `rg <pattern>`
+- whether generated guidance should mention CocoIndex as `Current Reality`, `Preferred Direction`, or omit it entirely
+
 ## Topic Classification
 
 For each topic the skill may document, classify it as:
@@ -79,3 +86,7 @@ For data ownership topics, classify the dominant shape too, such as:
 - `not established`
 
 Use that classification to decide whether to create the file, soften the wording, or skip it.
+
+## Cross-Repo Guard
+
+If a candidate rule comes from another Mahiro repo, record it only as a question or preferred direction until the target repo proves it locally. Do not carry over package manager, formatter, i18n, service, state, primitive, commit, or testing mechanics from memory alone.

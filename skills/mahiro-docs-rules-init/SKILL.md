@@ -30,6 +30,8 @@ Use this split in generated docs:
 
 Never promote Mahiro-style preference into `Current Reality` unless the target repo proves it.
 
+Do not import mechanics from another Mahiro repo as current fact. A convention from PaoPlew, Fanarium, Haabiz, Haabiz Landing, eizypay, Murmur, or mahiro-skills can inspire `Preferred Direction`, but the generated docs must prove local package manager, framework, i18n source locale, primitive library, state layer, service/data shape, and verification commands from the target repo itself.
+
 ## V1 Scope
 
 This version supports `init` only.
@@ -71,6 +73,7 @@ Before writing anything, inspect these inputs:
 - `package.json`, workspace config, and script/task runner files
 - framework, router, styling, i18n, state, and data-fetching signals
 - existing code structure, naming, and boundary patterns
+- semantic-search or code-search tooling signals such as `.cocoindex_code/`, `ccc`, or existing `AGENTS.md` search guidance
 
 Do not generate files from template assumptions alone.
 
@@ -79,6 +82,7 @@ Do not generate files from template assumptions alone.
 This skill is a local boilerplate generator, not a research task.
 
 - Stay inside the target repo only.
+- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available, and `rg` for exact strings.
 - Do not use web search, GitHub search, Context7, subagents, or any external documentation lookup.
 - Do not use unsupported local commands such as `sg`.
 - Do not run the dev server, preview server, or long-running app processes.
@@ -139,6 +143,7 @@ The skill should aim to create these files. See `resources/file-matrix.md` for t
 - No invented architecture
 - No guessed commands
 - No reference-repo leakage as if it were target-repo fact
+- No copied convention from another Mahiro repo unless this target repo proves the same rule locally
 - No docs that feel like generic AI filler
 - One consistent docs-family voice across files
 - Template grammar should be mirrored closely for the final docs shape

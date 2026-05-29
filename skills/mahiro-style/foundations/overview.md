@@ -16,6 +16,7 @@ It is not the source of truth for a target repo's current state. A repo's `Curre
 
 - Treat this skill as fallback doctrine, not as permission to override repo-local rules.
 - Read local instructions before applying cross-repo defaults.
+- Never transplant a convention from one Mahiro repo into another just because both repos are Mahiro-owned. Haabiz, PaoPlew, Fanarium, Haabiz Landing, eizypay, and mahiro-skills can all have different current realities.
 - Use Foundations for stable doctrine about interpretation, structure, and code-style posture.
 - Keep topic-specific implementation guidance in `patterns/`, not in this page.
 - Ground the doctrine in repeated repo evidence, not one-off taste.
@@ -35,6 +36,7 @@ The shape stays stable across repos, but the concrete rules still depend on loca
 - A multi-app repo can still keep each product app's ownership explicit before promoting anything into shared packages.
 - A responsibility-first single app can keep router root, `components`, `hooks`, `services`, `stores`, and `constants` visible without collapsing into one giant bucket.
 - A lean route-first app can still document route files, root providers, tests, and formatter rules clearly in `AGENTS.md`.
+- A marketing Astro app, React Router product app, Next monorepo, Tauri desktop app, and skill-bundle CLI can all deserve different file, i18n, state, and release shapes even when Mahiro's fallback taste is consistent.
 
 Those repos differ in shape, but the shared pattern is consistent: local doctrine wins, repeated structure matters, and fallback style should sharpen the repo's existing direction instead of flattening it.
 
@@ -58,6 +60,7 @@ This vocabulary prevents the main failure mode: converting Mahiro preference int
 ## Anti-Examples
 
 - Treating `/mahiro-style` like a global override that can ignore `AGENTS.md`.
+- Copying mechanics from a recently touched Mahiro repo into the current repo without checking local docs, active patterns, and package versions first.
 - Using this page to decide hook, service, or shared UI boundaries that belong in `patterns/`.
 - Writing doctrine here that duplicates detailed naming, i18n, or route-boundary rules.
 - Grounding a rule in one memorable file instead of repeated repo evidence.

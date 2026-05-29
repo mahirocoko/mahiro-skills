@@ -20,6 +20,7 @@ This page defines the exact rule order for `/mahiro-style`.
 - Established repo patterns matter when local docs are absent or partial.
 - Mahiro fallback doctrine fills gaps. It does not erase explicit local rules or strong repeated repo patterns.
 - When sources conflict, explicit local doctrine beats inferred patterns, and stable repo patterns beat fallback taste.
+- A rule proven in another Mahiro repo is still external evidence here. It can suggest a question to ask of the current repo, but it cannot become the current repo's rule without local proof.
 
 ## Preference
 
@@ -49,6 +50,7 @@ Use the same winner order in every repo, but let the local evidence change the o
 - In a responsibility-first single app, file structure, named export conventions, and route-file patterns in `AGENTS.md` beat fallback doctrine even when the fallback would often shape the code differently elsewhere.
 - In a lean route-first app, the local rule that quality checks and formatter posture are part of done-ness wins before cross-repo taste.
 - In any repo where `AGENTS.md` explicitly defines component section order, that explicit doc wins over a partial active-code snapshot, even if the migration is still uneven.
+- In a desktop app, a finance app, a marketing site, and a skill-pack CLI, the same preference may land in different files or not apply at all. Check the target repo's runtime, package manager, i18n source locale, primitive library, and test surface before applying a remembered Mahiro pattern.
 
 ## Examples
 
@@ -64,3 +66,4 @@ Use the same winner order in every repo, but let the local evidence change the o
 - Treating an in-progress codebase snapshot as stronger than an explicit local doctrine rule just because the migration is incomplete.
 - Mixing two conflicting layers into a compromise shape for new code.
 - Using one exceptional file as proof of a repo-wide rule.
+- Treating "we did it in PaoPlew/Fanarium/Haabiz" as enough evidence for this repo.

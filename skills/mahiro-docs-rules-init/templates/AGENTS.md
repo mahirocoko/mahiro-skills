@@ -107,6 +107,19 @@ Prefer the command shape contributors should actually run in this repo today.
 - Add a service layer when REST or API logic repeats across owners and the calls belong to one transport boundary.
 - Keep direct hook-owned access when Supabase-direct or similar SDK calls stay local to one route or module owner.
 
+## Codebase Search
+
+### Current Reality
+
+- Document the repo's real search tools here.
+- If CocoIndex/`ccc` is initialized or repo-local docs already require it, say to use semantic search for broad/fuzzy codebase exploration and `rg` for exact strings.
+- If semantic search is not established, say so directly instead of inventing a `ccc` workflow.
+
+### Preferred Direction
+
+- Prefer semantic search for questions like "where is this implemented?", "how does this flow work?", or "find related code" when the repo has a maintained index.
+- Prefer `rg` for exact symbols, file names, strings, and verification that a literal pattern is absent.
+
 ## How To Change This Repo Safely
 
 - Match the existing file and export posture before introducing a new pattern.
@@ -179,6 +192,7 @@ Explicit local evidence beats imported preference.
 - Verify commands against repo scripts before documenting them.
 - Do not describe planned architecture as if it already exists.
 - Do not let reference repo taste override explicit local evidence.
+- Do not copy package manager, i18n, primitive, service, state, or test-command conventions from another Mahiro repo unless this repo proves the same rule.
 - Do not require services in repos whose stable pattern is hook-owned direct SDK access.
 
 ## Quick Rules

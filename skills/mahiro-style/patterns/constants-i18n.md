@@ -13,6 +13,7 @@ For the full shared failure-flow doctrine, see `error-handling.md`.
 - Extracted constants contain plain string literals for user-facing copy with no `msg` wrapper
 - `i18n._()` or `t()` called inside a constants file or outside a render boundary
 - Mock data objects use `t()` on data-shaped fields like names, team labels, or IDs
+- The refactor changes the repo's source language, catalog format, or extraction workflow because another Mahiro repo used a different i18n posture
 - Copy extracted into constants only to reduce component line count while the component is still the only consumer
 - Component-local headings, placeholders, or empty-state text moved into a separate file with no reuse
 
@@ -37,6 +38,7 @@ The component that renders UI text owns the final translation call.
 ## Non-negotiable
 
 - Follow repo-local doctrine first, then other repo-local instruction files, then established repo patterns, and only then use Mahiro fallback doctrine.
+- Preserve the repo's source-locale reality before changing copy. Thai-source repos, English-source repos, direct dictionary repos, and Lingui extraction repos need different edit shapes.
 - Keep component-local copy in React when the wording is tightly bound to JSX layout, button flow, empty states, form help text, or conditional UI branches.
 - Extract only data-like or reusable structures, such as nav items, route metadata, table column descriptors, status maps, and screen configuration that already wants a constants owner.
 - Do not extract layout-local or component-local copy into `constants/` when the data is only consumed by one owner and stays easier to scan in place.
@@ -44,6 +46,7 @@ The component that renders UI text owns the final translation call.
 - Make the render boundary explicit. Constants define descriptors, renderers translate them.
 - Do not extract copy only to reduce line count or make a file look tidier.
 - Do not claim a descriptor flow is current reality unless the repo actually uses one.
+- Do not migrate source text, catalog files, or translation helper style just because another Mahiro repo uses that approach.
 - Do not leave `msg` versus `t` versus `<Trans>` ambiguous in review comments or refactors. The rule is descriptor at definition, translation at render.
 
 ## Preference
@@ -76,6 +79,7 @@ Repo-local posture decides the final shape.
 - A later section-level refactor sharpened the mock-data boundary too: section owners kept `mock*` collections as plain API-shaped values, while headings, placeholders, table headers, and computed badge labels used `t` at render time.
 - Some repos may prefer `t(...)` from `useLingui`, others may use `i18n._(...)`, and some rich text cases need `<Trans>`. The stable rule is not one exact API everywhere. The stable rule is that extracted config holds descriptors, and rendering code performs the final translation call.
 - If a repo already repeats a different but translation-safe pattern, keep the local winner. Mahiro fallback doctrine exists to resolve the gap, not to flatten working local conventions.
+- If a repo uses direct locale dictionaries instead of extraction, edit the dictionary files according to local key conventions and run the repo's own verification path. Do not introduce Lingui-only structures as a style cleanup.
 
 ## Examples
 

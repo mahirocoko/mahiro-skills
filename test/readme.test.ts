@@ -77,9 +77,9 @@ describe("README", () => {
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
     expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper.");
-    expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens.");
-    expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction or fallback.");
-    expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow.");
+    expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
+    expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
+    expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");
     expect(index).toContain("**Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`");

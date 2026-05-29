@@ -37,12 +37,14 @@ Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how
 
 - Check the diff against the exact four-level precedence order: `AGENTS.md` -> other repo-local instruction files -> established repo patterns -> Mahiro fallback doctrine.
 - Reject reviews that treat Mahiro fallback doctrine as stronger than explicit local doctrine or repeated repo shape.
+- Reject reviews that import a convention from another Mahiro repo without first naming the local evidence that makes it valid here.
 - Flag route or screen files that grow into mixed ownership modules containing orchestration, domain contracts, config, helper maps, mock data, and rendering in one place.
 - Flag extracted constants or config if the move weakens translation posture, especially in repos that already use Lingui or another explicit i18n flow.
 - Flag naming that hides domain meaning behind vague buckets such as `data`, `items`, `list`, `meta`, or `config` when the business concept can be named directly.
 - Flag nested module exports that become too generic for code search, such as `Sidebar` or `Avatar` from `profile/sidebar.tsx` or `profile/avatar.tsx`.
 - Flag shared UI changes that absorb page-specific business rules just to reduce line count in a route or module file.
 - Flag UI trees that get deeper without earning a real semantic, layout, accessibility, state, or ownership boundary.
+- Flag generic AI-looking UI drift: unexplained metric-card walls, fake-premium gradients, decorative pill overload, gratuitous transitions, verbose helper copy, or styling that ignores the repo's product tone.
 - Flag refactors that preserve logic but noticeably drift from the established product feel of a screen, such as turning a sparse premium surface into a verbose instructional one.
 - Flag spacing overrides on shared primitives when they appear reflexive rather than driven by a clear visual requirement.
 - Flag local one-off error message mappers when the repo already has a shared error resolver or stable error-code path.
@@ -92,6 +94,7 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - Did the refactor add HTML wrapper layers or wrapper components that only mirror visual grouping, even though the same UI could stay readable with fewer layers?
 - Does each UI layer have a visible job, or is the depth just hiding weak component boundaries?
 - Did the change preserve the screen's established product feel, or did technically correct logic come with heavier copy, denser spacing, or a less intentional tone?
+- Did the design start from repo-local primitives and product tone, or from generic AI SaaS defaults such as gradient hero cards, pill clusters, and decorative stat grids?
 - Did shared primitives keep their default spacing where appropriate, or did the diff add overrides before proving a visual need?
 
 ### Real review themes to keep active
@@ -105,6 +108,7 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - Owner-local versus shared extraction: if a layout child or module child is the only consumer, prefer keeping the data and translation close to that owner.
 - UI structure restraint: extra wrappers need a reason; do not approve anonymous nesting or wrapper components that do not earn a real boundary.
 - Product-feel preservation: if the screen used to feel spare, premium, or direct, refactors should not make it louder or more instructional by accident.
+- Anti-generic UI: product tone, local primitives, accessibility, and real user action beat decorative polish.
 - Truth labeling: separate current repo evidence from preferred Mahiro fallback so the review stays honest.
 
 ## Examples
@@ -119,6 +123,7 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - "The route got shorter, but the new hook still owns one-off selection, disclosure, and URL-state logic for a single route. Keep that orchestration inline until a reusable boundary actually appears." 
 - "The prop list is long, but it still reads as one clear component contract. That is acceptable here; the real issue to watch is leaking parent internals, not prop count by itself." 
 - "This diff adds `getInviteErrorMessage()` inside one hook, but the repo already repeats a shared resolver and stable error codes for this failure family. Keep normalization shared and let the render owner translate the final message."
+- "This screen now looks like a generic AI dashboard: four decorative metric cards, extra pills, and motion that the repo never established. Keep only the controls and feedback that help the user act."
 
 ## Anti-Examples
 
@@ -131,4 +136,5 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - Treating anti-pattern guidance as a separate source to go read later instead of catching the drift directly in this review.
 - Treating long props as an automatic smell without checking whether they still express one clear component contract.
 - Approving deeper UI trees just because the JSX was split up, even though the extra wrappers do not add a real responsibility.
+- Approving generic SaaS polish because it looks complete, while ignoring repo-local product tone, accessibility, and actual user intent.
 - Approving a diff that surfaces raw backend error text directly in UI even though the repo already uses a shared error normalization path.

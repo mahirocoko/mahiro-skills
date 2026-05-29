@@ -49,6 +49,17 @@ Before writing or proposing anything, decide the destination:
 
 Do not promote a single correction into global doctrine unless the user explicitly asks for global behavior.
 
+## Scope Classifier
+
+When a correction comes from work across multiple Mahiro repos, classify the scope before choosing a target:
+
+- **Repo-local rule** — belongs in the target repo's `AGENTS.md`, docs, or project memory. Use when the evidence depends on that repo's package manager, framework, source locale, primitive library, service pattern, or folder layout.
+- **Global Mahiro-style doctrine** — belongs in `mahiro-style` only when the user explicitly asks for cross-repo behavior or multiple repos show the same underlying preference despite different implementations.
+- **Skill-specific procedure** — belongs in the owning skill when the lesson is about how to run the skill, not how to code the target repo. Example: `direct-cli` pane-first doctrine belongs in `direct-cli`, not a global style rule.
+- **Session-only note** — belongs in `/rrr` or `/forward` when the fact helps continuity but should not become a rule.
+
+Preserve the distinction between the **underlying preference** and the **repo-specific mechanism**. For example: "respect repo-local i18n source-locale" can be global; "use Lingui `msg` descriptors" is repo-local unless the target repo proves Lingui.
+
 ## Proposal Workflow
 
 ### Phase 1: Capture the correction
@@ -61,11 +72,13 @@ Do not promote a single correction into global doctrine unless the user explicit
 
 - Read relevant `AGENTS.md`, `CLAUDE.md`, docs, README, style files, or neighboring code when the lesson concerns repo behavior.
 - Prefer repo-local rules over Mahiro fallback doctrine.
+- Check whether a similar lesson already exists in `mahiro-style`, the target skill, project memory, or repo docs before adding another rule.
 - If repo evidence is weak, label it as weak instead of upgrading it to “Current Reality.”
 
 ### Phase 3: Classify and choose target
 
 - Use the evidence taxonomy.
+- Use the scope classifier to avoid turning a repo-specific mechanism into global doctrine.
 - Choose one destination: do not persist, session note, project proposal, repo docs patch, or global style candidate.
 - If target is ambiguous, ask one concise clarifying question.
 
@@ -79,6 +92,8 @@ Produce a proposed change before editing files. Include:
 - **Patch sketch** — concise wording to add/change.
 - **Confidence** — high / medium / low.
 - **Rollback note** — how to revert or narrow the guidance if it proves too broad.
+
+If the proposal updates `mahiro-style`, explicitly state which part is global preference and which repo-specific examples must stay out of the wording.
 
 ### Phase 5: Approval and edit
 
@@ -112,6 +127,7 @@ Do not include an approval ask when no durable docs/rules/style edit is recommen
 
 - **`mahiro-docs-rules-init`** owns initial repo docs/rules bootstrap. This skill owns targeted refinements after real feedback.
 - **`mahiro-style`** is fallback doctrine. Use it to shape wording, but do not overwrite repo-local truth with global style.
+- **Project memory** is appropriate when the rule helps this agent work in one repo but should not be packaged as a reusable skill instruction.
 - **`rrr`** owns retrospective and durable lesson notes. Send transient or session-only learnings there.
 - **`forward`** owns next-session handoff. Add pending docs/rules refinement there when approval is deferred.
 - **`recap`** can surface previous lessons before deciding whether feedback is repeated friction.
@@ -127,6 +143,7 @@ For proposal-only mode:
 **Evidence**: ...
 **Classification**: Direct User Feedback | Repo-Proven Pattern | Repeated Session Friction | Inference | Transient Context
 **Destination**: Do Not Persist | Session Note | Project Proposal | Repo Docs Patch | Global Style Candidate
+**Scope**: Repo-local rule | Global Mahiro-style doctrine | Skill-specific procedure | Session-only note
 **Target**: ...
 **Proposed wording**: ...
 **Confidence**: high | medium | low
@@ -172,8 +189,9 @@ Before final output:
 1. Confirm every durable claim has evidence.
 2. Confirm transient context did not become a durable rule.
 3. Confirm repo-local facts are labeled separately from preferred direction.
-4. Confirm edits, if any, touched only approved target files.
-5. Confirm paired docs/indexes are updated only when their public description changed.
-6. Confirm proposal-only output with any `Needs approval: yes` includes a direct approval handoff naming target files and exact edit scope; omit it only when no durable edit is recommended.
+4. Confirm repo-specific mechanisms did not become global doctrine by accident.
+5. Confirm edits, if any, touched only approved target files.
+6. Confirm paired docs/indexes are updated only when their public description changed.
+7. Confirm proposal-only output with any `Needs approval: yes` includes a direct approval handoff naming target files and exact edit scope; omit it only when no durable edit is recommended.
 
 ARGUMENTS: $ARGUMENTS

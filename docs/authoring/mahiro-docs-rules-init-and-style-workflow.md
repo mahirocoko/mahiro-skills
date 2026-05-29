@@ -10,6 +10,8 @@ Use these skills together with a clear division of labor:
 
 They should not replace each other directly because they solve different problems.
 
+Shared guardrail: all three tools are repo-reality-first. A pattern from another Mahiro repo can inspire a question or `Preferred Direction`, but package manager, framework, i18n source locale, primitive ownership, service/data shape, state layer, and verification commands must come from the target repo before they become `Current Reality`.
+
 ## 1. New Repo or Weak Docs Baseline
 
 Use first:
@@ -21,6 +23,7 @@ Goal:
 - create `AGENTS.md`
 - create the first docs family
 - give the repo a usable baseline rules layer
+- include CocoIndex/`ccc` code-search guidance only when the target repo or local environment proves that workflow is available
 
 Recommended flow:
 
@@ -53,6 +56,7 @@ Goal:
 
 - classify the feedback as durable or transient
 - separate repo-local guidance from global Mahiro doctrine
+- classify scope as repo-local rule, global Mahiro-style doctrine, skill-specific procedure, or session-only note
 - propose the smallest docs/rules/style update
 - require approval before editing `AGENTS.md`, docs, skills, or style guidance
 
@@ -61,9 +65,10 @@ Recommended flow:
 1. Capture the exact correction or desired pattern.
 2. Inspect repo-local docs/rules before using fallback style.
 3. Classify evidence: direct user feedback, repo-proven pattern, repeated friction, inference, or transient context.
-4. Produce a proposal with target file, rationale, confidence, and rollback note.
-5. Edit only after approval.
-6. Use `rrr` or `forward` if the lesson should stay as session memory or next-session work instead of a durable rule.
+4. Classify scope: repo-local, global style, skill-specific procedure, or session-only note.
+5. Produce a proposal with target file, rationale, confidence, and rollback note.
+6. Edit only after approval.
+7. Use `rrr` or `forward` if the lesson should stay as session memory or next-session work instead of a durable rule.
 
 Best for:
 
@@ -93,6 +98,7 @@ Goal:
 - update docs in a targeted way
 - prevent docs from drifting away from repo reality
 - prevent abstractions from growing faster than Mahiro-style allows
+- prevent generic AI UI drift and cross-repo convention transplant during normal review/refactor work
 
 Recommended flow:
 

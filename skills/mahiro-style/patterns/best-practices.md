@@ -13,6 +13,7 @@ Use it when the problem crosses boundaries, such as deciding between route extra
 - Domain-specific code promoted to shared package or `ui/` folder after only one usage
 - Refactor makes files smaller but ownership less obvious
 - UI structure gets deeper, but no new semantic, layout, state, or ownership boundary was earned
+- UI polish looks generic or AI-default instead of preserving the repo's established product tone, local primitive contracts, and user-action focus
 
 ## Choosing the Right Owner
 
@@ -66,6 +67,7 @@ Where should this code live?
 - Keep this page as synthesis, not as a second full copy of every pattern page.
 - Resolve implementation choices by ownership first: route, component, hook, service, store, provider, or shared UI.
 - Follow repo-local tooling, exports, and formatter rules first, then apply Mahiro-shaped ownership decisions.
+- Do not copy file placement, state boundaries, primitive APIs, i18n posture, or test commands from another Mahiro repo until this repo proves the same rule locally.
 - Use the more specific canonical pattern page when the decision clearly belongs there.
 - Keep examples here short and cross-cutting instead of turning this page into a framework tutorial.
 - Treat UI structure depth as an ownership signal too; if a layer has no job, remove it or name the real owner.
@@ -82,6 +84,7 @@ Where should this code live?
 - Prefer preserving the intended product feel of an existing screen during refactors. A change that is structurally cleaner but visually heavier, more explanatory, or less intentional is still a regression.
 - Prefer shared component defaults first. Reach for spacing and padding overrides only after proving that the screen truly needs them.
 - Prefer UI copy that helps the next user action, not copy that explains internal architecture or permission rules.
+- Prefer product-specific restraint over generic polish. If a card, gradient, pill, animation, or metric does not help the user decide or act, remove it or keep it owner-local until the repo establishes that visual language.
 
 ## Contextual
 
@@ -90,6 +93,7 @@ Where should this code live?
 - In a multi-app repo, package boundaries add another ownership layer. Check whether something is truly shared across apps before promoting it into a shared package.
 - If a local repo has stronger snippet, package, or export rules, follow them. This page is about choosing the owner, not overriding local mechanics.
 - If one Mahiro repo uses hook-owned transport and another uses service classes, preserve the target repo's current boundary first. The preferred fallback is contextual, not one rigid architecture.
+- If one repo uses Thai source copy, another English source copy, and another direct dictionary files instead of extraction, preserve the target repo's source-locale and catalog workflow before applying i18n fallback taste.
 
 ## Examples
 
@@ -196,5 +200,7 @@ export const PayrollSummaryCard = ({ period, total, breakdown }: IPayrollSummary
 ```
 
 - Copying repo-local mechanics from one reference project into another without checking local doctrine first.
+- Copying a primitive override pattern from one repo into another when the target repo's primitive intentionally owns its shell style.
+- Adding generic metric cards, decorative pills, or transitions because the screen feels sparse, rather than because the product flow needs them.
 - Adding three more wrapper layers during a refactor even though the same layout could stay readable with one named section or row.
 - Repeating full service, state, route, and naming doctrine here instead of routing to their canonical pages.

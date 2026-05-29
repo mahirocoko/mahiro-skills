@@ -9,6 +9,8 @@ Use this before declaring the init pass complete.
 - Are missing layers labeled as missing instead of described as current?
 - Are Mahiro-style preferences kept out of `Current Reality` unless the repo proves them?
 - Are fallback rules labeled as `Preferred Direction`, `Not Established Yet`, or `Adoption Triggers`?
+- Did every package manager, i18n source-locale, primitive/style, service/data, state, commit, and test command claim come from this target repo rather than another Mahiro repo?
+- If generated docs mention CocoIndex/`ccc`, did the target repo or local environment prove that guidance is valid here?
 
 ## Family Check
 
@@ -34,3 +36,4 @@ Use this before declaring the init pass complete.
 - Did every blueprint-style recommendation preserve local repo reality first?
 - Are section comments or dividers described as a shortcut for long files, not a rule for every file?
 - Did any example accidentally introduce a folder path the repo does not use?
+- Did any example accidentally copy a convention from a recently touched repo instead of using target-repo evidence?

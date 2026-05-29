@@ -70,7 +70,34 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("## Proposal Workflow");
     expect(skill).toContain("## Approval Gate");
     expect(skill).toContain("## Integration With Related Skills");
+    expect(skill).toContain("## Scope Classifier");
     expect(skill).toContain("No silent durable edits.");
     expect(skill).toContain("Do not promote a single correction into global doctrine unless the user explicitly asks for global behavior.");
+    expect(skill).toContain("Use the scope classifier to avoid turning a repo-specific mechanism into global doctrine.");
+  });
+
+  test("mahiro-style blocks cross-repo convention transplant", () => {
+    const overview = readRepoFile("skills", "mahiro-style", "foundations", "overview.md");
+    const bestPractices = readRepoFile("skills", "mahiro-style", "patterns", "best-practices.md");
+    const sharedUi = readRepoFile("skills", "mahiro-style", "patterns", "shared-ui-boundaries.md");
+    const constantsI18n = readRepoFile("skills", "mahiro-style", "patterns", "constants-i18n.md");
+
+    expect(overview).toContain("Never transplant a convention from one Mahiro repo into another");
+    expect(bestPractices).toContain("Do not copy file placement, state boundaries, primitive APIs, i18n posture, or test commands from another Mahiro repo");
+    expect(sharedUi).toContain("Let reusable primitives own their shell contract");
+    expect(constantsI18n).toContain("Preserve the repo's source-locale reality before changing copy");
+  });
+
+  test("mahiro-docs-rules-init reinforces repo-local search and cross-repo guards", () => {
+    const skill = readRepoFile("skills", "mahiro-docs-rules-init", "SKILL.md");
+    const generationRules = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "generation-rules.md");
+    const agentsTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "AGENTS.md");
+
+    expect(skill).toContain("Do not import mechanics from another Mahiro repo as current fact.");
+    expect(skill).toContain("Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available");
+    expect(generationRules).toContain("Never transplant mechanics from another Mahiro repo into `Current Reality`");
+    expect(generationRules).toContain("If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`");
+    expect(agentsTemplate).toContain("## Codebase Search");
+    expect(agentsTemplate).toContain("Do not copy package manager, i18n, primitive, service, state, or test-command conventions from another Mahiro repo");
   });
 });
