@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex,
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for planning, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Gemini/Cursor lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
+Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Gemini/Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
 
 ## Contents
 
@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.36 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.37 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.36 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.37 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -110,7 +110,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
-| `direct-cli` | `/direct-cli` | You need a direct Gemini or Cursor CLI lane in tmux. |
+| `direct-cli` | `/direct-cli` | You need a direct Gemini, Cursor, Antigravity, or Codex CLI lane in tmux. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
@@ -134,7 +134,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
-| Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, research, transcript lanes |
+| Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, Antigravity, Codex, research, transcript lanes |
 | Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local` | UI taste filtering, asset packs, image prompts |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
@@ -143,7 +143,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | `tmux`, Gemini CLI and/or Cursor CLI |
+| `direct-cli` | `tmux`, Gemini CLI, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI |
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

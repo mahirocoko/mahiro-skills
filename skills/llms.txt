@@ -7,7 +7,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `asset-designer` — Asset director for production-ready website image assets and manifests. Trigger on: cutout/background removal, layer separation, transparent PNG packs, missing web assets, asset QA/delivery notes.
 - `cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Trigger on: create or patch `AGENTS.md` for `ccc` / `cocoindex-code`, semantic code-search doctrine, repo-local search rules, make agents prefer CocoIndex, `ดู repo หน่อย` / `หาโค้ดส่วนนี้` routing rules.
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
-- `direct-cli` — Direct executor playbook for Gemini CLI and Cursor CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
+- `direct-cli` — Direct executor playbook for Gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, direct Antigravity lane, agy lane, direct Codex lane, codex lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
 - `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
 - `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.

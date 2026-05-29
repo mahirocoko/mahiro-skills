@@ -1,14 +1,14 @@
 # direct-cli skill
 
-`/direct-cli` is the packaged playbook for running Gemini CLI, Cursor CLI, and Antigravity CLI directly through tmux-managed executor lanes.
+`/direct-cli` is the packaged playbook for running Gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI directly through tmux-managed executor lanes.
 
 It is for situations where you want to bypass the usual orchestration runtime but still keep good operator posture: narrow scope, current-worktree continuation, pane-first verification, launch first then send the task prompt, and fresh-session recovery when the lane looks unhealthy.
 
-The default posture is now explicit: launch in tmux with yolo-style approval flags, do not attach the task prompt inline, capture the pane until it is ready, then send the real prompt with `tmux send-keys`. Avoid Cursor and Antigravity headless mode by default. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent models`, `agent --help`, `gemini --help`, or `agy --help`. Gemini should launch with `--skip-trust` when appropriate for the intended workspace.
+The default posture is now explicit: launch in tmux with yolo-style approval flags, do not attach the task prompt inline, capture the pane until it is ready, then send the real prompt with `tmux send-keys`. Avoid Cursor, Antigravity, and Codex headless mode by default. If model or flag availability is uncertain, it is fine to validate with CLI discovery commands such as `agent --list-models`, `agent models`, `agent --help`, `gemini --help`, `agy --help`, or `codex --help`. Gemini should launch with `--skip-trust` when appropriate for the intended workspace.
 
-Default models are explicit too: Gemini uses `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup uses `composer-2.5-fast`; Cursor balanced implementation uses `composer-2.5`; Cursor heavy review / deep reasoning uses `claude-opus-4-7-high`; Antigravity uses `Gemini 3.5 Flash (High)` by default, with `Gemini 3.1 Pro (High)` and `Claude Opus 4.6 (Thinking)` as curated alternatives.
+Default models are explicit too: Gemini uses `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup uses `composer-2.5-fast`; Cursor balanced implementation uses `composer-2.5`; Cursor heavy review / deep reasoning uses `claude-opus-4-8-thinking-high`; Antigravity uses `Gemini 3.5 Flash (High)` by default, with `Gemini 3.1 Pro (High)` and `Claude Opus 4.6 (Thinking)` as curated alternatives; Codex uses `gpt-5.5` by default, with `gpt-5.3-codex-high` and `gpt-5.3-codex-high-fast` as curated alternatives.
 
-If a command-style invocation names the lane but not the model — for example `/direct-cli gemini ...`, `/direct-cli cursor ...`, or `/direct-cli agy ...` — ask the user which skill-defined model to use before launching. Do not present the full CLI model list unless the user requests it or a preferred model fails. For Gemini, confirm the single normal default `gemini-3.1-pro-preview`; for Cursor, offer `composer-2.5-fast`, `composer-2.5`, and `claude-opus-4-7-high`; for Antigravity, offer `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, and `Claude Opus 4.6 (Thinking)`.
+If a command-style invocation names the lane but not the model — for example `/direct-cli gemini ...`, `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` — ask the user which skill-defined model to use before launching. Do not present the full CLI model list unless the user requests it or a preferred model fails. For Gemini, confirm the single normal default `gemini-3.1-pro-preview`; for Cursor, offer `composer-2.5-fast`, `composer-2.5`, and `claude-opus-4-8-thinking-high`; for Antigravity, offer `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, and `Claude Opus 4.6 (Thinking)`; for Codex, offer `gpt-5.5`, `gpt-5.3-codex-high`, and `gpt-5.3-codex-high-fast`.
 
 ## What this skill is for
 
@@ -18,7 +18,7 @@ Use it when you want AI to:
 - keep work limited to the current worktree
 - inspect tmux pane output as execution truth
 - recover cleanly from approval blocking, session corruption, or unsent prompts
-- launch Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`, and Antigravity with `--dangerously-skip-permissions`, then send the task prompt after readiness
+- launch Gemini with `--approval-mode yolo`, Cursor with `--yolo --approve-mcps`, Antigravity with `--dangerously-skip-permissions`, and Codex with `--sandbox workspace-write --ask-for-approval never`, then send the task prompt after readiness
 
 ## What this skill is not
 
@@ -30,7 +30,7 @@ Use it when you want AI to:
 
 - `SKILL.md` is the agent entrypoint and short operating summary
 - `playbook.md` is the preserved long-form operator manual
-- `playbook.md` also contains tested launch examples that were actually run in tmux
+- `playbook.md` also contains tmux-first launch examples and current freshness notes
 
 ## Recommended usage
 
@@ -39,8 +39,10 @@ Use it when you want AI to:
 /direct-cli gemini "fresh session for current-worktree-only visual pass"
 /direct-cli cursor "cleanup pass after a Gemini UI run"
 /direct-cli agy "pre-release verification pass"
+/direct-cli codex "OpenAI-native implementation pass"
 /direct-cli cursor --model composer-2.5-fast "cleanup pass after a Gemini UI run"
 /direct-cli agy --model "Gemini 3.5 Flash (High)" "inspect this repo"
+/direct-cli codex --model gpt-5.5 "image-aware coding pass"
 /direct-cli recovery "the direct lane looks stuck"
 ```
 

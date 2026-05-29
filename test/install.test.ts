@@ -200,14 +200,15 @@ describe("install", () => {
 
       expect(result.status).toBe("installed");
       expect(existsSync(installedPlaybookPath)).toBe(true);
-      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions");
+      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions");
       expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions");
+      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions");
       expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions");
-      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions");
+      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions");
+      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Gemini CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh session, narrow scope, pane-first truth**");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
@@ -229,10 +230,11 @@ describe("install", () => {
       expect(existsSync(installedCommandPath)).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "direct-cli.md"))).toBe(false);
       expect(readFileSync(installedCommandPath, "utf8")).toContain(
-        'description = "Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, and Antigravity CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."',
+        'description = "Mahiro Skill | Direct executor playbook for using gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."',
       );
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
       temp.cleanup();
