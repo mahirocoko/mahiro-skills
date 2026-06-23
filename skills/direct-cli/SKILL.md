@@ -23,6 +23,11 @@ Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`cod
 ## Default Lane Contract
 
 - Use a fresh interactive tmux lane by default
+- If one job needs multiple direct CLI lanes, prefer one named tmux job session with multiple panes over scattered one-lane sessions
+- Multi-pane jobs support two modes: **role fanout** (shared context, different lane roles) and **same-prompt fanout** (exact same prompt pasted into every pane for independent model answers)
+- For same-prompt fanout, write the prompt to a temp file, `tmux load-buffer` once, and paste that buffer into each pane so the prompt is byte-identical
+- Keep a lane registry: pane title, CLI/model, role, write permissions, and output directory if it may write files
+- Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, `agy --help`, `codex --help`, `codex features list`, `codex doctor`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
 - Default models: Gemini `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor heavy review / deep reasoning `claude-opus-4-8-thinking-high`; Codex default/current `gpt-5.5`
@@ -43,6 +48,76 @@ Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`cod
 - Do not use Antigravity headless/print mode (`agy -p`, `agy --print`, `agy --prompt`) by default; stay pane-first and interactive unless the user explicitly asks for script-style output
 - Do not use Codex headless/non-interactive mode (`codex exec`) by default; stay pane-first and interactive unless the user explicitly asks for script-style output
 - Do not use Codex `--dangerously-bypass-approvals-and-sandbox` by default; prefer workspace-write sandbox plus no approval prompts for direct-lane momentum
+
+## Multi-pane Job Sessions
+
+Use this when a single job benefits from multiple models or CLIs at the same time: for example Codex image generation, Antigravity Opus review, Gemini Pro reasoning, and Gemini Flash alternatives around one asset or implementation task.
+
+### Session shape
+
+- Create one tmux session named for the job: `direct-<job-slug>`.
+- Split panes inside that session rather than creating unrelated sessions like `codex-task`, `agy-task`, and `gemini-task` for the same job.
+- Set pane titles with lane role/model names so captures stay readable.
+- Capture by pane title/index and synthesize results in the main agent; do not let one lane read another lane's answer before it responds when independent diversity matters.
+
+Example shape:
+
+```bash
+tmux new-session -d -s "direct-agent-halo-sprite" -n lanes
+tmux split-window -h -t "direct-agent-halo-sprite:0.0"
+tmux split-window -v -t "direct-agent-halo-sprite:0.1"
+tmux select-layout -t "direct-agent-halo-sprite:0" tiled
+tmux select-pane -t "direct-agent-halo-sprite:0.0" -T "codex-imagegen"
+tmux select-pane -t "direct-agent-halo-sprite:0.1" -T "agy-opus-review"
+tmux select-pane -t "direct-agent-halo-sprite:0.2" -T "agy-gemini-pro-check"
+tmux list-panes -t "direct-agent-halo-sprite" -F '#{pane_index}: #{pane_title} #{pane_current_command}'
+```
+
+### Fanout modes
+
+**Role fanout**: every pane gets the same job context, then a role-specific task.
+
+```text
+Job: <job name>
+Shared context:
+- repo/worktree path
+- allowed files/output dirs
+- current constraints
+
+Lane role: <review / implement / imagegen / alternatives>
+Task: <role-specific task>
+```
+
+**Same-prompt fanout**: every pane receives the exact same prompt to get independent answers from different models/CLIs.
+
+Rules:
+
+- Use the same prompt bytes for every pane; do not hand-copy per pane.
+- Do not add lane-specific prefixes unless the user asked for role fanout instead.
+- If independence matters, tell the panes not to assume consensus inside the shared prompt itself.
+- Capture outputs separately and synthesize only after every lane has answered or clearly failed.
+
+```bash
+cat > /tmp/direct-job.prompt.txt <<'PROMPT'
+<SHARED PROMPT HERE>
+PROMPT
+tmux load-buffer -b direct-job-prompt /tmp/direct-job.prompt.txt
+for pane in 0 1 2; do
+  tmux paste-buffer -t "direct-job:0.$pane" -b direct-job-prompt
+  tmux send-keys -t "direct-job:0.$pane" Enter
+done
+```
+
+### Write policy
+
+- Prefer one writer lane per file or asset contract.
+- Review/idea lanes should not edit files unless explicitly assigned.
+- If multiple lanes may write, give each lane a separate output directory such as `generated-images/codex/` and `notes/agy-opus/`.
+- Main agent owns final merge/synthesis into the real worktree.
+
+### Sandbox verification
+
+Verified locally on 2026-06-23 with a tmux sandbox: one prompt was loaded into a tmux buffer, pasted into three panes, and captured to three pane files. SHA-256 hashes matched the shared prompt for all panes, proving same-prompt fanout is practical with `tmux load-buffer` / `paste-buffer`.
 
 ## Current Freshness Notes
 

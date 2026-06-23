@@ -37,6 +37,135 @@ Use this path when you want:
 - Verify that the prompt was actually submitted by checking pane output.
 - Trust the tmux pane more than a high-level assumption.
 
+## Multi-pane job sessions
+
+Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Antigravity with Opus for critique, Antigravity/Gemini for alternatives, and Codex or Cursor for implementation cleanup.
+
+The goal is one job, one tmux session, many panes — not scattered sessions that lose the shared context.
+
+### When to use
+
+- The user wants several model opinions on the same question.
+- The job has multiple independent roles: imagegen, design critique, implementation, verification, or risk review.
+- The same worktree/context should stay visible while lanes differ by CLI/model.
+- The user asks for several Antigravity models at once, such as Opus, Gemini 3.5, and Gemini 3.1 Pro.
+
+### Session naming and lane registry
+
+Name the tmux session for the job:
+
+```bash
+JOB="direct-<job-slug>"
+tmux new-session -d -s "$JOB" -n lanes
+tmux split-window -h -t "$JOB:0.0"
+tmux split-window -v -t "$JOB:0.1"
+tmux select-layout -t "$JOB:0" tiled
+tmux select-pane -t "$JOB:0.0" -T "codex-imagegen"
+tmux select-pane -t "$JOB:0.1" -T "agy-opus-review"
+tmux select-pane -t "$JOB:0.2" -T "agy-gemini-pro-check"
+tmux list-panes -t "$JOB" -F '#{pane_index}: #{pane_title} #{pane_current_command}'
+```
+
+Keep a lane registry before sending real prompts:
+
+| Pane | Title | CLI / model | Role | Write permission |
+| --- | --- | --- | --- | --- |
+| 0 | `codex-imagegen` | Codex `gpt-5.5` | image prompt / generation | write only to `generated-images/codex/` |
+| 1 | `agy-opus-review` | Agy `Claude Opus 4.6 (Thinking)` | critique | read-only / notes |
+| 2 | `agy-gemini-pro-check` | Agy `Gemini 3.1 Pro (High)` | consistency check | read-only / notes |
+
+### Fanout modes
+
+#### Role fanout
+
+Use role fanout when panes should do different jobs over the same work context.
+
+Every lane gets the same job context, then a lane-specific role/task:
+
+```text
+Job: <job name>
+Shared context:
+- Repo/worktree: <path>
+- Current constraints: <constraints>
+- Allowed files/output dirs: <scope>
+- Do not touch unrelated files.
+- Continue from the current worktree only. Do not restart from scratch.
+
+Lane role: <imagegen / critique / implementation / verification>
+Task:
+<role-specific task>
+
+Output:
+- changed files or generated paths, if any
+- recommendations / risks
+- what remains
+```
+
+#### Same-prompt fanout
+
+Use same-prompt fanout when the user wants different answers from multiple models for the same question.
+
+Rules:
+
+- Send byte-identical prompt content to every pane.
+- Do not add lane-specific prefixes or role instructions unless the user asks for role fanout.
+- If independent reasoning matters, put that instruction inside the shared prompt itself before fanout.
+- Capture each pane separately and synthesize after responses finish.
+- Do not let one pane read another pane's output before it answers.
+
+Use a prompt file plus tmux buffer to avoid quoting drift:
+
+```bash
+JOB="direct-<job-slug>"
+PROMPT_FILE="/tmp/$JOB.prompt.txt"
+cat > "$PROMPT_FILE" <<'PROMPT'
+<SHARED PROMPT HERE>
+PROMPT
+
+tmux load-buffer -b "$JOB-prompt" "$PROMPT_FILE"
+for pane in 0 1 2; do
+  tmux paste-buffer -t "$JOB:0.$pane" -b "$JOB-prompt"
+  tmux send-keys -t "$JOB:0.$pane" Enter
+done
+```
+
+Optional audit if the panes are test/sandbox panes that capture stdin to files:
+
+```bash
+shasum -a 256 "$PROMPT_FILE" /tmp/direct-cli-fanout.*/pane-*.txt
+```
+
+### Write policy for multi-pane work
+
+- Default to one writer lane per file or asset contract.
+- Make review, idea, and risk lanes read-only unless explicitly assigned as writers.
+- If several lanes need to produce artifacts, give each a separate output directory.
+- Main agent owns final merge/synthesis into the real worktree.
+- Report exactly which lane changed or generated which artifact.
+
+### Antigravity multi-model notes
+
+Antigravity model switching is still TUI-first through `/model`. For several Agy models in one job:
+
+1. Open one Agy pane per model.
+2. Launch `agy --dangerously-skip-permissions` in each pane.
+3. Switch each pane through `/model` before sending the task prompt, or ask the user to choose the model in that pane.
+4. Only then send either the role-specific prompt or the same shared prompt.
+
+Do not assume a CLI model flag exists for Agy until verified locally.
+
+### Sandbox verification
+
+This pattern was sandbox-tested on 2026-06-23:
+
+- created one tmux session with three panes
+- loaded one multiline prompt into a tmux buffer
+- pasted the same buffer into all panes
+- captured each pane's stdin to a file
+- SHA-256 hashes for the shared prompt and all three pane captures matched
+
+Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` is practical and avoids manual copy/paste drift.
+
 ## Known-good defaults
 
 Use these defaults first. Only deviate when the user explicitly asks or a launch failure forces a narrower recovery path.

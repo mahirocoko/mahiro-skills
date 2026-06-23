@@ -100,4 +100,25 @@ describe("skill pattern adaptation phase a", () => {
     expect(agentsTemplate).toContain("## Codebase Search");
     expect(agentsTemplate).toContain("Do not copy package manager, i18n, primitive, service, state, or test-command conventions from another Mahiro repo");
   });
+
+  test("direct-cli documents multi-pane fanout and write policy", () => {
+    const skill = readRepoFile("skills", "direct-cli", "SKILL.md");
+    const playbook = readRepoFile("skills", "direct-cli", "playbook.md");
+    const readme = readRepoFile("skills", "direct-cli", "README.md");
+
+    expect(skill).toContain("## Multi-pane Job Sessions");
+    expect(skill).toContain("same-prompt fanout");
+    expect(skill).toContain("tmux load-buffer");
+    expect(skill).toContain("one writer per file/asset contract");
+    expect(skill).toContain("Sandbox verification");
+
+    expect(playbook).toContain("## Multi-pane job sessions");
+    expect(playbook).toContain("Role fanout");
+    expect(playbook).toContain("Same-prompt fanout");
+    expect(playbook).toContain("Send byte-identical prompt content to every pane.");
+    expect(playbook).toContain("Main agent owns final merge/synthesis into the real worktree.");
+
+    expect(readme).toContain("same-prompt fanout");
+    expect(readme).toContain("matching SHA-256 hashes across three pane captures");
+  });
 });
