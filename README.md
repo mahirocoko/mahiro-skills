@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.39 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.40 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.39 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.40 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -73,6 +73,13 @@ The TUI wraps the same planner and installer core. Use it when you want menus fo
 Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.
 
 Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
+
+Current workflow highlights:
+
+- **Interactive install/update TUI** — open with `bun ./src/cli.ts`; supports Install, Update installed, List installed, and Receipt detail. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
+- **Direct CLI lanes** — `/direct-cli` keeps Gemini, Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
+- **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
+- **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 
 Common commands:
 
@@ -110,7 +117,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
-| `direct-cli` | `/direct-cli` | You need a direct Gemini, Cursor, Antigravity, or Codex CLI lane in tmux. |
+| `direct-cli` | `/direct-cli` | You need pane-first Gemini, Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
@@ -134,7 +141,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
-| Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, Antigravity, Codex, research, transcript lanes |
+| Direct execution | `bun ./src/cli.ts install direct-cli gemini deep-research watch --agent opencode --scope local` | Gemini, Cursor, Antigravity, Codex, multi-pane fanout, research, transcript lanes |
 | Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local` | UI taste filtering, asset packs, image prompts |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
@@ -143,7 +150,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | `tmux`, Gemini CLI, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI |
+| `direct-cli` | `tmux`, Gemini CLI, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes |
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
