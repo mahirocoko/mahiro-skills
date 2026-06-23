@@ -3,7 +3,7 @@ import type { InstallPlan, InstallResult, InstalledSummary, InstallScope, Instal
 
 export type GuidedMode = "install" | "plan" | "list";
 export type PlanSummaryMode = GuidedMode | "update";
-export type HomeAction = "install" | "plan" | "update" | "list" | "detail" | "exit";
+export type HomeAction = "install" | "update" | "list" | "detail" | "exit";
 export const backValue = "__back";
 export type BackValue = typeof backValue;
 export type AgentPickMode = "all" | "pick" | BackValue;
@@ -14,14 +14,12 @@ export const guidedScopes = ["local", "global"] as const;
 
 export const homeActionOptions = [
   { label: "Install", value: "install", hint: "copy skills/commands into the agent tree" },
-  { label: "Plan (dry run)", value: "plan", hint: "preview plan without installing" },
   { label: "Update installed", value: "update", hint: "refresh items recorded in install receipts" },
   { label: "List installed", value: "list", hint: "filter by one or more agents" },
   { label: "Receipt detail", value: "detail", hint: "one or more agents, one scope" },
   { label: "Exit", value: "exit", hint: "leave the TUI" },
 ] satisfies readonly PromptOption<HomeAction>[];
 
-const keyboardHint = "Ctrl+C cancel | choose Back to Home inside a wizard";
 const ansiReset = "\x1b[0m";
 const logoGradientStart = { red: 255, green: 82, blue: 190 };
 const logoGradientEnd = { red: 98, green: 225, blue: 255 };
@@ -90,7 +88,7 @@ function withBack<T extends string>(options: readonly PromptOption<T>[], allowBa
 }
 
 export function writeHomeIntro(io: PromptIO): void {
-  io.note(`${formatLogo(io)}\n\n${keyboardHint}`, "mahiro-skills");
+  io.note(formatLogo(io), "mahiro-skills");
 }
 
 export function agentPickOptions(agents: readonly ScopedAgent[], allowBack = false): readonly PromptOption<AgentPickMode>[] {

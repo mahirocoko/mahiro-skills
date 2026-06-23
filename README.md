@@ -2,7 +2,7 @@
 
 Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.
 
-`mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for planning, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
+`mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
 Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Gemini/Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
 
@@ -57,7 +57,7 @@ curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/insta
 bun ./src/cli.ts
 ```
 
-The TUI wraps the same planner and installer core. Use it when you want menus for install, update installed receipts, dry-run plan, list, doctor, or receipt detail.
+The TUI wraps the same planner and installer core. Use it when you want menus for install, update installed receipts, list installed items, or inspect receipt detail.
 
 ### Installer truth
 

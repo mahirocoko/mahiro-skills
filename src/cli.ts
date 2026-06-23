@@ -4,7 +4,7 @@ import { install } from "./install";
 import { listInstalled } from "./list";
 import { doctor } from "./doctor";
 import { runGuided } from "./guided";
-import { createPromptIO } from "./prompt";
+import { createPromptIO, isPromptCancelError } from "./prompt";
 import { supportedAgents, type CliOptions, type InstallScope, type ScopedAgent } from "./types";
 
 const VALID_CLI_AGENTS = new Set<ScopedAgent>(supportedAgents);
@@ -173,6 +173,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
+  if (isPromptCancelError(error)) {
+    process.exit(0);
+  }
+
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
   process.exit(1);

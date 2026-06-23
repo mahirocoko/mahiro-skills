@@ -2,8 +2,6 @@ import { install } from "./install";
 import {
   agentPickOptions,
   backValue,
-  formatInstallTargets,
-  formatInstalledSection,
   homeActionOptions,
   itemPickOptions,
   scopePickOptions,
@@ -29,6 +27,7 @@ import type {
   InstallResult,
   InstalledSummary,
   InstallScope,
+  InstallTarget,
   RepoInventory,
   ScopedAgent,
 } from "./types";
@@ -83,8 +82,6 @@ async function promptAgents(io: PromptIO, allowBack: boolean): Promise<ScopedAge
     return [...guidedAgents];
   }
 
-  io.note("Use space to toggle agents, then press enter to continue.", "Agent selection");
-
   return io.multiselect(
     "Toggle agents",
     guidedAgents.map((agent) => ({
@@ -114,8 +111,6 @@ async function promptItems(io: PromptIO, inventory: RepoInventory, allowBack: bo
   }
 
   const selectableItems = getSelectableItems(inventory);
-  io.note("Use space to toggle items, then press enter to continue.", "Item selection");
-
   return io.multiselect(
     "Choose items",
     selectableItems.map((item) => ({
@@ -142,6 +137,39 @@ function receiptToSummary(receipt: InstallReceipt): InstalledSummary {
     installedCommands: sortNames(receipt.installedCommands),
     installed: sortNames([...receipt.installedSkills, ...receipt.installedCommands]),
   };
+}
+
+function formatCountedInstalledSection(label: string, values: string[]): string[] {
+  const heading = `${label} (${values.length})`;
+
+  if (values.length === 0) {
+    return [heading, "- none"];
+  }
+
+  return [heading, ...values.map((value) => `- ${value}`)];
+}
+
+function formatReceiptTargets(plan: InstallPlan): string {
+  const blocks: string[] = [];
+
+  const formatTargets = (heading: string, targets: InstallTarget[]): void => {
+    if (targets.length === 0) {
+      return;
+    }
+
+    const lines = [`${heading} (${targets.length})`];
+    for (const target of targets) {
+      const collision = target.collision ? " [collision]" : "";
+      lines.push(`- ${target.name}${collision}`, `  from: ${target.source}`, `  to:   ${target.target}`);
+    }
+
+    blocks.push(lines.join("\n"));
+  };
+
+  formatTargets("Skills", plan.skills);
+  formatTargets("Commands", plan.commands);
+
+  return blocks.length > 0 ? blocks.join("\n\n") : "- none";
 }
 
 async function runUpdateView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions, allowBack: boolean): Promise<InstallResult[] | null> {
@@ -200,13 +228,19 @@ function receiptDetailBody(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAg
   }
 
   const lines = [
-    `root: ${receipt.root}`,
-    `sourceRepoPath: ${receipt.sourceRepoPath}`,
-    `installedAt: ${receipt.installedAt}`,
+    "Summary",
+    `- agent: ${receipt.agent}`,
+    `- scope: ${receipt.scope}`,
+    `- installed at: ${receipt.installedAt}`,
     "",
-    ...formatInstalledSection("Skills", sortNames(receipt.installedSkills)),
+    "Paths",
+    `- root: ${receipt.root}`,
+    `- source repo: ${receipt.sourceRepoPath}`,
     "",
-    ...formatInstalledSection("Commands", sortNames(receipt.installedCommands)),
+    "Installed items",
+    ...formatCountedInstalledSection("Skills", sortNames(receipt.installedSkills)),
+    "",
+    ...formatCountedInstalledSection("Commands", sortNames(receipt.installedCommands)),
   ];
 
   const reconstructed = sortNames([...new Set([...receipt.installedSkills, ...receipt.installedCommands])]);
@@ -216,12 +250,12 @@ function receiptDetailBody(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAg
       const plan = createPlan(agent, scope, reconstructed, env);
       lines.push(
         "",
-        "Reconstructed install targets (from installed names; same planner as install preview):",
-        formatInstallTargets(plan),
+        "Target files",
+        formatReceiptTargets(plan),
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      lines.push("", `Reconstructed install targets: unavailable (${message})`);
+      lines.push("", `Target files: unavailable (${message})`);
     }
   }
 

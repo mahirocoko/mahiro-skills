@@ -4,6 +4,8 @@ The TUI is the safest default when you want to browse agents, scopes, and instal
 
 The home menu also includes `Update installed`, which refreshes every non-empty receipt-recorded install automatically. It does not ask for agent, scope, or item choices.
 
+Keyboard shortcuts appear at the bottom of each active prompt: use arrow keys to move, `Enter` to select, `Space` to toggle multiselect items, and `Esc` or `Ctrl+C` to cancel. Wizard prompts include a `Back to Home` option.
+
 ## Launch
 
 ```bash
@@ -25,21 +27,6 @@ Install preview
   → review each receipt-recorded update plan
 Proceed with update?
   → yes
-```
-
-## Plan-only walkthrough
-
-```text
-Home
-  → Plan (dry run)
-Agents
-  → All agents (opencode, claude-code, cursor, gemini, codex, letta-code)
-Scope
-  → local
-Items
-  → default bundle
-Batch plan summary
-  → review skill and command counts per agent
 ```
 
 ## Install walkthrough
@@ -74,4 +61,4 @@ Toggle agents
   → opencode
 ```
 
-Use `Receipt detail` when you need exact installed paths, timestamps, and reconstructed targets.
+Use `Receipt detail` when you need exact installed paths, timestamps, installed item counts, and target files grouped by skill/command.

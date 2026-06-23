@@ -93,69 +93,6 @@ function makePromptIo(
 }
 
 describe("guided", () => {
-  test("runs interactive plan for multiple selected agents", async () => {
-    const temp = makeTempEnv();
-    const prompt = makePromptIo(["plan", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]]);
-
-    try {
-      const result = expectInstallPlans(await runGuided(makeOptions(), temp.env, prompt.io));
-
-      expect(result).toHaveLength(2);
-      expect(result.map((plan) => plan.agent).sort()).toEqual(["cursor", "gemini"]);
-      expect(result[0].requested).toEqual(["project"]);
-      expect(result[1].requested).toEqual(["project"]);
-      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("uses the All agents shortcut for a batch plan", async () => {
-    const temp = makeTempEnv();
-    const prompt = makePromptIo(["plan", "all", "local", "custom-items", "exit"], [["project"]]);
-
-    try {
-      const result = expectInstallPlans(await runGuided(makeOptions(), temp.env, prompt.io));
-
-      expect(result).toHaveLength(6);
-      expect(result.map((plan) => plan.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code"]);
-      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("runs interactive plan flow with prompted agent and TUI item selection", async () => {
-    const temp = makeTempEnv();
-    const prompt = makePromptIo(["plan", "pick", "local", "custom-items", "exit"], [["cursor"], ["project", "recap"]]);
-
-    try {
-      const result = expectInstallPlan(await runGuided(makeOptions(), temp.env, prompt.io));
-
-      expect(result.agent).toBe("cursor");
-      expect(result.scope).toBe("local");
-      expect(result.requested).toEqual(["project", "recap"]);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(prompt.writes.some((entry) => entry === "Home")).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("uses default bundle selection without typed item names", async () => {
-    const temp = makeTempEnv();
-    const prompt = makePromptIo(["plan", "pick", "local", "default-bundle", "exit"], [["opencode"]]);
-
-    try {
-      const result = expectInstallPlan(await runGuided(makeOptions(), temp.env, prompt.io));
-
-      expect(result.requested).toEqual([]);
-      expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-    } finally {
-      temp.cleanup();
-    }
-  });
-
   test("runs interactive install flow and confirms install", async () => {
     const temp = makeTempEnv();
     const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["gemini"], ["gemini"]], [true]);
@@ -251,9 +188,13 @@ describe("guided", () => {
         },
       ]);
       expect(detailPrompt.writes.some((entry) => entry.includes("[note:Receipt: gemini (local)]"))).toBe(true);
-      expect(detailPrompt.writes.some((entry) => entry.includes("sourceRepoPath:"))).toBe(true);
-      expect(detailPrompt.writes.some((entry) => entry.includes("Reconstructed install targets"))).toBe(true);
-      expect(detailPrompt.writes.some((entry) => entry.includes(" -> "))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("Summary\n- agent: gemini"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("Paths\n- root:"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("- source repo:"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("Installed items\nSkills (1)"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("Target files\nSkills (1)"))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("  from: "))).toBe(true);
+      expect(detailPrompt.writes.some((entry) => entry.includes("  to:   "))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -431,7 +372,7 @@ describe("guided", () => {
       expect(result).toEqual([]);
       expect(prompt.writes.some((entry) => {
         const plainEntry = stripAnsi(entry);
-        return plainEntry.includes("███╗   ███╗") && plainEntry.includes("          ███████╗██╗  ██╗") && plainEntry.includes("Ctrl+C cancel");
+        return plainEntry.includes("███╗   ███╗") && plainEntry.includes("          ███████╗██╗  ██╗");
       })).toBe(true);
       expect(prompt.writes.some((entry) => entry.includes("\\u2588"))).toBe(false);
       expect(prompt.writes).toContain("[outro] Goodbye.");
@@ -458,7 +399,7 @@ describe("guided", () => {
 
   test("returns to Home from nested wizard Back options", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["plan", "pick", "__back", "plan", "pick", "local", "__back", "exit"], [["cursor"], ["cursor"]]);
+    const prompt = makePromptIo(["install", "pick", "__back", "install", "pick", "local", "__back", "exit"], [["cursor"], ["cursor"]]);
 
     try {
       const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
@@ -467,7 +408,7 @@ describe("guided", () => {
       expect(prompt.writes.filter((entry) => entry === "Home")).toHaveLength(3);
       expect(prompt.writes.filter((entry) => entry === "Scope")).toHaveLength(2);
       expect(prompt.writes).toContain("Items");
-      expect(prompt.writes.some((entry) => entry.includes("[note:Batch plan summary]"))).toBe(false);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Install preview]"))).toBe(false);
     } finally {
       temp.cleanup();
     }

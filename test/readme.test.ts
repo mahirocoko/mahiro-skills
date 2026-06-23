@@ -37,6 +37,7 @@ describe("README", () => {
     const content = readFileSync(readmePath, "utf8");
 
     expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.");
+    expect(content).toContain("a private Bun CLI/TUI for previewing, installing, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
     expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.38 -- --agent opencode --scope global");

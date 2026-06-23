@@ -127,15 +127,14 @@ For successful install:
 
 ## Guided / TUI command checks
 
-- TUI/home flow can produce a plan through prompts without changing planner semantics
 - TUI install confirms before writing unless `--yes` is provided
 - collision handling uses the same overwrite rules as direct `install`
 - interactive item selection offers a default-bundle shortcut and multiselect over inventory (not numbered picks)
 - interactive agent selection offers either **All agents** or checkbox-style agent multiselect
-- without `--mode`, the home menu can run Install, Update installed, Plan, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/list run once and exit
+- without `--mode`, the home menu can run Install, Update installed, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/list run once and exit
 - declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
 - interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
-- receipt detail shows receipt metadata plus reconstructed `source -> target` rows from the planner when installed names are present
+- receipt detail shows readable receipt metadata plus reconstructed target files grouped by skill/command when installed names are present
 - direct CLI plan/install/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`
 - multi-agent plan/install in the TUI end with a batch summary note card
 - non-interactive guided/tui execution fails clearly when required flags are missing
