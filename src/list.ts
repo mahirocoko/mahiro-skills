@@ -15,7 +15,7 @@ function sortNames(values: string[]): string[] {
   return unique(values).sort();
 }
 
-function receiptPath(root: string, agent: ScopedAgent, scope: InstallScope): string {
+export function receiptPath(root: string, agent: ScopedAgent, scope: InstallScope): string {
   return join(root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
 }
 

@@ -37,7 +37,7 @@ describe("README", () => {
     const content = readFileSync(readmePath, "utf8");
 
     expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.");
-    expect(content).toContain("a private Bun CLI/TUI for previewing, installing, listing, and checking agent integrations");
+    expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
     expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.40 -- --agent opencode --scope global");
@@ -53,10 +53,11 @@ describe("README", () => {
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
-    expect(content).toContain("Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.");
+    expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `tui`, and `guided`.");
     expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.");
     expect(content).toContain("Current workflow highlights:");
-    expect(content).toContain("Interactive install/update TUI");
+    expect(content).toContain("Interactive install/uninstall/update TUI");
+    expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("same-prompt fanout through a shared tmux buffer");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");

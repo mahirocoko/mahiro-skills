@@ -131,12 +131,12 @@ For successful install:
 - collision handling uses the same overwrite rules as direct `install`
 - interactive item selection offers a default-bundle shortcut and multiselect over inventory (not numbered picks)
 - interactive agent selection offers either **All agents** or checkbox-style agent multiselect
-- without `--mode`, the home menu can run Install, Update installed, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/list run once and exit
+- without `--mode`, the home menu can run Install, Uninstall, Update installed, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/uninstall/list run once and exit
 - declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
 - interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
 - receipt detail shows readable receipt metadata plus reconstructed target files grouped by skill/command when installed names are present
-- direct CLI plan/install/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`
-- multi-agent plan/install in the TUI end with a batch summary note card
+- direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`; direct uninstall also accepts `--agent all`
+- multi-agent plan/install/uninstall in the TUI end with a batch summary note card; multi-agent install and uninstall use one batch confirmation after all previews, not one confirmation per agent
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete
 
@@ -200,6 +200,6 @@ Use only these statuses in tests and CLI output:
 
 - registry publishing
 - zip artifact generation
-- uninstall cleanup policy
+- uninstall cleanup beyond receipt-recorded skill/command targets
 - symlink mode
 - automatic MCP provisioning

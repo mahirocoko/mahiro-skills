@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { runGuided } from "../src/guided";
 import type { PromptOption } from "../src/prompt";
-import type { CliOptions, InstalledSummary, InstallPlan, InstallResult } from "../src/types";
+import type { CliOptions, InstalledSummary, InstallPlan, InstallResult, UninstallResult } from "../src/types";
 import type { GuidedOutcome } from "../src/guided";
 import { makeTempEnv } from "./helpers";
 
@@ -27,6 +27,12 @@ function expectInstallResult(result: GuidedOutcome): InstallResult {
   expect(Array.isArray(result)).toBe(false);
   expect("status" in result).toBe(true);
   return result as InstallResult;
+}
+
+function expectUninstallResult(result: GuidedOutcome): UninstallResult {
+  expect(Array.isArray(result)).toBe(false);
+  expect("receiptRemoved" in result).toBe(true);
+  return result as UninstallResult;
 }
 
 function expectInstalledSummaries(result: GuidedOutcome): InstalledSummary[] {
@@ -135,6 +141,48 @@ describe("guided", () => {
 
       expect(result.status).toBe("installed");
       expect(secondPrompt.writes.some((entry) => entry.includes("Collisions detected. Overwrite existing targets?"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("runs interactive uninstall flow for a selected installed item", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project", "recap"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    const prompt = makePromptIo(["uninstall", "pick", "local", "custom-items", "exit"], [["cursor"], ["project"]], [true]);
+
+    try {
+      const result = expectUninstallResult(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result.status).toBe("uninstalled");
+      expect(result.agent).toBe("cursor");
+      expect(result.uninstalled).toEqual(["project"]);
+      expect(result.receiptRemoved).toBe(false);
+      expect(prompt.writes).toContain("Uninstall items");
+      expect(prompt.writes).toContain("Choose installed items");
+      expect(prompt.writes).toContain("Proceed with uninstall for cursor (local)?");
+      expect(prompt.writes.some((entry) => entry.includes("[note:Uninstall preview]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("runs interactive uninstall for all installed items across all selected agents", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    await runGuided(makeOptions({ mode: "install", agents: ["gemini"], scope: "local", items: ["gemini"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    const prompt = makePromptIo(["uninstall", "all", "local", "all-installed", "exit"], [], [true]);
+
+    try {
+      const result = await runGuided(makeOptions(), temp.env, prompt.io) as UninstallResult[];
+
+      expect(result).toHaveLength(6);
+      expect(result.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
+      expect(result.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["gemini"]);
+      expect(result.find((entry) => entry.agent === "cursor")?.receiptRemoved).toBe(true);
+      expect(result.find((entry) => entry.agent === "gemini")?.receiptRemoved).toBe(true);
+      expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with uninstall"))).toEqual(["Proceed with uninstall for 6 agents (local)?"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch uninstall summary]"))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -285,18 +333,34 @@ describe("guided", () => {
     }
   });
 
-  test("keeps completed installs visible when a later batch agent is declined", async () => {
+  test("runs multi-agent install with one batch confirmation", async () => {
     const temp = makeTempEnv();
-    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]], [true, false]);
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]], [true]);
 
     try {
       const result = await runGuided(makeOptions(), temp.env, prompt.io);
       const installs = result as InstallResult[];
 
-      expect(installs).toHaveLength(1);
-      expect(installs[0]?.agent).toBe("cursor");
-      expect(prompt.writes.some((entry) => entry.includes("[note:Batch install partial] Batch install stopped after 1 completed agent(s). Earlier installs were kept."))).toBe(true);
+      expect(installs).toHaveLength(2);
+      expect(installs.map((installResult) => installResult.agent)).toEqual(["cursor", "gemini"]);
+      expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with install"))).toEqual(["Proceed with install for 2 agents (local)?"]);
       expect(prompt.writes.some((entry) => entry.includes("[note:Batch install summary]"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("home loop returns to Home when multi-agent install is declined before writes", async () => {
+    const temp = makeTempEnv();
+    const prompt = makePromptIo(["install", "pick", "local", "custom-items", "exit"], [["cursor", "gemini"], ["project"]], [false]);
+
+    try {
+      const result = expectInstalledSummaries(await runGuided(makeOptions(), temp.env, prompt.io));
+
+      expect(result).toEqual([]);
+      expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with install"))).toEqual(["Proceed with install for 2 agents (local)?"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Home] Install cancelled."))).toBe(true);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Batch install summary]"))).toBe(false);
     } finally {
       temp.cleanup();
     }
@@ -479,7 +543,7 @@ describe("guided", () => {
 
     try {
       await expect(runGuided(makeOptions({ mode: "install" }), temp.env, prompt.io)).rejects.toThrow(
-        "Guided mode requires --agent and --scope for plan/install when stdin is not interactive.",
+        "Guided mode requires --agent and --scope for plan/install/uninstall when stdin is not interactive.",
       );
     } finally {
       temp.cleanup();

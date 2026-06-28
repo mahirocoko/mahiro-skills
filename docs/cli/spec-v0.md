@@ -11,6 +11,7 @@ The CLI exists to install the packaged repo contents in agent-specific locations
 - Support both `global` and `local` installation scopes as first-class concepts.
 - Use adapter-specific rules instead of assuming all agents map to the same filesystem shape.
 - Be safe by default through planning, dry runs, and explicit collision handling.
+- Uninstall receipt-recorded skills/commands from one or more agents without guessing beyond the receipt.
 
 ## Non-goals for v0
 
@@ -18,7 +19,7 @@ The CLI exists to install the packaged repo contents in agent-specific locations
 - Automatic zip artifact generation.
 - Skill behavior translation between agents.
 - Symlink mode as the default install behavior.
-- Uninstall garbage collection beyond installed receipt cleanup.
+- Uninstall garbage collection beyond receipt-recorded skill/command targets.
 - Automatic MCP server provisioning for every skill.
 
 ## Repo model
@@ -120,25 +121,28 @@ If an agent has multiple valid roots, the adapter must resolve one canonical roo
 ```text
 mahiro-skills plan [items...] --agent <agent> [--agent <agent> ...] --scope <global|local>
 mahiro-skills install [items...] --agent <agent> [--agent <agent> ...] --scope <global|local>
+mahiro-skills uninstall [items...] --agent <agent|all> [--agent <agent> ...] --scope <global|local>
 mahiro-skills list --agent <agent> [--agent <agent> ...] --scope <global|local>
 mahiro-skills doctor --agent <agent> [--agent <agent> ...] [--scope <global|local>]
-mahiro-skills tui [items...] [--mode <plan|install|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
-mahiro-skills guided [items...] [--mode <plan|install|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills tui [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills guided [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
 ```
 
 ### Guided / TUI command behavior
 
-- `tui` and `guided` invoke the same implementation; both are interactive wrappers over the same `createPlan()` and `install()` flow used by the direct commands
+- `tui` and `guided` invoke the same implementation; both are interactive wrappers over the same `createPlan()`, `install()`, and `uninstall()` flows used by the direct commands
 - The TUI keeps workflow logic separate from menu/summary rendering: prompt I/O owns TTY detection/cancel/outro behavior and bottom-of-prompt keyboard hints, while view helpers own the compact startup wordmark, menu options, and preview/summary text
 - Active prompts show grounded keyboard help on the bottom hint line: arrow keys navigate, `Enter` selects, `Esc` / `Ctrl+C` cancels, `Space` toggles multiselect entries.
-- **Interactive home session (no `--mode`):** when stdin/stdout are interactive and no `--mode` is passed, the CLI opens a **home menu** first: Install, Update installed, List installed, Receipt detail, Exit. `Update installed` discovers install receipts from the receipt-derived list API, previews every non-empty receipt update, asks one batch `Proceed with update?` confirmation unless `--yes` is provided, and installs each receipt's recorded items with overwrite enabled. It does not prompt for agent, scope, or item choices. The human can run multiple actions in one process; choosing Exit returns the last completed result (or an empty result if nothing ran yet)
-- **Single-pass interactive (`--mode`):** with `--mode plan`, `--mode install`, or `--mode list`, the CLI runs that action once and returns (no home menu). `Update installed` stays in the TUI home flow and is not a new `--mode update` command. Declining overwrite or final install confirmation **ends with an error** (same as today), not a home loop
+- **Interactive home session (no `--mode`):** when stdin/stdout are interactive and no `--mode` is passed, the CLI opens a **home menu** first: Install, Uninstall, Update installed, List installed, Receipt detail, Exit. `Update installed` discovers install receipts from the receipt-derived list API, previews every non-empty receipt update, asks one batch `Proceed with update?` confirmation unless `--yes` is provided, and installs each receipt's recorded items with overwrite enabled. It does not prompt for agent, scope, or item choices. The human can run multiple actions in one process; choosing Exit returns the last completed result (or an empty result if nothing ran yet)
+- **Single-pass interactive (`--mode`):** with `--mode plan`, `--mode install`, `--mode uninstall`, or `--mode list`, the CLI runs that action once and returns (no home menu). `Update installed` stays in the TUI home flow and is not a new `--mode update` command. Declining overwrite or final install/uninstall confirmation **ends with an error** (same as today), not a home loop
 - **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
-- Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install`, `--agent` and `--scope`. `list` may run with `--mode list` only
+- Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install` / `uninstall`, `--agent` and `--scope`. `list` may run with `--mode list` only
 - Item selection uses a default-bundle shortcut plus **checkbox-style multiselect** (`Space` to toggle, `Enter` to confirm) over repo inventory, not numbered readline picks
 - **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
+- Uninstall prompts for one or more agents (including **All agents**), one scope, then either **all installed items** from the selected receipts or selected installed item names. A selected item removes both the recorded skill and command target for that name when both exist. Multi-agent uninstall shows per-agent previews but uses one batch confirmation instead of asking once per agent.
+- Direct `uninstall` accepts repeated/comma-separated `--agent` values plus `--agent all`; omitting items removes every skill/command recorded in each selected receipt for that scope.
 - Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
-- When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent
+- When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent. Multi-agent install shows every agent preview first, then uses one overwrite confirmation if needed and one final batch confirmation instead of asking per agent.
 - Update installed returns an empty result with a note when no receipts exist, and skips empty receipts with a note instead of prompting for replacement choices
 - Install confirmation remains explicit unless `--yes` is provided
 - Prompt cancellation is centralized and exits before side effects; the empty home exit uses a terminal outro instead of a note card
@@ -241,6 +245,21 @@ Receipt fields:
 - installed commands
 - source repo path
 - install timestamp
+
+## Uninstall behavior
+
+Uninstall is receipt-driven and intentionally conservative.
+
+Rules:
+
+- `uninstall <items...>` only removes items recorded in the matching install receipt for the selected agent and scope.
+- `uninstall` with no items removes every skill and command recorded in the receipt.
+- If a name is recorded as both a skill and command, uninstalling that name removes both targets.
+- Missing target paths are treated as already absent; the receipt is still updated for the requested recorded item.
+- Unknown or unrecorded items are reported as skipped and are not used to guess paths.
+- When a receipt still has installed items after uninstall, it is rewritten with the remaining names and the original install timestamp preserved.
+- When a receipt becomes empty, the receipt file is removed.
+- Direct CLI supports `--agent all` as a shortcut for the full v0 adapter set.
 
 ## Adapter output rules
 

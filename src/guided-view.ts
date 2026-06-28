@@ -1,19 +1,21 @@
 import type { PromptIO, PromptOption } from "./prompt";
-import type { InstallPlan, InstallResult, InstalledSummary, InstallScope, InstallTarget, ScopedAgent } from "./types";
+import type { InstallPlan, InstallResult, InstalledSummary, InstallScope, InstallTarget, ScopedAgent, UninstallResult } from "./types";
 
-export type GuidedMode = "install" | "plan" | "list";
-export type PlanSummaryMode = GuidedMode | "update";
-export type HomeAction = "install" | "update" | "list" | "detail" | "exit";
+export type GuidedMode = "install" | "uninstall" | "plan" | "list";
+export type PlanSummaryMode = "install" | "plan" | "list" | "update";
+export type HomeAction = "install" | "uninstall" | "update" | "list" | "detail" | "exit";
 export const backValue = "__back";
 export type BackValue = typeof backValue;
 export type AgentPickMode = "all" | "pick" | BackValue;
 export type ItemPickMode = "default-bundle" | "custom-items" | BackValue;
+export type UninstallItemPickMode = "all-installed" | "custom-items" | BackValue;
 export type ScopePickMode = InstallScope | BackValue;
 
 export const guidedScopes = ["local", "global"] as const;
 
 export const homeActionOptions = [
   { label: "Install", value: "install", hint: "copy skills/commands into the agent tree" },
+  { label: "Uninstall", value: "uninstall", hint: "remove receipt-recorded skills/commands" },
   { label: "Update installed", value: "update", hint: "refresh items recorded in install receipts" },
   { label: "List installed", value: "list", hint: "filter by one or more agents" },
   { label: "Receipt detail", value: "detail", hint: "one or more agents, one scope" },
@@ -118,6 +120,19 @@ export function itemPickOptions(defaultBundleLabel: string, allowBack = false): 
   ], allowBack);
 }
 
+export function uninstallItemPickOptions(allowBack = false): readonly PromptOption<UninstallItemPickMode>[] {
+  return withBack([
+    {
+      label: "all installed items",
+      value: "all-installed",
+    },
+    {
+      label: "select installed items",
+      value: "custom-items",
+    },
+  ], allowBack);
+}
+
 export function formatInstalledSection(label: string, values: string[]): string[] {
   if (values.length === 0) {
     return [label, "- none"];
@@ -197,6 +212,15 @@ export function writeBatchInstallSummary(io: PromptIO, results: InstallResult[])
   ];
 
   io.note(lines.join("\n"), "Batch install summary");
+}
+
+export function writeBatchUninstallSummary(io: PromptIO, results: UninstallResult[]): void {
+  const lines = [
+    `agents: ${results.length}`,
+    ...results.map((result) => `${result.agent}: ${result.status} (${result.uninstalled.length} uninstalled)`),
+  ];
+
+  io.note(lines.join("\n"), "Batch uninstall summary");
 }
 
 export function writeListSummary(io: PromptIO, summaries: InstalledSummary[]): void {

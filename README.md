@@ -2,7 +2,7 @@
 
 Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.
 
-`mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
+`mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
 Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Gemini/Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
 
@@ -57,7 +57,7 @@ curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/insta
 bun ./src/cli.ts
 ```
 
-The TUI wraps the same planner and installer core. Use it when you want menus for install, update installed receipts, list installed items, or inspect receipt detail.
+The TUI wraps the same planner, installer, and uninstaller core. Use it when you want menus for install, uninstall, update installed receipts, list installed items, or inspect receipt detail.
 
 ### Installer truth
 
@@ -70,13 +70,13 @@ The TUI wraps the same planner and installer core. Use it when you want menus fo
 
 ## Use
 
-Supported v0 commands: `plan`, `install`, `list`, `doctor`, `tui`, and `guided`.
+Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `tui`, and `guided`.
 
 Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
 
 Current workflow highlights:
 
-- **Interactive install/update TUI** — open with `bun ./src/cli.ts`; supports Install, Update installed, List installed, and Receipt detail. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
+- **Interactive install/uninstall/update TUI** — open with `bun ./src/cli.ts`; supports Install, Uninstall, Update installed, List installed, and Receipt detail. Uninstall can target one agent or all agents, then remove selected receipt-recorded items or everything for the chosen scope. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
 - **Direct CLI lanes** — `/direct-cli` keeps Gemini, Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
 - **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
@@ -93,6 +93,10 @@ bun ./src/cli.ts install --agent opencode --scope local
 
 # Install selected skills for multiple agents
 bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local
+
+# Uninstall selected skills from one agent, or from all agents in a scope
+bun ./src/cli.ts uninstall project --agent cursor --scope local
+bun ./src/cli.ts uninstall --agent all --scope local
 
 # Check installed files
 bun ./src/cli.ts doctor --agent opencode --scope local

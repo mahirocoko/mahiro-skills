@@ -8,6 +8,8 @@ export type InstallScope = "global" | "local";
 
 export type PlanStatus = "installed" | "partially-installed" | "skipped" | "unsupported";
 
+export type UninstallStatus = "uninstalled" | "partially-uninstalled" | "skipped";
+
 export type InstallUnitKind = "skill" | "command";
 
 export interface RepoBundle {
@@ -83,6 +85,25 @@ export interface InstallResult {
   receiptPath?: string;
 }
 
+export interface UninstalledTarget {
+  item: string;
+  kind: InstallUnitKind;
+  target: string;
+  removed: boolean;
+}
+
+export interface UninstallResult {
+  status: UninstallStatus;
+  agent: ScopedAgent;
+  scope: InstallScope;
+  root: string;
+  uninstalled: string[];
+  targets: UninstalledTarget[];
+  skipped: SkippedItem[];
+  receiptPath?: string;
+  receiptRemoved: boolean;
+}
+
 export interface DoctorCheck {
   label: string;
   ok: boolean;
@@ -97,12 +118,12 @@ export interface DoctorResult {
 }
 
 export interface CliOptions {
-  command: "plan" | "install" | "list" | "doctor" | "guided" | "tui";
+  command: "plan" | "install" | "uninstall" | "list" | "doctor" | "guided" | "tui";
   items: string[];
   /** From repeated `--agent` and/or comma-separated values; empty when omitted (interactive TUI). */
   agents: ScopedAgent[];
   scope?: InstallScope;
   overwrite: boolean;
-  mode?: "plan" | "install" | "list";
+  mode?: "plan" | "install" | "uninstall" | "list";
   yes: boolean;
 }

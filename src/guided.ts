@@ -1,12 +1,15 @@
 import { install } from "./install";
+import { uninstall } from "./uninstall";
 import {
   agentPickOptions,
   backValue,
   homeActionOptions,
   itemPickOptions,
   scopePickOptions,
+  uninstallItemPickOptions,
   writeBatchInstallSummary,
   writeBatchPlanSummary,
+  writeBatchUninstallSummary,
   writeHomeIntro,
   writeInstallReview,
   writeListSummary,
@@ -14,6 +17,7 @@ import {
   type AgentPickMode,
   type GuidedMode,
   type HomeAction,
+  type UninstallItemPickMode,
 } from "./guided-view";
 import { listInstalled, listInstalledSummaries } from "./list";
 import { createPlan } from "./plan";
@@ -30,6 +34,7 @@ import type {
   InstallTarget,
   RepoInventory,
   ScopedAgent,
+  UninstallResult,
 } from "./types";
 
 const guidedAgents = supportedAgents;
@@ -39,6 +44,8 @@ export type GuidedOutcome =
   | InstallPlan[]
   | InstallResult
   | InstallResult[]
+  | UninstallResult
+  | UninstallResult[]
   | InstalledSummary[];
 
 interface SelectableItem {
@@ -116,6 +123,42 @@ async function promptItems(io: PromptIO, inventory: RepoInventory, allowBack: bo
     selectableItems.map((item) => ({
       label: item.label,
       value: item.value,
+    })),
+  );
+}
+
+function installedItemsFor(agent: ScopedAgent, scope: InstallScope, env: NodeJS.ProcessEnv): string[] {
+  const receipt = listInstalled(agent, scope, env);
+  if (!receipt) {
+    return [];
+  }
+
+  return sortNames([...receipt.installedSkills, ...receipt.installedCommands]);
+}
+
+async function promptUninstallItems(io: PromptIO, env: NodeJS.ProcessEnv, agents: ScopedAgent[], scope: InstallScope, allowBack: boolean): Promise<string[] | null> {
+  const installedItems = sortNames(agents.flatMap((agent) => installedItemsFor(agent, scope, env)));
+
+  if (installedItems.length === 0) {
+    io.note("No install receipts or installed items found for the selected agents and scope.", "Uninstall");
+    return [];
+  }
+
+  const selectionMode = await io.select<UninstallItemPickMode>("Uninstall items", uninstallItemPickOptions(allowBack));
+
+  if (selectionMode === backValue) {
+    return null;
+  }
+
+  if (selectionMode === "all-installed") {
+    return [];
+  }
+
+  return io.multiselect(
+    "Choose installed items",
+    installedItems.map((item) => ({
+      label: item,
+      value: item,
     })),
   );
 }
@@ -290,7 +333,7 @@ async function runSinglePlanOrInstall(
   io: PromptIO,
   env: NodeJS.ProcessEnv,
   options: CliOptions,
-  mode: GuidedMode,
+  mode: "install" | "plan",
   agent: ScopedAgent,
   scope: InstallScope,
   items: string[],
@@ -335,13 +378,55 @@ async function runSinglePlanOrInstall(
   return install(agent, scope, items, overwrite, env);
 }
 
+function writeUninstallPreview(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAgent, scope: InstallScope, items: string[]): void {
+  const receipt = listInstalled(agent, scope, env);
+  const plannedItems = items.length > 0 ? sortNames(items) : receipt ? sortNames([...receipt.installedSkills, ...receipt.installedCommands]) : [];
+
+  if (!receipt || plannedItems.length === 0) {
+    io.note(`No installed items found for ${agent} (${scope}).`, "Uninstall preview");
+    return;
+  }
+
+  io.note([
+    `agent: ${agent}`,
+    `scope: ${scope}`,
+    `items: ${plannedItems.join(", ")}`,
+  ].join("\n"), "Uninstall preview");
+}
+
+async function runSingleUninstall(
+  io: PromptIO,
+  env: NodeJS.ProcessEnv,
+  options: CliOptions,
+  agent: ScopedAgent,
+  scope: InstallScope,
+  items: string[],
+  softCancelReturnsToHome: boolean,
+): Promise<UninstallResult | null> {
+  writeUninstallPreview(io, env, agent, scope, items);
+
+  if (!options.yes) {
+    const shouldProceed = await promptConfirm(io, `Proceed with uninstall for ${agent} (${scope})?`);
+    if (!shouldProceed) {
+      if (softCancelReturnsToHome) {
+        io.note("Uninstall cancelled.", "Home");
+        return null;
+      }
+
+      throw new Error("Guided uninstall cancelled.");
+    }
+  }
+
+  return uninstall(agent, scope, items, env);
+}
+
 function assertRequiredGuidedOptions(options: CliOptions): asserts options is CliOptions & { mode: GuidedMode } {
   if (!options.mode) {
     throw new Error("Guided mode requires --mode when stdin is not interactive.");
   }
 
   if (options.mode !== "list" && (options.agents.length === 0 || !options.scope)) {
-    throw new Error("Guided mode requires --agent and --scope for plan/install when stdin is not interactive.");
+    throw new Error("Guided mode requires --agent and --scope for plan/install/uninstall when stdin is not interactive.");
   }
 }
 
@@ -393,6 +478,38 @@ async function runInteractiveSegment(
     return null;
   }
 
+  if (mode === "uninstall") {
+    const items = options.items.length > 0 ? options.items : await promptUninstallItems(io, env, agents, scope, softCancelReturnsToHome);
+    if (items === null) {
+      return null;
+    }
+
+    if (agents.length === 1) {
+      return runSingleUninstall(io, env, options, agents[0], scope, items, softCancelReturnsToHome);
+    }
+
+    for (const agent of agents) {
+      writeUninstallPreview(io, env, agent, scope, items);
+    }
+
+    if (!options.yes) {
+      const shouldProceed = await promptConfirm(io, `Proceed with uninstall for ${agents.length} agents (${scope})?`);
+      if (!shouldProceed) {
+        if (softCancelReturnsToHome) {
+          io.note("Uninstall cancelled.", "Home");
+          return null;
+        }
+
+        throw new Error("Guided uninstall cancelled.");
+      }
+    }
+
+    const results = agents.map((agent) => uninstall(agent, scope, items, env));
+
+    writeBatchUninstallSummary(io, results);
+    return results;
+  }
+
   const items = options.items.length > 0 ? options.items : await promptItems(io, getRepoInventory(env.MAHIRO_SKILLS_REPO_ROOT), softCancelReturnsToHome);
   if (items === null) {
     return null;
@@ -418,25 +535,40 @@ async function runInteractiveSegment(
     return plans;
   }
 
-  const results: InstallResult[] = [];
+  const plans = agents.map((agent) => createPlan(agent, scope, items, env));
+  for (const plan of plans) {
+    writePlanSummary(io, mode, plan);
+    writeInstallReview(io, plan);
+  }
 
-  for (const agent of agents) {
-    const result = await runSinglePlanOrInstall(io, env, options, mode, agent, scope, items, softCancelReturnsToHome);
-    if (result === null) {
-      if (results.length > 0) {
-        io.note(
-          `Batch install stopped after ${results.length} completed agent(s). Earlier installs were kept.`,
-          "Batch install partial",
-        );
-        writeBatchInstallSummary(io, results);
-        return results;
+  let overwrite = options.overwrite;
+  const hasCollisions = plans.some((plan) => plan.skills.some((entry) => entry.collision) || plan.commands.some((entry) => entry.collision));
+
+  if (hasCollisions && !overwrite) {
+    overwrite = await promptConfirm(io, `Collisions detected. Overwrite existing targets for ${agents.length} agents?`);
+    if (!overwrite) {
+      if (softCancelReturnsToHome) {
+        io.note("Install cancelled (overwrite not approved).", "Home");
+        return null;
       }
 
-      return null;
+      throw new Error("Guided install cancelled because collisions were not approved for overwrite.");
     }
-
-    results.push(result as InstallResult);
   }
+
+  if (!options.yes) {
+    const shouldProceed = await promptConfirm(io, `Proceed with install for ${agents.length} agents (${scope})?`);
+    if (!shouldProceed) {
+      if (softCancelReturnsToHome) {
+        io.note("Install cancelled.", "Home");
+        return null;
+      }
+
+      throw new Error("Guided install cancelled.");
+    }
+  }
+
+  const results = agents.map((agent) => install(agent, scope, items, overwrite, env));
 
   writeBatchInstallSummary(io, results);
   return results;
@@ -485,6 +617,14 @@ export async function runGuided(options: CliOptions, env = process.env, io = cre
         }
 
         return options.agents.map((agent) => createPlan(agent, scope, options.items, env));
+      }
+
+      if (options.mode === "uninstall") {
+        if (options.agents.length === 1) {
+          return uninstall(options.agents[0], scope, options.items, env);
+        }
+
+        return options.agents.map((agent) => uninstall(agent, scope, options.items, env));
       }
 
       if (options.agents.length === 1) {

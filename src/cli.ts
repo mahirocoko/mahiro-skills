@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { createPlan } from "./plan";
 import { install } from "./install";
+import { uninstall } from "./uninstall";
 import { listInstalled } from "./list";
 import { doctor } from "./doctor";
 import { runGuided } from "./guided";
@@ -13,6 +14,11 @@ function pushAgentTokens(agents: ScopedAgent[], raw: string): void {
   for (const part of raw.split(",")) {
     const token = part.trim();
     if (token.length === 0) {
+      continue;
+    }
+
+    if (token === "all") {
+      agents.push(...supportedAgents);
       continue;
     }
 
@@ -56,7 +62,7 @@ function parseArgs(argv: string[]): CliOptions {
   }
 
   const [commandRaw, ...rest] = argv;
-  if (!["plan", "install", "list", "doctor", "guided", "tui"].includes(commandRaw)) {
+  if (!["plan", "install", "uninstall", "list", "doctor", "guided", "tui"].includes(commandRaw)) {
     throw new Error(`Unsupported command '${commandRaw}'.`);
   }
 
@@ -90,7 +96,7 @@ function parseArgs(argv: string[]): CliOptions {
     }
     if (token === "--mode") {
       const nextMode = rest[i + 1];
-      if (nextMode !== "plan" && nextMode !== "install" && nextMode !== "list") {
+      if (nextMode !== "plan" && nextMode !== "install" && nextMode !== "uninstall" && nextMode !== "list") {
         throw new Error(`Unsupported guided mode '${nextMode}'.`);
       }
       mode = nextMode;
@@ -141,6 +147,13 @@ async function main(): Promise<void> {
       const agents = requireAgents(options);
       const scope = requireScope(options);
       const results = agents.map((agent) => install(agent, scope, options.items, options.overwrite));
+      console.log(JSON.stringify(results.length === 1 ? results[0] : results, null, 2));
+      return;
+    }
+    case "uninstall": {
+      const agents = requireAgents(options);
+      const scope = requireScope(options);
+      const results = agents.map((agent) => uninstall(agent, scope, options.items));
       console.log(JSON.stringify(results.length === 1 ? results[0] : results, null, 2));
       return;
     }

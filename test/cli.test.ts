@@ -51,6 +51,28 @@ describe("cli", () => {
     }
   });
 
+  test("supports uninstall for all agents in one scope", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,letta-code", "--scope", "local"], temp.env);
+      expect(installResult.exitCode).toBe(0);
+
+      const uninstallResult = runCli(["uninstall", "project", "--agent", "all", "--scope", "local"], temp.env);
+      expect(uninstallResult.exitCode).toBe(0);
+
+      const payload = parseJson(uninstallResult.stdout) as Array<{ agent: string; status: string; uninstalled: string[] }>;
+      expect(payload).toHaveLength(6);
+      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code"]);
+      expect(payload.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
+      expect(payload.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["project"]);
+      expect(payload.find((entry) => entry.agent === "letta-code")?.uninstalled).toEqual(["project"]);
+      expect(payload.find((entry) => entry.agent === "opencode")?.status).toBe("skipped");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("supports Letta Code in the direct CLI surface", () => {
     const temp = makeTempEnv();
 
