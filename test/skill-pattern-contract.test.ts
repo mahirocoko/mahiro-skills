@@ -111,14 +111,19 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("tmux load-buffer");
     expect(skill).toContain("one writer per file/asset contract");
     expect(skill).toContain("Sandbox verification");
+    expect(skill).toContain("Antigravity newline caveat");
+    expect(skill).toContain("--prompt-interactive");
 
     expect(playbook).toContain("## Multi-pane job sessions");
     expect(playbook).toContain("Role fanout");
     expect(playbook).toContain("Same-prompt fanout");
     expect(playbook).toContain("Send byte-identical prompt content to every pane.");
     expect(playbook).toContain("Main agent owns final merge/synthesis into the real worktree.");
+    expect(playbook).toContain("Antigravity multiline prompt caveat");
+    expect(playbook).toContain("agy --model \"Claude Opus 4.6 (Thinking)\"");
 
     expect(readme).toContain("same-prompt fanout");
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
+    expect(readme).toContain("Agy specifically");
   });
 });

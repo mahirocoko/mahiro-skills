@@ -145,14 +145,34 @@ shasum -a 256 "$PROMPT_FILE" /tmp/direct-cli-fanout.*/pane-*.txt
 
 ### Antigravity multi-model notes
 
-Antigravity model switching is still TUI-first through `/model`. For several Agy models in one job:
+Current local Antigravity (verified 2026-06-29, `agy 1.0.13`) supports exact model labels through `--model`. Prefer the flag when it exists, then verify the visible model label in the pane. Fall back to `/model` only if the flag is unavailable or the launch fails.
+
+For several Agy models in one job:
 
 1. Open one Agy pane per model.
-2. Launch `agy --dangerously-skip-permissions` in each pane.
-3. Switch each pane through `/model` before sending the task prompt, or ask the user to choose the model in that pane.
+2. Launch `agy --model "<exact label>" --dangerously-skip-permissions` in each pane when supported.
+3. Verify the visible model label, or switch each pane through `/model` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Do not assume a CLI model flag exists for Agy until verified locally.
+Known-good local labels from `agy models`: `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)`.
+
+### Antigravity multiline prompt caveat
+
+Agy treats literal newline paste differently from the tmux sandbox. Verified 2026-06-29: `tmux paste-buffer` of a multiline prompt into Agy split the prompt into separate queued messages, causing the first incomplete line to run before the rest of the prompt. This is not Opus-only; Gemini 3.5 Flash and Gemini 3.1 Pro showed the same per-line `HandleUserInput` logging, though the symptom can look different depending on model latency and whether queued lines auto-flush before the first response completes.
+
+Preferred Agy prompt delivery:
+
+```bash
+# ordinary follow-up: compact to one line, then send literally
+prompt="$(tr '\n' ' ' < /tmp/direct-job.prompt.txt)"
+tmux send-keys -t "$JOB:0.$pane" -l "$prompt"
+tmux send-keys -t "$JOB:0.$pane" Enter
+
+# fresh lane needing exact multiline initial prompt: interactive, not print/headless
+agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
+```
+
+Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
 
 ### Sandbox verification
 
@@ -164,7 +184,7 @@ This pattern was sandbox-tested on 2026-06-23:
 - captured each pane's stdin to a file
 - SHA-256 hashes for the shared prompt and all three pane captures matched
 
-Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` is practical and avoids manual copy/paste drift.
+Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` is practical and avoids manual copy/paste drift. For Agy, use the multiline caveat above instead of raw `paste-buffer`.
 
 ## Known-good defaults
 
@@ -183,7 +203,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Codex faster coding model: `gpt-5.3-codex-high-fast`
 - Gemini launch style: interactive tmux lane with `--approval-mode yolo --skip-trust`, then send the prompt after readiness
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
-- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions`, then send the prompt after readiness
+- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and exact `--model` label when supported; verify the visible label, then send the prompt after readiness
 - Codex launch style: interactive tmux lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
 
 ### Model selection rule
@@ -204,7 +224,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   2. `gpt-5.3-codex-high` — coding-heavy work, careful review, or deeper implementation.
   3. `gpt-5.3-codex-high-fast` — faster coding-focused follow-up.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex --help`, `codex doctor`, or current Codex docs if a model fails.
-- Antigravity CLI `1.0.3` still has no confirmed command-line model flag; if the chosen model is not already active in the pane, use `/model` in the TUI before sending the task prompt, or ask the user to select it.
+- Antigravity CLI `1.0.13` has a verified `--model` flag; prefer exact labels like `--model "Claude Opus 4.6 (Thinking)"`, then verify the visible pane label. Use `/model` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
 - Use `agent --list-models` or `agent models` before changing Cursor model names; Cursor's list changes faster than this playbook.
@@ -216,7 +236,7 @@ These are evidence checkpoints from 2026-05-29; verify again when models or CLI 
 
 - Gemini CLI: local checked version was `0.43.0`; npm latest stable was `0.44.1`, with preview `0.45.0-preview.1`. Newer releases added session/context/MCP/routing/PTY fixes and Gemini 3.1 alias/thinking-config work. Keep `gemini-3.1-pro-preview` as the direct-lane default until the target machine verifies a newer accepted model name such as `gemini-3.1-pro`.
 - Cursor CLI: local checked version was `2026.05.24-dda726e`; `agent models` showed `composer-2.5-fast` as default, `composer-2.5`, and Opus 4.8 variants. Use `claude-opus-4-8-thinking-high` for heavy review/deep reasoning.
-- Antigravity CLI: local checked version was `1.0.3`. Recent changes added G1 credits and `/credits`, plugin import/manage behavior, MCP disable fixes, `/diff` wrapping fixes, prompt-input hang fixes, and more robust project discovery.
+- Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed the skill-defined labels, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
 - Codex CLI: local checked version was `0.134.0`; npm latest was `0.135.0`. `codex --help` exposed interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation` stable/enabled. Source gates image generation on ChatGPT/Codex backend, provider image-generation capability, and model image input modality; generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Gemini headless hard block
@@ -453,18 +473,26 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ### Fresh session
 
-Use the known-good Antigravity defaults first. Antigravity currently stores its active model in `~/.gemini/antigravity-cli/settings.json` and model switching is done through the `/model` TUI.
+Use the known-good Antigravity defaults first. Prefer exact `--model` labels when available, then verify the visible model label in the pane. Use `/model` TUI switching only as a fallback.
 
 ```bash
 tmux new-session -d -s "agy-task"
-tmux send-keys -t agy-task 'agy --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-task 'agy --model "Gemini 3.5 Flash (High)" --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-task -S -120
 tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
 ```
 
 ### Model selection
 
-If a non-current Antigravity model is required, switch inside the pane before sending the task prompt:
+If a non-current Antigravity model is required, launch with the exact label first:
+
+```bash
+tmux new-session -d -s "agy-opus"
+tmux send-keys -t agy-opus 'agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions' Enter
+tmux capture-pane -p -t agy-opus -S -120
+```
+
+If the flag fails or the visible label is wrong, switch inside the pane before sending the task prompt:
 
 ```bash
 tmux send-keys -t agy-task '/model' Enter
