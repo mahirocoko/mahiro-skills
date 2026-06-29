@@ -27,6 +27,81 @@ export interface RepoInventory {
   defaultBundle?: RepoBundle;
 }
 
+export interface SkillCatalogEntry {
+  name: string;
+  description?: string;
+  skillPath: string;
+  skillFilePath?: string;
+  frontmatterName?: string;
+  frontmatterDescription?: string;
+  hasSkillFile: boolean;
+  hasMarkdownCommand: boolean;
+  markdownCommandPath?: string;
+  hasGeminiCommand: boolean;
+  geminiCommandPath?: string;
+  inDefaultBundle: boolean;
+}
+
+export type InventoryGapSeverity = "error" | "warning";
+
+export interface InventoryGap {
+  code:
+    | "missing-skill-file"
+    | "frontmatter-name-mismatch"
+    | "command-without-skill"
+    | "gemini-command-without-skill"
+    | "bundle-skill-missing"
+    | "bundle-command-missing"
+    | "skill-missing-default-bundle"
+    | "command-missing-default-bundle";
+  severity: InventoryGapSeverity;
+  item: string;
+  detail: string;
+}
+
+export interface RepoManifestResult {
+  type: "manifest";
+  repoRoot: string;
+  skills: SkillCatalogEntry[];
+  commands: string[];
+  bundles: RepoBundle[];
+  defaultBundle?: RepoBundle;
+  gaps: InventoryGap[];
+}
+
+export interface SkillSearchResult {
+  name: string;
+  description?: string;
+  score: number;
+  matched: string[];
+  hasMarkdownCommand: boolean;
+  hasGeminiCommand: boolean;
+  inDefaultBundle: boolean;
+}
+
+export interface RepoSearchResult {
+  type: "search";
+  repoRoot: string;
+  query: string;
+  results: SkillSearchResult[];
+}
+
+export interface RepoGapsResult {
+  type: "gaps";
+  repoRoot: string;
+  ok: boolean;
+  gaps: InventoryGap[];
+}
+
+export interface NewSkillResult {
+  type: "new-skill";
+  name: string;
+  repoRoot: string;
+  skillPath: string;
+  files: string[];
+  nextSteps: string[];
+}
+
 export interface InstallTarget {
   name: string;
   kind: InstallUnitKind;
@@ -118,12 +193,13 @@ export interface DoctorResult {
 }
 
 export interface CliOptions {
-  command: "plan" | "install" | "uninstall" | "list" | "doctor" | "guided" | "tui";
+  command: "plan" | "install" | "uninstall" | "list" | "doctor" | "guided" | "tui" | "manifest" | "search" | "gaps" | "new";
   items: string[];
   /** From repeated `--agent` and/or comma-separated values; empty when omitted (interactive TUI). */
   agents: ScopedAgent[];
   scope?: InstallScope;
   overwrite: boolean;
+  copyTemplate: boolean;
   mode?: "plan" | "install" | "uninstall" | "list";
   yes: boolean;
 }

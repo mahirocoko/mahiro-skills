@@ -46,6 +46,7 @@ function makeOptions(overrides: Partial<CliOptions> = {}): CliOptions {
     items: [],
     agents: [],
     overwrite: false,
+    copyTemplate: false,
     yes: false,
     ...overrides,
   };

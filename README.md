@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.42 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.43 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.42 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.43 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -70,7 +70,7 @@ The TUI wraps the same planner, installer, and uninstaller core. Use it when you
 
 ## Use
 
-Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `tui`, and `guided`.
+Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.
 
 Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
 
@@ -100,6 +100,14 @@ bun ./src/cli.ts uninstall --agent all --scope local
 
 # Check installed files
 bun ./src/cli.ts doctor --agent opencode --scope local
+
+# Inspect the source skill catalog for agents/tooling
+bun ./src/cli.ts manifest --json
+bun ./src/cli.ts search project --json
+bun ./src/cli.ts gaps --json
+
+# Scaffold a new skill from the authoring template
+bun ./src/cli.ts new my-skill --copy-template --json
 
 # Install Agent Skills for Letta Code
 bun ./src/cli.ts install project --agent letta-code --scope local
@@ -169,6 +177,9 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - `examples/` — runnable or copyable workflow examples for the CLI/TUI surface
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
+- `bun ./src/cli.ts manifest --json` — machine-readable source catalog for skills, command coverage, bundle membership, and inventory gaps
+- `bun ./src/cli.ts gaps --json` — read-only authoring check for missing skill files, stale bundle references, and command/skill mismatches
+- `bun ./src/cli.ts new my-skill --copy-template --json` — copy the starter `template/` into `skills/my-skill/` and report manual bundle/command/index follow-up work
 - `docs/authoring/` — maintainer notes for release, path, inventory, and skill-writing conventions
 - `docs/cli/` — CLI spec and acceptance matrix
 - `src/` and `test/` — Bun + TypeScript CLI implementation and tests

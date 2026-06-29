@@ -124,9 +124,24 @@ mahiro-skills install [items...] --agent <agent> [--agent <agent> ...] --scope <
 mahiro-skills uninstall [items...] --agent <agent|all> [--agent <agent> ...] --scope <global|local>
 mahiro-skills list --agent <agent> [--agent <agent> ...] --scope <global|local>
 mahiro-skills doctor --agent <agent> [--agent <agent> ...] [--scope <global|local>]
+mahiro-skills manifest [--json]
+mahiro-skills search <query> [--json]
+mahiro-skills gaps [--json]
+mahiro-skills new <skill-name> --copy-template [--json]
 mahiro-skills tui [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
 mahiro-skills guided [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
 ```
+
+### Source catalog / agent-facing inventory
+
+The CLI also exposes read-only source-catalog commands for agents and authoring checks. They do not require `--agent` or `--scope`, and `--json` is accepted as an explicit no-op because direct CLI output is JSON by default.
+
+- `manifest` returns the machine-readable source catalog: repo root, skills, commands, bundles, default bundle, per-skill command coverage, and inventory gaps.
+- `search <query>` searches skill names and descriptions, returning scored matches with command coverage and default-bundle membership.
+- `gaps` returns the authoring gap report for missing `SKILL.md` files, frontmatter name mismatches, command/skill mismatches, stale bundle references, and default-bundle omissions.
+- `new <skill-name> --copy-template` copies the starter `template/` tree into `skills/<skill-name>/`, rewrites minimal `SKILL.md` frontmatter/title placeholders, refuses collisions, and returns manual next steps for marketplace, command wrappers, `skills/llms.txt`, README, and tests.
+
+These commands inspect or scaffold repo source (`skills/`, `commands/`, `commands-gemini/`, `.claude-plugin/marketplace.json`, `template/`) only. They do not read installed copies and do not modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
 
 ### Guided / TUI command behavior
 

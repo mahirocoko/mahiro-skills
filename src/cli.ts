@@ -1,10 +1,12 @@
 #!/usr/bin/env bun
 import { createPlan } from "./plan";
 import { install } from "./install";
+import { createSkillFromTemplate } from "./new-skill";
 import { uninstall } from "./uninstall";
 import { listInstalled } from "./list";
 import { doctor } from "./doctor";
 import { runGuided } from "./guided";
+import { getRepoGaps, getRepoManifest, searchSkillCatalog } from "./repo";
 import { createPromptIO, isPromptCancelError } from "./prompt";
 import { supportedAgents, type CliOptions, type InstallScope, type ScopedAgent } from "./types";
 
@@ -57,18 +59,20 @@ function parseArgs(argv: string[]): CliOptions {
       items: [],
       agents: [],
       overwrite: false,
+      copyTemplate: false,
       yes: false,
     };
   }
 
   const [commandRaw, ...rest] = argv;
-  if (!["plan", "install", "uninstall", "list", "doctor", "guided", "tui"].includes(commandRaw)) {
+  if (!["plan", "install", "uninstall", "list", "doctor", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw)) {
     throw new Error(`Unsupported command '${commandRaw}'.`);
   }
 
   const agents: ScopedAgent[] = [];
   let scope: InstallScope | undefined;
   let overwrite = false;
+  let copyTemplate = false;
   let mode: CliOptions["mode"];
   let yes = false;
   const items: string[] = [];
@@ -94,6 +98,10 @@ function parseArgs(argv: string[]): CliOptions {
       overwrite = true;
       continue;
     }
+    if (token === "--copy-template") {
+      copyTemplate = true;
+      continue;
+    }
     if (token === "--mode") {
       const nextMode = rest[i + 1];
       if (nextMode !== "plan" && nextMode !== "install" && nextMode !== "uninstall" && nextMode !== "list") {
@@ -107,17 +115,20 @@ function parseArgs(argv: string[]): CliOptions {
       yes = true;
       continue;
     }
+    if (token === "--json") {
+      continue;
+    }
 
     items.push(token);
   }
 
   const resolvedAgents = dedupeAgents(agents);
 
-  if (commandRaw !== "guided" && commandRaw !== "tui" && resolvedAgents.length === 0) {
+  if (!["guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && resolvedAgents.length === 0) {
     throw new Error("Missing required flag --agent.");
   }
 
-  if (commandRaw !== "doctor" && commandRaw !== "guided" && commandRaw !== "tui" && !scope) {
+  if (!["doctor", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && !scope) {
     throw new Error("Missing required flag --scope.");
   }
 
@@ -127,6 +138,7 @@ function parseArgs(argv: string[]): CliOptions {
     agents: resolvedAgents,
     scope,
     overwrite,
+    copyTemplate,
     mode,
     yes,
   };
@@ -136,6 +148,33 @@ async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
 
   switch (options.command) {
+    case "manifest": {
+      console.log(JSON.stringify(getRepoManifest(), null, 2));
+      return;
+    }
+    case "search": {
+      const query = options.items.join(" ").trim();
+      if (!query) {
+        throw new Error("Missing search query.");
+      }
+      console.log(JSON.stringify(searchSkillCatalog(query), null, 2));
+      return;
+    }
+    case "gaps": {
+      console.log(JSON.stringify(getRepoGaps(), null, 2));
+      return;
+    }
+    case "new": {
+      const [skillName] = options.items;
+      if (!skillName) {
+        throw new Error("Missing skill name.");
+      }
+      if (!options.copyTemplate) {
+        throw new Error("Missing required flag --copy-template.");
+      }
+      console.log(JSON.stringify(createSkillFromTemplate(skillName), null, 2));
+      return;
+    }
     case "plan": {
       const agents = requireAgents(options);
       const scope = requireScope(options);

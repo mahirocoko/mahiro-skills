@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
 import { join } from "path";
 
 import { makeTempEnv } from "./helpers";
@@ -13,6 +15,27 @@ function runCli(args: string[], env: NodeJS.ProcessEnv) {
 
 function parseJson(stdout: Uint8Array) {
   return JSON.parse(new TextDecoder().decode(stdout));
+}
+
+function makeTemplateRepo() {
+  const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-cli-new-"));
+  mkdirSync(join(repoRoot, "template"), { recursive: true });
+  mkdirSync(join(repoRoot, "skills"), { recursive: true });
+  writeFileSync(
+    join(repoRoot, "template", "SKILL.md"),
+    `---\nname: template\ndescription: Skill template with Bun Shell pattern.\n---\n\n# /template - Skill Template\n`,
+  );
+
+  return {
+    repoRoot,
+    env: {
+      ...process.env,
+      MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+    },
+    cleanup() {
+      rmSync(repoRoot, { recursive: true, force: true });
+    },
+  };
 }
 
 describe("cli", () => {
@@ -102,6 +125,86 @@ describe("cli", () => {
       expect(payload.root.endsWith(".codex")).toBe(true);
       expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
       expect(payload.commands.map((entry) => entry.name)).toEqual(["project"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("prints a repo skill manifest without requiring agent or scope", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["manifest", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { type: string; skills: Array<{ name: string }>; commands: string[]; gaps: unknown[] };
+      expect(payload.type).toBe("manifest");
+      expect(payload.skills.some((entry) => entry.name === "project")).toBe(true);
+      expect(payload.commands).toContain("project");
+      expect(Array.isArray(payload.gaps)).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("searches the repo skill catalog without requiring agent or scope", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["search", "repo", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { type: string; query: string; results: Array<{ name: string }> };
+      expect(payload.type).toBe("search");
+      expect(payload.query).toBe("repo");
+      expect(payload.results.some((entry) => entry.name === "project")).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("prints repo inventory gaps without requiring agent or scope", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["gaps", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { type: string; ok: boolean; gaps: unknown[] };
+      expect(payload.type).toBe("gaps");
+      expect(payload.ok).toBe(true);
+      expect(payload.gaps).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("creates a skill from template without requiring agent or scope", () => {
+    const temp = makeTemplateRepo();
+
+    try {
+      const result = runCli(["new", "sample-skill", "--copy-template", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { type: string; name: string; files: string[]; nextSteps: string[] };
+      expect(payload.type).toBe("new-skill");
+      expect(payload.name).toBe("sample-skill");
+      expect(payload.files).toEqual(["SKILL.md"]);
+      expect(payload.nextSteps.some((step) => step.includes("commands/sample-skill.md"))).toBe(true);
+      expect(readFileSync(join(temp.repoRoot, "skills", "sample-skill", "SKILL.md"), "utf8")).toContain("name: sample-skill");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("requires --copy-template for new skill scaffolding", () => {
+    const temp = makeTemplateRepo();
+
+    try {
+      const result = runCli(["new", "sample-skill", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(1);
+      expect(new TextDecoder().decode(result.stderr)).toContain("Missing required flag --copy-template");
     } finally {
       temp.cleanup();
     }
