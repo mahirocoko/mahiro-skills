@@ -15,6 +15,56 @@ KIND_CHOICES = ["sprite-sheet", "animation-strip", "icon-frame-extract", "qa-onl
 WORKFLOW_MODES = ["image-generate", "image-edit", "sprite-generate", "sprite-edit", "effect-animation"]
 SOURCE_LANES = ["codex", "gemini", "imagegen", "manual", "external-reference"]
 USAGE_CHOICES = ["reference-only", "source-candidate", "production-approved"]
+PROMPT_PRESETS = [
+    "pixel-character",
+    "image-edit",
+    "standard-animation",
+    "idle-breathing",
+    "walk-cycle",
+    "run-cycle",
+    "basic-attack",
+    "hurt-reaction",
+    "death-downed",
+    "spell-cast",
+    "jump-hop",
+    "guard-block",
+    "victory-cheer",
+    "interact-pickup",
+    "ranged-attack",
+    "skill-release",
+    "knockback",
+    "item-use",
+    "talk",
+    "effect-animation",
+]
+
+MOTION_BLOCKS = {
+    "idle-breathing": "Feet stay planted. Show readable breathing/secondary motion: subtle chest, shoulder, head, cloth, fur, tail, or equipment follow-through. Do not return identical still frames.",
+    "walk-cycle": "Create a readable in-place walk cycle with alternating foot contacts and passing poses. Keep torso/head stable, baseline stable, and feet visible. Static or nearly static rows fail.",
+    "run-cycle": "Create a stronger in-place run cycle with larger leg arcs, forward lean, and clear arm/tail/cloth follow-through. Preserve identity and avoid cropped limbs.",
+    "basic-attack": "Create anticipation, strike, impact/follow-through, and recovery frames. Weapon/hand path must be readable without crossing cell borders.",
+    "hurt-reaction": "Create neutral, recoil, squash/lean, and recovery frames. Keep the character recognizable and game-safe.",
+    "death-downed": "Create losing-balance, falling/downed, and settle frames. Keep body parts visible and avoid gore or extreme deformation.",
+    "spell-cast": "Create charge, cast, release, and settle frames. Magic effects must not hide the character silhouette or leave the cell.",
+    "jump-hop": "Create crouch/anticipation, lift, airborne, landing, and settle. Preserve baseline logic and avoid cropped ears or feet.",
+    "guard-block": "Create raise guard, hold/block, impact recoil, and return. Arms/shield/weapon must remain inside the cell.",
+    "victory-cheer": "Create celebratory arm/body/tail motion with stable scale. Avoid large props leaving the cell.",
+    "interact-pickup": "Create bend/reach, pickup/contact, lift, and return. Keep head and feet visible.",
+    "ranged-attack": "Create aim, draw/charge, release, follow-through, and recovery. Keep projectile effects small or separate.",
+    "skill-release": "Create anticipation, strong release, follow-through, and settle. Avoid effect clutter hiding the pose.",
+    "knockback": "Create readable recoil/slide frames while keeping the character inside the cell and anchor stable.",
+    "item-use": "Create reach/use/hold/return frames around a small prop. Prop must remain readable but secondary to character.",
+    "talk": "Create subtle mouth/head/hand/ear/tail changes. No speech bubbles, text, or UI. Feet stay planted.",
+}
+
+COMMON_NEGATIVE_PROMPT = (
+    "text, label, number, watermark, logo, signature, UI, frame border, guide lines, scenery, "
+    "detailed background, floor shadow, gradient background, shaded background, lighting variation on background, "
+    "glow around silhouette, antialias matte, checkerboard, cropped head, cropped ears, "
+    "cropped hands, cropped feet, cropped tail, missing weapon, missing prop, extra limbs, duplicate character, "
+    "duplicated head, detached body parts, body crossing cell border, inconsistent scale, character redesign, "
+    "photorealistic, 3d render, vector art, blurry, painterly, noisy micro-detail"
+)
 
 
 def repo_root() -> Path:
@@ -61,6 +111,92 @@ def copy_assets(paths: list[str], assets_dir: Path) -> list[str]:
     return copied
 
 
+
+def build_scaffold_prompt(args: argparse.Namespace, copied_assets: list[str], states: list[str], directions: list[str]) -> str:
+    preset = args.prompt_preset or args.motion_preset or ("effect-animation" if args.workflow_mode == "effect-animation" else args.workflow_mode)
+    lines: list[str] = [f"# {args.title}", ""]
+    if args.prompt.strip():
+        lines += ["## User brief", "", args.prompt.strip(), ""]
+
+    if copied_assets:
+        lines += ["## Source", "", f"Inspect selected source asset first: `{copied_assets[0]}`.", "Treat it as the exact identity source, not loose inspiration.", ""]
+
+    if args.workflow_mode == "image-edit" or preset == "image-edit":
+        lines += [
+            "## Image edit contract",
+            "",
+            "Edit the selected source image; do not create a new unrelated variant.",
+            "Preserve original canvas size/aspect ratio and full-body visibility.",
+            "Preserve transparency when possible; otherwise use a flat chroma fallback.",
+            "Change only requested regions/annotations and return a real PNG/WebP.",
+            "",
+        ]
+    elif args.workflow_mode == "effect-animation" or preset == "effect-animation":
+        frame_count = len(states)
+        lines += [
+            "## Effect animation contract",
+            "",
+            f"Category: {args.effect_category or '<effect-category>'}",
+            f"Type: {args.effect_type or '<effect-type>'}",
+            f"Style: {args.effect_style or 'pixel-clean'}",
+            f"Palette: {args.effect_palette or '<palette>'}",
+            f"Frames: {frame_count}",
+            f"Frame size: {args.frame_size[0]}x{args.frame_size[1]}",
+            f"Layout: {args.effect_layout or 'grid-4x2'}",
+            f"Loop: {args.effect_loop or '<loop-mode>'}",
+            f"Anchor: {args.effect_anchor or '<anchor>'}",
+            "",
+            "Create one real transparent PNG game VFX sprite sheet. Follow effectContext exactly. Every populated frame must show temporal progression. Do not bake checkerboard, matte background, preview backgrounds, text, labels, frame numbers, arrows, UI, logos, watermarks, or border guides into the image.",
+            "",
+        ]
+    else:
+        action = args.motion_preset or preset or (states[0] if states else "sprite-action")
+        lines += [
+            "## Character preservation",
+            "",
+            "Preserve the exact character identity: species, face, palette, outfit colors, props, proportions, and silhouette.",
+            "Keep one full-body character in every cell with head/ears or hair, hands, equipment, tail/appendages, and both feet visible.",
+            "Prefer simplified readable sprite details over noisy illustration texture.",
+            "",
+            "## Sprite sheet contract",
+            "",
+            f"Workflow mode: {args.workflow_mode}",
+            f"Action / motion preset: {action}",
+            f"States: {', '.join(states)}",
+            f"Frame size: {args.frame_size[0]}x{args.frame_size[1]}",
+            f"Chroma key: {args.chroma_key or '<flat chroma key or true alpha>'}",
+            "Return a real raster PNG/WebP sprite sheet, not SVG/canvas/procedural/placeholder output.",
+            "Use the requested grid, cell size, frame count, directions, and chroma key exactly. No gutters or extra sheet margin unless requested.",
+            "Chroma background must be exact solid flat key color from edge to edge: no gradient, no lighting variation, no texture, no glow, no shadow, and no antialias matte around the silhouette.",
+            "Keep generous spacing between frames so tail, sword, ears, cups, effects, and appendages do not cross into neighboring cells.",
+            "No text, labels, UI, frame numbers, watermarks, scenery, shadows, or border guides.",
+            "",
+        ]
+        if args.workflow_mode == "sprite-generate":
+            lines += [
+                "## Direction contract",
+                "",
+                f"Directions: {', '.join(directions)}",
+                "For standard direction-split work, produce separate direction sheets with stable identity, scale, head size, baseline, and pixel density. If this job is single-direction, keep all frames in the requested row/grid only.",
+                "",
+            ]
+        motion_block = MOTION_BLOCKS.get(action) or MOTION_BLOCKS.get(preset)
+        if motion_block:
+            lines += ["## Motion-specific requirements", "", motion_block, ""]
+
+    negative = args.negative_prompt.strip() or COMMON_NEGATIVE_PROMPT
+    lines += [
+        "## Negative prompt / avoid",
+        "",
+        negative,
+        "",
+        "## QA and promotion gate",
+        "",
+        "visual honesty gate: before calling this final, inspect target-size output. Script QA passing is not enough. Fail the candidate if silhouette, detail, alpha/chroma, motion readability, or style match is weak.",
+    ]
+    if args.notes.strip():
+        lines += ["", "## Job notes", "", args.notes.strip()]
+    return "\n".join(lines).rstrip() + "\n"
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create a sprite workflow handoff job")
     parser.add_argument("--root", default=None, help="Sprite workflow root (default: $AGENT_STATE_DIR/sprite-workflow)")
@@ -70,6 +206,8 @@ def main() -> int:
     parser.add_argument("--workflow-mode", choices=WORKFLOW_MODES, default="sprite-generate")
     parser.add_argument("--title", required=True)
     parser.add_argument("--prompt", default="")
+    parser.add_argument("--prompt-preset", choices=PROMPT_PRESETS, default="", help="Scaffold prompt preset to write into prompt.md")
+    parser.add_argument("--scaffold-prompt", action="store_true", help="Write a structured Image Cockpit-style prompt scaffold even when --prompt is empty")
     parser.add_argument("--negative-prompt", default="")
     parser.add_argument("--notes", default="", help="Job/generation notes")
     parser.add_argument("--seed", default="")
@@ -137,6 +275,10 @@ def main() -> int:
         "loopMode": args.effect_loop,
         "anchor": args.effect_anchor,
     } if args.workflow_mode == "effect-animation" else None
+    should_scaffold_prompt = bool(args.scaffold_prompt or args.prompt_preset)
+    prompt_text = build_scaffold_prompt(args, copied_assets, states, directions) if should_scaffold_prompt else (args.prompt or f"# {args.title}\n\nDescribe the sprite task here.\n")
+    job_prompt = prompt_text if should_scaffold_prompt and not args.prompt else args.prompt
+
     job = {
         "id": job_id,
         "kind": args.kind,
@@ -144,7 +286,7 @@ def main() -> int:
         "title": args.title,
         "targetRepo": str(target_repo),
         "createdAt": now.isoformat().replace("+00:00", "Z"),
-        "prompt": args.prompt,
+        "prompt": job_prompt,
         "negativePrompt": args.negative_prompt,
         "jobNotes": args.notes,
         "generationHints": {"seed": args.seed, "size": args.size or f"{args.frame_size[0]}x{args.frame_size[1]}", "count": args.count, "quality": args.quality},
@@ -158,7 +300,7 @@ def main() -> int:
         "provenance": {"sourceLane": args.source_lane, "usage": args.usage},
     }
     (job_dir / "job.json").write_text(json.dumps(job, indent=2) + "\n")
-    (job_dir / "prompt.md").write_text((args.prompt or f"# {args.title}\n\nDescribe the sprite task here.\n") + "\n")
+    (job_dir / "prompt.md").write_text(prompt_text if prompt_text.endswith("\n") else prompt_text + "\n")
     (job_dir / "provenance.md").write_text(f"# Provenance\n\n- sourceLane: {args.source_lane}\n- usage: {args.usage}\n- targetRepo: {target_repo}\n")
     (job_dir / "status.json").write_text(json.dumps({"status": "created", "updatedAt": job["createdAt"]}, indent=2) + "\n")
 

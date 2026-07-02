@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.44 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.45 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.44 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.45 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -80,7 +80,7 @@ Current workflow highlights:
 - **Direct CLI lanes** — `/direct-cli` keeps Gemini, Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
 - **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
-- **Sprite asset pipeline** — `/sprite-workflow` now ships deterministic chroma-key extraction, light/dark/checker QA previews, center-drift/sliver gates, candidate scoring, and center-alignment helpers for generated mascot/sprite sheets.
+- **Sprite asset pipeline** — `/sprite-workflow` now ships deterministic chroma-key extraction, light/dark/checker QA previews, safe edge-connected vs spill comparison, bounds/silhouette jitter gates, adjacent-frame zooms, motion-jitter reports, settle-frame smoothing, candidate scoring, center alignment, and safe named promotion helpers for generated mascot/sprite sheets.
 
 Common commands:
 
@@ -142,7 +142,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
-| `sprite-workflow` | `/sprite-workflow` | You need a CLI-first sprite/Codex handoff, chroma-key extraction pipeline, manifest, contact sheet, preview GIF, QA, center alignment, or promotion gate. |
+| `sprite-workflow` | `/sprite-workflow` | You need a CLI-first sprite/Codex handoff, chroma-key extraction/dicut pipeline, manifest, contact sheet, preview GIF, QA, motion-jitter review, settle-frame smoothing, safe named promotion, or runtime sprite asset gate. |
 | `uncodixify` | `/uncodixify` | You need to prevent generic AI-looking frontend UI and fake premium styling. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
@@ -168,7 +168,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
-| `sprite-workflow` | `python3`, ImageMagick `magick`; optional Pillow (`python3 -m pip install Pillow`) for animated GIF previews. |
+| `sprite-workflow` | `python3`, ImageMagick `magick`; optional Pillow (`python3 -m pip install Pillow`) for animated GIF previews. Motion review helpers and named promotion are bundled Python scripts. |
 
 ## Repo map
 

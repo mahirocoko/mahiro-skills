@@ -72,6 +72,80 @@ def run(command: Iterable[str]) -> subprocess.CompletedProcess[str]:
     return result
 
 
+def run_bytes(command: Iterable[str]) -> bytes:
+    result = subprocess.run(list(command), capture_output=True)
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf8", errors="replace").strip()
+        stdout = result.stdout.decode("utf8", errors="replace").strip()
+        raise SystemExit(stderr or stdout or "command failed")
+    return result.stdout
+
+
+def edge_connected_commands(width: int, height: int, tolerance: float) -> list[str]:
+    fuzz = f"{max(0.0, min(1.0, tolerance)) * 100:.3f}%"
+    points = [(0, 0), (max(0, width - 1), 0), (0, max(0, height - 1)), (max(0, width - 1), max(0, height - 1))]
+    commands = ["-alpha", "set", "-fuzz", fuzz, "-fill", "none"]
+    for x, y in points:
+        commands += ["-draw", f"color {x},{y} floodfill"]
+    return commands
+
+
+def detect_component_x_runs(magick: str, path: Path, width: int, height: int, frames: int, tolerance: float, min_column_alpha: int, padding: int) -> list[tuple[int, int]] | None:
+    raw = run_bytes([
+        magick,
+        str(path),
+        *edge_connected_commands(width, height, tolerance),
+        "-alpha", "extract",
+        "-depth", "8",
+        "gray:-",
+    ])
+    expected = width * height
+    if len(raw) < expected:
+        return None
+    column_counts = [0] * width
+    data = raw[:expected]
+    for y in range(height):
+        row = data[y * width:(y + 1) * width]
+        for x, value in enumerate(row):
+            if value > 0:
+                column_counts[x] += 1
+    active = [count >= min_column_alpha for count in column_counts]
+    runs: list[list[int]] = []
+    in_run = False
+    start = 0
+    for index, is_active in enumerate(active):
+        if is_active and not in_run:
+            start = index
+            in_run = True
+        elif not is_active and in_run:
+            if index - start > 2:
+                runs.append([start, index])
+            in_run = False
+    if in_run:
+        runs.append([start, width])
+    runs = [[left, right] for left, right in runs if sum(column_counts[left:right]) > min_column_alpha * 3]
+    while len(runs) > frames:
+        gap, merge_index = min((runs[i + 1][0] - runs[i][1], i) for i in range(len(runs) - 1))
+        runs[merge_index] = [runs[merge_index][0], runs[merge_index + 1][1]]
+        del runs[merge_index + 1]
+    if len(runs) != frames:
+        return None
+    padded: list[tuple[int, int]] = []
+    for index, (left, right) in enumerate(runs):
+        left_limit = 0
+        right_limit = width
+        if index > 0:
+            left_limit = (runs[index - 1][1] + left) // 2
+        if index < len(runs) - 1:
+            right_limit = (right + runs[index + 1][0]) // 2
+        padded_left = max(left_limit, left - padding)
+        padded_right = min(right_limit, right + padding)
+        if padded_right <= padded_left:
+            padded_left, padded_right = left, right
+        padded.append((max(0, padded_left), min(width, padded_right)))
+    return padded
+
+
 def image_size(magick: str, path: Path) -> tuple[int, int]:
     result = run([magick, "identify", "-format", "%w %h", str(path)])
     width_raw, height_raw = result.stdout.strip().split()
@@ -103,8 +177,12 @@ def main() -> int:
     parser.add_argument("--frame-size", type=parse_size, required=True)
     parser.add_argument("--chroma-key", type=parse_color, default=parse_color("#ff00ff"))
     parser.add_argument("--key-tolerance", type=float, default=0.22)
+    parser.add_argument("--background-mode", choices=["color-distance", "edge-connected"], default="color-distance", help="color-distance removes all key-like pixels; edge-connected flood-fills only background connected to image edges.")
     parser.add_argument("--spill", choices=["none", "magenta", "green"], default="magenta")
     parser.add_argument("--source-layout", choices=["horizontal"], default="horizontal")
+    parser.add_argument("--slice-mode", choices=["fixed", "component-x-runs"], default="fixed", help="fixed uses equal/explicit cells; component-x-runs detects foreground x-runs after edge-connected key removal.")
+    parser.add_argument("--component-min-column-alpha", type=int, default=8)
+    parser.add_argument("--component-run-padding", type=int, default=8)
     parser.add_argument("--source-cell-width", type=int, default=0, help="Raw generated cell step width. Defaults to input width / frames.")
     parser.add_argument("--crop-width", type=int, default=0, help="Raw crop width per frame. Defaults to source-cell-width.")
     parser.add_argument("--crop-height", type=int, default=0, help="Raw crop height. Defaults to input height.")
@@ -143,32 +221,59 @@ def main() -> int:
     frames_dir.mkdir(parents=True, exist_ok=True)
 
     expression = alpha_fx_expression(args.chroma_key, args.key_tolerance, args.spill)
+    detected_runs = None
+    if args.slice_mode == "component-x-runs":
+        detected_runs = detect_component_x_runs(
+            magick,
+            args.input,
+            input_width,
+            input_height,
+            args.frames,
+            args.key_tolerance,
+            args.component_min_column_alpha,
+            args.component_run_padding,
+        )
+        if detected_runs is None:
+            if args.json:
+                print(json.dumps({"ok": False, "warning": "component-x-runs detection failed; falling back to fixed slicing"}), file=sys.stderr)
+            detected_runs = None
     clear_by_frame: dict[int, list[tuple[int, int, int, int]]] = {}
     for frame, x, y, width, height in args.clear_region:
         clear_by_frame.setdefault(frame, []).append((x, y, width, height))
 
     frame_entries = []
     for index in range(args.frames):
-        crop_x = index * source_cell_width + args.crop_x_offset
-        if index == args.frames - 1 and args.last_crop_x is not None:
-            crop_x = args.last_crop_x
-        crop_x = max(0, min(crop_x, max(0, input_width - crop_width)))
+        if detected_runs:
+            left, right = detected_runs[index]
+            crop_x = left
+            crop_width_current = max(1, right - left)
+        else:
+            crop_x = index * source_cell_width + args.crop_x_offset
+            if index == args.frames - 1 and args.last_crop_x is not None:
+                crop_x = args.last_crop_x
+            crop_width_current = crop_width
+        crop_x = max(0, min(crop_x, max(0, input_width - crop_width_current)))
         crop_y = max(0, min(args.crop_y, max(0, input_height - crop_height)))
         frame_path = frames_dir / frame_name(index)
         command = [
             magick,
             str(args.input),
             "-crop",
-            f"{crop_width}x{crop_height}+{crop_x}+{crop_y}",
+            f"{crop_width_current}x{crop_height}+{crop_x}+{crop_y}",
             "+repage",
-            "-alpha",
-            "set",
-            "-channel",
-            "A",
-            "-fx",
-            expression,
-            "+channel",
         ]
+        if args.background_mode == "edge-connected":
+            command += edge_connected_commands(crop_width_current, crop_height, args.key_tolerance)
+        else:
+            command += [
+                "-alpha",
+                "set",
+                "-channel",
+                "A",
+                "-fx",
+                expression,
+                "+channel",
+            ]
         if args.trim:
             command += ["-trim", "+repage"]
         command += [
@@ -228,6 +333,9 @@ def main() -> int:
         "source": {
             "input": str(args.input),
             "chromaKey": "#{:02x}{:02x}{:02x}".format(*args.chroma_key),
+            "backgroundMode": args.background_mode,
+            "sliceMode": args.slice_mode,
+            "detectedRuns": detected_runs,
             "crop": {"sourceCellWidth": source_cell_width, "cropWidth": crop_width, "cropHeight": crop_height, "cropXOffset": args.crop_x_offset, "cropY": args.crop_y},
             "resizePercent": args.resize_percent,
             "trim": args.trim,

@@ -148,3 +148,16 @@ python3 ~/.letta/skills/sprite-workflow/scripts/center-align-frames.py \
 ```
 
 Use sliver clear regions or better extraction settings for detached artifacts. Do not let automated QA pass if visible detached slivers remain in light/dark/checker previews.
+
+## Visual honesty gate
+
+Script QA passing does not make an asset production-ready. Before saying an asset is final, done, or promoted, inspect the real output at target runtime size on light/dark/checker backgrounds. Stop and report honestly when any of these are weak:
+
+- silhouette readability;
+- tail/appendage continuity;
+- alpha/edge quality;
+- detail preservation;
+- animation readability;
+- style match to the source character and product.
+
+If the output is not good enough, do not describe it as final or wait for Mahiro to catch the issue. Mark it as failed/draft, explain the visible problem, and recommend regenerate/fix/cleanup instead.

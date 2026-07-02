@@ -156,6 +156,11 @@ def main() -> int:
     parser.add_argument("--max-center-drift", type=float, default=0, help="Warn/fail when a frame center is farther than this from target center. 0 disables.")
     parser.add_argument("--max-center-range", type=float, default=0, help="Warn/fail when centerX range across frames exceeds this. 0 disables.")
     parser.add_argument("--warn-center-as-error", action="store_true")
+    parser.add_argument("--max-bounds-x-range", type=float, default=0, help="Warn/fail when alpha-bounds x range across frames exceeds this. 0 disables.")
+    parser.add_argument("--max-bounds-y-range", type=float, default=0, help="Warn/fail when alpha-bounds y range across frames exceeds this. 0 disables.")
+    parser.add_argument("--max-bounds-width-range", type=float, default=0, help="Warn/fail when alpha-bounds width range across frames exceeds this. 0 disables.")
+    parser.add_argument("--max-bounds-height-range", type=float, default=0, help="Warn/fail when alpha-bounds height range across frames exceeds this. 0 disables.")
+    parser.add_argument("--warn-bounds-as-error", action="store_true")
     parser.add_argument("--max-sliver-components", type=int, default=-1, help="Maximum detached sliver components allowed. -1 disables.")
     parser.add_argument("--sliver-min-area", type=int, default=12)
     parser.add_argument("--sliver-max-thickness", type=int, default=4)
@@ -186,6 +191,10 @@ def main() -> int:
         temp = Path(temp_raw)
         widths: list[int] = []
         centers: list[float] = []
+        bounds_xs: list[int] = []
+        bounds_ys: list[int] = []
+        bounds_widths: list[int] = []
+        bounds_heights: list[int] = []
         for index in range(args.frames):
             frame = temp / f"frame-{index:02d}.png"
             run([magick, str(args.sheet), "-crop", f"{frame_width}x{frame_height}+{index * frame_width}+0", "+repage", str(frame)])
@@ -197,6 +206,10 @@ def main() -> int:
             else:
                 width, height, x, y = bounds
                 widths.append(width)
+                bounds_xs.append(x)
+                bounds_ys.append(y)
+                bounds_widths.append(width)
+                bounds_heights.append(height)
                 center_x = x + width / 2
                 centers.append(center_x)
                 entry["centerX"] = center_x
@@ -239,6 +252,21 @@ def main() -> int:
                     failures.append(message)
                 else:
                     warnings.append(message)
+        bounds_checks = [
+            ("bounds x", bounds_xs, args.max_bounds_x_range),
+            ("bounds y", bounds_ys, args.max_bounds_y_range),
+            ("bounds width", bounds_widths, args.max_bounds_width_range),
+            ("bounds height", bounds_heights, args.max_bounds_height_range),
+        ]
+        for label, values, maximum in bounds_checks:
+            if maximum > 0 and values:
+                value_range = max(values) - min(values)
+                if value_range > maximum:
+                    message = f"{label} range {value_range:.1f}px exceeds {maximum:.1f}px"
+                    if args.warn_bounds_as_error:
+                        failures.append(message)
+                    else:
+                        warnings.append(message)
         if args.preserve_right_appendage and widths:
             max_width = max(widths)
             min_allowed = max_width * args.min_width_ratio
