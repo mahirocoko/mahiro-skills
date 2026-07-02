@@ -200,6 +200,6 @@ export interface CliOptions {
   scope?: InstallScope;
   overwrite: boolean;
   copyTemplate: boolean;
-  mode?: "plan" | "install" | "uninstall" | "list";
+  mode?: "plan" | "install" | "uninstall" | "list" | "update";
   yes: boolean;
 }

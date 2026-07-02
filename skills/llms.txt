@@ -19,6 +19,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
 - `rrr` — Session retrospective with lessons learned. Trigger on: retrospective, end of session, lessons learned, durable memory note.
+- `sprite-workflow` — CLI-first sprite/Codex handoff workflow for sprite sheets, mascot frames, chroma-key extraction, center alignment, manifests, contact sheets, preview GIFs, QA, and promotion gates. Trigger on: sprite sheet, mascot frames, animation strip, contact sheet, preview GIF, Codex image handoff, sprite QA, promote generated assets.
 - `uncodixify` — Doctrine-first frontend taste and UI calibration filter that prevents generic AI/Codex output. Trigger on: frontend UI generation/review, reference leakage, AI-looking layouts, fake-premium SaaS polish, unsupported motion/filler UI.
 - `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
 - `watch` — Learn from YouTube videos via Gemini transcription. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
@@ -31,12 +32,13 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
 - **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`
+- **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `direct-cli`
 
 ## Install examples
 
 ```bash
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
-bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer --agent opencode --scope local
+bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer sprite-workflow --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope global
 ```

@@ -420,12 +420,12 @@ async function runSingleUninstall(
   return uninstall(agent, scope, items, env);
 }
 
-function assertRequiredGuidedOptions(options: CliOptions): asserts options is CliOptions & { mode: GuidedMode } {
+function assertRequiredGuidedOptions(options: CliOptions): asserts options is CliOptions & { mode: GuidedMode | "update" } {
   if (!options.mode) {
     throw new Error("Guided mode requires --mode when stdin is not interactive.");
   }
 
-  if (options.mode !== "list" && (options.agents.length === 0 || !options.scope)) {
+  if (options.mode !== "list" && options.mode !== "update" && (options.agents.length === 0 || !options.scope)) {
     throw new Error("Guided mode requires --agent and --scope for plan/install/uninstall when stdin is not interactive.");
   }
 }
@@ -607,6 +607,10 @@ export async function runGuided(options: CliOptions, env = process.env, io = cre
       assertRequiredGuidedOptions(options);
       if (options.mode === "list") {
         return filterSummariesByAgents(listInstalledSummaries(env), options.agents);
+      }
+
+      if (options.mode === "update") {
+        return runUpdateView(io, env, options, false) as Promise<GuidedOutcome>;
       }
 
       const scope = options.scope as InstallScope;

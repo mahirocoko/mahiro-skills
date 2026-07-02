@@ -479,6 +479,23 @@ describe("guided", () => {
     }
   });
 
+
+  test("runs non-interactive guided update mode", async () => {
+    const temp = makeTempEnv();
+    try {
+      await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+      const prompt = makePromptIo([], [], [], false);
+      const result = await runGuided(makeOptions({ mode: "update", yes: true }), temp.env, prompt.io);
+      const updates = result as InstallResult[];
+      expect(updates).toHaveLength(1);
+      expect(updates[0]?.agent).toBe("cursor");
+      expect(updates[0]?.installed).toEqual(["project"]);
+      expect(prompt.writes.some((entry) => entry.includes("[note:Install plan] mode: update"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("runs non-interactive guided list mode with mode only", async () => {
     const temp = makeTempEnv();
     const prompt = makePromptIo([], [], [], false);

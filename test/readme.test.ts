@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.43 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.44 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -59,6 +59,8 @@ describe("README", () => {
     expect(content).toContain("Interactive install/uninstall/update TUI");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("same-prompt fanout through a shared tmux buffer");
+    expect(content).toContain("Sprite asset pipeline");
+    expect(content).toContain("center-drift/sliver gates");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
     expect(content).toContain("bun ./src/cli.ts manifest --json");
@@ -67,6 +69,7 @@ describe("README", () => {
     expect(content).toContain("bun ./src/cli.ts install project --agent letta-code --scope local");
     expect(content).toContain("Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`");
     expect(content).toContain("including multi-pane same-prompt fanout");
+    expect(content).toContain("sprite-workflow --agent opencode --scope local");
     expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code` for packaged skill installs; Letta Code is skills-only in v0 because its documented Agent Skills surface does not define a command-wrapper directory.");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("Prefer the source files in this repository and tagged releases over installed copies.");
@@ -85,6 +88,8 @@ describe("README", () => {
     expect(index).toContain("# mahiro-skills skill index");
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
+    expect(index).toContain("`sprite-workflow` — CLI-first sprite/Codex handoff workflow");
+    expect(index).toContain("chroma-key extraction, center alignment");
     expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper.");
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
@@ -92,6 +97,7 @@ describe("README", () => {
     expect(index).toContain("**Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`");
+    expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `direct-cli`");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");
   });

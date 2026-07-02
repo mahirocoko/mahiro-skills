@@ -104,7 +104,7 @@ function parseArgs(argv: string[]): CliOptions {
     }
     if (token === "--mode") {
       const nextMode = rest[i + 1];
-      if (nextMode !== "plan" && nextMode !== "install" && nextMode !== "uninstall" && nextMode !== "list") {
+      if (nextMode !== "plan" && nextMode !== "install" && nextMode !== "uninstall" && nextMode !== "list" && nextMode !== "update") {
         throw new Error(`Unsupported guided mode '${nextMode}'.`);
       }
       mode = nextMode;
