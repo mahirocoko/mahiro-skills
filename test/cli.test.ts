@@ -170,10 +170,23 @@ describe("cli", () => {
       const result = runCli(["gaps", "--json"], temp.env);
 
       expect(result.exitCode).toBe(0);
-      const payload = parseJson(result.stdout) as { type: string; ok: boolean; gaps: unknown[] };
+      const payload = parseJson(result.stdout) as { type: string; ok: boolean; gaps: Array<{ code: string; item: string; severity: string; detail: string }> };
       expect(payload.type).toBe("gaps");
       expect(payload.ok).toBe(true);
-      expect(payload.gaps).toEqual([]);
+      expect(payload.gaps).toEqual([
+        {
+          code: "command-missing-default-bundle",
+          severity: "warning",
+          item: "deep-research",
+          detail: "Command 'deep-research' is not listed in the default bundle.",
+        },
+        {
+          code: "skill-missing-default-bundle",
+          severity: "warning",
+          item: "deep-research",
+          detail: "Skill 'deep-research' is not listed in the default bundle.",
+        },
+      ]);
     } finally {
       temp.cleanup();
     }

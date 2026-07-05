@@ -5,6 +5,8 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 ## Skills
 
 - `asset-designer` — Asset director for production-ready website image assets and manifests. Trigger on: cutout/background removal, layer separation, transparent PNG packs, missing web assets, asset QA/delivery notes.
+- `codex-asset-production` — Codex asset-lane orchestrator for production-ish web/game visual assets. Trigger on: Codex imagegen plus dicut cleanup, source sheet lane, asset-designer cleanup lane, asset provenance, visual asset QA handoff.
+- `control-room-goals` — Control Room goal/DoD/next-action drafting workflow. Trigger on: /cr goal, Control Room setup, DoD, next, safe, verified, handoff, reset, goal clarification.
 - `cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Trigger on: create or patch `AGENTS.md` for `ccc` / `cocoindex-code`, semantic code-search doctrine, repo-local search rules, make agents prefer CocoIndex, `ดู repo หน่อย` / `หาโค้ดส่วนนี้` routing rules.
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
 - `direct-cli` — Direct executor playbook for Gemini CLI, Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions. Trigger on: direct Gemini lane, direct Cursor lane, direct Antigravity lane, agy lane, direct Codex lane, codex lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
@@ -28,17 +30,17 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 
 - **Orientation bundle**: `recap`, `rrr`, `forward`
 - **Project tracking bundle**: `project`, `learn`
-- **Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`
+- **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
-- **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`
-- **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `direct-cli`
+- **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
+- **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`
 
 ## Install examples
 
 ```bash
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
-bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer sprite-workflow --agent opencode --scope local
+bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope global
 ```

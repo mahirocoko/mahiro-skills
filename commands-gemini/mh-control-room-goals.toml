@@ -1,0 +1,8 @@
+description = "Helps set or refine Control Room goals, Definition of Done (DoD), next steps, safety mode, verification, handoff, and reset behavior. Use when the user mentions Control Room, /cr, goal, next, DoD, verified, safe, handoff, reset, or asks to structure a task before execution."
+prompt = """
+Execute the `control-room-goals` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"control-room-goals\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/control-room-goals/SKILL.md` for local installs or `~/.gemini/skills/control-room-goals/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

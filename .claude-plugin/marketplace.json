@@ -10,7 +10,8 @@
       "skills": [
         "asset-designer",
         "cocoindex-rules-init",
-        "deep-research",
+        "codex-asset-production",
+        "control-room-goals",
         "direct-cli",
         "forward",
         "gemini",
@@ -31,7 +32,8 @@
       "commands": [
         "asset-designer",
         "cocoindex-rules-init",
-        "deep-research",
+        "codex-asset-production",
+        "control-room-goals",
         "direct-cli",
         "forward",
         "gemini",

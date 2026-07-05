@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.45 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.46 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -98,8 +98,8 @@ describe("README", () => {
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");
     expect(index).toContain("**Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
-    expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `deep-research`, `watch`");
-    expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `direct-cli`");
+    expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
+    expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");
   });
