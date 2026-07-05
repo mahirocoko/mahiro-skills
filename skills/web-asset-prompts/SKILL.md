@@ -15,6 +15,17 @@ Boundary: use this skill for prompt specs and prompt rewrites only. Use `asset-d
 
 Phase role: `web-asset-prompts` is the per-asset prompt writer. It answers **how to ask an image model for one web-usable asset**. It should not become the asset-pack planner; use `asset-designer` for deciding the asset set, filenames, layer split, QA composites, or delivery manifest.
 
+## Skill routing
+
+| User intent | Use |
+| --- | --- |
+| Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
+| Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
+| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
+| Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
+
+
 Recommended chain:
 
 ```txt

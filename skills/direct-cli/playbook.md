@@ -4,9 +4,10 @@ This playbook is for using `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), an
 
 The intended model is simple:
 
-- Sisyphus stays the conversation owner.
+- Mahiro Code / the main agent stays the conversation owner.
 - Gemini CLI, Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
 - Tmux pane output is treated as the nearest source of execution truth.
+- For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow. For sprite-like sheets, route through `sprite-workflow` first.
 
 ## When to use direct CLI
 

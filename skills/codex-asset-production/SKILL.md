@@ -8,6 +8,17 @@ description: Coordinates Codex imagegen and asset-designer/dicut lanes for produ
 ## Overview
 Use this workflow when Mahiro wants Codex to act as the visual designer for production-ish assets, not just a mood-board generator. The main agent owns art direction, contracts, repo integration, and final reporting; Codex owns image generation plus asset-designer-style cutout/cleanup and edge QA whenever possible. Do not conflate Codex procedural PNG/script output with real imagegen output: procedural drafts are diagnostic/reference candidates unless the lane explicitly used image generation.
 
+## Skill routing
+
+| User intent | Use |
+| --- | --- |
+| Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
+| Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
+| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
+| Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
+
+
 ## Steps
 1. **Define the asset contract before generation**
    - Write or update a short manifest: asset family, intended use, source references, allowed output folder, states/variants, background/alpha expectations, QA surfaces, and promotion status.

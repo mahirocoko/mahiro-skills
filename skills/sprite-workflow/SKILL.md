@@ -7,6 +7,17 @@ description: CLI-first sprite/Codex handoff workflow for sprite sheets, mascot f
 
 Use this skill when sprite or mascot assets need a repeatable workflow rather than a one-off prompt. Pair with `asset-designer` for source strategy, cutout/chroma-key cleanup, QA previews, and production asset manifests; pair with `web-asset-prompts` for per-asset prompt wording.
 
+## Skill routing
+
+| User intent | Use |
+| --- | --- |
+| Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
+| Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
+| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
+| Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
+
+
 ## Core posture
 
 - Define the asset contract before generation: frame size, states, frame order, anchors, transparency, provenance, runtime target.

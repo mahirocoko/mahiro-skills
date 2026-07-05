@@ -5,7 +5,7 @@ description: Direct executor playbook for using gemini CLI, Cursor CLI, Antigrav
 
 # /direct-cli - Direct CLI Playbook
 
-Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions when you want a fresh executor lane outside the usual orchestration runtime, while still keeping Sisyphus-style operator discipline.
+Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions when you want a fresh executor lane outside the usual orchestration runtime, while still keeping pane-first operator discipline.
 
 ## When to Use
 
@@ -16,9 +16,10 @@ Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`cod
 
 ## Operating Model
 
-- Sisyphus stays the conversation owner
+- Mahiro Code / the main agent stays the conversation owner
 - Gemini CLI, Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor
 - Tmux pane output is treated as the nearest source of execution truth
+- For production-ish asset/imagegen work, use `codex-asset-production` as the front-door workflow and this skill only as the pane executor layer; for sprite-like sheets, start from `sprite-workflow`.
 
 ## Default Lane Contract
 
