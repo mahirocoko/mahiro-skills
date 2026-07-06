@@ -27,7 +27,9 @@ Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`cod
 - If one job needs multiple direct CLI lanes, prefer one named tmux job session with multiple panes over scattered one-lane sessions
 - Multi-pane jobs support two modes: **role fanout** (shared context, different lane roles) and **same-prompt fanout** (exact same prompt pasted into every pane for independent model answers)
 - For same-prompt fanout, write the prompt to a temp file, `tmux load-buffer` once, and paste that buffer into each pane so the prompt is byte-identical
+- Keep direct-cli generic: multi-pane sessions can coordinate implementation, review, verification, research, asset work, or model-comparison lanes across Gemini/Cursor/Agy/Codex. Codex imagegen is one use case, not the default identity of this skill.
 - Keep a lane registry: pane title, CLI/model, role, write permissions, and output directory if it may write files
+- For asset/imagegen jobs, use `codex-asset-production` for the asset contract; in this skill, record source-vs-dicut role, lane output folder, expected `$CODEX_HOME/generated-images/...` collection path, and fanout type.
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, `agy --help`, `codex --help`, `codex features list`, `codex doctor`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
@@ -114,8 +116,9 @@ done
 
 - Prefer one writer lane per file or asset contract.
 - Review/idea lanes should not edit files unless explicitly assigned.
-- If multiple lanes may write, give each lane a separate output directory such as `generated-images/codex/` and `notes/agy-opus/`.
-- Main agent owns final merge/synthesis into the real worktree.
+- If multiple lanes may write, give each lane a separate output directory such as `work/implement/`, `notes/review/`, `reports/verify/`, or asset-specific `generated-images/codex/source-a/`.
+- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in Codex's generated-images area for the main agent to collect. Do not let parallel lanes overwrite canonical runtime paths.
+- Main agent owns final merge/synthesis into the real worktree: capture panes, compare outputs, choose candidates, assign cleanup, and promote accepted files.
 
 ### Sandbox verification
 

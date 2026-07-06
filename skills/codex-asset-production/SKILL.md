@@ -32,7 +32,17 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Ask Codex to use the asset-designer lens: create source art, cut/clean the assets, inspect edges, produce QA previews/contact sheets, and update manifests with honest status. If strict asset-designer behavior matters, explicitly require Codex to read/load the asset-designer skill before generation or dicut; do not rely on the main agent's contract language as proof every lane used the skill.
    - If the intended pass is imagegen, say so explicitly in the lane prompt (for example, generate raster source sheets with image generation before dicut). If Codex instead produces assets procedurally via scripts/libraries, label the output as a procedural draft/reference, not an imagegen pass.
 
-3. **Generate assets by role, not by screen crop**
+3. **Orchestrate multi-lane Codex imagegen jobs when speed or diversity matters**
+   - One asset job can use one tmux session with multiple Codex panes; use `direct-cli` for the pane mechanics. Do not create scattered one-pane sessions for one visual problem.
+   - Choose the fanout mode deliberately:
+     - **Same-prompt fanout** for independent visual diversity: paste the exact same imagegen/source prompt into multiple Codex panes with tmux buffer fanout, and keep each lane isolated until the main agent compares outputs.
+     - **Role fanout** for pipeline speed: split `source/imagegen`, `variant exploration`, `dicut/cleanup`, `QA/contact-sheet`, and optional `review/critique` lanes.
+   - Keep a lane registry before launch: pane title, model, role, allowed paths, output directory, and whether the lane may write. Example roles: `codex-source-a`, `codex-source-b`, `codex-dicut`, `codex-qa`.
+   - Give each source lane its own scratch/output folder; never let parallel lanes write the same canonical asset path. Main agent collects Codex imagegen outputs from lane folders or `$CODEX_HOME/generated-images/...`, records provenance, and promotes only accepted files.
+   - Main agent should act as orchestrator: define contract, dispatch lanes early, capture pane outputs, compare candidates, pick winners, assign final cleanup, inspect actual files, then integrate. Do not let a lane self-promote its own output into runtime paths without main-agent review.
+   - Use subagents alongside direct panes when useful: repo-scout for asset contracts/runtime paths, sprite-forge for sprite/frame QA, ui-review for in-app composition, thai-copy-review/kien-thai for copy-bearing images, and asset-designer for alpha/edge review.
+
+4. **Generate assets by role, not by screen crop**
    - For icons, generate icon sheets or individual icons explicitly; prefer SVG/CSS-colorable redraws for production if raster icons fail dark/light theming.
    - For faithful icon SVG refinement, especially when Mahiro says to use `direct-cli`/Agy/Gemini 3.5 High, open an Agy lane with the visible model set to Gemini 3.5 Flash (High), constrain writes to the icon SVG/QA/manifest paths, and have it redraw/trace from the named reference rather than inventing new metaphors. If the user wants exact source alignment, narrow the visual source to the specified contact sheet and compare generated SVGs over that source; adjust only mismatched parts.
    - For mascots, generate state-specific isolated source art with a consistent character model.
@@ -42,19 +52,19 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - For building/object source sheets, a pretty illustration board is not enough: require clear grid/cell spacing, generous padding around every asset, no crowded bottom rows, and a flat or easily sampled background before dicut. If equal-grid cropping touches neighboring pieces, switch to full-sheet background removal plus connected-component bounds instead of forcing fixed cell crops.
    - When the user asks for faithful reference alignment, compare the generated source against the named reference before cleanup: geometry, proportions, role, and visual language must match. If it merely borrows the mood while inventing a new kit, label it `inspired/drifted candidate`, do not promote it, and regenerate or defer before dicut.
 
-4. **Prefer chroma-key sources over fake transparency**
+5. **Prefer chroma-key sources over fake transparency**
    - If direct transparent PNGs show checkerboards or uncertain alpha, reject them and use a clean chroma key that does not appear in the art.
    - For generated sprite sheets, push source quality before cleanup: require an exact flat chroma background, no gradient/lighting/shadow/glow/anti-alias matte around the silhouette, generous spacing between frames, and one isolated character per cell.
    - Sample the actual matte/background color from the generated source instead of assuming the requested key was exact (for example, a requested `#ff00ff` can come back as a nearby magenta gradient or shaded matte). Use fuzzed transparency carefully and preserve sRGBA/alpha rather than accidentally converting the image to grayscale or dropping channels.
    - Verify alpha by compositing on light, sky/cream, peach, checker, and dark backgrounds; do not trust a contact sheet or checkerboard preview as real transparency.
 
-5. **Make Codex own final dicut and edge QA**
+6. **Make Codex own final dicut and edge QA**
    - Codex should perform the cutout/cleanup and inspect edges using asset-designer criteria.
    - Start dicut lanes in normal workspace-write when possible, but if Codex hits sandbox write errors, stop and ask before retrying with scoped full-access. State the allowed paths, no-app-code, no-destructive, and no-commit constraints in the prompt.
    - Have Codex write trial outputs to a separate folder first. The main agent should compare trial vs canonical QA, ask/confirm before replacement, then move accepted outputs into canonical paths and remove or neutralize duplicate trial assets so future implementers do not pick the wrong folder.
    - Main-shell cleanup is only diagnostic/integration fallback unless Mahiro explicitly approves it as final. Do not claim main-shell cutouts are final Codex dicut.
 
-6. **QA before promotion**
+7. **QA before promotion**
    - Require contact sheets and previews on multiple backgrounds, but also open the actual output PNGs: contact sheets can hide loose trim, star/dot bounding-box bloat, or edge residue.
    - For SVG icon QA, do not rely on ImageMagick rasterization when stroke rendering looks suspicious; use browser-rendered HTML previews/screenshots instead. If direct source matching matters, add an overlay QA view that places the SVG over the reference/contact sheet, regenerate it after patches, and keep reports honest about single-color `currentColor` limitations versus watercolor/texture parity.
    - Build composition mocks from the real target stage/runtime layers plus the candidate PNGs, not from QA preview composites, debug labels, or contact-sheet screenshots; rebuild mocks after replacing canonical cleaned assets.
@@ -67,7 +77,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Keep runtime promotion separate from design-reference approval until the app has concrete asset path, size, and responsive contracts.
    - Once a candidate is accepted into a fixed-size runtime surface, measure the actual DOM/target boxes before export, create delivery PNGs at those sizes in a runtime-specific folder, and point CSS/runtime imports there. Keep large clean/source masters separate; if fixed-size export reveals edge artifacts, rebuild from a trimmed/centered master instead of hiding the issue with CSS.
 
-7. **Report provenance and limitations**
+8. **Report provenance and limitations**
    - Say which lane generated each source, which lane performed dicut/cleanup, and which assets were rejected.
    - Be explicit about limitations like rough alpha, dark-mode failure, raster-not-production, or text placeholders.
 

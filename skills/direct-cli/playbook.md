@@ -48,6 +48,7 @@ The goal is one job, one tmux session, many panes — not scattered sessions tha
 
 - The user wants several model opinions on the same question.
 - The job has multiple independent roles: imagegen, design critique, implementation, verification, or risk review.
+- You want multiple Codex imagegen lanes for independent source candidates or source/dicut/QA role fanout in one asset job.
 - The same worktree/context should stay visible while lanes differ by CLI/model.
 - The user asks for several Antigravity models at once, such as Opus, Gemini 3.5, and Gemini 3.1 Pro.
 
@@ -61,9 +62,9 @@ tmux new-session -d -s "$JOB" -n lanes
 tmux split-window -h -t "$JOB:0.0"
 tmux split-window -v -t "$JOB:0.1"
 tmux select-layout -t "$JOB:0" tiled
-tmux select-pane -t "$JOB:0.0" -T "codex-imagegen"
-tmux select-pane -t "$JOB:0.1" -T "agy-opus-review"
-tmux select-pane -t "$JOB:0.2" -T "agy-gemini-pro-check"
+tmux select-pane -t "$JOB:0.0" -T "implement"
+tmux select-pane -t "$JOB:0.1" -T "review"
+tmux select-pane -t "$JOB:0.2" -T "verify"
 tmux list-panes -t "$JOB" -F '#{pane_index}: #{pane_title} #{pane_current_command}'
 ```
 
@@ -71,9 +72,9 @@ Keep a lane registry before sending real prompts:
 
 | Pane | Title | CLI / model | Role | Write permission |
 | --- | --- | --- | --- | --- |
-| 0 | `codex-imagegen` | Codex `gpt-5.5` | image prompt / generation | write only to `generated-images/codex/` |
-| 1 | `agy-opus-review` | Agy `Claude Opus 4.6 (Thinking)` | critique | read-only / notes |
-| 2 | `agy-gemini-pro-check` | Agy `Gemini 3.1 Pro (High)` | consistency check | read-only / notes |
+| 0 | `implement` | Codex/Cursor/Gemini | scoped implementation or generation | write only to assigned files/output dir |
+| 1 | `review` | Agy/Cursor/Gemini | critique / risks / alternatives | read-only / notes |
+| 2 | `verify` | Codex/Cursor/Agy | checks, QA, or reproduction | write only to reports unless assigned |
 
 ### Fanout modes
 
@@ -140,9 +141,30 @@ shasum -a 256 "$PROMPT_FILE" /tmp/direct-cli-fanout.*/pane-*.txt
 
 - Default to one writer lane per file or asset contract.
 - Make review, idea, and risk lanes read-only unless explicitly assigned as writers.
-- If several lanes need to produce artifacts, give each a separate output directory.
-- Main agent owns final merge/synthesis into the real worktree.
+- If several lanes need to produce artifacts, give each a separate output directory such as `work/implement/`, `notes/review/`, `reports/verify/`, or asset-specific folders.
+- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in Codex's generated-images area for the main agent to collect.
+- Do not let parallel lanes overwrite canonical runtime paths.
+- Main agent owns final merge/synthesis into the real worktree. For asset jobs, that means capturing panes, comparing outputs, choosing candidates, assigning cleanup, and promoting accepted files.
 - Report exactly which lane changed or generated which artifact.
+
+### Codex imagegen multi-lane jobs
+
+Use this specific shape when `codex-asset-production` asks for several Codex imagegen/source lanes. Direct-cli remains the generic pane executor; this subsection is only the asset/imagegen specialization.
+
+Example asset lane registry:
+
+| Pane | Title | CLI / model | Role | Write permission |
+| --- | --- | --- | --- | --- |
+| 0 | `codex-source-a` | Codex `gpt-5.5` | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
+| 1 | `codex-source-b` | Codex `gpt-5.5` | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
+| 2 | `codex-dicut` | Codex `gpt-5.3-codex-high` | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
+| 3 | `agy-review` | Agy/Cursor/Gemini | critique / visual risks | read-only / notes |
+
+- Put all panes in one `direct-<asset-job>` tmux session.
+- Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
+- Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `codex-dicut`, `codex-qa`, and optional `agy-review`.
+- Record each pane's output folder and collect Codex generated PNGs from `$CODEX_HOME/generated-images/<session>/<call_id>.png` when the lane leaves images there.
+- The main agent compares source candidates, picks winners, assigns cleanup/dicut, inspects actual output files, and promotes only accepted assets to canonical paths.
 
 ### Antigravity multi-model notes
 
