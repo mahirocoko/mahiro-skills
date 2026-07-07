@@ -53,7 +53,7 @@ If rules conflict, explicit beats implicit, specific beats general, and repeated
 - `error` -> `patterns/error-handling.md`, `patterns/services.md`, `patterns/hooks.md`, `patterns/constants-i18n.md`
 - `i18n` -> `patterns/constants-i18n.md`
 - `boundaries` -> `patterns/services.md`, `patterns/stores-state.md`, `patterns/shared-ui-boundaries.md`
-- `review` -> `foundations/review-checklist.md`
+- `review` -> `foundations/review-checklist.md` (includes economical anchor -> hypothesis -> edit -> validation loop)
 - `anti` -> `foundations/review-checklist.md`, `patterns/best-practices.md`
 
 ## Document Map

@@ -63,6 +63,26 @@ Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how
 - Prefer comments that ask whether new UI copy genuinely helps the user act, or merely explains internal implementation that should stay in docs.
 - Prefer review comments that ask where a recoverable failure is normalized, surfaced, and finally translated instead of treating all error handling as one concern.
 
+## Economical implementation loop
+
+Use this as an implementation and review guardrail, not as a law to rush every task. Repo-reality-first does not mean reading the whole repo before acting; it means finding the right local evidence fast and validating against real files.
+
+Preferred loop for implementation tasks:
+
+1. Start from the most concrete anchor available: a file, symbol, failing behavior, failing command, test, or nearby implementation surface.
+2. Gather only enough nearby context to state one falsifiable local hypothesis and one cheap check that could disconfirm it.
+3. Make the smallest grounded edit or reversible probe that tests the hypothesis.
+4. Run the narrowest useful validation after the first substantive edit: failing check, targeted test, focused typecheck/lint/build, or diff-only review only when commands are unavailable.
+5. Expand exploration only when the cheap check fails, the task is inherently broad, or repo-local risk justifies more discovery.
+
+Review for this drift:
+
+- The diff or agent trace searched broadly without naming a concrete anchor.
+- The agent reread unchanged context instead of choosing a cheap discriminating check.
+- The first edit was large or speculative when a smaller grounded probe was available.
+- Validation was skipped after a substantive edit even though a focused command existed.
+- The loop was over-applied to broad architecture, security, migration, or multi-owner changes where wider discovery was justified.
+
 ## Contextual
 
 Apply the same review order everywhere, but let the local repo decide the winning shape.
