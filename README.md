@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex,
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Gemini/Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
+Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
 
 ## Contents
 
@@ -77,7 +77,7 @@ Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, a
 Current workflow highlights:
 
 - **Interactive install/uninstall/update TUI plus non-interactive `guided --mode update --yes`** — open with `bun ./src/cli.ts`; supports Install, Uninstall, Update installed, List installed, and Receipt detail. Uninstall can target one agent or all agents, then remove selected receipt-recorded items or everything for the chosen scope. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
-- **Direct CLI lanes** — `/direct-cli` keeps Gemini, Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
 - **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 - **Sprite asset pipeline** — `/sprite-workflow` now ships deterministic chroma-key extraction, light/dark/checker QA previews, safe edge-connected vs spill comparison, bounds/silhouette jitter gates, adjacent-frame zooms, motion-jitter reports, settle-frame smoothing, candidate scoring, center alignment, and safe named promotion helpers for generated mascot/sprite sheets.
@@ -132,7 +132,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `control-room-goals` | `/control-room-goals` | You need to draft or refine a Goal Mode objective, DoD, immediate next action, verification evidence, or handoff/reset boundary. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
-| `direct-cli` | `/direct-cli` | You need pane-first Gemini, Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
+| `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
@@ -157,7 +157,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
-| Direct execution | `bun ./src/cli.ts install direct-cli gemini watch --agent opencode --scope local` | Gemini, Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
+| Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
 | Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | UI taste filtering, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
@@ -166,7 +166,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | `tmux`, Gemini CLI, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes. For Agy, prefer exact `--model` labels and `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | `tmux`, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes. For Agy, prefer exact `--model` labels and `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

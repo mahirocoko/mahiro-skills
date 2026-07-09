@@ -115,6 +115,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("--prompt-interactive");
     expect(skill).toContain("claude-fable-5-thinking-high");
     expect(skill).toContain("Use the exact model ID, not the display shorthand");
+    expect(skill).not.toContain("Gemini CLI");
+    expect(skill).not.toContain("/direct-cli gemini");
+    expect(skill).not.toContain("gemini --help");
 
     expect(playbook).toContain("## Multi-pane job sessions");
     expect(playbook).toContain("Role fanout");
@@ -125,11 +128,16 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("agy --model \"Claude Opus 4.6 (Thinking)\"");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
+    expect(playbook).not.toContain("Gemini CLI");
+    expect(playbook).not.toContain("gemini-task");
+    expect(playbook).not.toContain("gemini --help");
 
     expect(readme).toContain("same-prompt fanout");
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
+    expect(readme).not.toContain("Gemini CLI");
+    expect(readme).not.toContain("/direct-cli gemini");
   });
 
   test("goal skill describes Goal Mode without old cockpit references", () => {

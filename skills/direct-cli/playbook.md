@@ -1,11 +1,11 @@
 # Direct CLI Playbook
 
-This playbook is for using `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), and Codex CLI (`codex`) directly, without going through the usual orchestration runtime.
+This playbook is for using Cursor CLI, Antigravity CLI (`agy`), and Codex CLI (`codex`) directly, without going through the usual orchestration runtime.
 
 The intended model is simple:
 
 - Mahiro Code / the main agent stays the conversation owner.
-- Gemini CLI, Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
+- Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
 - Tmux pane output is treated as the nearest source of execution truth.
 - For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow. For sprite-like sheets, route through `sprite-workflow` first.
 
@@ -21,15 +21,14 @@ Use this path when you want:
 
 - Prefer a **fresh tmux session** when an old session looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
-- Use discovery commands such as `agent --list-models`, `agent --help`, `gemini --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
+- Use discovery commands such as `agent --list-models`, `agent --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
 - Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
 - Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
 - Do not default to Codex non-interactive mode such as `codex exec`; use it only when the user explicitly asks for script/headless output.
 - Do not default to Codex `--dangerously-bypass-approvals-and-sandbox`; use workspace-write sandboxing by default.
-- If the invocation is `/direct-cli gemini ...`, `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
+- If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
-- Gemini headless mode is forbidden. Do not use `gemini -p` or `gemini --prompt`, even for recovery or a quick finish.
-- Launch Gemini, Cursor, Antigravity, and Codex in tmux with yolo approvals, but without the task prompt inline.
+- Launch Cursor, Antigravity, and Codex in tmux with yolo approvals, but without the task prompt inline.
 - Capture the pane and confirm the session is ready before sending the real task prompt with `tmux send-keys`.
 - Remember that yolo approvals do not bypass workspace trust prompts. If the pane shows a trust prompt for the intended repo, accept it in the pane or hand it to the user to accept before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
@@ -40,7 +39,7 @@ Use this path when you want:
 
 ## Multi-pane job sessions
 
-Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Antigravity with Opus for critique, Antigravity/Gemini for alternatives, and Codex or Cursor for implementation cleanup.
+Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Antigravity with Opus for critique, Cursor for alternatives, and Codex or Cursor for implementation cleanup.
 
 The goal is one job, one tmux session, many panes — not scattered sessions that lose the shared context.
 
@@ -50,7 +49,7 @@ The goal is one job, one tmux session, many panes — not scattered sessions tha
 - The job has multiple independent roles: imagegen, design critique, implementation, verification, or risk review.
 - You want multiple Codex imagegen lanes for independent source candidates or source/dicut/QA role fanout in one asset job.
 - The same worktree/context should stay visible while lanes differ by CLI/model.
-- The user asks for several Antigravity models at once, such as Opus, Gemini 3.5, and Gemini 3.1 Pro.
+- The user asks for several Cursor/Codex/Agy lanes at once for independent implementation, review, or verification.
 
 ### Session naming and lane registry
 
@@ -72,8 +71,8 @@ Keep a lane registry before sending real prompts:
 
 | Pane | Title | CLI / model | Role | Write permission |
 | --- | --- | --- | --- | --- |
-| 0 | `implement` | Codex/Cursor/Gemini | scoped implementation or generation | write only to assigned files/output dir |
-| 1 | `review` | Agy/Cursor/Gemini | critique / risks / alternatives | read-only / notes |
+| 0 | `implement` | Codex/Cursor | scoped implementation or generation | write only to assigned files/output dir |
+| 1 | `review` | Agy/Cursor | critique / risks / alternatives | read-only / notes |
 | 2 | `verify` | Codex/Cursor/Agy | checks, QA, or reproduction | write only to reports unless assigned |
 
 ### Fanout modes
@@ -158,7 +157,7 @@ Example asset lane registry:
 | 0 | `codex-source-a` | Codex `gpt-5.5` | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
 | 1 | `codex-source-b` | Codex `gpt-5.5` | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
 | 2 | `codex-dicut` | Codex `gpt-5.3-codex-high` | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
-| 3 | `agy-review` | Agy/Cursor/Gemini | critique / visual risks | read-only / notes |
+| 3 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
 
 - Put all panes in one `direct-<asset-job>` tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
@@ -177,11 +176,11 @@ For several Agy models in one job:
 3. Verify the visible model label, or switch each pane through `/model` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Known-good local labels from `agy models`: `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)`.
+Known-good local label from `agy models`: `Claude Opus 4.6 (Thinking)`.
 
 ### Antigravity multiline prompt caveat
 
-Agy treats literal newline paste differently from the tmux sandbox. Verified 2026-06-29: `tmux paste-buffer` of a multiline prompt into Agy split the prompt into separate queued messages, causing the first incomplete line to run before the rest of the prompt. This is not Opus-only; Gemini 3.5 Flash and Gemini 3.1 Pro showed the same per-line `HandleUserInput` logging, though the symptom can look different depending on model latency and whether queued lines auto-flush before the first response completes.
+Agy treats literal newline paste differently from the tmux sandbox. Verified 2026-06-29: `tmux paste-buffer` of a multiline prompt into Agy split the prompt into separate queued messages, causing the first incomplete line to run before the rest of the prompt. Use the safe prompt delivery patterns below instead of raw multiline paste.
 
 Preferred Agy prompt delivery:
 
@@ -213,27 +212,22 @@ Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` 
 
 Use these defaults first. Only deviate when the user explicitly asks or a launch failure forces a narrower recovery path.
 
-- Gemini model: `gemini-3.1-pro-preview`
 - Cursor quick implementation / cleanup model: `composer-2.5-fast`
 - Cursor balanced implementation model: `composer-2.5`
 - Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
 - Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
 - Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
-- Antigravity default/current model: `Gemini 3.5 Flash (High)`
-- Antigravity stronger Gemini model: `Gemini 3.1 Pro (High)`
 - Antigravity heavy review model: `Claude Opus 4.6 (Thinking)`
 - Codex default/current model: `gpt-5.5`
 - Codex coding-heavy model: `gpt-5.3-codex-high`
 - Codex faster coding model: `gpt-5.3-codex-high-fast`
-- Gemini launch style: interactive tmux lane with `--approval-mode yolo --skip-trust`, then send the prompt after readiness
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
 - Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and exact `--model` label when supported; verify the visible label, then send the prompt after readiness
 - Codex launch style: interactive tmux lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
 
 ### Model selection rule
 
-- If `/direct-cli gemini ...` has no explicit model, ask the user to confirm `gemini-3.1-pro-preview` as the Gemini direct-lane model. This is the always-preferred Gemini default; use other Gemini models only when the user explicitly names one.
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5-fast` — recommended for ordinary Cursor direct-lane work: quick implementation, cleanup, narrow refactors, and follow-up fixes.
   2. `composer-2.5` — balanced reasoning when the task needs more than fast cleanup but not a full heavy review lane.
@@ -242,9 +236,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   5. `claude-opus-4-8-thinking-high` — Opus heavy review / deep reasoning lane.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
-  1. `Gemini 3.5 Flash (High)` — recommended/current fast Antigravity lane.
-  2. `Gemini 3.1 Pro (High)` — stronger Gemini reasoning.
-  3. `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
+  1. `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-5.5` — recommended/current Codex direct-lane default.
@@ -255,42 +247,18 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
 - Use `agent --list-models` or `agent models` before changing Cursor model names; Cursor's list changes faster than this playbook.
-- Gemini CLI had no confirmed `--list-models` equivalent in the checked local `0.43.0`; use known working model names or current Gemini CLI docs/package evidence before changing Gemini defaults.
 
 ## Current freshness checkpoints
 
-These are evidence checkpoints from 2026-05-29; verify again when models or CLI behavior matter.
+These are evidence checkpoints; verify again when models or CLI behavior matter.
 
-- Gemini CLI: local checked version was `0.43.0`; npm latest stable was `0.44.1`, with preview `0.45.0-preview.1`. Newer releases added session/context/MCP/routing/PTY fixes and Gemini 3.1 alias/thinking-config work. Keep `gemini-3.1-pro-preview` as the direct-lane default until the target machine verifies a newer accepted model name such as `gemini-3.1-pro`.
 - Cursor CLI: local checked version was `2026.07.08-0c04a8a` on 2026-07-09. `agent models` showed Fable 5 IDs including `claude-fable-5-thinking-high` and `claude-fable-5-thinking-xhigh`; `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and the pane showed `Fable 5 300K High`. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
-- Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed the skill-defined labels, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
+- Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed `Claude Opus 4.6 (Thinking)`, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
 - Codex CLI: local checked version was `0.134.0`; npm latest was `0.135.0`. `codex --help` exposed interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation` stable/enabled. Source gates image generation on ChatGPT/Codex backend, provider image-generation capability, and model image input modality; generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
-
-## Gemini headless hard block
-
-Gemini must never be run in headless mode from this skill.
-
-Forbidden:
-
-```bash
-gemini -p "..."
-gemini --prompt "..."
-```
-
-Required:
-
-```bash
-tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
-tmux capture-pane -p -t "gemini-task" -S -120
-tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
-```
-
-Reason: headless Gemini bypasses the pane-first execution contract and is more likely to hit model-capacity / `429` failures. Recovery must stay interactive.
 
 ## Launch examples
 
-These examples preserve the tmux-first launch shape used while refining this skill. Model availability changes quickly; validate with `agent --list-models`, `gemini --help`, `agy --help`, or `codex --help` if a command fails.
+These examples preserve the tmux-first launch shape used while refining this skill. Model availability changes quickly; validate with `agent --list-models`, `agy --help`, or `codex --help` if a command fails.
 
 ### Cursor interactive review lane
 
@@ -301,24 +269,6 @@ tmux capture-pane -p -t "cursor-task" -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CURSOR_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
 ```
-
-### Gemini interactive lane
-
-```bash
-tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
-tmux capture-pane -p -t "gemini-task" -S -120
-tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly GEMINI_DIRECT_CLI_OK and then wait.' Enter
-tmux capture-pane -p -t "gemini-task" -S -120
-```
-
-Observed result before trust prompt:
-
-```text
-GEMINI_DIRECT_CLI_OK
-```
-
-Gemini then surfaced a workspace trust prompt in the pane. That is expected and can be accepted in the interactive UI for the intended repo by either the agent or the user.
 
 ### Codex interactive lane
 
@@ -337,7 +287,6 @@ Use these when you need to validate local behavior rather than guessing:
 ```bash
 agent --list-models
 agent --help
-gemini --help
 agy --help
 codex --help
 codex features list
@@ -346,90 +295,11 @@ codex doctor
 
 ---
 
-## Gemini CLI direct playbook
-
-### Best for
-
-- UI work
-- layout and styling passes
-- focused frontend tasks
-- exploratory visual implementation with tight scope
-
-### Fresh session
-
-```bash
-tmux new-session -d -s "gemini-task"
-tmux send-keys -t gemini-task 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
-tmux capture-pane -p -t "gemini-task" -S -120
-tmux send-keys -t gemini-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
-```
-
-### Prompt template
-
-```text
-Continue from the current worktree only.
-Do not restart from scratch.
-
-Scope is limited to:
-- <file1>
-- <file2>
-
-Task:
-<what to change>
-
-Rules:
-- keep changes minimal
-- do not touch unrelated files
-- summarize changed files at the end
-```
-
-### Check current pane output
-
-```bash
-tmux capture-pane -p -t "gemini-task" -S -120
-```
-
-### If Gemini thinks too long
-
-```bash
-tmux send-keys -t gemini-task C-c
-tmux capture-pane -p -t gemini-task -S -120
-tmux send-keys -t gemini-task "Continue from the current worktree only. Keep scope narrow. Finish only the pending change in <file>." Enter
-```
-
-Do not switch to `gemini -p` / `gemini --prompt` when Gemini thinks too long. Stay inside the interactive pane or start a fresh interactive pane.
-
-### If Gemini session looks broken
-
-If you see errors like API 400 function-call mismatch, abandon the old session and start a new one.
-
-```bash
-tmux kill-session -t gemini-task
-tmux new-session -d -s "gemini-task-fresh"
-tmux send-keys -t gemini-task-fresh 'gemini -m "gemini-3.1-pro-preview" --approval-mode yolo --skip-trust' Enter
-tmux capture-pane -p -t gemini-task-fresh -S -120
-tmux send-keys -t gemini-task-fresh 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
-```
-
-Allowed recovery actions:
-
-1. `tmux send-keys -t <session> C-c`
-2. send a shorter follow-up prompt in the same interactive pane
-3. if still unhealthy, kill the session and start a fresh interactive lane
-
-Forbidden recovery actions:
-
-- switching to `gemini -p`
-- switching to `gemini --prompt`
-- using non-interactive Gemini execution to finish faster
-
----
-
 ## Cursor CLI direct playbook
 
 ### Best for
 
-- refactoring after a Gemini UI pass
+- refactoring after another implementation pass
 - code cleanup
 - structure tightening
 - logic-heavy follow-up work
@@ -520,7 +390,7 @@ Use the known-good Antigravity defaults first. Prefer exact `--model` labels whe
 
 ```bash
 tmux new-session -d -s "agy-task"
-tmux send-keys -t agy-task 'agy --model "Gemini 3.5 Flash (High)" --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-task 'agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-task -S -120
 tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
 ```
@@ -542,10 +412,8 @@ tmux send-keys -t agy-task '/model' Enter
 tmux capture-pane -p -t agy-task -S -120
 ```
 
-Then choose one of the skill-defined labels in the TUI:
+Then choose the skill-defined label in the TUI:
 
-- `Gemini 3.5 Flash (High)` — current/default fast lane.
-- `Gemini 3.1 Pro (High)` — stronger Gemini reasoning.
 - `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
 
 ### Prompt template
@@ -655,14 +523,12 @@ tmux capture-pane -p -t "codex-task" -S -120
 
 ## Recommended combined flow
 
-### Gemini first, Cursor second
+### Cursor first, Codex or Agy second
 
-1. Run Gemini CLI for the visual or UI-heavy pass.
+1. Run Cursor CLI for scoped implementation, cleanup, or reasoning.
 2. Inspect the pane output and then inspect the diff.
-3. Run Cursor CLI for refactor or cleanup on top of the resulting worktree.
+3. Run Codex or Antigravity for review, verification, or an alternative lane when useful.
 4. Run verification locally.
-
-This works well when Gemini is stronger at producing the initial UI direction, while Cursor is stronger at tightening code structure afterward.
 
 ### Antigravity as a verification or exploration lane
 
@@ -672,7 +538,7 @@ Use Antigravity CLI after implementation when you want another agent harness to 
 
 Use Codex CLI when you want OpenAI's local coding agent directly in the pane, especially for implementation/review tasks or image-aware workflows. Keep image generation requests inside the interactive lane; do not switch to `codex exec` only because the task mentions images.
 
-The default direct path is still interactive for all tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Gemini into headless `-p` / `--prompt` mode at all. Do not switch Antigravity into `agy -p` / `--print` / `--prompt` mode by default. Do not switch Codex into `codex exec` by default. Launch first, check readiness, then send the task prompt.
+The default direct path is still interactive for all tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Antigravity into `agy -p` / `--print` / `--prompt` mode by default. Do not switch Codex into `codex exec` by default. Launch first, check readiness, then send the task prompt.
 
 ---
 
@@ -717,7 +583,6 @@ Symptoms:
 
 Mitigation:
 
-- prefer `--approval-mode yolo` when appropriate for Gemini direct runs
 - prefer `--yolo --approve-mcps` for Cursor direct runs
 - prefer `--sandbox workspace-write --ask-for-approval never` for Codex direct runs
 - inspect pane output directly before assuming the executor is still progressing normally
@@ -726,7 +591,7 @@ Mitigation:
 
 Symptoms:
 
-- Gemini launches, but local project agents or commands are skipped because the folder is not yet trusted
+- the CLI launches, but local project agents or commands are skipped because the folder is not yet trusted
 - the pane shows a trust selection UI instead of continuing directly into normal work
 
 Notes:
@@ -753,14 +618,13 @@ Mitigation:
 - abandon the session
 - create a fresh interactive tmux session
 - resend a shorter prompt with narrower scope
-- never recover by switching Gemini to `-p` / `--prompt`
 - never recover by switching Codex to `codex exec` unless the user explicitly asked for headless/script output
 
 ### Prompt not actually submitted
 
 Symptoms:
 
-- text appears in the input box but Gemini, Cursor, Antigravity, or Codex has not entered thinking
+- text appears in the input box but Cursor, Antigravity, or Codex has not entered thinking
 - text you sent is still sitting in the inbox / input area
 
 Mitigation:
@@ -783,7 +647,6 @@ tmux list-sessions
 Capture pane output:
 
 ```bash
-tmux capture-pane -p -t "gemini-task" -S -120
 tmux capture-pane -p -t "cursor-task" -S -120
 tmux capture-pane -p -t "agy-task" -S -120
 tmux capture-pane -p -t "codex-task" -S -120
@@ -792,7 +655,6 @@ tmux capture-pane -p -t "codex-task" -S -120
 Interrupt current task:
 
 ```bash
-tmux send-keys -t gemini-task C-c
 tmux send-keys -t cursor-task C-c
 tmux send-keys -t agy-task C-c
 tmux send-keys -t codex-task C-c
@@ -801,7 +663,6 @@ tmux send-keys -t codex-task C-c
 Kill session:
 
 ```bash
-tmux kill-session -t gemini-task
 tmux kill-session -t cursor-task
 tmux kill-session -t agy-task
 tmux kill-session -t codex-task
@@ -810,7 +671,6 @@ tmux kill-session -t codex-task
 Create fresh session:
 
 ```bash
-tmux new-session -d -s "gemini-task-fresh"
 tmux new-session -d -s "cursor-task-fresh"
 tmux new-session -d -s "agy-task-fresh"
 tmux new-session -d -s "codex-task-fresh"
@@ -819,16 +679,6 @@ tmux new-session -d -s "codex-task-fresh"
 ---
 
 ## Short operator checklist
-
-Before launching Gemini:
-
-1. Am I using tmux?
-2. Am I launching without the task prompt inline?
-3. Is `--approval-mode yolo` present?
-4. Is the scope narrow and current-worktree-only?
-5. Will I verify readiness with `tmux capture-pane` before `tmux send-keys`?
-
-If any answer is no, do not launch Gemini yet.
 
 Before launching Codex:
 
@@ -850,8 +700,7 @@ When a direct CLI lane looks stuck:
 4. Start a fresh interactive tmux session.
 5. Confirm the launch is ready, then send a shorter, narrower prompt.
 6. Confirm the new prompt was actually submitted.
-7. Never switch Gemini to headless mode.
-8. Keep Antigravity pane-first unless the user explicitly asks for print/headless output.
-9. Keep Codex pane-first unless the user explicitly asks for `codex exec` or script/headless output.
+7. Keep Antigravity pane-first unless the user explicitly asks for print/headless output.
+8. Keep Codex pane-first unless the user explicitly asks for `codex exec` or script/headless output.
 
 The key rule is simple: **fresh session, narrow scope, pane-first truth**.
