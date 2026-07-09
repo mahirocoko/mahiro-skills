@@ -1,51 +1,89 @@
 ---
 name: control-room-goals
-description: Helps set or refine Control Room goals, Definition of Done (DoD), next steps, safety mode, verification, handoff, and reset behavior. Use when the user mentions Control Room, /cr, goal, next, DoD, verified, safe, handoff, reset, or asks to structure a task before execution.
+description: Helps draft or refine Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
 ---
 
-# Control Room Goals
+# Goal Mode
 
-Use Control Room as a human-in-the-loop cockpit, not an autonomous loop runner.
+Use Goal Mode as lightweight conversation-scoped objective management for the current conversation.
 
 ## Model
 
-- `goal`: human-owned objective.
-- `DoD`: evidence-based conditions for done.
-- `next`: one concrete immediate action.
-- `claimed`: agent checked and claims ready.
-- `verified`: human accepted, usually via `/cr verified ...`.
-- `handoff + next=""`: loop ended; no agent action remains.
+- `goal`: one concrete human-owned objective for the current conversation.
+- `DoD`: evidence-based conditions for done; keep it in the goal draft/body when useful.
+- `next`: the immediate action the agent should take; track execution with `UpdatePlan` or concise status, not hidden loops.
+- `claimed`: agent has checked evidence and says it is ready.
+- `verified`: Mahiro accepted the result; never treat claimed as verified.
+- `handoff`: work stops with a clear next human or next-session action.
 
 ## Default packet
 
-Draft first; do not set the goal immediately unless the user explicitly asked to set/apply it. Prefer this shape:
+Draft first; do not set a goal immediately unless the user directly asks to set, apply, or create it. Prefer this shape:
 
 ```text
-Proposed CR:
-/cr goal <objective>. DoD: <3-5 concrete evidence conditions>
-/cr next <one immediate action>
+Proposed Goal Mode:
+Goal: <one objective>
+DoD:
+- <3-5 concrete evidence conditions>
+Next: <one immediate action>
 
 Use this?
 ```
 
-Only call `control_room_propose_goal` after explicit confirmation (for example: “use this”, “apply”, “set it”, “ตั้งเลย”) or when the user directly commands a goal change. If the user is discussing, evaluating, or asking what the goal should be, keep it as a draft.
-
-Good DoD conditions include specific files/configs changed, diagnostics passing, `/reload` or restart completed, smoke test evidence, commit hash if commit is part of the task, and human verification when visual/product acceptance is required.
+Good DoD conditions include specific files/configs changed, diagnostics passing, `/reload` or restart completed, smoke-test evidence, commit hash if commit/release is part of the task, and human verification when visual/product acceptance is required.
 
 Avoid vague DoD like “make it better” or “finish everything”.
+
+## Applying the goal
+
+Only apply after explicit confirmation such as “use this”, “apply”, “set it”, “create it”, “ตั้งเลย”, or when the user explicitly commands a goal change.
+
+When applying:
+
+- If a goal tool is available, use it only after confirmation. Do not set a token budget unless the user explicitly asked for one.
+- If an existing goal is present, do not replace it unless the user explicitly asked to replace/reset it; draft the replacement first.
+- If only slash commands are available, provide the exact `/goal ...` text for the user/runtime to run.
+- Keep the goal concise enough to be useful, but include compact DoD when it materially prevents drift.
+
+Example applied text:
+
+```text
+/goal Build and verify the Agy prompt-handling update. DoD: docs updated, tests pass, release notes align, final status reports risks.
+```
+
+## Goal Mode commands and tools
+
+Known command surface:
+
+- `/goal <objective>` — starts a goal for the current conversation.
+- `/goal --token-budget N <objective>` — starts a goal with a soft token budget; use only when the user explicitly asks for a token budget.
+- `/goal status` — shows the current goal and usage.
+- `/goal pause` / `/goal resume` — pauses or resumes the active goal.
+- `/goal complete` — marks the active goal complete.
+- `/goal clear` — clears the active goal.
+
+Known tool surface when available:
+
+- `GetGoal` / `get_goal` — inspect current goal state.
+- `CreateGoal` / `create_goal` — create a goal only when explicitly requested or confirmed.
+- `UpdateGoal` / `update_goal` — mark complete or blocked only; do not use it to mutate objective text.
+
+If neither commands nor tools are available, keep the goal as a visible draft and use `UpdatePlan` plus concise status until the runtime provides a goal surface.
 
 ## Clarifying questions
 
 Ask at most 1-3 concise questions only when the answer materially changes the goal, DoD, risk, or next action.
 
-Prefer proposing a draft CR packet first when enough context exists:
+Prefer proposing a draft packet first when enough context exists:
 
 ```text
-Proposed CR:
-/cr goal <objective>. DoD: <3-5 evidence conditions>
-/cr next <one immediate action>
+Proposed Goal Mode:
+Goal: <objective>
+DoD:
+- <evidence condition>
+Next: <immediate action>
 
-Only question: <missing decision that changes the plan>
+Only question: <missing decision that changes execution>
 ```
 
 Useful questions:
@@ -53,35 +91,37 @@ Useful questions:
 - What does success look like?
 - Explore/plan only, or implement now?
 - Any boundaries: dev server, hooks, memory, secrets, branch, files?
-- What evidence proves done: tests, screenshot, `/reload`, commit, manual verify?
-- Is `/cr safe` needed because this touches global config, hooks, memory, destructive cleanup, or unclear scope?
+- What evidence proves done: tests, screenshot, `/reload`, commit, release, manual verify?
+- Is extra approval needed because this touches global config, hooks, memory, destructive cleanup, credentials, or unclear scope?
 
-For broad requests, offer 2-4 concrete options instead of open-ended questions. Do not interview when a reasonable draft is possible. Keep momentum.
+For broad requests, offer 2-4 concrete options instead of open-ended questions. Do not interview when a reasonable draft is possible.
 
-## `/cr safe`
+## Safety and state
 
-Use `/cr safe` for higher-risk or stateful work:
+There is no separate “safe mode” command in Goal Mode. For higher-risk work, put the safety boundary in the draft and ask for explicit approval before acting.
+
+Use explicit approval gates for:
 
 - global config/hooks/settings/mods/shell profile changes
 - memory edits or migrations
 - installing/removing tools/packages
 - destructive cleanup or rollback-sensitive work
+- credentials, secrets, payments, production deploys, pushes, or releases
 - unclear scope where drift would be costly
 
-Do not use `/cr safe` for pure discussion, small low-risk edits, or simple explanation tasks.
+Do not add safety ceremony for pure discussion, small low-risk edits, or simple explanation tasks.
 
 ## Agent behavior
 
-- Pure discussion/recommendation: do not update CR unless work starts.
-- Draft CR goals before applying them; do not call `control_room_propose_goal` for exploratory discussion.
-- Execution starts or user confirms the draft: update mode and next.
-- Update on phase changes, not every message.
-- Use `explore`, `edit`, `verify`, `stuck`, `handoff` intentionally.
-- After checks pass: set `verificationState=claimed` with evidence.
-- Never treat `claimed` as human `verified`.
-- Waiting for Mahiro: `mode=handoff` with exact next human action.
-- Done: `mode=handoff`, `next=""`.
-- Obsolete/stale goal: suggest `/cr reset`.
+- Pure discussion/recommendation: do not create or replace a goal unless work starts.
+- Draft Goal Mode packets before applying them during exploratory discussion.
+- Execution starts or user confirms the draft: set/apply the goal if tooling is available, then use `UpdatePlan` for step progress.
+- Update the plan on phase changes, not every message.
+- After checks pass: report claimed evidence and ask for human verification when acceptance matters.
+- Waiting for Mahiro: provide a handoff with the exact next human action.
+- Done: mark the goal complete only when the objective is actually achieved and no required work remains.
+- Blocked: mark blocked only after a repeated blocker leaves the agent at an impasse.
+- Obsolete/stale goal: suggest `/goal clear` and a new goal draft instead of silently overwriting it.
 
 ## Explain terms
 
@@ -90,8 +130,8 @@ If asked, explain in the user's language using this mapping:
 ```text
 goal = objective
 DoD = evidence required for done
-next = one immediate action
+next = immediate action
 claimed = agent checked
 verified = human accepted
-handoff + empty next = loop ended
+handoff = stop point with next action
 ```

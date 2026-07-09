@@ -214,10 +214,12 @@ Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` 
 Use these defaults first. Only deviate when the user explicitly asks or a launch failure forces a narrower recovery path.
 
 - Gemini model: `gemini-3.1-pro-preview`
-- Cursor heavy review / deep reasoning model: `claude-opus-4-8-thinking-high`
 - Cursor quick implementation / cleanup model: `composer-2.5-fast`
 - Cursor balanced implementation model: `composer-2.5`
-- Cursor fallback default model: `composer-2-fast` (the CLI account default as of 2026-05-19)
+- Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
+- Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
+- Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
+- Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
 - Antigravity default/current model: `Gemini 3.5 Flash (High)`
 - Antigravity stronger Gemini model: `Gemini 3.1 Pro (High)`
 - Antigravity heavy review model: `Claude Opus 4.6 (Thinking)`
@@ -235,8 +237,10 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5-fast` — recommended for ordinary Cursor direct-lane work: quick implementation, cleanup, narrow refactors, and follow-up fixes.
   2. `composer-2.5` — balanced reasoning when the task needs more than fast cleanup but not a full heavy review lane.
-  3. `claude-opus-4-8-thinking-high` — high-stakes review, deep reasoning, or ambiguous architecture/debugging.
-- Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined.
+  3. `claude-fable-5-thinking-high` — Fable 5 reasoning lane; use this when Mahiro says “Fable 5” unless he asks for another Fable variant.
+  4. `claude-fable-5-thinking-xhigh` — Fable 5 extra-high lane for heavier review.
+  5. `claude-opus-4-8-thinking-high` — Opus heavy review / deep reasoning lane.
+- Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `Gemini 3.5 Flash (High)` — recommended/current fast Antigravity lane.
   2. `Gemini 3.1 Pro (High)` — stronger Gemini reasoning.
@@ -258,7 +262,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 These are evidence checkpoints from 2026-05-29; verify again when models or CLI behavior matter.
 
 - Gemini CLI: local checked version was `0.43.0`; npm latest stable was `0.44.1`, with preview `0.45.0-preview.1`. Newer releases added session/context/MCP/routing/PTY fixes and Gemini 3.1 alias/thinking-config work. Keep `gemini-3.1-pro-preview` as the direct-lane default until the target machine verifies a newer accepted model name such as `gemini-3.1-pro`.
-- Cursor CLI: local checked version was `2026.05.24-dda726e`; `agent models` showed `composer-2.5-fast` as default, `composer-2.5`, and Opus 4.8 variants. Use `claude-opus-4-8-thinking-high` for heavy review/deep reasoning.
+- Cursor CLI: local checked version was `2026.07.08-0c04a8a` on 2026-07-09. `agent models` showed Fable 5 IDs including `claude-fable-5-thinking-high` and `claude-fable-5-thinking-xhigh`; `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and the pane showed `Fable 5 300K High`. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
 - Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed the skill-defined labels, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
 - Codex CLI: local checked version was `0.134.0`; npm latest was `0.135.0`. `codex --help` exposed interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation` stable/enabled. Source gates image generation on ChatGPT/Codex backend, provider image-generation capability, and model image input modality; generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
@@ -292,7 +296,7 @@ These examples preserve the tmux-first launch shape used while refining this ski
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "claude-opus-4-8-thinking-high" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CURSOR_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
@@ -432,7 +436,7 @@ Forbidden recovery actions:
 
 ### Fresh session
 
-Use the known-good Cursor defaults first. If the model or flags are in doubt on this machine, validate with `agent --list-models` or `agent --help` before changing the launch shape.
+Use the known-good Cursor defaults first. If the model or flags are in doubt on this machine, validate with `agent models`, `agent --list-models`, or `agent --help` before changing the launch shape. Cursor wants exact model IDs for `--model`; display shorthands like “Fable 5” can fail or select unexpectedly.
 
 ```bash
 tmux new-session -d -s "cursor-task"
@@ -449,7 +453,23 @@ tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a heavy review / deep reasoning pass:
+For a Fable 5 reasoning pass (use this when Mahiro says “Fable 5”):
+
+```bash
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps' Enter
+tmux capture-pane -p -t cursor-task -S -120
+tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
+```
+
+For a heavier Fable 5 pass:
+
+```bash
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-xhigh" --yolo --approve-mcps' Enter
+tmux capture-pane -p -t cursor-task -S -120
+tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
+```
+
+For an Opus heavy review / deep reasoning pass:
 
 ```bash
 tmux send-keys -t cursor-task 'agent --model "claude-opus-4-8-thinking-high" --yolo --approve-mcps' Enter

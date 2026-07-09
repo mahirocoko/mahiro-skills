@@ -1,5 +1,5 @@
 ---
-description: Helps set or refine Control Room goals, Definition of Done (DoD), next steps, safety mode, verification, handoff, and reset behavior. Use when the user mentions Control Room, /cr, goal, next, DoD, verified, safe, handoff, reset, or asks to structure a task before execution.
+description: Helps draft or refine Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
 allowed-tools:
   - Bash
   - Read
@@ -11,7 +11,7 @@ allowed-tools:
   - WebFetch
 ---
 
-# /control-room-goals
+# /control-room-goals (Goal Mode)
 
 Execute the `control-room-goals` skill with args: `$ARGUMENTS`
 

@@ -33,12 +33,12 @@ Use direct `gemini` CLI, Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`cod
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `gemini --help`, `agy --help`, `codex --help`, `codex features list`, `codex doctor`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
-- Default models: Gemini `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor heavy review / deep reasoning `claude-opus-4-8-thinking-high`; Codex default/current `gpt-5.5`
+- Default models: Gemini `gemini-3.1-pro-preview`; Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor Fable 5 reasoning `claude-fable-5-thinking-high`; Cursor heavy Opus review `claude-opus-4-8-thinking-high`; Codex default/current `gpt-5.5`
 - Antigravity (`agy`) model choices are TUI labels: `Gemini 3.5 Flash (High)` default/current fast lane, `Gemini 3.1 Pro (High)` stronger Gemini reasoning, and `Claude Opus 4.6 (Thinking)` heavy review/reasoning
 - Codex (`codex`) model choices are `gpt-5.5` default/current general lane, `gpt-5.3-codex-high` coding-heavy lane, and `gpt-5.3-codex-high-fast` faster coding lane
 - If the user invokes `/direct-cli gemini ...`, `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` without an explicit model, stop and ask which skill-defined model to use before launching the lane; do not show the full CLI model list unless requested or troubleshooting
 - For Gemini, the only normal skill-defined choice is `gemini-3.1-pro-preview`; treat it as the recommended/default choice and use other Gemini models only if the user explicitly names one
-- For Cursor, ask among `composer-2.5-fast`, `composer-2.5`, and `claude-opus-4-8-thinking-high`; mention `composer-2-fast` only as a fallback if the current preferred models fail
+- For Cursor, ask among `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, and `claude-opus-4-8-thinking-high`; when the user says “Fable 5”, use the exact model ID `claude-fable-5-thinking-high` unless they explicitly ask for another Fable variant. Mention `composer-2-fast` only as a fallback if the current preferred models fail
 - For Antigravity, ask among `Gemini 3.5 Flash (High)`, `Gemini 3.1 Pro (High)`, and `Claude Opus 4.6 (Thinking)`; current local `agy` supports `--model`, so prefer launching with the exact label when available, then verify the visible model label in the pane. Fall back to `/model` only if the flag is unavailable or fails.
 - For Codex, ask among `gpt-5.5`, `gpt-5.3-codex-high`, and `gpt-5.3-codex-high-fast`; launch `codex` interactively before sending the task prompt
 - Gemini headless mode is a hard block: never use `gemini -p`, `gemini --prompt`, or any non-interactive Gemini execution path
@@ -132,7 +132,7 @@ Use these notes as a check, not as timeless truth:
 
 - Verified 2026-05-29: local Gemini CLI was `0.43.0`, while npm latest stable was `0.44.1` and preview was `0.45.0-preview.1`. Re-run `gemini --version` / `gemini --help` before changing Gemini launch flags or model names.
 - Gemini direct-lane default remains `gemini-3.1-pro-preview` until the local Gemini CLI is verified to accept a replacement such as `gemini-3.1-pro`; Gemini/Cursor model aliases move quickly.
-- Verified 2026-05-29: Cursor `agent models` included `composer-2.5-fast` as default, `composer-2.5`, and `claude-opus-4-8-thinking-high`; use Opus 4.8 Thinking as the heavy review/reasoning lane.
+- Verified 2026-07-09: Cursor `agent` is `2026.07.08-0c04a8a`; `agent models` lists `claude-fable-5-thinking-high` / `claude-fable-5-thinking-xhigh` and many Fable 5 variants. `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and showed `Fable 5 300K High` in the pane. Use the exact model ID, not the display shorthand “fable 5”.
 - Verified 2026-05-29: Antigravity `agy` was `1.0.3`, with G1 credits, `/credits`, plugin import/manage, MCP disable fixes, `/diff` wrapping fixes, and project-discovery robustness improvements. Keep Antigravity pane-first unless the user explicitly asks for print mode.
 - Verified 2026-06-29: local Antigravity `agy` is `1.0.13`, `agy models` lists `Claude Opus 4.6 (Thinking)`, and `agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions` launches the Opus pane successfully. Startup logs may briefly show auth/model-cache errors before keyring auth succeeds; verify the visible account/model label in the pane before diagnosing failure.
 - Verified 2026-05-29: Codex CLI local was `0.134.0`, npm latest was `0.135.0`, `image_generation` was stable/enabled, and `codex --help` supported interactive `--image`, `--model`, `--sandbox`, and `--ask-for-approval` flags. Codex image generation requires ChatGPT/Codex backend plus provider/model support; generated PNGs are saved under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
@@ -164,7 +164,7 @@ Reason: headless Gemini bypasses this skill's pane-first execution contract and 
 /direct-cli cursor
 /direct-cli agy
 /direct-cli codex
-/direct-cli cursor --model composer-2.5-fast
+/direct-cli cursor --model claude-fable-5-thinking-high
 /direct-cli gemini --model gemini-3.1-pro-preview
 /direct-cli agy --model "Gemini 3.5 Flash (High)"
 /direct-cli codex --model gpt-5.5
