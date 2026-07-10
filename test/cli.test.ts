@@ -74,6 +74,26 @@ describe("cli", () => {
     }
   });
 
+  test("default all-agent installs include frontend-design", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const installResult = runCli(["install", "--agent", "all", "--scope", "global"], temp.env);
+      expect(installResult.exitCode).toBe(0);
+
+      const listResult = runCli(["list", "--agent", "all", "--scope", "global"], temp.env);
+
+      expect(listResult.exitCode).toBe(0);
+      const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
+      expect(payload.length).toBe(6);
+      expect(payload.every((entry) => entry.installedSkills.includes("frontend-design"))).toBe(true);
+      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("frontend-design");
+      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("frontend-design"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("supports uninstall for all agents in one scope", () => {
     const temp = makeTempEnv();
 
@@ -181,22 +201,10 @@ describe("cli", () => {
           detail: "Command 'deep-research' is not listed in the default bundle.",
         },
         {
-          code: "command-missing-default-bundle",
-          severity: "warning",
-          item: "frontend-design",
-          detail: "Command 'frontend-design' is not listed in the default bundle.",
-        },
-        {
           code: "skill-missing-default-bundle",
           severity: "warning",
           item: "deep-research",
           detail: "Skill 'deep-research' is not listed in the default bundle.",
-        },
-        {
-          code: "skill-missing-default-bundle",
-          severity: "warning",
-          item: "frontend-design",
-          detail: "Skill 'frontend-design' is not listed in the default bundle.",
         },
       ]);
     } finally {

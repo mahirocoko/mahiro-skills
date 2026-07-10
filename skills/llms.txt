@@ -34,7 +34,6 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
-- **Frontend planning optional bundle (`mahiro-frontend-design`)**: `frontend-design`
 - **Frontend design and assets bundle**: `frontend-design`, `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
 - **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`
 

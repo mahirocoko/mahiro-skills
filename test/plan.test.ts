@@ -13,22 +13,11 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(20);
-      expect(plan.commands.length).toBe(20);
+      expect(plan.skills.length).toBe(21);
+      expect(plan.commands.length).toBe(21);
+      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("resolves the optional frontend-design bundle without changing the default bundle", () => {
-    const temp = makeTempEnv();
-    try {
-      const plan = createPlan("opencode", "local", ["mahiro-frontend-design"], temp.env);
-      expect(plan.description).toContain("outside the default bundle");
-      expect(plan.skills.map((entry) => entry.name)).toEqual(["frontend-design"]);
-      expect(plan.commands.map((entry) => entry.name)).toEqual(["frontend-design"]);
     } finally {
       temp.cleanup();
     }
@@ -52,8 +41,9 @@ describe("plan", () => {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(20);
-      expect(plan.commands.length).toBe(20);
+      expect(plan.skills.length).toBe(21);
+      expect(plan.commands.length).toBe(21);
+      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
@@ -83,8 +73,9 @@ describe("plan", () => {
       const plan = createPlan("gemini", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(20);
-      expect(plan.commands.length).toBe(20);
+      expect(plan.skills.length).toBe(21);
+      expect(plan.commands.length).toBe(21);
+      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "gemini")).toBe(true);
     } finally {

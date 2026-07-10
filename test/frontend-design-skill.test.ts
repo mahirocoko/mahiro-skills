@@ -45,14 +45,13 @@ describe("frontend-design skill", () => {
     expect(references).toContain("Requested deliverables: N");
   });
 
-  test("keeps strong taste priors out and stays outside the default bundle", () => {
+  test("keeps strong taste priors out while shipping through the default bundle", () => {
     const skill = read("skills", "frontend-design", "SKILL.md");
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
     const references = read("skills", "frontend-design", "references", "reference-contracts.md");
     const doctrine = [skill, brief, references].join("\n");
     const marketplace = JSON.parse(read(".claude-plugin", "marketplace.json"));
     const defaultBundle = marketplace.bundles[0];
-    const optionalBundle = marketplace.bundles.find((bundle: { name: string }) => bundle.name === "mahiro-frontend-design");
 
     expect(skill).toContain("high-level asset requirements/roles");
     expect(skill).toContain("Filenames, ratios, production strategy, manifests, cleanup, QA, and promotion remain owned by `asset-designer`");
@@ -66,10 +65,8 @@ describe("frontend-design skill", () => {
     expect(doctrine).not.toContain("Python randomization");
     expect(doctrine).not.toContain("Inter is banned");
     expect(doctrine).not.toContain("Fraunces");
-    expect(defaultBundle.skills).not.toContain("frontend-design");
-    expect(defaultBundle.commands).not.toContain("frontend-design");
-    expect(optionalBundle.skills).toEqual(["frontend-design"]);
-    expect(optionalBundle.commands).toEqual(["frontend-design"]);
+    expect(defaultBundle.skills).toContain("frontend-design");
+    expect(defaultBundle.commands).toContain("frontend-design");
   });
 
   test("keeps uncodixify aligned to the brief and reference contract", () => {
