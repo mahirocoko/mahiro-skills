@@ -22,6 +22,18 @@ describe("plan", () => {
     }
   });
 
+  test("resolves the optional frontend-design bundle without changing the default bundle", () => {
+    const temp = makeTempEnv();
+    try {
+      const plan = createPlan("opencode", "local", ["mahiro-frontend-design"], temp.env);
+      expect(plan.description).toContain("outside the default bundle");
+      expect(plan.skills.map((entry) => entry.name)).toEqual(["frontend-design"]);
+      expect(plan.commands.map((entry) => entry.name)).toEqual(["frontend-design"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("installs paired command for same-named skill on claude-code", () => {
     const temp = makeTempEnv();
     try {

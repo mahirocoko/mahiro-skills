@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.52 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.53 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.52 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.53 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -134,6 +134,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
+| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded design brief, reference anatomy, redesign plan, reference-set contract, or rendered fidelity review. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
@@ -158,7 +159,8 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
-| Frontend assets | `bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | UI taste filtering, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
+| Frontend planning (optional) | `bun ./src/cli.ts install mahiro-frontend-design --agent opencode --scope local` | Install the explicit frontend brief/reference/fidelity skill without adding it to the default bundle |
+| Frontend design and assets | `bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Explicit design briefs, post-render taste audits, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites

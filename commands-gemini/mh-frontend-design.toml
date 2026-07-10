@@ -1,0 +1,8 @@
+description = "Create an explicit repo-grounded frontend design brief, reference breakdown, redesign plan, or reference-to-implementation fidelity contract. Do not auto-load for native model-taste baselines."
+prompt = """
+Execute the `frontend-design` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"frontend-design\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/frontend-design/SKILL.md` for local installs or `~/.gemini/skills/frontend-design/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

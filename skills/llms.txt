@@ -11,6 +11,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis.
 - `direct-cli` — Direct executor playbook for Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions. Trigger on: direct Cursor lane, direct Antigravity lane, agy lane, direct Codex lane, codex lane, tmux pane, fresh CLI session, yolo/offloaded executor lane.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
+- `frontend-design` — Explicit repo-grounded frontend design planning and reference/fidelity contracts. Trigger on: design brief, reference anatomy, preserve/overhaul redesign plan, web/mobile reference set, image-first implementation handoff, rendered fidelity review. Skip automatic loading for native model-taste baselines.
 - `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
 - `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.
 - `mac-calendar-booking` — Safe macOS Calendar event booking workflow with explicit confirmation. Trigger on: book calendar, add meeting to Mac Calendar, schedule event, create agenda then add event.
@@ -33,7 +34,8 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
-- **Frontend taste bundle**: `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
+- **Frontend planning optional bundle (`mahiro-frontend-design`)**: `frontend-design`
+- **Frontend design and assets bundle**: `frontend-design`, `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
 - **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`
 
 ## Install examples
@@ -41,6 +43,6 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 ```bash
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
-bun ./src/cli.ts install uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local
+bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope global
 ```

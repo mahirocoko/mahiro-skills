@@ -51,6 +51,16 @@
         "web-asset-prompts",
         "watch"
       ]
+    },
+    {
+      "name": "mahiro-frontend-design",
+      "description": "Explicit repo-grounded frontend design planning and reference/fidelity contracts, kept outside the default bundle for opt-in use.",
+      "skills": [
+        "frontend-design"
+      ],
+      "commands": [
+        "frontend-design"
+      ]
     }
   ]
 }

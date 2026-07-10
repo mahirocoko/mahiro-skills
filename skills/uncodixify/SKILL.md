@@ -11,7 +11,7 @@ Use it when UI output is visibly drifting toward generic GPT/Codex taste and nee
 
 ## Core principle
 
-`frontend-design` may provide the intent, structure, tokens, palette cues, and prompt stack.
+`frontend-design` may provide the intent, structure, repo-backed system cues, reference decisions, and implementation handoff.
 
 `uncodixify` provides the floor.
 
@@ -83,7 +83,7 @@ Explicit design-system tokens for radius, shape, and component geometry override
 ### What must inherit from `frontend-design`
 
 - page/app structure that is explicitly requested
-- prompt-composed section order
+- brief-defined section or screen order
 - design tokens and palette constraints that are explicit and coherent
 - brand-specific layout or component cues from handoff files
 - design-system constraints that are clearly intentional
@@ -98,7 +98,7 @@ Explicit design-system tokens for radius, shape, and component geometry override
 
 ### Exception rule
 
-If a flourish is explicitly required by the product, brand, or prompt stack, it may stay.
+If a flourish is explicitly required by the product, brand, approved brief, or reference decision, it may stay.
 
 But it must still justify itself through one of these:
 
@@ -418,7 +418,7 @@ When using this doctrine with `frontend-design`:
 
 - inherit explicit tokens and brand directions first
 - inherit explicit handoff structure first
-- inherit composed prompt sections first
+- inherit brief-defined structure and reference decisions first
 - then apply this doctrine as a cleanup and normalization layer
 
 Do not use this skill to erase intentional brand direction.

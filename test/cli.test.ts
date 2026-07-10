@@ -181,10 +181,22 @@ describe("cli", () => {
           detail: "Command 'deep-research' is not listed in the default bundle.",
         },
         {
+          code: "command-missing-default-bundle",
+          severity: "warning",
+          item: "frontend-design",
+          detail: "Command 'frontend-design' is not listed in the default bundle.",
+        },
+        {
           code: "skill-missing-default-bundle",
           severity: "warning",
           item: "deep-research",
           detail: "Skill 'deep-research' is not listed in the default bundle.",
+        },
+        {
+          code: "skill-missing-default-bundle",
+          severity: "warning",
+          item: "frontend-design",
+          detail: "Skill 'frontend-design' is not listed in the default bundle.",
         },
       ]);
     } finally {
