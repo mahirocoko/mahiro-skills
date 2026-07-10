@@ -42,13 +42,13 @@ bun ./src/cli.ts plan --agent opencode --scope local
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.51 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.52 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.51 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.52 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -145,7 +145,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
 | `sprite-workflow` | `/sprite-workflow` | You need a CLI-first sprite/Codex handoff, chroma-key extraction/dicut pipeline, manifest, contact sheet, preview GIF, QA, motion-jitter review, settle-frame smoothing, safe named promotion, or runtime sprite asset gate. |
-| `uncodixify` | `/uncodixify` | You need to prevent generic AI-looking frontend UI and fake premium styling. |
+| `uncodixify` | `/uncodixify` | You need an explicit or evidence-triggered second-pass audit/enforcement pass for generic AI-looking frontend UI and fake premium styling. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
 

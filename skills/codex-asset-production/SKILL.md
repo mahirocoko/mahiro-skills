@@ -27,6 +27,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 
 2. **Open Codex designer/dicut lanes**
    - Use interactive Codex/tmux lanes when available; attach the relevant reference images and the manifest.
+   - Resolve each Codex lane's current model/effort through `direct-cli`; do not duplicate a stale model catalog here and do not invent effort-suffixed slugs such as `gpt-5.6-sol-high`. Keep the model slug and `model_reasoning_effort` separate at launch.
    - Give each lane one clear asset family and constrain writes to that family folder or a scratch folder. Multiple panes are OK when families are independent.
    - Prefer two explicit passes when quality matters: an imagegen/source-sheet lane first, then a separate dicut-only lane that reads the source sheet and owns cutout/cleanup/QA. This avoids silently letting the main shell become the final dicut owner after an imagegen lane succeeds.
    - Ask Codex to use the asset-designer lens: create source art, cut/clean the assets, inspect edges, produce QA previews/contact sheets, and update manifests with honest status. If strict asset-designer behavior matters, explicitly require Codex to read/load the asset-designer skill before generation or dicut; do not rely on the main agent's contract language as proof every lane used the skill.
@@ -34,6 +35,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 
 3. **Orchestrate multi-lane Codex imagegen jobs when speed or diversity matters**
    - One asset job can use one tmux session with multiple Codex panes; use `direct-cli` for the pane mechanics. Do not create scattered one-pane sessions for one visual problem.
+   - Treat Codex `ultra` as a job-level automatic-delegation choice, not a default for every pane. Do not combine several manual Codex panes with ultra in every pane unless Mahiro explicitly wants nested fanout and accepts the extra token/coordination cost. Prefer either explicit manual lanes with ordinary effort or one deliberate ultra lane for a large parallelizable asset job.
    - Choose the fanout mode deliberately:
      - **Same-prompt fanout** for independent visual diversity: paste the exact same imagegen/source prompt into multiple Codex panes with tmux buffer fanout, and keep each lane isolated until the main agent compares outputs.
      - **Role fanout** for pipeline speed: split `source/imagegen`, `variant exploration`, `dicut/cleanup`, `QA/contact-sheet`, and optional `review/critique` lanes.

@@ -33,13 +33,14 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions 
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - It is acceptable to run `agent --help`, `agent --list-models`, `agy --help`, `codex --help`, `codex features list`, `codex doctor`, or similar checks when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation
-- Default models: Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor Fable 5 reasoning `claude-fable-5-thinking-high`; Cursor heavy Opus review `claude-opus-4-8-thinking-high`; Codex default/current `gpt-5.5`
+- Default models: Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor Fable 5 reasoning `claude-fable-5-thinking-high`; Cursor heavy Opus review `claude-opus-4-8-thinking-high`; Codex flagship `gpt-5.6-sol` with high reasoning
 - Antigravity (`agy`) model choice: `Claude Opus 4.6 (Thinking)` for heavy review/reasoning
-- Codex (`codex`) model choices are `gpt-5.5` default/current general lane, `gpt-5.3-codex-high` coding-heavy lane, and `gpt-5.3-codex-high-fast` faster coding lane
+- Codex (`codex`) curated choices are `gpt-5.6-sol` high for flagship work, `gpt-5.6-terra` medium for balanced everyday work, `gpt-5.6-luna` medium for fast/cost-efficient work, and `gpt-5.6-sol` ultra for large parallelizable jobs. Keep model slug and effort separate: launch with `--model <slug> -c 'model_reasoning_effort="<effort>"'`.
 - If the user invokes `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` without an explicit model, stop and ask which skill-defined model to use before launching the lane; do not show the full CLI model list unless requested or troubleshooting
 - For Cursor, ask among `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, and `claude-opus-4-8-thinking-high`; when the user says “Fable 5”, use the exact model ID `claude-fable-5-thinking-high` unless they explicitly ask for another Fable variant. Mention `composer-2-fast` only as a fallback if the current preferred models fail
 - For Antigravity, use `Claude Opus 4.6 (Thinking)`; current local `agy` supports `--model`, so launch with the exact label when available, then verify the visible model label in the pane. Fall back to `/model` only if the flag is unavailable or fails.
-- For Codex, ask among `gpt-5.5`, `gpt-5.3-codex-high`, and `gpt-5.3-codex-high-fast`; launch `codex` interactively before sending the task prompt
+- For Codex, ask among `gpt-5.6-sol` high, `gpt-5.6-terra` medium, `gpt-5.6-luna` medium, and `gpt-5.6-sol` ultra; launch `codex` interactively before sending the task prompt. Sol and Terra support ultra; Luna currently stops at max. Keep `gpt-5.5` and `gpt-5.3-codex-spark` as fallback/legacy choices rather than the default picker.
+- Treat `/direct-cli ... --effort <level>` as a skill-level argument and translate it to Codex `-c model_reasoning_effort=<level>`; Codex itself does not expose a `--effort` flag. If a recognized GPT-5.6 model is explicit but effort is omitted, use Sol `high`, Terra `medium`, or Luna `medium`. Never infer `ultra` unless the user asks for it or explicitly delegates model/effort choice for a genuinely large parallelizable job.
 - Launch Cursor, Antigravity, and Codex in tmux with yolo-style flags only, not with the task prompt inline
 - Capture the pane and confirm readiness before sending the real task prompt with `tmux send-keys`
 - If the direct lane shows a workspace trust prompt for the intended repo, accept it in the pane or let the user accept it directly before sending the task prompt
@@ -131,7 +132,7 @@ Use these notes as a check, not as timeless truth:
 - Verified 2026-07-09: Cursor `agent` is `2026.07.08-0c04a8a`; `agent models` lists `claude-fable-5-thinking-high` / `claude-fable-5-thinking-xhigh` and many Fable 5 variants. `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and showed `Fable 5 300K High` in the pane. Use the exact model ID, not the display shorthand “fable 5”.
 - Verified 2026-05-29: Antigravity `agy` was `1.0.3`, with G1 credits, `/credits`, plugin import/manage, MCP disable fixes, `/diff` wrapping fixes, and project-discovery robustness improvements. Keep Antigravity pane-first unless the user explicitly asks for print mode.
 - Verified 2026-06-29: local Antigravity `agy` is `1.0.13`, `agy models` lists `Claude Opus 4.6 (Thinking)`, and `agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions` launches the Opus pane successfully. Startup logs may briefly show auth/model-cache errors before keyring auth succeeds; verify the visible account/model label in the pane before diagnosing failure.
-- Verified 2026-05-29: Codex CLI local was `0.134.0`, npm latest was `0.135.0`, `image_generation` was stable/enabled, and `codex --help` supported interactive `--image`, `--model`, `--sandbox`, and `--ask-for-approval` flags. Codex image generation requires ChatGPT/Codex backend plus provider/model support; generated PNGs are saved under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
+- Verified 2026-07-10: Codex CLI local/latest is `0.144.1`. The interactive `/model` picker lists `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.3-codex-spark`. Sol/Terra expose low, medium, high, extra-high (`xhigh`), max, and ultra; Luna exposes low through max but no ultra. Ultra is described as automatic task delegation. `image_generation`, `multi_agent`, and `fast_mode` are stable/enabled. Codex image generation still requires ChatGPT/Codex backend plus provider/model support; generated PNGs are saved under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Quick Commands
 
@@ -142,7 +143,7 @@ Use these notes as a check, not as timeless truth:
 /direct-cli codex
 /direct-cli cursor --model claude-fable-5-thinking-high
 /direct-cli agy --model "Claude Opus 4.6 (Thinking)"
-/direct-cli codex --model gpt-5.5
+/direct-cli codex --model gpt-5.6-sol --effort high
 /direct-cli recovery
 ```
 

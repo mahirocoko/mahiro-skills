@@ -1,13 +1,13 @@
 ---
 name: uncodixify
-description: Use when generating or revamping frontend UI in HTML, CSS, React, Vue, Svelte, Tailwind, prompt-driven design output, or component code where generic GPT/Codex aesthetics, fake premium SaaS styling, metric-card grids, soft gradients, pill overload, decorative copy, or AI-default layout moves must be actively prevented.
+description: Use on explicit request, during a second-pass frontend audit, or after concrete generic-AI drift is observed in HTML, CSS, React, Vue, Svelte, Tailwind, visual references, or component code. Do not apply before the first rendered pass when evaluating a model's native design taste.
 ---
 
 # /uncodixify
 
 This skill is a doctrine-first taste filter.
 
-Use it when UI output is drifting toward generic GPT/Codex taste and needs to be pulled back toward normal product standards.
+Use it when UI output is visibly drifting toward generic GPT/Codex taste and needs to be pulled back toward product standards, or when Mahiro explicitly asks for strict anti-AI normalization.
 
 ## Core principle
 
@@ -20,9 +20,26 @@ Use it when UI output is drifting toward generic GPT/Codex taste and needs to be
 
 The goal is not to erase product direction. The goal is to prevent the easy AI move: decorative, median, fake-premium UI that looks generated instead of designed.
 
+## Trigger policy and operating modes
+
+Do not auto-load this skill for every frontend generation task. Trigger it when at least one condition is true:
+
+1. Mahiro explicitly invokes or requests `uncodixify` / anti-AI normalization.
+2. A rendered implementation or visual reference shows concrete drift such as filler metrics, pill overload, fake-premium gradients, unsupported motion, decorative copy, repetitive cards, or template-like hierarchy.
+3. A second-pass frontend review specifically asks whether the result looks generic or model-generated.
+
+For native model-taste evaluation, including GPT-5.6 Sol experiments, do not apply `uncodixify` before the first rendered pass. Keep the baseline limited to repo rules, the product brief, explicit references, and the model's own judgment. Apply this skill only in a separate comparison lane or post-render audit so its house taste does not contaminate the baseline.
+
+Choose one mode before acting:
+
+- **Audit mode (default for review/drift triggers):** identify concrete violations with rendered/file evidence and explain the product impact. Do not rewrite intentional design choices automatically.
+- **Enforce mode:** normalize confirmed violations after Mahiro explicitly requests enforcement or accepts the audit findings.
+
+If the invocation does not specify a mode, use audit mode unless the user clearly asked to fix or normalize the UI.
+
 ## UI calibration dials
 
-Use these as pre-generation and review dials. They are not a premium-style generator. They exist to keep UI choices intentional, product-shaped, and harder than the default AI move.
+Use these as review and enforcement dials. Apply them before generation only when enforce mode was explicitly requested. They are not a premium-style generator. They exist to keep UI choices intentional, product-shaped, and harder than the default AI move.
 
 - `DESIGN_VARIANCE`: default 4/10. Ask: is the layout variation solving hierarchy, brand clarity, or scanability, or is it just avoiding normal structure to look designed?
 - `MOTION_INTENSITY`: default 2/10. Ask: does the motion explain state, causality, or affordance, or is it unsupported choreography added because static UI felt too plain?
@@ -141,7 +158,7 @@ Generated images may inspire composition, relative hierarchy, mood, or section g
 
 ## Canonical doctrine
 
-Use the following doctrine directly. Do not summarize it into polite style tips while implementing.
+In audit mode, use the following doctrine as a diagnostic checklist and report evidence before changing the UI. In enforce mode, apply it directly rather than summarizing it into polite style tips.
 
 ---
 
@@ -410,7 +427,7 @@ Use it to stop the AI from reaching for the same default aesthetics every time.
 
 ## Final uncodixify self-check
 
-Before calling UI work done, run this check and fix failures immediately:
+Before calling an uncodixify pass done, run this check:
 
 - Fake-premium shortcuts: did any glow, glass, gradient, oversized radius, cinematic dark SaaS move, or decorative shadow survive without a product reason?
 - Placeholder/filler UI: did any fake chart, empty metric grid, ornamental badge, generic startup copy, mini-note, or decorative section block appear only to fill space?
@@ -418,6 +435,6 @@ Before calling UI work done, run this check and fix failures immediately:
 - Typography scale misuse: did large type compensate for weak layout, repeat hero-scale emphasis too deep in the page, shrink body copy unfairly, or break the project’s type hierarchy?
 - Reference leakage: did a generated image or borrowed reference become implementation proof instead of a board to reinterpret through the product and design system?
 
-If one answer is yes, the UI is still codexy. Normalize it before final output.
+If one answer is yes, record the concrete evidence. In audit mode, report it without automatically rewriting the UI. In enforce mode, normalize the confirmed violation before final output.
 
 ARGUMENTS: $ARGUMENTS

@@ -115,6 +115,15 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("--prompt-interactive");
     expect(skill).toContain("claude-fable-5-thinking-high");
     expect(skill).toContain("Use the exact model ID, not the display shorthand");
+    expect(skill).toContain("`gpt-5.6-sol` high");
+    expect(skill).toContain("`gpt-5.6-terra` medium");
+    expect(skill).toContain("`gpt-5.6-luna` medium");
+    expect(skill).toContain("`gpt-5.6-sol` ultra");
+    expect(skill).toContain("model_reasoning_effort");
+    expect(skill).toContain("Codex itself does not expose a `--effort` flag");
+    expect(skill).toContain("Never infer `ultra`");
+    expect(skill).not.toContain("gpt-5.3-codex-high");
+    expect(skill).not.toContain("gpt-5.3-codex-high-fast");
     expect(skill).not.toContain("Gemini CLI");
     expect(skill).not.toContain("/direct-cli gemini");
     expect(skill).not.toContain("gemini --help");
@@ -128,6 +137,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("agy --model \"Claude Opus 4.6 (Thinking)\"");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
+    expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
+    expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
+    expect(playbook).toContain("Luna exposes low through max and must not be launched with ultra");
+    expect(playbook).not.toContain("gpt-5.3-codex-high");
+    expect(playbook).not.toContain("gpt-5.3-codex-high-fast");
     expect(playbook).not.toContain("Gemini CLI");
     expect(playbook).not.toContain("gemini-task");
     expect(playbook).not.toContain("gemini --help");
@@ -136,8 +150,35 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
+    expect(readme).toContain("`gpt-5.6-sol` with high reasoning");
+    expect(readme).toContain("`gpt-5.6-sol` ultra");
     expect(readme).not.toContain("Gemini CLI");
     expect(readme).not.toContain("/direct-cli gemini");
+  });
+
+  test("codex asset production delegates model policy without nested ultra fanout", () => {
+    const skill = readRepoFile("skills", "codex-asset-production", "SKILL.md");
+
+    expect(skill).toContain("Resolve each Codex lane's current model/effort through `direct-cli`");
+    expect(skill).toContain("do not invent effort-suffixed slugs");
+    expect(skill).toContain("Treat Codex `ultra` as a job-level automatic-delegation choice");
+    expect(skill).toContain("Do not combine several manual Codex panes with ultra in every pane");
+  });
+
+  test("uncodixify preserves native model taste before evidence-triggered audit", () => {
+    const skill = readRepoFile("skills", "uncodixify", "SKILL.md");
+    const command = readRepoFile("commands", "uncodixify.md");
+    const geminiCommand = readRepoFile("commands-gemini", "mh-uncodixify.toml");
+    const index = readRepoFile("skills", "llms.txt");
+
+    expect(skill).toContain("Do not auto-load this skill for every frontend generation task");
+    expect(skill).toContain("For native model-taste evaluation, including GPT-5.6 Sol experiments");
+    expect(skill).toContain("Audit mode (default for review/drift triggers)");
+    expect(skill).toContain("Enforce mode");
+    expect(skill).toContain("do not apply `uncodixify` before the first rendered pass");
+    expect(command).toContain("Do not apply before the first rendered pass");
+    expect(geminiCommand).toContain("Do not apply before the first rendered pass");
+    expect(index).toContain("Skip before the first rendered pass when evaluating native model taste");
   });
 
   test("goal skill describes Goal Mode without old cockpit references", () => {

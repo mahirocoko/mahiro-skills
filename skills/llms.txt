@@ -22,7 +22,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
 - `rrr` — Session retrospective with lessons learned. Trigger on: retrospective, end of session, lessons learned, durable memory note.
 - `sprite-workflow` — CLI-first sprite/Codex handoff workflow for sprite sheets, mascot frames, chroma-key extraction, dicut cleanup, center/bounds jitter QA, adjacent-frame zooms, motion-jitter reports, settle-frame smoothing, manifests, contact sheets, preview GIFs, QA, and safe named promotion gates. Trigger on: sprite sheet, mascot frames, animation strip, contact sheet, preview GIF, Codex image handoff, sprite QA, promote generated assets.
-- `uncodixify` — Doctrine-first frontend taste and UI calibration filter that prevents generic AI/Codex output. Trigger on: frontend UI generation/review, reference leakage, AI-looking layouts, fake-premium SaaS polish, unsupported motion/filler UI.
+- `uncodixify` — Explicit/evidence-triggered frontend audit and enforcement filter for generic AI/Codex output. Trigger on: explicit uncodixify request, second-pass UI audit, rendered reference leakage, AI-looking layouts, fake-premium SaaS polish, unsupported motion/filler UI. Skip before the first rendered pass when evaluating native model taste.
 - `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
 - `watch` — Learn from YouTube videos via Gemini transcription. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
 

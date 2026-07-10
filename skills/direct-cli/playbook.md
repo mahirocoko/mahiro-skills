@@ -154,9 +154,9 @@ Example asset lane registry:
 
 | Pane | Title | CLI / model | Role | Write permission |
 | --- | --- | --- | --- | --- |
-| 0 | `codex-source-a` | Codex `gpt-5.5` | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
-| 1 | `codex-source-b` | Codex `gpt-5.5` | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
-| 2 | `codex-dicut` | Codex `gpt-5.3-codex-high` | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
+| 0 | `codex-source-a` | Codex `gpt-5.6-sol` high | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
+| 1 | `codex-source-b` | Codex `gpt-5.6-sol` high | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
+| 2 | `codex-dicut` | Codex `gpt-5.6-terra` high | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
 | 3 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
 
 - Put all panes in one `direct-<asset-job>` tmux session.
@@ -219,9 +219,11 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
 - Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
 - Antigravity heavy review model: `Claude Opus 4.6 (Thinking)`
-- Codex default/current model: `gpt-5.5`
-- Codex coding-heavy model: `gpt-5.3-codex-high`
-- Codex faster coding model: `gpt-5.3-codex-high-fast`
+- Codex flagship model/effort: `gpt-5.6-sol` + `high`
+- Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
+- Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
+- Codex automatic-delegation model/effort: `gpt-5.6-sol` + `ultra` for large parallelizable jobs
+- Codex fallback/legacy choices: `gpt-5.5` and `gpt-5.3-codex-spark`
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
 - Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and exact `--model` label when supported; verify the visible label, then send the prompt after readiness
 - Codex launch style: interactive tmux lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
@@ -239,9 +241,13 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   1. `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
-  1. `gpt-5.5` — recommended/current Codex direct-lane default.
-  2. `gpt-5.3-codex-high` — coding-heavy work, careful review, or deeper implementation.
-  3. `gpt-5.3-codex-high-fast` — faster coding-focused follow-up.
+  1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
+  2. `gpt-5.6-terra` + `medium` — balanced everyday coding and follow-up work.
+  3. `gpt-5.6-luna` + `medium` — fast/cost-efficient scoped work.
+  4. `gpt-5.6-sol` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
+- Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent model IDs such as `gpt-5.6-sol-high`.
+- Sol and Terra currently expose low, medium, high, extra-high (`xhigh`), max, and ultra. Luna exposes low through max and must not be launched with ultra.
+- `/direct-cli --effort <level>` is command/skill syntax, not a native Codex flag. Translate it to `-c model_reasoning_effort=<level>` at launch. When a recognized GPT-5.6 model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex --help`, `codex doctor`, or current Codex docs if a model fails.
 - Antigravity CLI `1.0.13` has a verified `--model` flag; prefer exact labels like `--model "Claude Opus 4.6 (Thinking)"`, then verify the visible pane label. Use `/model` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
@@ -254,7 +260,7 @@ These are evidence checkpoints; verify again when models or CLI behavior matter.
 
 - Cursor CLI: local checked version was `2026.07.08-0c04a8a` on 2026-07-09. `agent models` showed Fable 5 IDs including `claude-fable-5-thinking-high` and `claude-fable-5-thinking-xhigh`; `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and the pane showed `Fable 5 300K High`. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
 - Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed `Claude Opus 4.6 (Thinking)`, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
-- Codex CLI: local checked version was `0.134.0`; npm latest was `0.135.0`. `codex --help` exposed interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation` stable/enabled. Source gates image generation on ChatGPT/Codex backend, provider image-generation capability, and model image input modality; generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
+- Codex CLI: local/latest checked version was `0.144.1` on 2026-07-10. The TTY `/model` picker listed `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.3-codex-spark`. Sol/Terra exposed low, medium, high, extra-high, max, and ultra; Luna exposed low through max. Ultra was labeled “automatic task delegation.” `codex --help` still exposes interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation`, `multi_agent`, and `fast_mode` stable/enabled. Generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Launch examples
 
@@ -274,7 +280,7 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.5" --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --sandbox workspace-write --ask-for-approval never' Enter
 tmux capture-pane -p -t "codex-task" -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CODEX_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "codex-task" -S -120
@@ -459,25 +465,33 @@ Use Codex interactively by default. Do not launch `codex exec` unless the user e
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.5" --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --sandbox workspace-write --ask-for-approval never' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a coding-heavy pass:
+For a balanced everyday pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.3-codex-high" --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-terra" -c model_reasoning_effort=medium --sandbox workspace-write --ask-for-approval never' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a faster coding-focused pass:
+For a fast/cost-efficient pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.3-codex-high-fast" --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-luna" -c model_reasoning_effort=medium --sandbox workspace-write --ask-for-approval never' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
+```
+
+For a large parallelizable job with automatic task delegation:
+
+```bash
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra --sandbox workspace-write --ask-for-approval never' Enter
+tmux capture-pane -p -t codex-task -S -120
+tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Split independent workstreams when useful, then synthesize and verify the result. <YOUR TASK HERE>' Enter
 ```
 
 ### Image capabilities

@@ -8,7 +8,9 @@ Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/s
 
 Prefer the known-good tmux launch commands from the skill playbook first, then wait for pane readiness and send the task prompt with `tmux send-keys`.
 
-If {{args}} names a lane (`cursor`, `agy`, or `codex`) but does not explicitly name a model, ask the user which skill-defined model to use before launching. Do not show the full CLI model list unless requested or troubleshooting. Use the skill-defined choices: Cursor `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, or `claude-opus-4-8-thinking-high`; Antigravity `Claude Opus 4.6 (Thinking)`; Codex `gpt-5.5`, `gpt-5.3-codex-high`, or `gpt-5.3-codex-high-fast`.
+If {{args}} names a lane (`cursor`, `agy`, or `codex`) but does not explicitly name a model, ask the user which skill-defined model to use before launching. For Codex, ask for a model/effort pair. Do not show the full CLI model list unless requested or troubleshooting. Use the skill-defined choices: Cursor `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, or `claude-opus-4-8-thinking-high`; Antigravity `Claude Opus 4.6 (Thinking)`; Codex `gpt-5.6-sol` high, `gpt-5.6-terra` medium, `gpt-5.6-luna` medium, or `gpt-5.6-sol` ultra.
+
+For Codex, translate skill argument `--effort <level>` to CLI config `-c model_reasoning_effort=<level>`; do not pass `--effort` to Codex. If the model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra.
 
 If model or flag availability is uncertain on this machine, it is acceptable to validate with commands such as `agent --list-models`, `agent --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` before launching the direct lane.
 """

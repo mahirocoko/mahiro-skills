@@ -1,4 +1,4 @@
-description = "Use when generating or revamping frontend UI in HTML, CSS, React, Vue, Svelte, Tailwind, prompt-driven design output, or component code where generic GPT/Codex aesthetics, fake premium SaaS styling, metric-card grids, soft gradients, pill overload, decorative copy, or AI-default layout moves must be actively prevented."
+description = "Use on explicit request, during a second-pass frontend audit, or after concrete generic-AI drift is observed. Do not apply before the first rendered pass when evaluating a model's native design taste."
 prompt = """
 Execute the `uncodixify` skill with args: {{args}}
 
