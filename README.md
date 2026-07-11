@@ -134,7 +134,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
-| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded design brief, reference anatomy, redesign plan, reference-set contract, or rendered fidelity review. |
+| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, or rendered fidelity review. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
