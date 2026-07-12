@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Iterable
+
+HELPER_PATH = Path(__file__).with_name("derived-manifest.py")
+SPEC = importlib.util.spec_from_file_location("sprite_derived_manifest", HELPER_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError("cannot load derived manifest helper")
+HELPER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(HELPER)
 
 
 def parse_size(value: str) -> tuple[int, int]:
@@ -54,6 +62,12 @@ def alpha_bounds(magick: str, frame: Path) -> tuple[int, int, int, int] | None:
     return width, height, x, y
 
 
+def safe_name(value: str, label: str) -> str:
+    if not value or Path(value).name != value or value in {".", ".."}:
+        raise SystemExit(f"{label} must be a safe basename")
+    return value
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Center-align transparent sprite frames by alpha bounds")
     parser.add_argument("--input", required=True, type=Path)
@@ -66,6 +80,8 @@ def main() -> int:
     parser.add_argument("--preview-name", default="preview.gif")
     parser.add_argument("--duration-ms", type=int, default=90)
     parser.add_argument("--final-duration-ms", type=int, default=560)
+    parser.add_argument("--source-manifest", type=Path, default=None, help="Optional manifest whose metadata/lineage should continue")
+    parser.add_argument("--manifest-name", default="manifest.json")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -73,21 +89,28 @@ def main() -> int:
         raise SystemExit("--frames must be positive")
     if args.max_shift < 0:
         raise SystemExit("--max-shift must be non-negative")
-    if not args.input.exists():
-        raise SystemExit(f"input not found: {args.input}")
+    if not args.input.is_file() or args.input.is_symlink() or args.input.stat().st_nlink != 1:
+        raise SystemExit("input must be a regular non-symlink, non-hardlinked file")
+    safe_name(args.sheet_name, "--sheet-name"); safe_name(args.preview_name, "--preview-name"); safe_name(args.manifest_name, "--manifest-name")
+    if args.source_manifest and (not args.source_manifest.is_file() or args.source_manifest.is_symlink() or args.source_manifest.stat().st_nlink != 1):
+        raise SystemExit("source manifest must be a regular non-symlink, non-hardlinked file")
 
     magick = magick_bin()
     frame_width, frame_height = args.frame_size
     target_center_x = args.target_center_x if args.target_center_x is not None else frame_width / 2
-    output_dir = args.output_dir
-    frames_dir = output_dir / "frames"
-    frames_dir.mkdir(parents=True, exist_ok=True)
-    sheet_path = output_dir / args.sheet_name
-    preview_path = output_dir / args.preview_name
+    output_dir = args.output_dir.resolve()
+    if args.input.resolve().is_relative_to(output_dir): raise SystemExit("input/output self-overwrite is forbidden")
+    if output_dir.exists():
+        raise SystemExit("output directory must not already exist")
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
     shifts = []
 
-    with tempfile.TemporaryDirectory(prefix="sprite-center-") as temp_raw:
-        temp = Path(temp_raw)
+    with tempfile.TemporaryDirectory(prefix="sprite-center-", dir=output_dir.parent) as temp_raw:
+        stage = Path(temp_raw) / "publish"; stage.mkdir()
+        frames_dir = stage / "frames"; frames_dir.mkdir()
+        sheet_path = stage / args.sheet_name
+        preview_path = stage / args.preview_name
+        temp = Path(temp_raw) / "work"; temp.mkdir()
         for index in range(args.frames):
             cropped = temp / f"source-{index:02d}.png"
             out = frames_dir / f"frame-{index:02d}.png"
@@ -99,19 +122,39 @@ def main() -> int:
                 width, _height, x, _y = bounds
                 center_x = x + width / 2
                 dx = round(target_center_x - center_x)
-                dx = max(-args.max_shift, min(args.max_shift, dx))
+                if abs(dx) > args.max_shift:
+                    raise SystemExit(f"frame {index}: required shift {dx}px exceeds --max-shift {args.max_shift}")
+                if x + dx < 0 or x + width + dx > frame_width:
+                    raise SystemExit(f"frame {index}: translation dx={dx} would clip alpha; refusing alignment")
             run([magick, "-size", f"{frame_width}x{frame_height}", "xc:none", str(cropped), "-geometry", f"{dx:+d}+0", "-compose", "over", "-composite", str(out)])
             shifts.append({"index": index, "centerXBefore": center_x, "dx": dx})
 
-    run([magick, *[str(frames_dir / f"frame-{index:02d}.png") for index in range(args.frames)], "+append", str(sheet_path)])
-    preview_command = [magick, "-dispose", "background"]
-    for index in range(args.frames):
-        delay = max(1, round((args.final_duration_ms if index == args.frames - 1 else args.duration_ms) / 10))
-        preview_command += ["-delay", str(delay), str(frames_dir / f"frame-{index:02d}.png")]
-    preview_command += ["-loop", "0", str(preview_path)]
-    run(preview_command)
+        run([magick, *[str(frames_dir / f"frame-{index:02d}.png") for index in range(args.frames)], "+append", str(sheet_path)])
+        preview_command = [magick, "-dispose", "background"]
+        for index in range(args.frames):
+            delay = max(1, round((args.final_duration_ms if index == args.frames - 1 else args.duration_ms) / 10))
+            preview_command += ["-delay", str(delay), str(frames_dir / f"frame-{index:02d}.png")]
+        preview_command += ["-loop", "0", str(preview_path)]
+        run(preview_command)
 
-    payload = {"ok": True, "outputDir": str(output_dir), "sheet": str(sheet_path), "previewGif": str(preview_path), "targetCenterX": target_center_x, "shifts": shifts}
+        manifest_path = None
+        if args.source_manifest:
+            manifest = json.loads(args.source_manifest.read_text())
+            frame_paths = [frames_dir / f"frame-{index:02d}.png" for index in range(args.frames)]
+            HELPER.rewrite_frames(manifest, frame_paths, (frame_width, frame_height))
+            manifest["artifacts"] = {"sheet": HELPER.artifact(sheet_path, (frame_width * args.frames, frame_height)), "previewGif": HELPER.artifact(preview_path, (frame_width, frame_height))}
+            HELPER.copy_native_review(manifest, args.source_manifest.resolve().parent, stage)
+            lineage = manifest.setdefault("lineage", {})
+            previous_normalization = lineage.get("normalization")
+            lineage["normalization"] = {"kind": "center-align", "translationOnly": True, "sourceManifest": str(args.source_manifest.resolve()), "shifts": shifts, "previous": previous_normalization}
+            manifest.setdefault("schemaVersion", 2)
+            manifest_path = stage / args.manifest_name
+            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+        stage.rename(output_dir)
+    sheet_path = output_dir / args.sheet_name
+    preview_path = output_dir / args.preview_name
+    manifest_path = output_dir / args.manifest_name if args.source_manifest else None
+    payload = {"ok": True, "outputDir": str(output_dir), "sheet": str(sheet_path), "previewGif": str(preview_path), "manifest": str(manifest_path) if manifest_path else None, "targetCenterX": target_center_x, "shifts": shifts}
     if args.json:
         print(json.dumps(payload, indent=2))
     else:

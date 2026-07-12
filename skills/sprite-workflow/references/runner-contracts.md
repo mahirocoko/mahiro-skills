@@ -11,6 +11,8 @@ This adapts Image Cockpit's Codex runner contract into `sprite-workflow` languag
 - Do not create procedural placeholders, SVG, canvas drawings, diagrams, or text-only substitutes for imagegen output.
 - If image generation/editing is unavailable or blocked, write a small blocker JSON sidecar instead of fake art.
 - Keep QA/debug/contact/comparison/temp files outside the root final outbox until the candidate is approved.
+- Verify workflow-specific capabilities before accepting a job. If a required image/video/runtime capability is absent, use the existing blocker sidecar; do not hard-code one provider as permanently capable.
+- Preserve `action`, direction, frame count, content/anchor policy, lineage/source IDs, and source hashes in returned metadata when the job provides them.
 
 Blocker sidecar schema:
 
@@ -65,6 +67,25 @@ Blocker sidecar schema:
 - No checkerboard, solid matte, UI panels, labels, frame numbers, arrows, border guides, text, logos, or watermarks.
 - Every populated frame must show temporal progression.
 - Include compact metadata JSON and GIF preview when feasible.
+
+## `motion-reference`
+
+- This is a local reference-intake lane, not a generation substitute and not a production sprite result.
+- Require an explicit human-selected start/end (or duration) for one cycle. Never sample an entire multi-cycle clip by default and call it a loop.
+- Preserve the raw video, source hash, selected-cycle bounds, extraction rate/count, and frame hashes in an owned output directory.
+- Use argument-vector ffmpeg/ffprobe execution with bounded dimensions, duration, frame count, and total decoded pixels. Missing tools produce a blocker.
+
+## `native-grid-recovery`
+
+- Run only on inputs within the stable contract. A low-confidence/refused report is a successful safety outcome, not a reason to force output.
+- Preserve the source and report; do not combine grid recovery with chroma removal, alignment, upscaling, atlas packing, or promotion.
+- Do not claim exact upstream parity unless the implementation and fixtures prove it.
+
+## `approved-atlas`
+
+- Consume only contained, hash-matching `production-approved` frame manifests under the atlas contract.
+- Do not scale, trim, rotate, deduplicate, mirror, or modify source pixels.
+- Reject traversal/symlink escape, duplicate IDs/state-index pairs, invalid anchors, hash mismatch, dimensions mismatch, or unapproved inputs.
 
 ## Worker prompt template
 

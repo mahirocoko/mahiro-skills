@@ -17,6 +17,7 @@ Required fields:
   "jobNotes": "preserve character identity; QA all cells before finalizing",
   "generationHints": { "seed": "", "size": "", "count": 1, "quality": "auto" },
   "frameSize": [32, 32],
+  "frameCount": 8,
   "states": ["idle", "work"],
   "sourceAssets": [],
   "selectedImage": { "name": "", "assetPath": "", "source": "" },
@@ -31,6 +32,13 @@ Required fields:
   },
   "effectContext": null,
   "tournament": { "candidateCount": 3, "isolateOutboxes": true },
+  "action": "idle-breathing",
+  "direction": "side",
+  "contentPolicy": "character-only",
+  "anchorPolicy": "feet",
+  "lineage": { "sourceIds": ["sha256:approved-master"] },
+  "motionReference": null,
+  "gridExtraction": null,
   "provenance": {
     "sourceLane": "codex",
     "usage": "source-candidate"
@@ -59,6 +67,16 @@ Supported provenance `usage` values:
 - `source-candidate`
 - `production-approved`
 
+Schema-v2 fields are optional for backward compatibility. When any are present, set `schemaVersion: 2` and preserve them through extraction, normalization, QA, and promotion:
+
+- `frameCount` is independent from `states.length`; one action state may contain many frames.
+- `action` and `direction` identify authored motion and view separately from runtime state labels.
+- `contentPolicy` identifies whether composite alpha represents character/body, attached props, detached FX, or FX-only content. Body-aware anchor/scale measurement must fail closed when its required body mask is absent.
+- `anchorPolicy` records the intended semantic measurement; it does not authorize scripts to treat detached dust, weapons, shadows, or capes as feet.
+- `lineage.sourceIds` records stable source identities used for reuse/coverage rollups.
+- `motionReference` is always reference metadata with explicit human-selected cycle bounds; it cannot confer production approval.
+- `gridExtraction` records explicit rows, columns, row-major order, and recovery mode. Component recovery must not silently fall back.
+
 
 ## Image Cockpit-inspired fields
 
@@ -76,6 +94,18 @@ Preserve these concepts when preparing Codex/imagegen jobs:
 
 For Image Cockpit-style standard animation, prefer five separate direction images (`front`, `front-three-quarter`, `side`, `back-three-quarter`, `back`) with 4×2 frames each, then compose the final sheet after QA.
 
+## Prompt catalog contract
+
+The bundled `data/prompt-catalog.json` preserves 107 exact Image Cockpit examples with stable IDs, collection/category/tags, original positive/negative prompts, notes, and source locators at pinned upstream revision `b997e78609773975a98617568818ac32f40cf1a7`. `data/prompt-templates.json` is an adapted parameterized authoring surface and is not claimed byte-equal to originals. Use `prompt-catalog.py validate` before relying on either.
+
+Prompt provenance identifies source text only. Generated assets still need their own `sourceLane`, source files, QA, usage level, and approval evidence.
+
+## Motion-reference intake contract
+
+`extract-motion-reference.py` writes a separate `motion-reference.json` under an owned output directory. It records the local video hash, explicit `startSeconds`/`endSeconds`/`durationSeconds`, `humanSelected: true`, `wholeClipDefault: false`, extraction rate/count, and per-frame hashes. The script never invokes a generation provider. Missing ffmpeg/ffprobe is a blocker, not permission to fabricate frames.
+
+See `motion-reference-intake.md` for bounded input limits and selected-cycle rules.
+
 ## `outbox/manifest.json`
 
 Required fields:
@@ -83,12 +113,33 @@ Required fields:
 ```json
 {
   "frameSize": [32, 32],
+  "frameCount": 1,
+  "action": "idle-breathing",
+  "direction": "side",
+  "contentPolicy": "character-only",
+  "anchorPolicy": "feet",
   "states": ["idle", "work"],
   "frames": [
     { "file": "frames/idle-00.png", "state": "idle", "index": 0, "durationMs": 160 }
   ],
   "anchors": {
     "default": [16, 30]
+  },
+  "lineage": {
+    "sourceIds": ["sha256:approved-master"],
+    "normalization": null
+  },
+  "reviews": {
+    "nativePreNormalization": {
+      "kind": "native-pre-normalization-review",
+      "approved": true,
+      "sourceManifest": { "path": "/absolute/native/manifest.json", "sha256": "..." },
+      "sourceSheet": { "path": "/absolute/native/sprite-sheet.png", "sha256": "..." },
+      "reviewArtifact": { "file": "native-pre-normalization.png", "sha256": "..." },
+      "evidence": { "file": "native-review.json", "sha256": "..." },
+      "reviewedAt": "2026-07-11T00:00:00Z",
+      "notes": "Inspected silhouette, appendages, alpha, and target-size readability before normalization."
+    }
   },
   "provenance": {
     "sourceLane": "codex",
@@ -104,4 +155,9 @@ Rules:
 - Every frame `state` must appear in `states`.
 - Every frame file is resolved relative to the manifest directory.
 - `anchors` values, when present, must be `[x, y]` pairs.
+- Normalized outputs must retain native pre-normalization review evidence before named promotion. Review evidence describes an actual inspection; it is not created by QA success alone.
+- Translation-only normalization records integer shifts and must fail rather than clip alpha.
+- `action`, direction, content/anchor policy, lineage, frame timing, and provenance survive promotion when present.
 - Keep raw provider details out of manifest files; use `qa-report.md` for human-readable notes.
+
+The strict native-grid report and approved-atlas contracts are separate because their security/integrity requirements differ from legacy frame manifests. See `native-grid-snap-contract.md`, `pixel-snap-provenance.md`, and `atlas-contract.md`.

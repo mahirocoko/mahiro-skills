@@ -7,9 +7,12 @@ import { spawnSync } from "child_process";
 const repoRoot = join(import.meta.dir, "..");
 const skillRoot = join(repoRoot, "skills", "sprite-workflow");
 const scriptsRoot = join(skillRoot, "scripts");
+const imagePython = [process.env.SPRITE_WORKFLOW_PYTHON, "/usr/bin/python3", "python3"].find(
+  candidate => candidate && spawnSync(candidate, ["-c", "import PIL"], { encoding: "utf8" }).status === 0,
+) ?? "python3";
 
 function runScript(name: string, args: string[], cwd = repoRoot) {
-  return spawnSync("python3", [join(scriptsRoot, name), ...args], {
+  return spawnSync(imagePython, [join(scriptsRoot, name), ...args], {
     cwd,
     encoding: "utf8",
   });
@@ -127,20 +130,16 @@ describe("sprite-workflow skill", () => {
     const temp = mkdtempSync(join(tmpdir(), "sprite-named-promote-"));
     const outbox = join(temp, "job", "outbox");
     mkdirSync(outbox, { recursive: true });
-    writeFileSync(join(outbox, "sheet.png"), "sheet");
-    writeFileSync(join(outbox, "preview.gif"), "gif");
+    expect(spawnSync(imagePython, ["-c", `from PIL import Image\nim=Image.new('RGBA',(16,16),(255,0,0,255)); im.save(${JSON.stringify(join(outbox, "sheet.png"))},'PNG'); im.save(${JSON.stringify(join(outbox, "preview.gif"))},'GIF'); im.save(${JSON.stringify(join(outbox, "idle-frame.png"))},'PNG')`]).status).toBe(0);
     const manifest = join(outbox, "manifest.json");
     writeFileSync(manifest, JSON.stringify({
       frameSize: [16, 16],
       states: ["idle"],
-      frames: [{ file: "frames/idle-00.png", state: "idle", index: 0 }],
+      frames: [{ file: "idle-frame.png", state: "idle", index: 0 }],
       anchors: { default: [8, 15] },
       provenance: { sourceLane: "codex", usage: "source-candidate" },
       artifacts: { sheet: "sheet.png", previewGif: "preview.gif" },
     }, null, 2));
-    mkdirSync(join(outbox, "frames"), { recursive: true });
-    writeFileSync(join(outbox, "frames", "idle-00.png"), "frame");
-
     const promoted = runScript("promote-named-artifact.py", [
       manifest,
       "--target-dir", join(temp, "public-assets"),
@@ -153,8 +152,8 @@ describe("sprite-workflow skill", () => {
     expect(existsSync(join(temp, "public-assets", "cat-sit-tea-preview.gif"))).toBe(true);
     const outputManifest = JSON.parse(readFileSync(join(temp, "public-assets", "cat-sit-tea-manifest.json"), "utf8"));
     expect(outputManifest.name).toBe("cat-sit-tea");
-    expect(outputManifest.artifacts.sheet).toBe("cat-sit-tea-sprite-sheet.png");
-    expect(outputManifest.provenance.usage).toBe("production-draft");
+    expect(outputManifest.artifacts.sheet.file).toBe("cat-sit-tea-sprite-sheet.png");
+    expect(outputManifest.provenance.usage).toBe("production-approved");
   });
 
   test("documents Image Cockpit workflow patterns", () => {

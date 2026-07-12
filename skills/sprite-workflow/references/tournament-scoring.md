@@ -53,6 +53,8 @@ WRITE report to: <JOB_DIR>/outbox/winner-report.md
 For each candidate, inspect manifest/QA/contact sheets and target-size previews. Score completeness, identity, cell safety, alpha/chroma, center/baseline, motion readability, target-size readability, warnings, and provenance. Pick one winner only if it is good enough for human review/promotion. If all candidates are fuzzy, static, cropped, off-style, or detail-destroyed, mark all failed and recommend regenerate or master-sprite cleanup.
 ```
 
+When candidates will be normalized, inspect and record native pre-normalization evidence before comparing normalized winners. A mechanically aligned sheet must not outrank a candidate whose original extraction preserves identity, appendages, and intended motion more faithfully. Batch reports distinguish requested action/direction slots from unique jobs/source IDs so intentional reuse is visible rather than counted as extra generation.
+
 ## Publish gate
 
 Do not publish/promote until:

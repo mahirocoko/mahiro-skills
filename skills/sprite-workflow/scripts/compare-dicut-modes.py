@@ -50,6 +50,12 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def validate_basename(option: str, value: str) -> str:
+    if not value or Path(value).name != value or value in {".", ".."}:
+        raise SystemExit(f"{option} must be a plain output basename")
+    return value
+
+
 def mode_args(mode: str) -> list[str]:
     if mode == "edge-connected":
         return ["--background-mode", "edge-connected", "--spill", "none"]
@@ -129,8 +135,14 @@ def main() -> int:
     parser.add_argument("--chroma-key", default="#ff00ff")
     parser.add_argument("--key-tolerance", default="0.16")
     parser.add_argument("--resize-percent", default="100")
-    parser.add_argument("--slice-mode", choices=["fixed", "component-x-runs"], default="component-x-runs")
+    parser.add_argument("--slice-mode", choices=["fixed", "component-x-runs", "component-grid"], default="component-x-runs")
+    parser.add_argument("--source-columns", type=int, default=0)
+    parser.add_argument("--source-rows", type=int, default=0)
+    parser.add_argument("--source-layout", choices=["horizontal", "grid"], default="horizontal")
     parser.add_argument("--component-run-padding", default="8")
+    parser.add_argument("--component-min-body-area", default="0")
+    parser.add_argument("--component-center-confidence", default="0.45")
+    parser.add_argument("--component-overflow-distance", default="0")
     parser.add_argument("--gravity", default="center")
     parser.add_argument("--state", default="animation")
     parser.add_argument("--sheet-name", default="sprite-sheet.png")
@@ -149,7 +161,11 @@ def main() -> int:
         raise SystemExit(f"input not found: {args.input}")
 
     magick_bin()
+    validate_basename("--sheet-name", args.sheet_name)
+    validate_basename("--preview-name", args.preview_name)
     out_root = args.output_dir
+    if out_root.exists() and (not out_root.is_dir() or any(out_root.iterdir())):
+        raise SystemExit(f"output directory must be absent or empty: {out_root}")
     out_root.mkdir(parents=True, exist_ok=True)
     modes = args.mode or ["edge-connected", "spill"]
     results = []
@@ -158,8 +174,6 @@ def main() -> int:
 
     for mode in modes:
         mode_dir = out_root / mode
-        if mode_dir.exists():
-            shutil.rmtree(mode_dir)
         extract_command = [
             "python3", str(scripts / "extract-chroma-sheet.py"),
             "--input", str(args.input),
@@ -169,7 +183,13 @@ def main() -> int:
             "--chroma-key", args.chroma_key,
             "--key-tolerance", str(args.key_tolerance),
             "--slice-mode", args.slice_mode,
+            "--source-layout", args.source_layout,
+            "--source-columns", str(args.source_columns),
+            "--source-rows", str(args.source_rows),
             "--component-run-padding", str(args.component_run_padding),
+            "--component-min-body-area", str(args.component_min_body_area),
+            "--component-center-confidence", str(args.component_center_confidence),
+            "--component-overflow-distance", str(args.component_overflow_distance),
             "--resize-percent", str(args.resize_percent),
             "--trim",
             "--gravity", args.gravity,

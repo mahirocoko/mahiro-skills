@@ -8,6 +8,8 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -94,19 +96,20 @@ def split_csv(value: str) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip()]
 
 
+JOB_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
 def copy_assets(paths: list[str], assets_dir: Path) -> list[str]:
     copied: list[str] = []
     for raw in paths:
         src = Path(raw).expanduser().resolve()
-        if not src.exists():
-            raise SystemExit(f"source asset not found: {raw}")
+        original = Path(raw).expanduser()
+        if not original.is_file() or original.is_symlink() or original.stat().st_nlink != 1:
+            raise SystemExit(f"source asset must be a regular non-symlink, non-hardlinked file: {raw}")
         target = assets_dir / src.name
-        if src.is_dir():
-            if target.exists():
-                shutil.rmtree(target)
-            shutil.copytree(src, target)
-        else:
-            shutil.copy2(src, target)
+        if target.exists():
+            raise SystemExit(f"duplicate source asset basename: {src.name}")
+        shutil.copy2(src, target)
         copied.append(str(target.relative_to(assets_dir.parent)))
     return copied
 
@@ -132,7 +135,7 @@ def build_scaffold_prompt(args: argparse.Namespace, copied_assets: list[str], st
             "",
         ]
     elif args.workflow_mode == "effect-animation" or preset == "effect-animation":
-        frame_count = len(states)
+        frame_count = args.frame_count if args.frame_count is not None else len(states)
         lines += [
             "## Effect animation contract",
             "",
@@ -216,8 +219,14 @@ def main() -> int:
     parser.add_argument("--quality", default="auto")
     parser.add_argument("--frame-size", type=parse_frame_size, default=[32, 32])
     parser.add_argument("--states", default="idle", help="Comma-separated states")
+    parser.add_argument("--frame-count", type=int, default=None, help="Explicit output frame count; independent of state count")
     parser.add_argument("--motion-preset", default="", help="Animation motion preset/action id")
+    parser.add_argument("--action", default="", help="Stable schema-v2 action identifier (defaults to motion preset/state)")
     parser.add_argument("--directions", default="", help="Comma-separated direction labels")
+    parser.add_argument("--direction", default="", help="Stable schema-v2 direction identifier for this artifact")
+    parser.add_argument("--content-policy", default="", help="Optional schema-v2 content policy identifier")
+    parser.add_argument("--anchor-policy", default="", help="Optional schema-v2 anchor policy identifier")
+    parser.add_argument("--lineage-source-id", action="append", default=[], help="Upstream stable source id (repeatable)")
     parser.add_argument("--chroma-key", default="", help="Chroma key name or hex")
     parser.add_argument("--tournament-candidates", type=int, default=1, help="Parallel candidate count for hard generation jobs")
     parser.add_argument("--effect-category", default="")
@@ -230,6 +239,14 @@ def main() -> int:
     parser.add_argument("--source-lane", choices=SOURCE_LANES, default="codex")
     parser.add_argument("--usage", choices=USAGE_CHOICES, default="source-candidate")
     parser.add_argument("--source-asset", action="append", default=[], help="Reference/source asset to copy into assets/ (repeatable)")
+    parser.add_argument("--motion-reference", default="", help="Optional local video/reference path metadata; does not trigger extraction")
+    parser.add_argument("--motion-start", type=float, default=None, help="Human-selected reference start in seconds")
+    motion_selection = parser.add_mutually_exclusive_group()
+    motion_selection.add_argument("--motion-end", type=float, default=None, help="Human-selected reference end in seconds")
+    motion_selection.add_argument("--motion-duration", type=float, default=None, help="Human-selected reference duration in seconds")
+    parser.add_argument("--grid-columns", type=int, default=None)
+    parser.add_argument("--grid-rows", type=int, default=None)
+    parser.add_argument("--grid-mode", choices=["fixed", "component-grid"], default=None)
     args = parser.parse_args()
 
     target_repo = Path(args.target_repo).expanduser().resolve() if args.target_repo else repo_root()
@@ -238,26 +255,36 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     slug = "-".join("".join(ch.lower() if ch.isalnum() else "-" for ch in args.title).split("-"))[:48] or "sprite-job"
     job_id = args.job_id or f"{now.strftime('%Y%m%d-%H%M%S')}-{slug}"
-    job_dir = root / "jobs" / job_id
+    if not JOB_ID_RE.fullmatch(job_id) or job_id in {".", ".."}:
+        raise SystemExit("--job-id must be a flat identifier using only letters, numbers, dot, underscore, and hyphen")
+    jobs_dir = (root / "jobs").resolve()
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    job_dir = jobs_dir / job_id
     if job_dir.exists():
-      raise SystemExit(f"job already exists: {job_dir}")
+        raise SystemExit(f"job already exists: {job_dir}")
+    staging_parent = Path(tempfile.mkdtemp(prefix=f".{job_id}-", dir=jobs_dir))
+    job_dir_stage = staging_parent / "job"
 
-    assets_dir = job_dir / "assets"
-    outbox_dir = job_dir / "outbox"
+    assets_dir = job_dir_stage / "assets"
+    outbox_dir = job_dir_stage / "outbox"
     frames_dir = outbox_dir / "frames"
-    for path in [assets_dir, frames_dir, job_dir / "logs", outbox_dir, job_dir / "qa"]:
+    for path in [assets_dir, frames_dir, job_dir_stage / "logs", outbox_dir, job_dir_stage / "qa"]:
         path.mkdir(parents=True, exist_ok=True)
 
     copied_assets = copy_assets(args.source_asset, assets_dir)
     states = split_csv(args.states)
     if not states:
         raise SystemExit("at least one state is required")
+    frame_count = args.frame_count if args.frame_count is not None else (len(states) if args.kind == "sprite-sheet" else 8)
+    if frame_count <= 0:
+        raise SystemExit("--frame-count must be positive")
 
     directions = split_csv(args.directions) or ["front", "front three-quarter", "side", "back three-quarter", "back"] if args.workflow_mode == "sprite-generate" else []
     source_asset_path = copied_assets[0] if copied_assets else ""
     sprite_context = {
-        "action": args.motion_preset or (states[0] if states else ""),
-        "frames": len(states) if args.kind == "sprite-sheet" else 8,
+        "action": args.action or args.motion_preset or (states[0] if states else ""),
+        "frames": frame_count,
+        "frameCount": frame_count,
         "grid": {"columns": 4, "rows": 2, "gutter": 0} if args.workflow_mode == "sprite-generate" else None,
         "cell": {"width": args.frame_size[0], "height": args.frame_size[1]},
         "directions": directions,
@@ -269,7 +296,7 @@ def main() -> int:
         "type": args.effect_type,
         "style": args.effect_style,
         "palette": args.effect_palette,
-        "frameCount": len(states),
+        "frameCount": frame_count,
         "frameSize": {"width": args.frame_size[0], "height": args.frame_size[1]},
         "layout": args.effect_layout,
         "loopMode": args.effect_loop,
@@ -278,6 +305,20 @@ def main() -> int:
     should_scaffold_prompt = bool(args.scaffold_prompt or args.prompt_preset)
     prompt_text = build_scaffold_prompt(args, copied_assets, states, directions) if should_scaffold_prompt else (args.prompt or f"# {args.title}\n\nDescribe the sprite task here.\n")
     job_prompt = prompt_text if should_scaffold_prompt and not args.prompt else args.prompt
+
+    motion_reference = None
+    if args.motion_reference:
+        if args.motion_start is None or (args.motion_end is None and args.motion_duration is None):
+            raise SystemExit("motion reference metadata requires --motion-start and either --motion-end or --motion-duration")
+        duration = args.motion_duration if args.motion_duration is not None else args.motion_end - args.motion_start
+        if args.motion_start < 0 or duration <= 0:
+            raise SystemExit("motion reference selection must have non-negative start and positive duration")
+        motion_reference = {"localPath": str(Path(args.motion_reference).expanduser().resolve()), "startSeconds": args.motion_start, "durationSeconds": duration, "endSeconds": args.motion_start + duration, "humanSelected": True, "extracted": False}
+    grid_metadata = None
+    if args.grid_columns is not None or args.grid_rows is not None or args.grid_mode is not None:
+        if not args.grid_columns or not args.grid_rows:
+            raise SystemExit("grid metadata requires positive --grid-columns and --grid-rows")
+        grid_metadata = {"mode": args.grid_mode or "fixed", "columns": args.grid_columns, "rows": args.grid_rows, "order": "row-major"}
 
     job = {
         "id": job_id,
@@ -291,6 +332,7 @@ def main() -> int:
         "jobNotes": args.notes,
         "generationHints": {"seed": args.seed, "size": args.size or f"{args.frame_size[0]}x{args.frame_size[1]}", "count": args.count, "quality": args.quality},
         "frameSize": args.frame_size,
+        "frameCount": frame_count,
         "states": states,
         "sourceAssets": copied_assets,
         "selectedImage": {"name": Path(source_asset_path).name if source_asset_path else "", "assetPath": source_asset_path, "source": "copied-source-asset" if source_asset_path else ""},
@@ -298,13 +340,27 @@ def main() -> int:
         "effectContext": effect_context,
         "tournament": {"candidateCount": max(1, args.tournament_candidates), "isolateOutboxes": args.tournament_candidates > 1},
         "provenance": {"sourceLane": args.source_lane, "usage": args.usage},
+        "motionReference": motion_reference,
+        "gridExtraction": grid_metadata,
     }
-    (job_dir / "job.json").write_text(json.dumps(job, indent=2) + "\n")
-    (job_dir / "prompt.md").write_text(prompt_text if prompt_text.endswith("\n") else prompt_text + "\n")
-    (job_dir / "provenance.md").write_text(f"# Provenance\n\n- sourceLane: {args.source_lane}\n- usage: {args.usage}\n- targetRepo: {target_repo}\n")
-    (job_dir / "status.json").write_text(json.dumps({"status": "created", "updatedAt": job["createdAt"]}, indent=2) + "\n")
+    metadata = {
+        "action": args.action or args.motion_preset or (states[0] if states else ""),
+        "direction": args.direction,
+        "contentPolicy": args.content_policy,
+        "anchorPolicy": args.anchor_policy,
+        "lineage": {"sourceIds": args.lineage_source_id},
+    }
+    if any([args.action, args.direction, args.content_policy, args.anchor_policy, args.lineage_source_id, args.frame_count is not None, motion_reference is not None, grid_metadata is not None]):
+        job["schemaVersion"] = 2
+        job.update(metadata)
+    (job_dir_stage / "job.json").write_text(json.dumps(job, indent=2) + "\n")
+    (job_dir_stage / "prompt.md").write_text(prompt_text if prompt_text.endswith("\n") else prompt_text + "\n")
+    (job_dir_stage / "provenance.md").write_text(f"# Provenance\n\n- sourceLane: {args.source_lane}\n- usage: {args.usage}\n- targetRepo: {target_repo}\n")
+    (job_dir_stage / "status.json").write_text(json.dumps({"status": "created", "updatedAt": job["createdAt"]}, indent=2) + "\n")
+    job_dir_stage.rename(job_dir)
+    staging_parent.rmdir()
 
-    print(json.dumps({"jobId": job_id, "jobDir": str(job_dir), "outboxDir": str(outbox_dir), "manifest": str(outbox_dir / "manifest.json")}, indent=2))
+    print(json.dumps({"jobId": job_id, "jobDir": str(job_dir), "outboxDir": str(job_dir / "outbox"), "manifest": str(job_dir / "outbox" / "manifest.json")}, indent=2))
     return 0
 
 

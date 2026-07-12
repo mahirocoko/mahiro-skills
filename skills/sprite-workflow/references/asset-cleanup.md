@@ -70,6 +70,10 @@ Always prefer at least these backgrounds for candidate review:
 
 For sprites, check both the sheet and animated preview. A single still contact sheet can look acceptable while the GIF reveals baseline jitter or frame timing issues.
 
+Enclosed transparent regions need warning-first review. `qa-sprite-sheet.py` normalizes enclosed-hole area against body bounds so equivalent shapes at different frame sizes remain comparable, but the metric cannot know whether a gap is damaged torso alpha or intentional space between limbs, rings, or weapons. Use `--alpha-warnings-as-error` only after the asset contract establishes that enclosed holes are invalid; `--intentional-alpha-holes` records the review exception without hiding the measurement.
+
+Review extracted frames at native size before center/bottom translation or cross-action scale correction. Normalization can make a clipped tail, missing prop, or wrong source scale look superficially consistent. Mixed body/FX sheets require a body mask for body anchor/scale decisions.
+
 ## Delivery manifest row
 
 Use this compact asset-designer row when handing off a sprite candidate:

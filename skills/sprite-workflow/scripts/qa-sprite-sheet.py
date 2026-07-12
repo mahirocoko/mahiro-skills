@@ -92,12 +92,15 @@ def connected_components(magick: str, frame: Path) -> list[dict[str, object]]:
         "null:",
     ])
     components: list[dict[str, object]] = []
-    pattern = re.compile(r"^\s*(\d+):\s+(\d+)x(\d+)\+(\d+)\+(\d+)\s+[^\s]+\s+(\d+)\s+srgb\((\d+),(\d+),(\d+)\)")
+    pattern = re.compile(r"^\s*(\d+):\s+(\d+)x(\d+)\+(\d+)\+(\d+)\s+[^\s]+\s+(\d+)\s+(?:srgb\((\d+),(\d+),(\d+)\)|gray\((\d+)\))")
     for line in (result.stdout + result.stderr).splitlines():
         match = pattern.match(line)
         if not match:
             continue
-        component_id, width, height, x, y, area, red, green, blue = map(int, match.groups())
+        component_id, width, height, x, y, area = map(int, match.groups()[:6])
+        colors = match.groups()[6:9]
+        gray = match.group(10)
+        red, green, blue = ((int(gray),) * 3) if gray is not None else tuple(map(int, colors))
         # Foreground in alpha-extract threshold output is white; background is black.
         foreground = red > 127 or green > 127 or blue > 127
         components.append({
@@ -143,6 +146,18 @@ def sliver_components(components: list[dict[str, object]], *, min_area: int, max
     return slivers
 
 
+def body_fx_and_holes(components: list[dict[str, object]]) -> dict[str, object]:
+    foreground = [item for item in components if item.get("foreground")]
+    if not foreground:
+        return {"body": None, "nearbyFx": [], "enclosedAlphaHoles": {"count": 0, "areaPixels": 0, "areaRatioOfBodyBounds": 0.0}}
+    body = max(foreground, key=lambda item: int(item["area"]))
+    nearby = [item for item in foreground if item is not body]
+    holes = [item for item in components if not item.get("foreground") and int(item["x"]) > int(body["x"]) and int(item["y"]) > int(body["y"]) and int(item["right"]) < int(body["right"]) and int(item["bottom"]) < int(body["bottom"])]
+    hole_area = sum(int(item["area"]) for item in holes)
+    bounds_area = max(1, int(body["width"]) * int(body["height"]))
+    return {"body": body, "nearbyFx": nearby, "assignment": "largest foreground component is body; remaining foreground components are nearby FX/review candidates", "enclosedAlphaHoles": {"count": len(holes), "areaPixels": hole_area, "areaRatioOfBodyBounds": hole_area / bounds_area, "components": holes}}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="QA transparent sprite sheet dimensions, alpha bounds, residue, and appendage consistency")
     parser.add_argument("sheet", type=Path)
@@ -161,6 +176,11 @@ def main() -> int:
     parser.add_argument("--max-bounds-width-range", type=float, default=0, help="Warn/fail when alpha-bounds width range across frames exceeds this. 0 disables.")
     parser.add_argument("--max-bounds-height-range", type=float, default=0, help="Warn/fail when alpha-bounds height range across frames exceeds this. 0 disables.")
     parser.add_argument("--warn-bounds-as-error", action="store_true")
+    parser.add_argument("--max-bottom-range", type=float, default=0, help="Warn when measured bottomY range exceeds this; 0 disables")
+    parser.add_argument("--max-bottom-neighbor-delta", type=float, default=0, help="Warn when adjacent bottomY delta exceeds this; 0 disables")
+    parser.add_argument("--warn-bottom-as-error", action="store_true")
+    parser.add_argument("--body-mask-sheet", type=Path, default=None, help="Optional alpha mask sheet used for body bounds instead of full-art bounds")
+    parser.add_argument("--require-body-mask", action="store_true", help="Fail closed unless a valid nonblank body mask is supplied for every frame")
     parser.add_argument("--max-sliver-components", type=int, default=-1, help="Maximum detached sliver components allowed. -1 disables.")
     parser.add_argument("--sliver-min-area", type=int, default=12)
     parser.add_argument("--sliver-max-thickness", type=int, default=4)
@@ -169,6 +189,9 @@ def main() -> int:
     parser.add_argument("--min-width-ratio", type=float, default=0.75)
     parser.add_argument("--allow-bottom-edge", action="store_true", help="Allow alpha to touch the bottom baseline edge while still checking other edges")
     parser.add_argument("--warn-as-error", action="store_true")
+    parser.add_argument("--max-enclosed-alpha-hole-ratio", type=float, default=0.02, help="Warn when enclosed transparent area/body-bounds area exceeds this normalized ratio; negative disables")
+    parser.add_argument("--alpha-warnings-as-error", action="store_true", help="Promote alpha-hole warnings to errors")
+    parser.add_argument("--intentional-alpha-holes", action="store_true", help="Mark holes intentional/review-only; never auto-fail them")
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -182,6 +205,13 @@ def main() -> int:
     expected_size = (frame_width * args.frames, frame_height)
     sheet_size = image_size(magick, args.sheet)
     failures: list[str] = []
+    if args.require_body_mask and args.body_mask_sheet is None:
+        failures.append("body mask required but --body-mask-sheet was not supplied")
+    if args.body_mask_sheet is not None:
+        if not args.body_mask_sheet.exists():
+            failures.append(f"body mask sheet not found: {args.body_mask_sheet}")
+        elif image_size(magick, args.body_mask_sheet) != expected_size:
+            failures.append("body mask sheet size does not match expected sprite sheet size")
     warnings: list[str] = []
     frames: list[dict[str, object]] = []
     if sheet_size != expected_size:
@@ -195,12 +225,26 @@ def main() -> int:
         bounds_ys: list[int] = []
         bounds_widths: list[int] = []
         bounds_heights: list[int] = []
+        bottoms: list[int] = []
         for index in range(args.frames):
             frame = temp / f"frame-{index:02d}.png"
             run([magick, str(args.sheet), "-crop", f"{frame_width}x{frame_height}+{index * frame_width}+0", "+repage", str(frame)])
-            bounds = alpha_bounds(magick, frame)
+            measurement_frame = frame
+            if args.body_mask_sheet is not None and args.body_mask_sheet.exists() and image_size(magick, args.body_mask_sheet) == expected_size:
+                measurement_frame = temp / f"mask-{index:02d}.png"
+                run([magick, str(args.body_mask_sheet), "-crop", f"{frame_width}x{frame_height}+{index * frame_width}+0", "+repage", str(measurement_frame)])
+            bounds = alpha_bounds(magick, measurement_frame)
             residue = magenta_residue_count(magick, frame)
-            entry: dict[str, object] = {"index": index, "magentaResidue": residue}
+            components = connected_components(magick, frame)
+            component_report = body_fx_and_holes(components)
+            entry: dict[str, object] = {"index": index, "magentaResidue": residue, "components": component_report}
+            hole_metrics = component_report["enclosedAlphaHoles"]
+            if args.max_enclosed_alpha_hole_ratio >= 0 and float(hole_metrics["areaRatioOfBodyBounds"]) > args.max_enclosed_alpha_hole_ratio:
+                message = f"frame {index}: enclosed alpha-hole ratio {float(hole_metrics['areaRatioOfBodyBounds']):.4f} exceeds {args.max_enclosed_alpha_hole_ratio:.4f} of body bounds"
+                if args.alpha_warnings_as_error and not args.intentional_alpha_holes:
+                    failures.append(message)
+                else:
+                    warnings.append(message + (" (intentional/review-only)" if args.intentional_alpha_holes else ""))
             if bounds is None:
                 failures.append(f"frame {index}: blank alpha")
             else:
@@ -211,9 +255,13 @@ def main() -> int:
                 bounds_widths.append(width)
                 bounds_heights.append(height)
                 center_x = x + width / 2
+                bottom_y = y + height
+                bottoms.append(bottom_y)
                 centers.append(center_x)
                 entry["centerX"] = center_x
-                entry["bounds"] = {"x": x, "y": y, "width": width, "height": height, "right": x + width, "bottom": y + height}
+                entry["bottomY"] = bottom_y
+                entry["measurementSource"] = "body-mask" if measurement_frame != frame else "alpha"
+                entry["bounds"] = {"x": x, "y": y, "width": width, "height": height, "right": x + width, "bottom": bottom_y}
                 if args.max_center_drift > 0:
                     target_center_x = args.target_center_x if args.target_center_x is not None else frame_width / 2
                     center_drift = abs(center_x - target_center_x)
@@ -234,7 +282,7 @@ def main() -> int:
                 warnings.append(f"frame {index}: magenta residue {residue}px")
             if args.max_sliver_components >= 0:
                 slivers = sliver_components(
-                    connected_components(magick, frame),
+                    components,
                     min_area=args.sliver_min_area,
                     max_thickness=args.sliver_max_thickness,
                     min_aspect=args.sliver_min_aspect,
@@ -252,6 +300,16 @@ def main() -> int:
                     failures.append(message)
                 else:
                     warnings.append(message)
+        if bottoms:
+            bottom_range = max(bottoms) - min(bottoms)
+            if args.max_bottom_range > 0 and bottom_range > args.max_bottom_range:
+                message = f"bottomY range {bottom_range:.1f}px exceeds {args.max_bottom_range:.1f}px"
+                (failures if args.warn_bottom_as_error else warnings).append(message)
+            for index in range(1, len(bottoms)):
+                delta = abs(bottoms[index] - bottoms[index - 1])
+                if args.max_bottom_neighbor_delta > 0 and delta > args.max_bottom_neighbor_delta:
+                    message = f"frames {index - 1}-{index}: bottomY neighbor delta {delta:.1f}px exceeds {args.max_bottom_neighbor_delta:.1f}px"
+                    (failures if args.warn_bottom_as_error else warnings).append(message)
         bounds_checks = [
             ("bounds x", bounds_xs, args.max_bounds_x_range),
             ("bounds y", bounds_ys, args.max_bounds_y_range),
@@ -276,7 +334,7 @@ def main() -> int:
                     warnings.append(f"frame {entry['index']}: bbox width {bounds['width']} below appendage ratio threshold {min_allowed:.1f}")
 
     ok = not failures and not (args.warn_as_error and warnings)
-    payload = {"ok": ok, "sheet": str(args.sheet), "sheetSize": {"width": sheet_size[0], "height": sheet_size[1]}, "expectedSize": {"width": expected_size[0], "height": expected_size[1]}, "frames": frames, "warnings": warnings, "failures": failures}
+    payload = {"ok": ok, "sheet": str(args.sheet), "measurement": {"bodyMask": str(args.body_mask_sheet) if args.body_mask_sheet else None, "required": args.require_body_mask},  "sheetSize": {"width": sheet_size[0], "height": sheet_size[1]}, "expectedSize": {"width": expected_size[0], "height": expected_size[1]}, "frames": frames, "warnings": warnings, "failures": failures}
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(payload, indent=2) + "\n")

@@ -79,6 +79,7 @@ describe("frontend-design skill", () => {
     expect(references).toContain("Generated-Reference Analysis");
     expect(references).toContain("Fidelity Comparison");
     expect(references).toContain("Brand-Relative Pairwise Comparison");
+    expect(references).toContain("Anonymous Composition Exploration");
     expect(references).toContain("Requested deliverables: N");
     expect(brandTaste).toContain("## 1. Evidence and Brand Read");
     expect(brandTaste).toContain("## 2. Taste Thesis");
@@ -127,10 +128,14 @@ describe("frontend-design skill", () => {
     expect(brief).toContain("accept the section map as one product story");
     expect(brief).toContain("which existing anatomy survives and which is replaced");
     expect(brief).toContain("after copy and visual polish");
+    expect(brief).toContain("reconcile routed asset manifests or delivery notes with runtime files");
     expect(brief).toContain("Do not use this workflow to expand a small component fix");
-    expect(references).toContain("## 5. Rendered QA Evidence Contract");
+    expect(references).toContain("## 6. Rendered QA Evidence Contract");
     expect(references).toContain("CSS viewport and DPR");
+    expect(references).toContain("Capture readiness: fonts / critical media / lazy content");
     expect(references).toContain("section-anchor captures");
+    expect(references).toContain("Wait for the declared ready condition before capture");
+    expect(references).toContain("mark the image incomplete");
     expect(references).toContain("### QA Closure Loop");
     expect(references).toContain("clean recorded state");
     expect(references).toContain("recapture or re-measure the same state");
@@ -183,6 +188,20 @@ describe("frontend-design skill", () => {
     expect(references).toContain("downstream production routing");
     expect(skill).not.toContain("hashes, conversion commands");
     expect(references).not.toContain("hashes, conversion commands");
+  });
+
+  test("supports sealed multi-variant composition proofs without forcing a winner", () => {
+    const skill = read("skills", "frontend-design", "SKILL.md");
+    const references = read("skills", "frontend-design", "references", "reference-contracts.md");
+
+    expect(skill).toContain("multi-variant composition exploration");
+    expect(references).toContain("### Shared Evidence Packet");
+    expect(references).toContain("Pairwise ambiguity uses two directions");
+    expect(references).toContain("Every option must pass the same packet");
+    expect(references).toContain("seal the option mapping outside the review surface");
+    expect(references).toContain("immutable preliminary critic verdict");
+    expect(references).toContain("If the human selects `Neither`, promote no option or principle");
+    expect(references).toContain("when / prefer / because / evidence");
   });
 
   test("keeps uncodixify aligned to the brief and reference contract", () => {

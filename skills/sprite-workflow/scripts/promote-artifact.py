@@ -8,6 +8,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -18,11 +19,17 @@ def run_validator(manifest: Path) -> None:
         raise SystemExit(result.stdout + result.stderr)
 
 
-def copy_file(src: Path, dest: Path, dry_run: bool) -> None:
-    print(f"{'would copy' if dry_run else 'copy'} {src} -> {dest}")
-    if not dry_run:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
+def contained_regular(base: Path, value: str, label: str) -> tuple[Path, Path]:
+    relative = Path(value)
+    if not value or relative.is_absolute():
+        raise SystemExit(f"{label} must be a non-empty relative path")
+    raw = base / relative
+    if raw.is_symlink():
+        raise SystemExit(f"{label} must not be a symlink")
+    resolved = raw.resolve(strict=True)
+    if not resolved.is_relative_to(base.resolve()) or not resolved.is_file() or resolved.stat().st_nlink != 1:
+        raise SystemExit(f"{label} must be a contained regular non-hardlinked file")
+    return resolved, relative
 
 
 def main() -> int:
@@ -44,18 +51,33 @@ def main() -> int:
     if not args.approve and not args.dry_run:
         raise SystemExit("promotion requires --approve or --dry-run")
 
-    manifest_dir = args.manifest.parent
+    manifest_path = args.manifest.resolve()
+    manifest_dir = manifest_path.parent
     target_dir = args.target_dir.expanduser().resolve()
-    copy_file(args.manifest, target_dir / "manifest.json", dry_run)
+    if target_dir.exists():
+        raise SystemExit("target directory already exists; atomic promotion requires a new directory")
+    copies: list[tuple[Path, Path]] = [(manifest_path, Path("manifest.json"))]
     for frame in data.get("frames", []):
         if not isinstance(frame, dict) or not frame.get("file"):
             continue
-        rel = Path(str(frame["file"]))
-        copy_file(manifest_dir / rel, target_dir / rel, dry_run)
+        copies.append(contained_regular(manifest_dir, str(frame["file"]), "frame file"))
     for optional in ["contact-sheet.html", "preview.gif", "qa-report.md"]:
         src = manifest_dir / optional
         if src.exists():
-            copy_file(src, target_dir / optional, dry_run)
+            copies.append(contained_regular(manifest_dir, optional, optional))
+    for source, relative in copies:
+        print(f"{'would copy' if dry_run else 'copy'} {source} -> {target_dir / relative}")
+    if dry_run:
+        return 0
+    target_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".sprite-promote-", dir=target_dir.parent) as raw:
+        stage = Path(raw) / "publish"
+        stage.mkdir()
+        for source, relative in copies:
+            destination = stage / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+        stage.rename(target_dir)
     return 0
 
 

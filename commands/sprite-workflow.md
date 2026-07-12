@@ -1,5 +1,5 @@
 ---
-description: CLI-first sprite/Codex handoff workflow for sprite sheets, mascot frames, contact sheets, preview GIFs, QA, and promotion gates.
+description: CLI-first sprite production workflow for prompts, imagegen handoffs, motion references, extraction, runtime QA, native-grid recovery, atlases, previews, and promotion gates.
 allowed-tools:
   - Bash
   - Read

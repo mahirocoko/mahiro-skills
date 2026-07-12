@@ -4,6 +4,8 @@ These presets adapt Image Cockpit's prompt-field model into portable CLI text bl
 
 ## Shared field model
 
+For ready-made source-character briefs, search the bundled 107-example attributed library with `prompt-catalog.py`. Exact originals and adapted parameterized templates are separate surfaces; see `prompt-catalog.md`. Do not paste the whole catalog into a job or treat a catalog example as production approval.
+
 Keep these fields separate in `job.json` and prompts:
 
 - `prompt` — positive creative brief.

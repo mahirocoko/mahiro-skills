@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--max-center-delta", type=float, default=2.0)
     parser.add_argument("--max-bounds-x-delta", type=float, default=3.0)
     parser.add_argument("--max-bounds-width-delta", type=float, default=3.0)
+    parser.add_argument("--max-bottom-delta", type=float, default=2.0)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -34,9 +35,12 @@ def main() -> int:
     bounds_y: list[float] = []
     bounds_width: list[float] = []
     bounds_height: list[float] = []
+    bottoms: list[float] = []
     for frame in frames:
         if isinstance(frame.get("centerX"), (int, float)):
             centers.append(float(frame["centerX"]))
+        if isinstance(frame.get("bottomY"), (int, float)):
+            bottoms.append(float(frame["bottomY"]))
         bounds = frame.get("bounds") if isinstance(frame.get("bounds"), dict) else {}
         for key, bucket in (("x", bounds_x), ("y", bounds_y), ("width", bounds_width), ("height", bounds_height)):
             value = bounds.get(key)
@@ -46,6 +50,7 @@ def main() -> int:
     center_deltas = neighbor_deltas(centers)
     x_deltas = neighbor_deltas(bounds_x)
     width_deltas = neighbor_deltas(bounds_width)
+    bottom_deltas = neighbor_deltas(bottoms)
     risky: list[dict[str, object]] = []
     for index, delta in enumerate(center_deltas, start=1):
         if delta > args.max_center_delta:
@@ -56,6 +61,9 @@ def main() -> int:
     for index, delta in enumerate(width_deltas, start=1):
         if delta > args.max_bounds_width_delta:
             risky.append({"between": [index - 1, index], "metric": "bounds.width", "delta": delta})
+    for index, delta in enumerate(bottom_deltas, start=1):
+        if delta > args.max_bottom_delta:
+            risky.append({"between": [index - 1, index], "metric": "bottomY", "delta": delta})
 
     payload = {
         "ok": len(risky) == 0,
@@ -66,11 +74,13 @@ def main() -> int:
             "boundsY": round(numeric_range(bounds_y), 3),
             "boundsWidth": round(numeric_range(bounds_width), 3),
             "boundsHeight": round(numeric_range(bounds_height), 3),
+            "bottomY": round(numeric_range(bottoms), 3),
         },
         "neighborDeltas": {
             "centerX": center_deltas,
             "boundsX": x_deltas,
             "boundsWidth": width_deltas,
+            "bottomY": bottom_deltas,
         },
         "riskyTransitions": risky,
         "notes": "Use this as a jitter warning, not final visual approval. Inspect preview GIF and adjacent-frame zooms.",

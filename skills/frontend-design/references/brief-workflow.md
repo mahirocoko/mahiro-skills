@@ -113,6 +113,7 @@ Check the current rendered surface and implementation:
 - analytics/test selectors and stable IDs
 - existing assets, source/runtime status, crop behavior
 - performance-sensitive media and motion
+- capture readiness for fonts, critical media, lazy content, and the intended animation/UI state
 - desktop/mobile/language/state screenshots that are current, truthfully named, and matched to the inspected implementation
 
 ### Reference Audit
@@ -141,6 +142,15 @@ Improve:
 Not established yet:
 Needs approval:
 ```
+
+### Pre-code Decision Ledger
+
+After the material audits and before implementation, synthesize only decisions that can change the composition or its protected contracts:
+
+| Evidence | Conflict or uncertainty | Design consequence | Decision | Rejected alternative | Status |
+| --- | --- | --- | --- | --- | --- |
+
+Include effort, change authorization, composition strategy, section sequence, primary action, proof placement, signature relationship, critical asset need, protected-contract decision, and blocking unknown only when material. Keep this pre-code ledger separate from any post-render comparison Decision Record: the ledger explains why a hypothesis was authorized; the Decision Record explains what the human selected after admissible renders.
 
 ## 4. Reference Review
 
@@ -280,6 +290,7 @@ Choose evidence that can disprove a weak brief:
 - asset target-size/crop inspection
 - product claims and demonstrations checked against the product-truth audit
 - after copy and visual polish, reconcile every implemented claim and demonstration against the product-truth matrix again, including availability/CTA truth, privacy/data flow, permissions, third-party-provider boundaries, and schematic caveats
+- reconcile routed asset manifests or delivery notes with runtime files; stale, retired, missing-source, or unresolved asset status remains open rather than being treated as approved
 - durable QA artifacts with truthful viewport, language, state, and scroll-target metadata
 - section-anchor and DOM-geometry checks when a full-page capture is unreliable
 

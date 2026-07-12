@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSy
 import { dirname, extname, join } from "path";
 
 import { createPlan } from "./plan";
+import { listInstalled } from "./list";
 import type { InstallReceipt, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
 const installedDescriptionPrefix = "Mahiro Skill | ";
@@ -116,6 +117,8 @@ function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, des
 export function install(agent: ScopedAgent, scope: InstallScope, items: string[], overwrite: boolean, env = process.env): InstallResult {
   const plan = createPlan(agent, scope, items, env);
   const sourceRepoPath = env.MAHIRO_SKILLS_REPO_ROOT || readRepoRoot();
+  const existingReceipt = listInstalled(agent, scope, env);
+  const description = plan.description ?? existingReceipt?.description;
 
   if (!overwrite) {
     const collision = [...plan.skills, ...plan.commands].find((entry) => entry.collision);
@@ -130,14 +133,14 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
 
   const installedSkills = plan.skills.map((entry) => entry.name);
   const installedCommands = plan.commands.map((entry) => entry.name);
-  const receiptPath = writeReceipt(agent, scope, plan.root, plan.description, installedSkills, installedCommands, sourceRepoPath);
+  const receiptPath = writeReceipt(agent, scope, plan.root, description, installedSkills, installedCommands, sourceRepoPath);
 
   return {
     status: resolveStatus(installedSkills.length + installedCommands.length, plan.skipped.length),
     agent,
     scope,
     root: plan.root,
-    description: plan.description,
+    description,
     installed: unique([...installedSkills, ...installedCommands]),
     skipped: plan.skipped,
     warnings: plan.warnings,

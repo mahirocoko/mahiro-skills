@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -146,6 +147,79 @@ def detect_component_x_runs(magick: str, path: Path, width: int, height: int, fr
     return padded
 
 
+def detect_component_grid(magick: str, path: Path, width: int, height: int, columns: int, rows: int, tolerance: float, padding: int, min_body_area: int, center_confidence: float, overflow_distance: int) -> tuple[list[tuple[int, int, int, int]], list[dict[str, object]]] | None:
+    """Recover exactly one confident body from each nominal row-major cell."""
+    result = run([magick, str(path), *edge_connected_commands(width, height, tolerance), "-alpha", "extract", "-threshold", "1%", "-define", "connected-components:verbose=true", "-connected-components", "8", "null:"])
+    pattern = re.compile(r"^\s*\d+:\s+(\d+)x(\d+)\+(\d+)\+(\d+)\s+[^\s]+\s+(\d+)\s+(?:srgb\((\d+),(\d+),(\d+)\)|gray\((\d+)\))")
+    components: list[dict[str, object]] = []
+    for line in (result.stdout + result.stderr).splitlines():
+        match = pattern.match(line)
+        if not match:
+            continue
+        component_width, component_height, x, y, area = map(int, match.groups()[:5])
+        colors, gray = match.groups()[5:8], match.group(9)
+        red, green, blue = ((int(gray),) * 3) if gray is not None else tuple(map(int, colors))
+        if max(red, green, blue) > 127 and area >= 4:
+            components.append({"x": x, "y": y, "width": component_width, "height": component_height, "area": area, "centerX": x + component_width / 2, "centerY": y + component_height / 2})
+
+    cell_area = (width / columns) * (height / rows)
+    required_area = min_body_area or max(4, round(cell_area * 0.02))
+    cells: list[tuple[int, int, int, int]] = []
+    for row in range(rows):
+        for column in range(columns):
+            cells.append((width * column // columns, height * row // rows, width * (column + 1) // columns, height * (row + 1) // rows))
+
+    assignments: list[dict[str, object]] = []
+    claimed: set[int] = set()
+    for cell_index, (cell_left, cell_top, cell_right, cell_bottom) in enumerate(cells):
+        cell_width, cell_height = cell_right - cell_left, cell_bottom - cell_top
+        candidates: list[tuple[int, dict[str, object]]] = []
+        local: list[tuple[int, dict[str, object]]] = []
+        for component_index, component in enumerate(components):
+            center_x, center_y = float(component["centerX"]), float(component["centerY"])
+            if not (cell_left <= center_x < cell_right and cell_top <= center_y < cell_bottom):
+                continue
+            local.append((component_index, component))
+            centered = abs(center_x - (cell_left + cell_right) / 2) <= cell_width * center_confidence and abs(center_y - (cell_top + cell_bottom) / 2) <= cell_height * center_confidence
+            contained = int(component["x"]) >= cell_left and int(component["y"]) >= cell_top and int(component["x"]) + int(component["width"]) <= cell_right and int(component["y"]) + int(component["height"]) <= cell_bottom
+            if int(component["area"]) >= required_area and centered and contained:
+                candidates.append((component_index, component))
+        if len(candidates) != 1:
+            return None
+        body_index, body = candidates[0]
+        # A second substantial component is ambiguous even when it misses the center gate.
+        if any(index != body_index and int(item["area"]) >= max(required_area, round(int(body["area"]) * 0.5)) for index, item in local):
+            return None
+        claimed.add(body_index)
+        assignments.append({"cell": {"index": cell_index, "column": cell_index % columns, "row": cell_index // columns, "bounds": [cell_left, cell_top, cell_right, cell_bottom]}, "body": body, "nearbyFx": []})
+
+    for component_index, component in enumerate(components):
+        if component_index in claimed:
+            continue
+        center_x, center_y = float(component["centerX"]), float(component["centerY"])
+        column = min(columns - 1, max(0, int(center_x * columns / width)))
+        row = min(rows - 1, max(0, int(center_y * rows / height)))
+        assignment = assignments[row * columns + column]
+        cell_left, cell_top, cell_right, cell_bottom = assignment["cell"]["bounds"]
+        overflow = max(cell_left - int(component["x"]), cell_top - int(component["y"]), int(component["x"]) + int(component["width"]) - cell_right, int(component["y"]) + int(component["height"]) - cell_bottom, 0)
+        if overflow > overflow_distance:
+            return None
+        assignment["nearbyFx"].append(component)
+
+    crops: list[tuple[int, int, int, int]] = []
+    for assignment in assignments:
+        cell_left, cell_top, cell_right, cell_bottom = assignment["cell"]["bounds"]
+        included = [assignment["body"], *assignment["nearbyFx"]]
+        left = max(0, cell_left - overflow_distance, min(int(item["x"]) for item in included) - padding)
+        top = max(0, cell_top - overflow_distance, min(int(item["y"]) for item in included) - padding)
+        right = min(width, cell_right + overflow_distance, max(int(item["x"]) + int(item["width"]) for item in included) + padding)
+        bottom = min(height, cell_bottom + overflow_distance, max(int(item["y"]) + int(item["height"]) for item in included) + padding)
+        if right <= left or bottom <= top:
+            return None
+        crops.append((left, top, right - left, bottom - top))
+    return crops, assignments
+
+
 def image_size(magick: str, path: Path) -> tuple[int, int]:
     result = run([magick, "identify", "-format", "%w %h", str(path)])
     width_raw, height_raw = result.stdout.strip().split()
@@ -179,10 +253,15 @@ def main() -> int:
     parser.add_argument("--key-tolerance", type=float, default=0.22)
     parser.add_argument("--background-mode", choices=["color-distance", "edge-connected"], default="color-distance", help="color-distance removes all key-like pixels; edge-connected flood-fills only background connected to image edges.")
     parser.add_argument("--spill", choices=["none", "magenta", "green"], default="magenta")
-    parser.add_argument("--source-layout", choices=["horizontal"], default="horizontal")
-    parser.add_argument("--slice-mode", choices=["fixed", "component-x-runs"], default="fixed", help="fixed uses equal/explicit cells; component-x-runs detects foreground x-runs after edge-connected key removal.")
+    parser.add_argument("--source-layout", choices=["horizontal", "grid"], default="horizontal")
+    parser.add_argument("--slice-mode", choices=["fixed", "component-x-runs", "component-grid"], default="fixed", help="fixed supports row-major grids; component modes fail closed when recovery is ambiguous.")
+    parser.add_argument("--source-columns", type=int, default=0)
+    parser.add_argument("--source-rows", type=int, default=0)
     parser.add_argument("--component-min-column-alpha", type=int, default=8)
     parser.add_argument("--component-run-padding", type=int, default=8)
+    parser.add_argument("--component-min-body-area", type=int, default=0, help="Minimum component area for a grid body; 0 derives 2%% of nominal cell area.")
+    parser.add_argument("--component-center-confidence", type=float, default=0.45, help="Maximum body-center offset from cell center as a fraction of cell dimensions.")
+    parser.add_argument("--component-overflow-distance", type=int, default=0, help="Maximum pixels detached FX may extend beyond its nominal cell.")
     parser.add_argument("--source-cell-width", type=int, default=0, help="Raw generated cell step width. Defaults to input width / frames.")
     parser.add_argument("--crop-width", type=int, default=0, help="Raw crop width per frame. Defaults to source-cell-width.")
     parser.add_argument("--crop-height", type=int, default=0, help="Raw crop height. Defaults to input height.")
@@ -200,6 +279,12 @@ def main() -> int:
     parser.add_argument("--final-duration-ms", type=int, default=560)
     parser.add_argument("--clear-region", action="append", type=parse_region, default=[], help="Clear a frame-local region after extraction. Format FRAME:X,Y,W,H")
     parser.add_argument("--source-note", default="")
+    parser.add_argument("--source-job", type=Path, default=None, help="Optional job.json supplying schema-v2 metadata and lineage")
+    parser.add_argument("--action", default="")
+    parser.add_argument("--direction", default="")
+    parser.add_argument("--content-policy", default="")
+    parser.add_argument("--anchor-policy", default="")
+    parser.add_argument("--source-id", action="append", default=[])
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -207,16 +292,30 @@ def main() -> int:
         raise SystemExit("--frames must be positive")
     if args.resize_percent <= 0:
         raise SystemExit("--resize-percent must be positive")
+    if args.component_min_body_area < 0 or not 0 < args.component_center_confidence <= 0.5 or args.component_overflow_distance < 0:
+        raise SystemExit("component confidence values must be non-negative and center confidence must be in (0, 0.5]")
     if not args.input.exists():
         raise SystemExit(f"input not found: {args.input}")
 
     magick = magick_bin()
     input_width, input_height = image_size(magick, args.input)
-    source_cell_width = args.source_cell_width or round(input_width / args.frames)
+    columns = args.source_columns or (args.frames if args.source_layout == "horizontal" else 0)
+    rows = args.source_rows or (1 if args.source_layout == "horizontal" else 0)
+    if columns <= 0 or rows <= 0 or columns * rows < args.frames:
+        raise SystemExit("source grid requires positive columns/rows with enough row-major cells")
+    if args.slice_mode == "component-grid" and columns * rows != args.frames:
+        raise SystemExit("component-grid requires exactly one requested frame per nominal cell")
+    source_cell_width = args.source_cell_width or (input_width // columns)
+    source_cell_height = input_height // rows
     crop_width = args.crop_width or source_cell_width
-    crop_height = args.crop_height or input_height
+    crop_height = args.crop_height or source_cell_height
     frame_width, frame_height = args.frame_size
     output_dir = args.output_dir
+    for option, name in (("--sheet-name", args.sheet_name), ("--preview-name", args.preview_name), ("--manifest-name", args.manifest_name)):
+        if not name or Path(name).name != name or name in {".", ".."}:
+            raise SystemExit(f"{option} must be a plain output basename")
+    if output_dir.exists() and (not output_dir.is_dir() or any(output_dir.iterdir())):
+        raise SystemExit(f"output directory must be absent or empty: {output_dir}")
     frames_dir = output_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
@@ -234,36 +333,47 @@ def main() -> int:
             args.component_run_padding,
         )
         if detected_runs is None:
-            if args.json:
-                print(json.dumps({"ok": False, "warning": "component-x-runs detection failed; falling back to fixed slicing"}), file=sys.stderr)
-            detected_runs = None
+            raise SystemExit("component-x-runs detection failed; no fixed-slice fallback was applied")
+    component_assignments = None
+    component_crops = None
+    if args.slice_mode == "component-grid":
+        recovered = detect_component_grid(magick, args.input, input_width, input_height, columns, rows, args.key_tolerance, args.component_run_padding, args.component_min_body_area, args.component_center_confidence, args.component_overflow_distance)
+        if recovered is None:
+            raise SystemExit("component-grid detection failed; no fixed-grid fallback was applied")
+        component_crops, component_assignments = recovered
     clear_by_frame: dict[int, list[tuple[int, int, int, int]]] = {}
     for frame, x, y, width, height in args.clear_region:
         clear_by_frame.setdefault(frame, []).append((x, y, width, height))
 
     frame_entries = []
     for index in range(args.frames):
-        if detected_runs:
+        crop_height_current = crop_height
+        if component_crops:
+            crop_x, crop_y, crop_width_current, crop_height_current = component_crops[index]
+        elif detected_runs:
             left, right = detected_runs[index]
             crop_x = left
             crop_width_current = max(1, right - left)
+            crop_y = args.crop_y
         else:
-            crop_x = index * source_cell_width + args.crop_x_offset
+            column, row = index % columns, index // columns
+            crop_x = column * source_cell_width + args.crop_x_offset
+            crop_y = row * source_cell_height + args.crop_y
             if index == args.frames - 1 and args.last_crop_x is not None:
                 crop_x = args.last_crop_x
             crop_width_current = crop_width
         crop_x = max(0, min(crop_x, max(0, input_width - crop_width_current)))
-        crop_y = max(0, min(args.crop_y, max(0, input_height - crop_height)))
+        crop_y = max(0, min(crop_y, max(0, input_height - crop_height_current)))
         frame_path = frames_dir / frame_name(index)
         command = [
             magick,
             str(args.input),
             "-crop",
-            f"{crop_width_current}x{crop_height}+{crop_x}+{crop_y}",
+            f"{crop_width_current}x{crop_height_current}+{crop_x}+{crop_y}",
             "+repage",
         ]
         if args.background_mode == "edge-connected":
-            command += edge_connected_commands(crop_width_current, crop_height, args.key_tolerance)
+            command += edge_connected_commands(crop_width_current, crop_height_current, args.key_tolerance)
         else:
             command += [
                 "-alpha",
@@ -325,6 +435,7 @@ def main() -> int:
 
     manifest = {
         "frameSize": [frame_width, frame_height],
+        "frameCount": args.frames,
         "states": [args.state],
         "frames": frame_entries,
         "anchors": {"default": [round(frame_width / 2), max(0, frame_height - 4)]},
@@ -336,12 +447,34 @@ def main() -> int:
             "backgroundMode": args.background_mode,
             "sliceMode": args.slice_mode,
             "detectedRuns": detected_runs,
-            "crop": {"sourceCellWidth": source_cell_width, "cropWidth": crop_width, "cropHeight": crop_height, "cropXOffset": args.crop_x_offset, "cropY": args.crop_y},
+            "grid": {"columns": columns, "rows": rows, "order": "row-major", "mode": args.slice_mode},
+            "componentAssignments": component_assignments,
+            "crop": {"sourceCellWidth": source_cell_width, "sourceCellHeight": source_cell_height, "cropWidth": crop_width, "cropHeight": crop_height, "cropXOffset": args.crop_x_offset, "cropY": args.crop_y},
             "resizePercent": args.resize_percent,
             "trim": args.trim,
             "note": args.source_note,
         },
     }
+    source_job = {}
+    if args.source_job:
+        if not args.source_job.exists():
+            raise SystemExit(f"source job not found: {args.source_job}")
+        source_job = json.loads(args.source_job.read_text())
+    metadata = {
+        "action": args.action or source_job.get("action") or (source_job.get("spriteContext") or {}).get("action"),
+        "direction": args.direction or source_job.get("direction"),
+        "contentPolicy": args.content_policy or source_job.get("contentPolicy"),
+        "anchorPolicy": args.anchor_policy or source_job.get("anchorPolicy"),
+    }
+    lineage = source_job.get("lineage") if isinstance(source_job.get("lineage"), dict) else {}
+    source_ids = list(dict.fromkeys([*lineage.get("sourceIds", []), *args.source_id]))
+    if source_job.get("id") and source_job["id"] not in source_ids:
+        source_ids.append(source_job["id"])
+    if args.source_job or any(metadata.values()) or source_ids:
+        manifest["schemaVersion"] = 2
+        manifest.update({key: value for key, value in metadata.items() if value})
+        manifest["lineage"] = {**lineage, "sourceIds": source_ids}
+        manifest["source"]["job"] = str(args.source_job) if args.source_job else None
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     payload = {"ok": True, "outputDir": str(output_dir), "sheet": str(sheet_path), "previewGif": str(preview_path), "manifest": str(manifest_path)}
     if args.json:

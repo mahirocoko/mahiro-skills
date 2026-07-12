@@ -16,6 +16,14 @@ Use provenance to decide what an output is allowed to become.
 - `manual` — human-authored or hand-edited source.
 - `external-reference` — local reference only unless license and human approval say otherwise.
 
+## Attributed prompt and algorithm sources
+
+- The bundled Image Cockpit prompt catalog is MIT-licensed source text pinned to a specific upstream revision. Keep `image-cockpit-LICENSE.txt`, exact source locators, and the distinction between original prompts and adapted templates in installed copies.
+- Prompt/catalog provenance does not become generated-asset provenance. A rendered prompt still needs a new job source lane, source artifacts, QA, and approval state.
+- Native-grid recovery carries separate notices for the Sprite Fusion-derived algorithm family and the chongdashu pipeline explanation. Recovery does not repair unknown ownership or upgrade `reference-only`/`source-candidate` inputs.
+- Motion-reference video and decoded frames remain `reference-only` unless a later authored output independently passes the production workflow. Preserve source hash and selected-cycle metadata.
+- Atlas assembly preserves the approval status of hash-matching approved inputs; it cannot create or infer approval.
+
 ## Mahiro project cautions
 
 - Traymori/Mori production source art has stricter rules: Codex should not invent Mori production source art by default. Use Codex for extraction, slicing, QA, and integration unless Mahiro explicitly asks for a Codex source candidate.

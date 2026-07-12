@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "notice": "These reusable parameterized templates are adaptations. Their rendered text is not claimed to be byte-equal to any original catalog prompt.",
+  "templates": [
+    {
+      "id": "humanoid-character",
+      "description": "Reusable isolated full-body character prompt.",
+      "parameters": {
+        "subject": {
+          "required": true
+        },
+        "style": {
+          "required": false,
+          "default": "crisp 32-bit fantasy RPG pixel-art rendering"
+        },
+        "chromaKey": {
+          "required": false,
+          "default": "#00ff00"
+        }
+      },
+      "body": "Create a single full-body pixel-art character asset: {subject}, centered idle-animation-ready stance, clear feet contact, readable silhouette, transparent background preferred, {style}, no scenery, no readable text, no logo, no watermark. If transparency is unavailable, use a perfectly flat solid {chromaKey} chroma-key background with no shadows, gradients, texture, floor plane, or lighting variation."
+    },
+    {
+      "id": "monster-character",
+      "description": "Reusable isolated monster or creature prompt.",
+      "parameters": {
+        "subject": {
+          "required": true
+        },
+        "style": {
+          "required": false,
+          "default": "crisp 32-bit fantasy RPG pixel-art rendering"
+        },
+        "chromaKey": {
+          "required": false,
+          "default": "#00ff00"
+        }
+      },
+      "body": "Create a single full-body pixel-art monster asset: {subject}, centered idle-animation-ready pose, clear readable silhouette, transparent background preferred, {style}, no scenery, no readable text, no logo, no watermark. If transparency is unavailable, use a perfectly flat solid {chromaKey} chroma-key background with no shadows, gradients, texture, floor plane, or lighting variation."
+    },
+    {
+      "id": "monster-girl-character",
+      "description": "Reusable family-friendly two-head-tall monster girl prompt.",
+      "parameters": {
+        "subject": {
+          "required": true
+        },
+        "chromaKey": {
+          "required": false,
+          "default": "#00ff00"
+        }
+      },
+      "body": "Create a single full-body pixel-art character asset: a cute two-head-tall chibi {subject}, compact readable silhouette, centered idle-animation-ready stance, transparent background preferred, crisp 32-bit fantasy RPG pixel-art rendering, family-friendly design, no scenery, no readable text, no logo, no watermark. Keep the entire character fully inside the image with comfortable transparent padding. If transparency is unavailable, use a perfectly flat solid {chromaKey} chroma-key background with no shadows, gradients, texture, floor plane, or lighting variation."
+    },
+    {
+      "id": "isolated-prop",
+      "description": "Reusable isolated pixel-art prop prompt.",
+      "parameters": {
+        "subject": {
+          "required": true
+        },
+        "chromaKey": {
+          "required": false,
+          "default": "#00ff00"
+        }
+      },
+      "body": "Create a pixel-art game prop asset: {subject}, isolated object, transparent background preferred, crisp readable composition, no scenery, no readable text, no logo, no watermark. If transparency is unavailable, use a perfectly flat solid {chromaKey} chroma-key background with no shadows, gradients, texture, floor plane, or lighting variation."
+    },
+    {
+      "id": "environment-tile",
+      "description": "Reusable isolated environment tile prompt.",
+      "parameters": {
+        "subject": {
+          "required": true
+        },
+        "perspective": {
+          "required": false,
+          "default": "top-down three-quarter RPG perspective"
+        },
+        "chromaKey": {
+          "required": false,
+          "default": "#00ff00"
+        }
+      },
+      "body": "Create a pixel-art environment tile concept: {subject}, {perspective}, tile edges clearly visible, transparent background outside the tile footprint preferred, no characters, no readable text, no logo, no watermark. If transparency is unavailable, use a perfectly flat solid {chromaKey} chroma-key background outside the tile footprint only."
+    }
+  ]
+}

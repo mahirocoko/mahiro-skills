@@ -2,6 +2,8 @@
 
 Source analyzed: `dreiachse-cyber/image-cockpit-for-codex-workflows` (`src/App.tsx`, `server/index.ts`, README, smoke scripts).
 
+Current pinned follow-up: `b997e78609773975a98617568818ac32f40cf1a7` (`v0.1.5`). The bundled prompt catalog includes all 107 app-visible examples: 101 Markdown-backed entries plus six legacy inline examples. Full MIT text and source locators ship with the skill.
+
 ## Core model
 
 Image Cockpit does not treat sprite work as a single prompt. It builds a structured handoff job:
@@ -121,6 +123,10 @@ Tournament behavior:
 
 Portable lesson: for hard animation sprite jobs, run parallel bounded candidates, keep candidate outputs isolated, score/QA them, then promote only one winner.
 
+The v0.1.5 publication path also preserves normalized `spriteContext.action` in direction-split/tournament winner manifests. Canonical manifests therefore keep action identity separate from runtime states and preserve it through promotion.
+
+The release distinguishes 100 requested animation slots from 80 unique generated jobs because some artifacts intentionally serve multiple slots. Canonical batch rollups similarly report requested coverage, delivered slots, unique source IDs, and reuse rather than inflating output counts.
+
 ## Effect Animation
 
 UI fields:
@@ -182,6 +188,8 @@ Effect output contract:
 ## Pair with asset cleanup
 
 Use `asset-cleanup.md` after generation when Image Cockpit-style outputs return checkerboard, matte, chroma spill, oversized sheets, or candidate artifacts that need runtime-safe cleanup and QA previews.
+
+Image Cockpit's moderate/severe interior-alpha-hole thresholds are useful evidence but resolution-dependent. Canonical QA normalizes enclosed-hole area against body bounds, warns by default, and requires visual review for intentional gaps; strict alpha failure is explicit.
 
 ## Portable CLI equivalent
 

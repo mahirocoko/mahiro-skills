@@ -50,9 +50,13 @@ python3 ~/.letta/skills/sprite-workflow/scripts/extract-chroma-sheet.py \
   --json
 ```
 
-## Fallbacks
+## Grid extraction and failures
 
-If `component-x-runs` fails to find exactly the requested frame count, fall back to fixed slicing and report the failure. Do not silently call a fallback production-ready.
+Fixed slicing supports explicit two-dimensional grids with `--source-layout grid --source-columns N --source-rows N`; output order is always row-major. `component-grid` partitions the source by those nominal cell bounds before choosing bodies. Each populated cell must contain exactly one body that passes the derived (2% of cell area) or explicit `--component-min-body-area` threshold and `--component-center-confidence` gate. Uneven body sizes are valid; global-largest selection is not used.
+
+Detached FX is assigned only to the cell containing its center. It may cross that boundary only by the explicit `--component-overflow-distance`; crops are clamped to the nominal cell plus that allowance. A missing or ambiguous body, a large competitor, or a component crossing farther into another cell rejects the entire recovery. Component recovery fails closed and never silently falls back to fixed slicing. Run a separate, explicit fixed-grid command only after reviewing and recording the failure.
+
+Extraction and comparison output directories must be absent or empty, and artifact name options accept basenames only. This prevents stale files and path traversal from being mistaken for the current result.
 
 If edge-connected cleanup leaves colored matte on semi-transparent edges, mark the output as draft and either regenerate with a stricter flat key or do targeted defringe/manual cleanup.
 

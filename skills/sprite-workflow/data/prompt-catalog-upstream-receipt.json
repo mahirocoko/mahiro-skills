@@ -1,0 +1,1306 @@
+{
+  "catalogSha256": "fece2d29e25722b5baf2160676bd665d940bbfc314f5462c9d278f421d1d67c1",
+  "collectionCounts": {
+    "basic-character": 21,
+    "legacy-inline": 6,
+    "monster": 30,
+    "monster-girl": 20,
+    "profession-character": 30
+  },
+  "entries": [
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "208cb40d82cca607ba6fd77831968408d53a72794bbd4f29460b0a0f38f926c0",
+        "sourceHeading": "4b8ab424f8ac7d920cb9faf306a82fcdf4ff932f17b87a396c2149879da783fc",
+        "sourceLocator": "f7b2fa8b4bb0a13c22113cd58b077df013680a1ed8cbd0134cb9d6d144201f2e",
+        "title": "e17a2d2b32bcc68ba88d280a25d3ea8fda3c7c121e11f2157475dd43da1defb5"
+      },
+      "id": "basic-boy-adventurer",
+      "sha256": "a045748bb429a8dfc66580c7b6f24e3f4102776b420f9a3f6936554221256ce5"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "d9b270e23bb6f938ca903f1eec4191b04b6ce29cea1f7a3a6b566c4f589f612e",
+        "sourceHeading": "1e6c1f6dc5702f0e413cd8e8245b8afd6165d05b828e1e3760e26d2372619d93",
+        "sourceLocator": "ef1b8cb3c61271aeb7ce3f796953f26ff012b31d1f678a5ee8ac181781194fd5",
+        "title": "7d3c2ba5af5ca461fa4001a7b7d5562ad5ce742d462c19747b09903f395319da"
+      },
+      "id": "basic-girl-adventurer",
+      "sha256": "222bd9179d2a52b6e680f651172ad8f8d7332b55776839a08b2fefa9b6f41e91"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "d8ecb77e27c5e17b03f60f5bc693b6eeda603916f88e9e3bcb30f0ec510812e0",
+        "sourceHeading": "4977854d861260c16c0031cb353e3a667e57d49e34ee96589c31e0156c468b5d",
+        "sourceLocator": "ab5085f3878f9c255f76ade10bdc635dc5bf08858a3763c1481912ac374b6889",
+        "title": "2200f2b2d7f074ba7f9584331b3276bc48b9c367bb52fbe845a8f29d2d524363"
+      },
+      "id": "basic-young-male-hero",
+      "sha256": "8141ac465892416dba656cf4ad3166d230ca7ecaf11839070a0d84ea927da1b5"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "75c6836acb8e1bd116849e67d752bf1f4689f4495737b9caeffbd412c7ce34c7",
+        "sourceHeading": "bd8e01ab659932fbe22925a0b3b6bb44436b199d56be854dff63293fd4dd364e",
+        "sourceLocator": "e3109a741afc2b93e8a6b9fd27bd244e3970da0dad2b204d9765face4df67530",
+        "title": "893737ef1ce1417e1a513bbd75aa8116436f9b8ed5a3bd1a106e0fa6c908bbef"
+      },
+      "id": "basic-young-female-hero",
+      "sha256": "69b54b1f7fd7205780dcbfcd07f9c12c75d869e548cda2452f9b3c31d0408e10"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "f8615c27955ebd60cf653b192b113237eee896202066b9d7d024c3fe4364d54e",
+        "sourceHeading": "faa8534a059f9dadd3106049e954d6b8b800df2fa6544f0b7df22ea4f9f36c9c",
+        "sourceLocator": "d80fd10331e0cca7cd405d147a9f5b9616e4a17f97492eb45061f0cd614405d4",
+        "title": "aa144b7dac6c1a98ae8c7c0a78e61d3088919ed98f2aa10d589346d2d70fac47"
+      },
+      "id": "basic-middle-aged-male-mercenary",
+      "sha256": "e8ffcd7176f7babbd415ed0daa29e5da503cda43bb89fe10f7451973c512dcfb"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "336d78d78cd1cfd4da79d79839821d25696c4083697e4114a9a413ceb34147ac",
+        "sourceHeading": "39be3e8845792a251a31118c8deeca4ee4b509184db5292f7b27cec3ea4f408c",
+        "sourceLocator": "c4d4731e6028d5f54199406251ff37d501286a49edc96cda185027ead2db7427",
+        "title": "4c71c1b1b6b66810d233ec11039a2dd195ace916537056faa47f4447592b49e7"
+      },
+      "id": "basic-middle-aged-female-ranger",
+      "sha256": "a682b829aa3b9d6da827e3ff7f53b7c6db86cd46b8ffa149b12fda55d0a1453e"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "c3125640e17ad622d47b62d05e19af451594c4b67ff16cdcbe6afcad4348c76c",
+        "sourceHeading": "c6c3e566c818e6e99675369afd2ff326799377bac7e1a228810f34d202c49526",
+        "sourceLocator": "6fb534e317cf7145ce069f11ff8ead1f81688aeb19e68afb1508cc139762ca7b",
+        "title": "0959ff8e769ada2d13a12ee0f25895c39f71ab13d4ee611515af0ccd890cdd09"
+      },
+      "id": "basic-elder-male-sage",
+      "sha256": "2cfb4c5a27b83657ea3e49a36ab02f2f02c99154dd6012a84e61f2b72c9f4282"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "493feae7947561b03d9d7928f0d26a71ec35547488fe46f32c4d888d4870b92f",
+        "sourceHeading": "ceed72625236233525a8e40f86273402ad6c6cba2a09b2d4b6425a2c18b8cf97",
+        "sourceLocator": "025e000ced65f95cfdf990d736c9f66a7eade3134e038ab8f95a180705fcf5cc",
+        "title": "52deb57f7d79e991cf9e7d6e6af14fba03f69a82104a69e89929bf27663aea82"
+      },
+      "id": "basic-elder-female-herbalist",
+      "sha256": "2c7bc245b2e40db43cead9ceb7dcc3c1397192e2492de776f95c0052615489a6"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "5922806ff9cab25b7649ab73e665d5d30f1bececcaa21e508d1687a69b552ac1",
+        "sourceHeading": "957d10b3630551c91f547f812837d755513ed85a1734ceb307b7b3583ee466c5",
+        "sourceLocator": "f5655f9ef56af748413ce4fbed395fdaf6da16c13d829c3987b83ec15d44e538",
+        "title": "8c20b889e0219f3c9656ff71e8a3d946a5fe714f7d9eccf6b0caa708a0aafc0b"
+      },
+      "id": "basic-androgynous-traveler",
+      "sha256": "98d255939788aa8459ce9a44aad1524c0d1b33a7b9a2b271db024a44405a6833"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "e226f3e49556c293079a38de083ebfb34e4deca44e8612a07173df94f8699561",
+        "sourceHeading": "55dd3ad7d09858cb300718e985046bafa0bfeb7cd218a2d70687cf5b35c9e3ea",
+        "sourceLocator": "a00179aaa3701078a12f257c4e4dc19f3ab30158c29ac966fe60903294af0afe",
+        "title": "8c601e65ec9e123adfa3ccc29f353d2639d0d12caab0ae3a02874576b569aee4"
+      },
+      "id": "basic-small-village-child",
+      "sha256": "7e10ee9722dcea7d5f4d1d91055ee31c829f7bfe5960c1b292202bf3689c5fcc"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "9df3a1ecbb194f902879f285b6956979d61dbe94a42466cb4302abd6927d1fb3",
+        "sourceHeading": "1bcc8f5f3cab4b97ed59a8dce784df18f054988d30d8b1faf655b99730ec32e6",
+        "sourceLocator": "1f589526b54a4a0ccefd629485d48e300ec696edfea03339369cbdf170a8b44f",
+        "title": "b4b3737a81545b78cd1fe081813f01563f28c1f6a63958e6a50f9cbf41b5f227"
+      },
+      "id": "basic-large-veteran-warrior",
+      "sha256": "e9e13c154e39d60df49b85d631b944a425a465d610231d638cda81847150e0b2"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "be629985153c227087d253a0c7c6389c7eedc2ebde69e83f6b31d50d2ee44244",
+        "sourceHeading": "db4694f1398abc1dc710edb904a0d24a973c38ae2689d12d00729cae82a061b0",
+        "sourceLocator": "20252cbbf9725c2827f0688616cff59b61c5e93accee08a108c5251e6bbc1128",
+        "title": "4c2a94ecbaa85fde86eadd5bb9b87707ad18e4a1a3f00f781eb0a4aba03b4a16"
+      },
+      "id": "basic-hooded-mysterious-figure",
+      "sha256": "9a3db8029ac85ac6b72d5d1fb027f04658b6b617cc3445afcf10b99a08ced93a"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "6fd7461ee9a924bbbffb9d1f8e6282a8bcf87272228655f493269d6c609362f5",
+        "sourceHeading": "1bbec31ddd9d628a2308bad8e39b3bccedf1736651ab4c1a27e3dab2cb24bc09",
+        "sourceLocator": "cb5355ce7eac1d236c633965673ec5eef16084fd155f4f56c51a2dc455cf487a",
+        "title": "24240e9c71a139d92a08062b8fc7fb0f9593512bdf1e067b03b2caa2edbb9cad"
+      },
+      "id": "basic-two-head-chibi-knight",
+      "sha256": "b5344e0bf12f049e042f22a961399cead2afb123d0d0c85976830d9c7ec8e134"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "2d63f2c2695062db5877f2ae9f6dde612f09b182527b07ddd59f4a5f32feb13d",
+        "sourceHeading": "3d63e5e4c73cc8040cd296ed32e4fcc0f0beab42c2705875b40f9bec701259a7",
+        "sourceLocator": "8ac51816033125f26bbcfd8c28fa86199dc6cd5b295315e942c2f2075c6b227e",
+        "title": "0bc9ada1e7382d293deecf5233f10eb38df4653ef99130c9b3174bd1343fc98e"
+      },
+      "id": "basic-two-head-chibi-mage",
+      "sha256": "6ffb37314a4c5e47b1e0efc49b9d8f1a8819684c3f24e54f2559163f08bb33b9"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "b0fd0122898ac38e52ae62d6194d3a4e64a96c5eae9177750b571cc45c9cc064",
+        "sourceHeading": "47147d70e4f80bd2412ead7b6524e2b80b5cee1b9eac8bb2e323035e3e3a86dd",
+        "sourceLocator": "5606833567071ed5e69b37a3acf13bceaeb84b341471d33208bd64282c14f778",
+        "title": "9e1cdc04ddbf14ebfb9ebdc30fefe41c55d47ff301c9d28f7cbe0e2903690b4c"
+      },
+      "id": "basic-two-head-chibi-archer",
+      "sha256": "6e010ec0ff3224e07fa151854bed5028e572a9e71ad0a5d261ce636cacdcbc7d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "53787c19f8bc273b5faba0ff91cecc6441db8baae8d093563cbeed5c631e1579",
+        "sourceHeading": "6c33135dc797fc2bb87c2fda9895a5d1a69952b6a72b24b882c2e16e0619225f",
+        "sourceLocator": "ae5ac3ebd24b99321450a2190f081d3dd48dd8884edd3d924dd7aa1374bcea2e",
+        "title": "d053bec9522366c11d3eb0c5205da50c2c90d03351a3e3bc5b4f01f0a5464256"
+      },
+      "id": "basic-two-head-chibi-healer",
+      "sha256": "2a62388af7946ba649e05ef6dbf02596518297572b04a437d18c4b2df15ebae5"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "e4c5c239366c2f4f34c16a14f5abbb801ec51b8bb0a18fb8910730e93301b8ad",
+        "sourceHeading": "2989f4f5ecf78e73da51d44dd4363e8b0276d25414fa595ca5f4e431e5301d31",
+        "sourceLocator": "00983bebfa38a1ca0961178715542f4b26c08d80862acd5c4c14eade4b94d4b0",
+        "title": "24701007ef5f6ca5581a111517cbfabdb475bfa3ae1ac4e134668e778c235930"
+      },
+      "id": "basic-two-head-chibi-ninja",
+      "sha256": "b33eedf2a4bdf7412729382a57254f97355b421a81367950dddf78d8a0160997"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "42b21fe2b5720c4610f1ef3beb5d7b53e72dd9d849079b6b402ffd760b805688",
+        "sourceHeading": "0a358bd90161c3eb10e55d3ccba462667fff94ead7284c5125cdc1d5b4fdd759",
+        "sourceLocator": "4857c5559507a0bfe868f6236ff6a304e1973607aff0835623be89f1794a7f85",
+        "title": "e6087f9254e7284080cff4db2e2620bfb5764cf9f0bae3de56f545a3677c2df4"
+      },
+      "id": "basic-two-head-chibi-alchemist",
+      "sha256": "d955e90efd80c1857e179e4666031b8d6799a896e4e9c97287c35b894057d5c3"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "3b41e6ace31bcbc10256be8af0714e140e45dd76672a82d9e88155dbf66b5839",
+        "sourceHeading": "e6327c1abf7bcc6b877cc052edb73b4301e7a77214466fc54dff7c9a321ef50e",
+        "sourceLocator": "d479011f3ab0184fa14dcbdc1dc012432183ca1b7aa72327ff44eeec6fba4042",
+        "title": "37765fc6960b222cba75b58b1401ccc68dfb0219e2766f494bf727b023319988"
+      },
+      "id": "basic-two-head-chibi-pirate",
+      "sha256": "6007abf477c7994563065faeb65e55da2cf9f774dbc267e26a783937cc4cfbb3"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "eae3cec6826d18866393c8901113d672a2cf7e5e6c8836eab3c4c26afda5b6a6",
+        "sourceHeading": "be3194a8e4638f3273659b44e9d46e206fd7785171bd44905b7fb6cdda3a94ee",
+        "sourceLocator": "8bfbd6fa5d3f613a9727dc6fdc60a5dc8b66fa90ba79d7a574e5d9e005e80860",
+        "title": "752ba9a7273d70df77dba7a97c2aa8f06eba57a8c77ce17b33f0ba7dbcab75ba"
+      },
+      "id": "basic-two-head-chibi-robot",
+      "sha256": "f2bff3f4206357c7c6cc628b4cd826a2a9d5808570fd5cfde52331d5bd43063f"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "1fb4f1cce7beb5c8758b0084b82a8ad57322b21f79e415073a50cdefa1b4ced0",
+        "positivePrompt": "eea0b8218e201c10014cf2292df148fecb04888310e79db952ee268b1d7d5a74",
+        "sourceHeading": "7eb567c1acadf7a4d6622ce07d8a958afdc5b1b4de573a9a93188c7e8ab993a3",
+        "sourceLocator": "9b3676411167b0f3ab8215360e399877da1248426bae280486e8489214326aa3",
+        "title": "5931fb482d2a1705d80dc8990f8a9bce65174ad504c0a3144a37f5e4efb7b1de"
+      },
+      "id": "basic-two-head-chibi-dragon-tamer",
+      "sha256": "5f1c32e80d2eab3d3c224cb81fb9f6c8700268608489bee468495006bcbbd4ea"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "1995e6c546fd637d44b43680820a59c43f5b2b20f5a461e69c3750d3f32883f0",
+        "sourceHeading": "3f44e2534ccf6c2328120d738dbabaead0c893ed4a10277c5ba2135e9afb16e1",
+        "sourceLocator": "eacd390bca5d03d2f32c292ee7a8db3b27bfd560bac87e4db18638ba5f06ef7e",
+        "title": "d3cbbc424a4198632dd259f210f1a89164beba4e504d59db3dab43f2c12912f7"
+      },
+      "id": "profession-boy-warrior-apprentice",
+      "sha256": "5a2fbb65dc9902c5320fe1becf75dd1f7c4016bd4aa0a0c526174fa0c9abd735"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "3af7535f3a953bf8f31225c397a7a8cb087e7223ed3361ccc20ebf582915ca37",
+        "sourceHeading": "dda13fff835bad841927ce7e050307bd890d452b275c3759da37cd99a6ef3b1a",
+        "sourceLocator": "5a7f45749b19b2ae8c3b5aea8487e714f166c5cce593de6fecfbdd75d74704de",
+        "title": "76dc1a3ff7cef4af12ac6127616265164806d5a10d4e536e34db68f53eaaef68"
+      },
+      "id": "profession-girl-knight-apprentice",
+      "sha256": "ae98c112b823eb9f48ad89f5c4debaf254fe29c01241b9641dafa654b7192701"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "31d164c2c7355025c452cbd1dafaec05e8934f49425af85e0a7e9fa99811f779",
+        "sourceHeading": "cd4a6680b3dc93fefa5fd486e0dde2081862581909ebc34942f1743472772f13",
+        "sourceLocator": "478443c2ac7d3aa2e54d84083482374fa922ded00a5f21b38bb0674325ae6c48",
+        "title": "65dd992281c4ff1a6999248e4026320c51d1a82ee1f35974a554760deb03e32b"
+      },
+      "id": "profession-young-male-sword-fighter",
+      "sha256": "905c79706eaa37bbfad5b149374feb1ccd413ffe3a1d06a263a077275aebe6d6"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "6f7459ce35866f015cf12c9fe560ddf6b1f3b9f044f20aa683f8d9dd405599d2",
+        "sourceHeading": "0133ec02191d0789b46ebf5bc1639c7a2db32b5a8394b5e0b5099c3ae3501004",
+        "sourceLocator": "1815cb4d325a03ede8a3f62c019ef5673fd2e3dc06fb213bb8415b27ea062113",
+        "title": "fdd410d826c4ec9a323b484e4e151926666eab3011d8f603ef9bd3ba7704d2d4"
+      },
+      "id": "profession-young-female-shield-guardian",
+      "sha256": "8a527dc39fafe075fd24c726cd1c733bb7ba36f705e37d94b2ccbed8b926e06a"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "c1b0e14c20fe1557da39a0f4bb1d71043a295195e3673b1dc77bf0034441176a",
+        "sourceHeading": "ce7ecf18c39ede20e5853402bdab571a5ef1df400eadc7f156528ed83682f6f1",
+        "sourceLocator": "10367e8cda2dfac1a9f83e84170cb91cbacc7b5820d984d311fded63931243f5",
+        "title": "e534939d82be9c9864246541e85a42df6e2c6e3800f161dfc7da02d565bd64c7"
+      },
+      "id": "profession-middle-aged-male-axeman",
+      "sha256": "aa8b9f88198fb042533afc8fb13804a9b509127c855557b4572a414915afefb7"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "b10a2bbc755fda5984a9841ee13914a153bbeda476e5ebfe56053029c4b660a0",
+        "sourceHeading": "5ed5a4b9bbf2e1f65f863f22e03c473d302d53db6c6e38df9910b09bc09a55ec",
+        "sourceLocator": "a5640d6cf6f95af9596b641b73e411c1fe06fbb7273694d7fd56dd60703f7370",
+        "title": "6323bf317c71eea0b5df0e3638175405b990ad8d8a70f115ab7c6c2b2645bf2b"
+      },
+      "id": "profession-middle-aged-female-spear-fighter",
+      "sha256": "61d3241ea763de9fc80d60f773c66de90af0f9a6899d3a03c53a17c4a509997c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "c27e3a660139e1c3190eb87efda9f4760a4eaff50694a4c4fbca3f86994d3111",
+        "sourceHeading": "8ad412fffa121dae6b4be6817d3e7ed710014b01df91872f10e913cbc27e3638",
+        "sourceLocator": "5a228f774170c9a0d9e3f9b503f30ae1a1c86632e65d850e502f59e33a11d5ca",
+        "title": "ed4283f64710b991f56414a3f27aa423a433264d6fead50891237388bddb7730"
+      },
+      "id": "profession-elder-male-archer",
+      "sha256": "3e8e8fb8918bb3a91d00c424416d3f7eed66611ffd91e0497963bb122d2fc8f0"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "a3a451ce386c2e251130e6aeab029a4ce6c0ee0e1c5f7583b0182226a7bc257d",
+        "sourceHeading": "8ab2fde3b598ea91d42a041778d73d2faae8bc5e011a592ef0ebecee319ec04f",
+        "sourceLocator": "de7e0621c25654c672a307de97f139a2e8a5d22ded54134630db6f8b2d90b8a5",
+        "title": "bb354e827ccb3689a45259cdab5f3b80a200d437a8cd8c804633a64b87b3f6bd"
+      },
+      "id": "profession-elder-female-ranger",
+      "sha256": "42cca488f3b28cc63c7587797e5051acc7a102ec5ec537ad710e4e8e63b0ed53"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "fa312fd4035ffc192a0c17f73d89fedf6409208d4b7696bc878751bb155b40bd",
+        "sourceHeading": "76443ea0cb07ce636527ef5eee9ea683cd9f9bfe8e57a2564788ad40bd2cf3c7",
+        "sourceLocator": "9164e93ae8c19a1ba1025050b642640e6b03022232634ff80b02007e862a302a",
+        "title": "62d7d337773e313811c79e89ea8800641be5faca530a50ad5071263b6718dfbd"
+      },
+      "id": "profession-young-male-thief",
+      "sha256": "e91de58749a52e5a15ba24af46822f24f77e1461a309f15efbbb0c113843e0ea"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "58cba458b6a023e9e05883fe6895245331c34a21e9e7850770ca43e8598ebaca",
+        "sourceHeading": "79749dddfc355beb3006010f4e0300700a2fedc73853b4637f3d3cbb3effa87f",
+        "sourceLocator": "7689cc9bab4e628ec8bd8e923da422eaf1056bd11c68e1c76308dc139380074e",
+        "title": "6a465fe8c4997cda57d8b658f889d165f8683fa9967df620238bded55ba5f96b"
+      },
+      "id": "profession-young-female-ninja",
+      "sha256": "05799660aaa33cea832966e07c3ea7cf8d52cdd43d4165c18a25fe1ddffec35d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "c914327a3da62ed5856071a0019f861d1e70d7f4b90d1ba30ccf06d706fa6d88",
+        "sourceHeading": "69d19f02e2c353aebecd7b8b7e2d42477f22351c3504a92016eea4de4c7bb26e",
+        "sourceLocator": "932f369ee4ee5fa055678faf6248d15b4268bc33e1b045ce5f97a45e87f8e7a1",
+        "title": "cacd3ffdbe746ede6beec276892df692d833ed2570cb885e939a5c188165acba"
+      },
+      "id": "profession-elder-male-samurai-master",
+      "sha256": "e86ead12da4ff77555270f759da967ec99039625544e71fa103d27921469ae8d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "119da7ea31a08b7de15b1764f4da3188077be6f7c865db19da74016d673e085f",
+        "sourceHeading": "40b55a64fce78ab15c8e8faf94a2783b31c1b4b09148003eaa41520230a8b668",
+        "sourceLocator": "cbbb83a2aa5ce9287fd271d34f6497054fcd85c3b0acedcf50a960541033db3e",
+        "title": "448da7f2f6eeb8c6865f9068a1cd06e9e62882465b9ee4c7a7f997c4393250ac"
+      },
+      "id": "profession-elder-female-martial-artist",
+      "sha256": "d92c11cd10d0feaba89785db0b2d579dd8fa5123e0d9385ff04bfcb06822e424"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "a3ca2b2e9100e6c9fa40795c22a305071bf83080bf209668312dfabe69bc1bf2",
+        "sourceHeading": "b0de9ffa3269552a1e693f36afcea7afddd3176c3e8b81ce523d108e9eb195d9",
+        "sourceLocator": "f262bd4055ba0c04de6ea2c2dea67cc7c8876d7b94dc5a84f831d07c8b421e00",
+        "title": "bda16f752007f2d3fd972d1371c14428d234ccf0819f3682eb5dfed696206d7e"
+      },
+      "id": "profession-boy-mage-apprentice",
+      "sha256": "14910182d744e291135a40ff0fc0cfff047d38e99bc587904ee4b9b617d85356"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "b0d8f35ae9804444bcb0e3273fefe9960189e9c1f99b8695ecfff6766b5d066b",
+        "sourceHeading": "cd136da9ebcd7c0d790a383946e529c9be036aec2d752de1017159a38ee4a3e5",
+        "sourceLocator": "8f5283274e537eada3794bc54dc56e0bd919b1792a42c712d79ae615d84685ac",
+        "title": "dc17e5e708ea8dec71e54922d0809ed0d179b3fa311d1cd44628a856ac5b9635"
+      },
+      "id": "profession-girl-healer-apprentice",
+      "sha256": "a7f7c87a24ce31f8acd5b141fc9affa8dc9f857d4c81423165f3c13c363af7da"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "62eb8fbf55d8f48d120cbae37d714cd650932a5dd3b0d5cdd019d2949df8a27f",
+        "sourceHeading": "b8e1d519aa6fde1e9b2cc2829e93f007b84000cb31fa860e1167b52f1fac0884",
+        "sourceLocator": "d899072d542111b31d29d0d87a8c436058a3c12e9de568c0f544e49faffa2213",
+        "title": "ab0ee3da3980fd4a9a6d994b09bed78d11aaec219ce9b6776df82aebd3866852"
+      },
+      "id": "profession-young-male-priest",
+      "sha256": "e60ab5d53c1c943dc563351cac4ca214c1e3a6b000cf744ab53df1d08297d6bc"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "81fa6f0b69437ffd4fed329863208aa1a239eb3453a45c76387d59aa2daea320",
+        "sourceHeading": "261865bb3c7e420c3b147dd7874b8a61ac10936b13d2c1e8d6a5d3d293af0652",
+        "sourceLocator": "e81bae9d16f08c68b5c6414e34c0abceea468582f937eb71223c80f6f112f92f",
+        "title": "1fcd61a7772eaf4d64484c6608749e8937183c0f7d084c2e109fc8e80f1b4061"
+      },
+      "id": "profession-young-female-witch",
+      "sha256": "1a23c0ba3b71c2abd9bb73c3dab51bda97bce5cb61ca729c0f4f75d35fc3bdc3"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "e570020b64c3985ceb1ea69165ca616a3b424dbc218c9010c406198a4ef67eb7",
+        "sourceHeading": "4f204707b20e98d50456742f9bb76316a5315f0535ea738c625fe80802fddc86",
+        "sourceLocator": "c67f5747896affc44d1442b71bfe4c3b363811b4e11cf4447b52c8f167f29110",
+        "title": "aec232fded73a9932ca88ed04c6397acc77e465d997c0125ba5f86941e55408c"
+      },
+      "id": "profession-middle-aged-male-summoner",
+      "sha256": "7aa54bdf3d16ebaa6f7c303e87e354bc89e17e7481a0c1fc87bc805fef9cd35d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "f2d9db1989b97aca58a8f661c5793e56f7428a3430d05a00f4c0c22d29645f8a",
+        "sourceHeading": "2502b448db24762ca02af2831b189df20df0fa38c2bfadded25918ea666394f4",
+        "sourceLocator": "14b98fe287cea2eca18bd966322cafedacae03c22eab8bc0fa75ada973a6c718",
+        "title": "3357e42f79695bccd6f4fa9fd07d624984cbe12a5bd4215e06ccaa3ea17e115b"
+      },
+      "id": "profession-middle-aged-female-alchemist",
+      "sha256": "7fcbe97ab3942880ec8120eb3fb9a347d0affcf249dbe8c48d4307f67b44ffab"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "830bf34a8685ca6cac582c43e8421694f695dcfc23169481e807ac7236220c4e",
+        "sourceHeading": "423a797a8e0672c7a442b2432526a6db851dbf5b50fbd7df211b1db199287616",
+        "sourceLocator": "8009310cf783e72b6b78a411327300e0dbc8029122005657bb7b917dc4343b97",
+        "title": "691d7c9aa4dad918b439acdc34c958d660fc1b6f3a1ad2feae730a5c1274fac7"
+      },
+      "id": "profession-elder-male-scholar",
+      "sha256": "bc7bb4ec1eaf97e84c7e1d2ac7831083a8dedea82ffb9d1a91e6dff02a9e29c3"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "d6fb9dca7d70209fb1422285208b5b924c0d3472e03b5a6f1a1cb256121bf167",
+        "sourceHeading": "e051e3890824c167254b42eda0c248448caec3747d8d3f10b4fd4f8bcbd6b5c5",
+        "sourceLocator": "d45a458ba7dfe0f62d9cc143830174ea268f4c8615965e0ed49e42273a69c706",
+        "title": "79a099342576dda3d3b827cbab280394c331386acdb596b5d0c884aebca1a70b"
+      },
+      "id": "profession-elder-female-engineer",
+      "sha256": "0dbf48ff9607019e4e6db831ffcdca84ec0480431650162229eba9fde5b84330"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "be3602bfb83f22ab7793598302c1e0f5b6dc23739e0fd3f8c06006500d2c29ab",
+        "sourceHeading": "a069b741f8179c4305784c6372a1bbab91b9fadbd49c9768db7bc6d3e57ecc37",
+        "sourceLocator": "b3f83fb459f2710fa048a3f9b512227fe718c614030f1e2186e9ed00303e3c7a",
+        "title": "53cb5f13dd226fca62ca798d006404d9d5b1512b15eb78da4835f3e020033a7b"
+      },
+      "id": "profession-young-male-blacksmith",
+      "sha256": "1f71eed172bff2413ebe05fd42a99164618fcda9096757a654ca6b177480599c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "abcfa7cdc33268ea2ff3c43d80495003678c4cb930a5820494bdab630f17f5e7",
+        "sourceHeading": "356822ea7894ea21fb9418da92cec273e3076f0a939277a93a3d788fc6f7da0b",
+        "sourceLocator": "d5d9ee1ad8fbb44bba9232ebcc692eeb7991be403721552191a7105b141188fd",
+        "title": "d15f6ad1e45840c172a83f43fca19a9a3b7fb1d21c2744ca7b53cd96733b05ad"
+      },
+      "id": "profession-young-female-merchant",
+      "sha256": "d1acb2460246bd1fb7660375044eb243c0c4a07c651c9aac642ce702645ff412"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "3831a607609eb817192090de0af358955063433ee134334d31b1eef1cada03d9",
+        "sourceHeading": "3ba84d31f6cc347dec997175f3c31fd6b6e9825f34ea052e9feaa9553cfa8810",
+        "sourceLocator": "195e73b4f56f70ceac28284a28e423eba7fef1f4240244929434506bf64a856e",
+        "title": "ee5ea64470359251f7744aca2f91d4c32c55a0b4acbb381b3e4be938cb88de65"
+      },
+      "id": "profession-middle-aged-male-chef",
+      "sha256": "4f1cf276c7e72947860d2a03fedbea2b54f11b8927f222dd00cf801874d9ee4e"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "ca899d1b09a9d2903ffec9e0dafb5703eec6fd1abf900d9e694462ed8ffdca22",
+        "sourceHeading": "f562652e7b13de0aa1c6957324661c7d068fdad20afac2e0347c6c52024224ae",
+        "sourceLocator": "982b12b56d0bfff16dabdf75648c55e362ea916a7daf2db11ffbbc58c5d65e57",
+        "title": "5576a27ec9ff111457a6f12224c6e93243ee32090cb9a80b725f90942b365232"
+      },
+      "id": "profession-middle-aged-female-farmer",
+      "sha256": "88915243f0670fb3c66bf25c9071bc70dd448fc723304932a1725ca411d64adc"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "be894a3d2ee79499a48b171af6a745bf2299c6b439c73152f7e7b86327377949",
+        "sourceHeading": "8e64b679fde76a2c934ae08958a38dd088d6cc702b1175745828613f41da4424",
+        "sourceLocator": "c4e896d0d5954bb1ccf45b52f3ca926dce4dc154caf680e1ace26172ce37ec54",
+        "title": "c15df088ed4f7c135d387159268dad7a187d89a740318497a40f58969f1972c1"
+      },
+      "id": "profession-elder-male-miner",
+      "sha256": "7fdb319f6608d2c66842350480556a8bac44a95e2b5a10857c36db95aa3ef4bf"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "0ae264140b18ac34e2e7362c66b7a6c387fe5a04b81aba02d5250af01a0d78a1",
+        "sourceHeading": "6c8a2a7d82b2797d7f9e62fd3085e3084b1c972809f8092633e8f1d9142b66b6",
+        "sourceLocator": "db0226142d465d0d3803332149d3b125d653eecb03dc379210ea3f0eae1230fd",
+        "title": "085e3893cf49ee9f98ce097126b690e10994401a7030b2ce3c49bd4303bd2945"
+      },
+      "id": "profession-elder-female-sailor",
+      "sha256": "48feb915ddae6d4f803e046236ed24d73c580794c7dc33828d7565d7ad57e28f"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "7f854e014c76c109e6a6d937920fae47c51d45ce4d0de663f05e31e7e24f8c9d",
+        "sourceHeading": "c448310aae66343fd8fb8e5e797a158750fc0945ad477f17d0c4c7178761b2d4",
+        "sourceLocator": "c015f95986129ed35e3f0fb528bc79fb571c4e6ffbb7b0b3933ff82c03c4d708",
+        "title": "4ab44f50c7d982d483296a170d1201987d732d196f186b24b56c84961addc545"
+      },
+      "id": "profession-young-male-bard",
+      "sha256": "9106591b6fcc50aa861c4078b36884c3644b830c25941f483213577540e930c5"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "332b03455a03f73e04338943181d39cb1f756d856e52447bf447c3bd476fb9cd",
+        "sourceHeading": "4f9f45000b7b11a5930c672a3917a38728c5358137f7a12d97f849758ea83f07",
+        "sourceLocator": "7adc0595ce1c47603ba1d5cce10848571be137ef850a448e6162eb7c1d3ec972",
+        "title": "2f56184b9600cf20fc616e2377331f2f28c23537b5cd21cf449e4f9a65962071"
+      },
+      "id": "profession-young-female-beast-tamer",
+      "sha256": "3572d0bf3e72b30708c6257e36881431242601ec8de990504b896cbe33cd8ac5"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "9e9837ef2129a5d3e06e8974635c3d784a44fdf7268adebafd533419430d43ec",
+        "sourceHeading": "a375adfb876b76d526bb698d180a74b435431212ce7abe7b1ed42d8266b8a01f",
+        "sourceLocator": "57acf539bd12880ad05fc472db811eb8abab44814d332574677f4b81b6c394bd",
+        "title": "efb359ab8d041d472c639124a462d963b2b038f2882772c3ed154f909c1b58a2"
+      },
+      "id": "profession-middle-aged-male-royal-guard",
+      "sha256": "5b333d3d2de86a8cc4f8e30a62877d59fc180c677b018410430af70087228720"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "31fe91b7931c57786fe778705d165619e68521749ad2e156e517b73ff3af1b9d",
+        "notes": "76740a9d65b2a1ad7b8cd39f694e1ed3b02bd9a4f9e47b9c1a8a1fabc49efa02",
+        "positivePrompt": "a969cb7667c486f6737ffb44c82cc482ac987466dfca39ae733edfe20ce16679",
+        "sourceHeading": "d5ffee82634b47c5bf74fb9948225bac4e134c6b20c9ba62d1c0fa5eceb4da53",
+        "sourceLocator": "eb39eef4c6cdf73498e1cf4ba2205fdfc6b1c86e23cc2bffaea75b4632eb3bca",
+        "title": "ac551c54daeeb59cc0b4707e56c8851bf513585830ab68328510082ed94d9b4b"
+      },
+      "id": "profession-middle-aged-female-captain",
+      "sha256": "7b8f3ff163f3fd277349e9adf06d2c85a8c7da93df58ef1382985a692f139c4f"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "98d350da8fa35e40562d761ca7d98f010716f61ee3beb120cc6d94c3db36809d",
+        "sourceHeading": "fac59dde6a20b5bc8e7b69698ec1b112aef4f9f789a89371b9e699ca46157b48",
+        "sourceLocator": "87cdb4d43812b08d259b230b9cec783f2d2f5ff32d58b7551196a920c486e6e2",
+        "title": "449ab9cdab480df52139320d25226bd58e468886a7162413263aac1489dd2709"
+      },
+      "id": "monster-classic-green-slime",
+      "sha256": "766db3b38564cade0ac84cfdca93526b1b7bacb95a186177f3356aa1d899b774"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "d8a273f097a226259054d811f3cec931db775b715a4952facca450b11f88a20e",
+        "sourceHeading": "42131405ecb2d45f439e8588c727573f5c830eeeea98554ec484b38d67ae8dcd",
+        "sourceLocator": "268ad109e3a83718b1b800c360ecf10d7239c49455fecfdd1e26dfdcd1426753",
+        "title": "9b07523ede14efd9176a69f223e5391f47a476def3f7ba35fcca1c91f74160a5"
+      },
+      "id": "monster-ember-slime",
+      "sha256": "b7b64b7b9f1440276939abc266fa108c9605a88392bae6d52c089e7002d96abc"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "65c82aa8d953fdfeda542a82df2a16e8b562f8c42215c328493cda4517482af9",
+        "sourceHeading": "61ad29090d26bc4421bf706ec4ed47a403f06e1eb081c0c035a9d16ea1f2e652",
+        "sourceLocator": "db284618670f67c1eb632868232d1080410cc6e9a98041473d609ff486c0169c",
+        "title": "f6db820d8a27295b6e1bb6ad3db100e123dd7870b15794dd81272dd856f670d2"
+      },
+      "id": "monster-blue-water-slime",
+      "sha256": "40a7bd4367984780008cab7cf6a5bd07f751ff635d6971ef25516398c522814c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "ea982779660e98498a6a0b753045225355ba31f3f96e2493a59cf0e91544a076",
+        "sourceHeading": "59940bb6eb1ba8f6a562ca8b3caab5bc76f03de4af41f0149de63eed7741e15d",
+        "sourceLocator": "14a99946d22c409fd4edecf1752a04756baa92a68aa4ff87309b1c79c33444ac",
+        "title": "c290a5f64e386fce83cc9c11e048fe76fc01a9f146efaab1ce77b1ad446c21cb"
+      },
+      "id": "monster-clockwork-slime",
+      "sha256": "74b8a382ba800e9bc6a22438a8ff5cf1d7a33868b4efa598d59c5935f9c3b492"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "4b5136557dedc99e86da5197421592c0aa4f08f6ff9b35d7b2f9b9e3302fc051",
+        "sourceHeading": "27a9f010911b6b6310aaa3156d821501e82d109fcb279f3cb8df87892b6e45e2",
+        "sourceLocator": "37a43a28a6cf3d183bab2917b1f6dc9a38f7185245e77b43dbab630356d24ab5",
+        "title": "056ce7c322bbc532edea8053486a0aacae5ceda842423336c646e8b5082ef2a7"
+      },
+      "id": "monster-tiny-mushroom-monster",
+      "sha256": "3dc579c37c1be7748d02706595e306333b2f781313fbea7e10690e7dbb733852"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "19bb5d9453464cb1efe45617d250d8795052f9441b3dc6c6bb0bed58ab9117f3",
+        "sourceHeading": "9ae6d988c07e840bc5dddf69f5c7633f9b19a5c53a3ca3267788754fb6d48bba",
+        "sourceLocator": "a0220a630f322a7452a90a907d28958822fd2c6f6b165f900b6312c561841c71",
+        "title": "3a91824c741bc2e05993d1f5f604894add4785ee24e3148319369ff458bb1c3f"
+      },
+      "id": "monster-thorn-mushroom-monster",
+      "sha256": "6185cd96f5ee4b7e3ac73fd252babfe094707de4d5736ebc17eba7a9d9f16b0d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "d7d017209cd3f29de14175bda0a7b4406525eecf5943f32a1dd95990666d031f",
+        "sourceHeading": "159a510144372d7042ab39308cc0ae8430ae4c438014d57141469a8ce5d3b007",
+        "sourceLocator": "e492f9db6170df4b7b794d2ba1a27004394436d82970ad1321f80971f93ba562",
+        "title": "dd768f07ecebeb916af937f4a1bb12ef722ee021738d49e6408efa9e46bdfb29"
+      },
+      "id": "monster-goblin-scout",
+      "sha256": "dd6e6acbd64f213483179c1712989c8475021b16e56df5889fc9c63464df1044"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "dbb13bbbaf43a4aa894493093c4d14418f8d18e385ce77560602c9d7a39e0d17",
+        "sourceHeading": "6e01daedce57089945e29b02a58726774f18036016ac02518445992b6c6f6cf8",
+        "sourceLocator": "cb1ba47b008c14b475e77c20ac67ee9ae3eb34a4c705aa91a7d154a2e59ee8c4",
+        "title": "0f2272a0ffc89f48ee9439cb863f1b02e568d82e972db5075e959231c39bc1c4"
+      },
+      "id": "monster-kobold-miner",
+      "sha256": "e0c3840fbbb21de5eabc17dd048ed0930ec8c98ad382a74b85242cf254fcbbab"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "818f8fc00e25df9fe1ad7dbd70d46ba81e435321e4a91b86e603f97333294a49",
+        "sourceHeading": "a907b62a334b245d6179f3518ece3bdaa30d7e2eb882cd1f6995c50f70d8a67c",
+        "sourceLocator": "552f519567be0eb3125d21ecff206da3c583a59bc44d9858de15c37d0f7b4a59",
+        "title": "d44021d118eb850c216800397237e620c46f350c656ba0953fa9908c52991746"
+      },
+      "id": "monster-orc-brute",
+      "sha256": "41fded346bbb6fae4f78a07461f6810dd700b2299bb12a7e98c7b94faaafe907"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "3e579fb448c7bb54b5d7aecf336bb5499df91f86c7b6fbe01af4112f04f3ea4c",
+        "sourceHeading": "df0c6ec5b9931fe5a12832c4adf943e8c923c74f45aaad8b7428d705d1dd08b0",
+        "sourceLocator": "8f186a923620a410a4356296db7e84e9b43cb40dea47dbbb78af068e21a0338a",
+        "title": "0858bc20409f4d8104ed093c94d48491e0ac9d78ab3e7968d63b1b415272dbd8"
+      },
+      "id": "monster-lizardman-guard",
+      "sha256": "b0b023147e0a31635bf519dc5b1f7f347acf8a31b87ca1da6d820ce1231b39d3"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "f540c5bf72745a542cd4ee7edab5c5ff7f8a5d48a608bf0dcd9c55c43dc77ca3",
+        "sourceHeading": "bf8c2ae7c21fc5015e966c91f7165462d03bf64ba46c5dfdaa11cd3a72a827ab",
+        "sourceLocator": "63dbd694b38fa26f11e8b755bf6f10f2e4d10799776474e42f1a29659c6a939e",
+        "title": "48eeb65ae1e33c9503126d3f763c72937af5dccfbb09bc2b8288b76573837b4a"
+      },
+      "id": "monster-harpy-fledgling",
+      "sha256": "6c92eb9054427c19f6f664fa304ad9358590534d9d3fb36feb8d93b21f8a3e9e"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "c83a63b444e45f24893b59d0515bad19d2e0415f201ff7a8c0af722845301ad3",
+        "sourceHeading": "dd677be48ea5ce7760db28cc4f72daf2ec3f49b4fffdc4243966bdc5fb08c38b",
+        "sourceLocator": "84f00d93dc7878b858d9b5d83fc7300e160b663aa247f24d3cae66c2f4e46960",
+        "title": "6f6bd2509d82a5a2c2cffda13fe2f62b1f16be172b64ed7c2cb7b6a59f45bc89"
+      },
+      "id": "monster-young-minotaur",
+      "sha256": "ee187fc9b8abaf6eca17b729b245d44a02f4688abbdda34f5b62a4b8b6d72b34"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "2fd590fcb21869674240f07951bef26e00a9ea0b8359c2b443cd2f05eb569d44",
+        "sourceHeading": "bb488800de38bfdf31e5d94c588cc41dcb9c8cd1d1935bd6b9de52686b747ef2",
+        "sourceLocator": "a5879671303e36c356b08050984e207951dae231ff61a1f4e02bbe26e2461e25",
+        "title": "1a234744f50cea328de9be8e73ab3806aa5d7692a35f6574f13628e99911dc23"
+      },
+      "id": "monster-stone-golem",
+      "sha256": "215bbce1fe0d817dd34eda9c708eaafb3d750500a1c4f4c2ca52658bc4ea1874"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "d2dee8daff527dd93e6315fe01cd0ee5135d28a7c41b2eb01221db19eda84660",
+        "sourceHeading": "1a541b50d1be42d379537470711f25d21f00ec08b1fe0c66f105de9007c02b21",
+        "sourceLocator": "bb2fb651dccb79a1750941d5274f94ab15a4844c874e19e3d23a0e8bb566ba61",
+        "title": "e6795f684816a985528ff6888fc60cb807d9caf55d7b7046542839d31f4909f8"
+      },
+      "id": "monster-crystal-golem",
+      "sha256": "9bb99082e157cc6d8c458d2a79f2c7139dc225738cb58e0f7c2ba4f74949568d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "bf3f096730423de42e68ff58e788575c1fa642b8c7f536d7f400122bc85cb075",
+        "sourceHeading": "32497c6c42a0e0ffc48760e809d867dc08367d15804b25f2723570eade9f3051",
+        "sourceLocator": "d2e25a601f9e25c3eb1250731ed9bfe5f0b0b588af15929b21959b09e66e5bec",
+        "title": "781097b1c648eff87bdfaba0f81ef7877357fabee40fe6aa320b982a6665ff01"
+      },
+      "id": "monster-candle-wisp",
+      "sha256": "e240660e6d9e7a890874a33b91f0d9d907fe50b0ec6bd8dfc5f07089886ff5f7"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "6d1a7960c850f5aa0479f17a95ff3f0ab329b81ab086b0711fcc0ae8e3471fbb",
+        "sourceHeading": "a741771df40f5fa42f36cb1fa75826056b678271102d502989d8bc2bc46f3153",
+        "sourceLocator": "1601104f1a275670f90fec5108822ec0f1c2fe46fdce36b1a6f4775f2217613c",
+        "title": "d6f58f39141ce2975bc52f24b8d3f5c54e80d0b0944a358dfba474c3d3574ee7"
+      },
+      "id": "monster-friendly-ghost",
+      "sha256": "e3bda271e060e3f07e9ce835b5fa7e7a098119081f7d49a6289b97ea804ffce9"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "ec94a1340597a795f0b98c7a03ba7844482836d36e18e1ec8b9f50b7ff3ceb94",
+        "sourceHeading": "e61a133e54a847f2ad3b433fd871f768161375f24cb14e214386f7bb140a712f",
+        "sourceLocator": "a375a255db99362fbf26b5fe803bcc5be18de2ff441d8ea231a7a2b3a733d95c",
+        "title": "6589a3e68c230e827903bfd12b19fb7adaaf48a64e01763da0202d68e49106cf"
+      },
+      "id": "monster-skeleton-soldier",
+      "sha256": "9408bc921fab908270f6caa21b7fc45ecf999982bd7adae7b32780c48600ed09"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "a807158b2ad3bed7b163d2c3dcc580f4baa3526946dc48e8c6eb6c4781a843da",
+        "sourceHeading": "84519c6afc9b7f0255e858a527650654e54e93aa024043bbac309c010d355f72",
+        "sourceLocator": "b8f422059b395f81b6876d71f0887641a871a3071166195a0fe3b68870237aac",
+        "title": "4fe8f6f857f5f1a2a02282bb980dbaaa299f8ec0e46a1aee255f9303b24d2efd"
+      },
+      "id": "monster-patchwork-zombie",
+      "sha256": "973ccc6c516a365224ad24f2f9b2257cfdd6ca8ee008a18fe5bff8dcf3104058"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "23147a1eed4468edaedea166afb7b8e6d839b7ff0102493f7df109e6c0ff5f68",
+        "sourceHeading": "b1f997f5b9f9be583beb6fd5b065414e13cb02b43a36c821717d7460c21c32b8",
+        "sourceLocator": "053cc6063ca53a0b6a9ad2db4f92863aa78527cfc56e67f8eb84134f63ecc68d",
+        "title": "955434ba123a23375b62209c08f1b1301c0189b14dd74533af37f9e7c651dfd9"
+      },
+      "id": "monster-treasure-mimic",
+      "sha256": "2bd0b94469c0296b083ce14af017ef0b0f4888c98edcea299fa5afda93978702"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "5001d7270e65a29e52192cac1bb93f613df0005f0dc4d4c997279d9c6712b62b",
+        "sourceHeading": "e467971d3db2a777acac3c01debca75e2a3d1ce88e17f2ddca86de48498ef750",
+        "sourceLocator": "d4f16bd039601d972b1b7f1f60362a32d6dbcbd88612221c8e5084d9ed24d52a",
+        "title": "88d4e46da30edbb8c4166d7716f795241e45eac63b64c8a5de289f7eeacd7cab"
+      },
+      "id": "monster-baby-dragon",
+      "sha256": "f4a9b1221d8e183f8650b1bfef5e4012b641e465f0e547fb7f1fae8dfa36e5f1"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "e4060d8367ff080e4ca84fea15912cd3ca6fa1822fd68db850d9380456c8627e",
+        "sourceHeading": "7b7444ffb0f494c9ae7886a65ac564d0061a3de9022d6b2fbe1d6cf41655528c",
+        "sourceLocator": "066d4e60101b2800bb93c55a7c457bc062a393665cbb9683c32b11e104369912",
+        "title": "2d04ea8b69cdd69b738792854a5748163376ca0cd6ea2d1c898e084c1f99c1e8"
+      },
+      "id": "monster-young-wyvern",
+      "sha256": "f039a8b97ce7602e4f709aaeb55dc71978d7f293a286decfb58406f62629ba8d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "6f07d40138db7660e80d41e93c38aab3d3e0e8846a2646cadedc644c5014ed3a",
+        "sourceHeading": "bf2b65eb276278b14c3f83a3419e9a30b39f98b37e83bc46f6894888ca27289f",
+        "sourceLocator": "5709387888e14c4c01806daa0be2252d45d9f98094b21a8363b13192c0642474",
+        "title": "d6aed3734eda90e68e0141a9c8770a1e617068752478ad073fff728bfc25cdf1"
+      },
+      "id": "monster-three-headed-pup",
+      "sha256": "bfe21fe2b49fc27c99d27109ae012b8127ac334e550fac32021caa11a16b24dd"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "b97958b6edb645d4ee0d974be91c9f4fb9318861cd8a4d0c6f9962e78feaf43a",
+        "sourceHeading": "7019951ed01e0492276b03eea48c9ad3a3da6dac31c6f6cce95dd01d5eeb8d79",
+        "sourceLocator": "678a683b6c8e88b95e48cca86effd125521687ddbe13c2ed74771df665d5e5d3",
+        "title": "4b0db8cd4bf3e62ae40e796f75418b46d874b5f42f38e53aa751fe1573907552"
+      },
+      "id": "monster-plant-sprout-monster",
+      "sha256": "8c83fd380f01f42243f32b74f10897f6b4aa8288938b4787285919fb12e15f36"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "f826bc692a2213836f4b585df3f2e13f9c9836cfcee073e66ac46ac99963f6f7",
+        "sourceHeading": "e4e3ae14f0371f3a4bc4722742a9ea3d0d408e3359ae887a72316543846a01bd",
+        "sourceLocator": "238d230e1a55bdc7c8d940b2aa94382d1525bac28ce27724e931a8ca37abb9c1",
+        "title": "83a74df92933ea292e1361f226fdcfc1cd0873ee5a6fd5e8dd8b9d92d53c3f72"
+      },
+      "id": "monster-poison-flower-monster",
+      "sha256": "e1ac2e3692f5845de7c903691ab6532d63be2542d014fbba32b4edec8b52c326"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "a66b7f848a4bfd86f7cd413eda0dcb291897b6882281f1442fcfc61a24ffa7b0",
+        "sourceHeading": "69b2fd9b0219d4d0c598e9c7c2a307f5ee1ee74bf2831d3db063f2be9d5049e0",
+        "sourceLocator": "75c6083cae64b6dca0e1034e6ee115dd65da7835f1b5ae6a31c2240a8696a2ca",
+        "title": "edfca083b5a8b74763906e6b502c1a9fe1440ab80f54436f4f0557fb861f94e1"
+      },
+      "id": "monster-floating-eye-monster",
+      "sha256": "3ff70e22f4ee97acc2fd54ad3f45f7705c295cc2c03fed6bcbf91af5596289b4"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "10620186e115fe487ab4f2db3da1513e154fd6336a293f711e3377f9112e1c70",
+        "sourceHeading": "68f4cea44ae23a04b3a89d2588460393dfbd22df985d6bd25c870e8a2522a37b",
+        "sourceLocator": "7d7f4bd035bd468fc4e05aacb31de362128aa87de7ac26030244ca3b6b3ed435",
+        "title": "92427a886f9ec4477048bb21a9a99f979615711191efa5dc716647c52fa028d0"
+      },
+      "id": "monster-shadow-imp",
+      "sha256": "bc33ebfad80c0c2074cebfb03b4d2110c18207c32bcc6097c5ec45d4ccec8c53"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "e4e66f694951dfc1afb5cdb85be774cf21c5ec2c210e166500ec1fcad1d82130",
+        "sourceHeading": "88194f223cab65c2d583aa76dad82a9a73ac3617d78bd1036d754a3d715b6b23",
+        "sourceLocator": "9f84018c0502ffa68a234000798de316f59fe34f17b0cbde2417f195a8d9d662",
+        "title": "bac6742c1c132ff918e948c0ae0652ba961585d4cdb582c3d915e25cbd9cc13f"
+      },
+      "id": "monster-fire-elemental",
+      "sha256": "47e225854f65d94917cd9f615ca1aa05c74c12f7b9e92358bdf5a556d9d819aa"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "7204da7fc8d3c410abca37b10b1742b0d120330e92ad12a7501c22459057cb1b",
+        "sourceHeading": "3dcd0d8b699d854b95ae5a4b79e2324957ce1a78aa66f9ae660f4e3df646ae65",
+        "sourceLocator": "6e0c85922170ada132cfbeb8994d1d87a45b09e51124dd60d1cb1e7d759cc0ea",
+        "title": "2d0174b5e6d0673dcd16d85cd94947960fe607cdfaebf7f300d99e7b0e5544a2"
+      },
+      "id": "monster-water-elemental",
+      "sha256": "65a70c260a11b3e3b53a587cf64dee37dfb57ba15c37e49b67bc58b22732db5e"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "1d9ceda8d23a7d97e1bb0d4a9849964fe8138d249b728cc4df0510aa726b9001",
+        "sourceHeading": "0f8347e6508c4b5937e13a1f9512505a6da909e3ff333a85c8ae894a024e3bdf",
+        "sourceLocator": "ea0c92b22586be86acc72253c62698fd029496c10e6030740fcb6a1adb994d69",
+        "title": "da020a47da1a77057f738822c887f02f05036ee67ae52dbbabd4a4ea3817b21c"
+      },
+      "id": "monster-wind-spirit",
+      "sha256": "0a7e5fd608b9484c12bbf825ac3b19ba3956835fe5caf5be020604f1366797f1"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "eb7472d343a8438646ef27a0347ab5a4dc1dc7268c734d680b1d1d31a48bc0d9",
+        "notes": "289f2afa3f868166cd42d9069b58cdd1cfefef4b2e0b81438a71c54870199667",
+        "positivePrompt": "54bf8541efcc4ef61416b28073c971bed03a34bcc1243a66d992e77ba0c0b181",
+        "sourceHeading": "1479ceaa2530d6cfa0cb437d762a640055b8bf6518ab61bc0dfd3072009011e0",
+        "sourceLocator": "27eabe7dae76f4ab92bb70af8d8b990503650348f5abbcf5fc90afa048457f4b",
+        "title": "f723b8e95eb6ee321e710aa6d0f72a5a98dc6cf449dda88072ebf913ff3410d1"
+      },
+      "id": "monster-earth-spirit",
+      "sha256": "c87b3a0cc53fc248a7d3d72cbef4070b378b393b09980729b41a0cb7ffc08aaa"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "1e5fa96326096954472941a8131f3162be16ebcb0a53b1a2148879c014adb6c3",
+        "sourceHeading": "0406fc606f6137cc56a3d42cb3b296127d4d9e250ee5c7b5ba5485cc2aeddef8",
+        "sourceLocator": "5790ec8c3eb2317a2bf03f673c5bb2c90b4ecef0967541548bd502b182aabc4b",
+        "title": "c0be62b1ec97219d510dab8df43815c5a918b7a3aae0128062350ad84071c2eb"
+      },
+      "id": "monster-girl-slime-scout-girl",
+      "sha256": "5d2d54b52600841de1124abb97b40bdfd26215bbc98fa39c5836f764c56f588b"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "c8b7d379130cebfa7f7f5e1adee7946de5918bb38b10e0049e1c850c5e5a8a6d",
+        "sourceHeading": "141a797b5993447d60d2877db582967167587df43cc7a0d68ca861b5ba00ad76",
+        "sourceLocator": "e115fd3d8c145a2c5a9d9805549d433b75aafc52bb865ab8a0f894cb348c106f",
+        "title": "c44b03405037c579284446f82d69520e4dc3c6c1e6b453d64a9d1c7e6d703424"
+      },
+      "id": "monster-girl-oni-hammer-girl",
+      "sha256": "e05c67b67038fb0709d11ac2794a86948f90eef0652a7e5f2a76b20a9cc7c3f7"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "403035641e08021d1597dee187ea6af3b5810e5ebb564d6bbdb715148bc506a4",
+        "sourceHeading": "0b0f2debdb2671d7c7b5c4a3633bda5f427f436826dd7ab6b9bca26b8244bf3a",
+        "sourceLocator": "07cd283009f0ffeb9744ff6b535a3723ce2e51b6fef80740bf44a21fcf7fc7d7",
+        "title": "f70fee56835eee8a0cd494b6fbb02d0db6cf75e94dba1cf1a8e882899cbb8025"
+      },
+      "id": "monster-girl-dragonkin-lancer-girl",
+      "sha256": "c998060aa34bbab2e29e90957d0bee2601cb7a308d47a285a8a25c5469ee8adb"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "c5c7673c59339179def50a42349609fb7bb759d4866d2dbfd185efeeb0d45e94",
+        "sourceHeading": "bd0edefeb18aa78a4dab7999f2cc986a0c7265ef8a18c27c0afc783b8f97dbe7",
+        "sourceLocator": "4c2ef328552a95f4b25072bb63a0a5fe4d8c4085351135f2a973d029a46ce2d9",
+        "title": "084c25bf871f9c5efa9e070fcffd25a5df00d5ea03d0dc194a7f2fc94f5ce08a"
+      },
+      "id": "monster-girl-harpy-wind-runner-girl",
+      "sha256": "bf3ee1d5059c3dac4516a722e7fb2ac5931cedfecb769fe66fe53291a271a04d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "7b027de46474d73bb8d417527c89a7e5b2b668bd0efd20c009b9df107b25fbc6",
+        "sourceHeading": "ed2b024a569a6c18afc6cb8676d610833dc7633d278986c5b4d9c4fb3966f58b",
+        "sourceLocator": "3e15f4f9994d3f07ee80c5fea24bff06d957ac13527e0908b16b5848afeaef84",
+        "title": "153f56110f636e7c267d60573f46fd0d1baa31df61bfeab0bcf8cd6e4a9a3527"
+      },
+      "id": "monster-girl-lamia-spellblade-girl",
+      "sha256": "b1456b9cfd2ffd55d8264461c28c1dff88ce64d6ec4d5f394c3083ee7d951559"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "14daece1ae718da2e3922add80a4f0ea951bb5169beafa83ecafe2d7f542e8a1",
+        "sourceHeading": "0911ae1bbad0c3fd597e8df4c1b797e2024b39f5d3425577a41b083e993cc8af",
+        "sourceLocator": "01e5298a883415203f42cccb5c316c2c397316c1c63f5c062595f6279a0f92b9",
+        "title": "d440932d3ccafe997f6dac5900a4499f710fdd85fe025d15294340eead4e0576"
+      },
+      "id": "monster-girl-arachne-thread-rogue-girl",
+      "sha256": "dab5d20eec8a56222b2ebb9a4d6a06b131819872bca4f5fe85ca84964999dbc6"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "040da37f587e85b16a18b3231897c812f66652a5c6a65a77682656a33a5d63bd",
+        "sourceHeading": "b5819e94b2b2099219da3f037a6c3aeb324d2771dc5b851c975c1e3cf24da837",
+        "sourceLocator": "8b7863e9cefa04a2900e980aac2d1a2bd0ad7201355ab4fadc06a29f72314aec",
+        "title": "9658e87065d3c2e646d4e40f2f1bb50fcbf419bb2c0a664d6373eedf4e4ba468"
+      },
+      "id": "monster-girl-centaur-guard-girl",
+      "sha256": "0f5cbdaf3aa37e3632585faf10f605e6dbd9e67e26bf0df51d7503531f4891a4"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "b9768783dbdf19657af93f1ea7421174621a8d6ad1a45647dabb9d03d44750c2",
+        "sourceHeading": "99e19692b9e94c498668b3cd3e98f81ea08af761f72ebabf0611e1e383989838",
+        "sourceLocator": "28c5b2f2b60b62c1aa4569b2c9051ad51df5b47243ed003073df58e5e3a53734",
+        "title": "88e8ff87cdbb3b37365dea9cc69897cf7a08e3842b7ef36846e843fa2d46796e"
+      },
+      "id": "monster-girl-kitsune-lantern-girl",
+      "sha256": "68b81ee7a8c33c038d2c0758c00868053a7cdcf941ca60617ab794bfe9dfdb3d"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "bf84362ad38659bfb93b6c3af1f602fbafd4f788fcb8d518c0c095ade3dc63df",
+        "sourceHeading": "e2d29f1abdf7bb892b46dafbf83c1329fc7d5e0e5ebbfc80dd7547cb6b9fde0b",
+        "sourceLocator": "a90b98991ac40e6bdcd760e02bc89372dde3660ec75dba33583c47f6d0a0bbe8",
+        "title": "31d5ad0983fc317a0ce6a1707349f0e9a21f1765e3e37851b94d4937183e5d31"
+      },
+      "id": "monster-girl-wolf-ranger-girl",
+      "sha256": "9e2a5a4637f69148f9466ffa017e144ce758426b537d6697bfb2bd8aecb2da9c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "b528b8c6f6203be1854b8052f6743eca1262107e397e3cc269e4d55ce383e42e",
+        "sourceHeading": "a132c1df00fbf2f6464291f9987c00c7e16605cb6e1d8390afe17512709e48ca",
+        "sourceLocator": "32decc81caf5a1d51973d26de16a8d16ed20404930eadde97acd89fb109d7866",
+        "title": "c938f38c75a758136e37287d8823a63a721c41b328af473800921028269977b1"
+      },
+      "id": "monster-girl-cat-thief-girl",
+      "sha256": "da851f95e502b2c23246a78348c41762501043a58341a747b00c091f3871d07c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "abe676cde15000fb9ec9ba6b611a777d62e95556fef2392fb3c7bcfcc96e8ce5",
+        "sourceHeading": "29bb92b03e601f65d7afcf80270f769e09e922cb41b7161a32834854e5b04848",
+        "sourceLocator": "f1dec2100c8be7ffc649ff0974b61607b4ee9258f69bd3810df0c4138a71c977",
+        "title": "dd3ffe75dd5223cd3a68f291be19bb731bf2381eccb9b8600312b68f11355b23"
+      },
+      "id": "monster-girl-vampire-fencer-girl",
+      "sha256": "4426dbe27f6f79aefde95f8c6bface3e265442cc5c440678c0a85ec17b94fdb9"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "d8f8b98585e9c0787d31d27b78c30169b77364c0e441ca6e56b315c130d37f06",
+        "sourceHeading": "f76df76de48c7fc9cf8c0a824bcf230ec7fce5d2f2a1352fdccee911fb0f8a4e",
+        "sourceLocator": "6f56c7d83bdf997b0596c0f07ca0bb1841eea5ea9520d808203790a3d133dff1",
+        "title": "1ccef9667bb09c107f1638df6cc59e021199fba76e8ac77807313fb56d068a8a"
+      },
+      "id": "monster-girl-ghost-lantern-girl",
+      "sha256": "e56b2c16b00825c35ebfe83dfb8dd12ec8aa1804ff57c4d7379443db66b96809"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "2393717805c916dba2aee15fa314664bf1831685038f3c1286bdabe6dde7c7c8",
+        "sourceHeading": "db57b629314bee3f7036bdc6d988374034dc11cee464a89a3191b14f09fc1319",
+        "sourceLocator": "9c8aad45e2707f19d860a73c5f1f76560c9128388e05f607ca7d4188cf0a7e9f",
+        "title": "eeede92cb497799606cc25d6330eeb733cb20e8394c8ee5cf05d67ae259c1c49"
+      },
+      "id": "monster-girl-fairy-archer-girl",
+      "sha256": "9372142d26d8c4d8c98d752a6cc29d2b40929ddc2661bebc56016cbeb388f6fd"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "012992e4bf9381333adceed04a6a9390eddc7470b1ac616a3e140a1ecf13e776",
+        "sourceHeading": "a1b5da9a0096d397e0df377f3f84fb65be15cde575a039f159318c88fe221840",
+        "sourceLocator": "fa0316cbcd0aa67bba1081e4764387d780dfe81c425bc178a7777b8686b13ed1",
+        "title": "12777f1ea3fa997b52b926ea4d2cdea2648c577628730c19a27b96783889476b"
+      },
+      "id": "monster-girl-moth-mage-girl",
+      "sha256": "9609187f0663a566a71652162a663d4fa06e325fc2d0356e795e7a2a1e255101"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "94f1afc31abd9876a791dff70623cdb92d05546531b2e25493d0d5fad4182f1b",
+        "sourceHeading": "385ef4767ca88e7372eb2f276c12a3a47eafa978122122efbf75e959bc7f6e4a",
+        "sourceLocator": "e3bf8d4727b2be289099ec468800646b7cda4879c459059e52c5430a94cf2914",
+        "title": "f0582cf95b2c91737730f8e747c682a6f33165cdaa8fb68dc55302fc66f93275"
+      },
+      "id": "monster-girl-beetle-shield-guardian-girl",
+      "sha256": "2132181fbb0da6987e68f8966b916d18bfa5a445ae375446b7f28a0037d351d8"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "cd3d2c73990c4b6b8538b0a66b536daa5437b592dd3603a868596364e69cbf4c",
+        "sourceHeading": "dac2e366aa0fc9440b7166d931ac6e132af1a57ce605ed098ba2448aa1974024",
+        "sourceLocator": "780d21b4347e9eee68fcc6f7b3eadf4100a38a64eeee4f9fdf7105deee7ecc5f",
+        "title": "a7235fc4f36c96c67645367a84df098cac35718442149c197aec71c7ad4c312f"
+      },
+      "id": "monster-girl-mantis-duelist-girl",
+      "sha256": "6127b3c2c26b21c388e54c9caf1ea1fc2e0418282c519dc7a57e85a8215c7e00"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "2901e2722f8d7b9db9b6f4d6f4f7fea65312d291ec47dba2c53f8e316380c60b",
+        "sourceHeading": "41824520f6c7266ea159df2d23f29837779859349207e54fc31cf22e6e01bd85",
+        "sourceLocator": "7cb6b7f2a8c050dd3db09ea6cdefa6f62b70f56450391b388b96715acd23a226",
+        "title": "7be57e1658cf856ffe67f528280a9a9a4d7be645842ad646267ff0b091e99fd1"
+      },
+      "id": "monster-girl-mushroom-alchemist-girl",
+      "sha256": "476d3959aa814ef94ee892fb9a5c4b8ec60dc9e72ca5c3037be4aaadd24ba1ae"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "945088c5a4266b397466f8a8cbbf9976a848270ea05fca6137a90129e92ec073",
+        "sourceHeading": "5088990c1619b1b0ab7007e48391807b607d3a13ab4d04d51ee66dd6ee960560",
+        "sourceLocator": "60394d1069785eb0bb0ef992e35690264addbf065365c11db0440cdfd4df5313",
+        "title": "b48a8f79a6e00b46665e3a61c2317693784474a51f13e7e1cb44e26d6e70ed36"
+      },
+      "id": "monster-girl-dryad-guardian-girl",
+      "sha256": "a6f97556b5d83da1f5574cbddbba0a682f68f518a40553725b1883954294d65c"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "1a5100d21cfa5767320dab33caa95a8e783321fad59f35ab2d7dc5494e313cff",
+        "sourceHeading": "26a7a2902b148494afb1f25683be14eca58939552cf9f18c6001c7e134033061",
+        "sourceLocator": "ab8d155522826f38200c4cdbae153058747d5f5f91b2a53a5ad7ecb84ce0338c",
+        "title": "ab159a50dfe6ceba1ad8fcf469b4a091dc3983871d7c64907afe7afc2f94640f"
+      },
+      "id": "monster-girl-golem-defender-girl",
+      "sha256": "8097f20ca5d26f6b4ed8db180f4729e13d8cc41572849830ec8aa40b1a2931cf"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "bcb40d3b0caa9ae5342de908d570d535418717b4cbda419e91e3dc9eb93f8b3e",
+        "notes": "67764cb516a480877a46b97e7e6b163060af8dee58ac99123abdb02f5ac2f4cb",
+        "positivePrompt": "811facc583de3a78397ebab8c28b7affd3d745304d6eeaf93d90db3141f33f50",
+        "sourceHeading": "494fe5ddb40c188f2ba87d1d7c75c63d0f218210e76936e544c048e2ad0aa120",
+        "sourceLocator": "e03c0d92c316281f3a31aa41f83423b7e2575f9cf4aeb4f8dc2d322f9ada0d7a",
+        "title": "4c14559155ea88f130c70d6c8f802fa37ebaec92bc3fde55839b9dde0cfb9e91"
+      },
+      "id": "monster-girl-shark-pirate-girl",
+      "sha256": "a75a55b2f90bea998f3bd68f8be1fdcfb3fb12995399994e620f11282ab0613b"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "e49afbeba89ae85d6f039b42c89f91acd6433feb47a9f75acd569f4d94afb782",
+        "notes": "7989df5038978724bd13a8191be563d047901efb3078a806bb534bd27a95f978",
+        "positivePrompt": "cca9bd7ced3a34f7a6ea25589fb7582933ffbadc56e90e3fb9f879567c4611af",
+        "sourceHeading": "bbf4924efc5bac82b27a50319d8021f1bc21160dbec9139cd71a2fc170a9d359",
+        "sourceLocator": "22165281429be1c2da8d74eaa84d4f74fc6fd2720eb063160e8b2b2b66f1d57b",
+        "title": "c92a28697358feae3b2d2f1209b744c57c78ea86eef3c5bb35f963b11e4f9fd1"
+      },
+      "id": "clockwork-mushroom-courier",
+      "sha256": "ae519150f168358b8519dc8bdf6ed86fc2dcfe8e589f58999a061e7cf4a43aa8"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "123b6a12705d256a07d050ca184a2dbcf317272c8b3df6573d4cd52b8b585be5",
+        "notes": "e740922be217213e41f4eed276eac038e7aff3936c1c7670168eb4d4dc120dd8",
+        "positivePrompt": "9ad53088732f1a5ed298d90e5052723c925a21eaa4727cf58064e1077785bf2b",
+        "sourceHeading": "e14ae2836859b3fe791692a2d70391c9df9a2ae49b24b6847f31be50670a71b2",
+        "sourceLocator": "18eac8c30de85b37603cc0fa2bcfa41eb623fc7b354cb82a0aaa0fb4d82f15ec",
+        "title": "98a6e070b3f7ae1f683a53dc9fcd2458de21a80d9f87eee61a05905faa7037b1"
+      },
+      "id": "forest-mage-idle",
+      "sha256": "34411f4adaa142cb8570d891c6fa712837cf532ba61e7da6369545b6bae70ff0"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "f96750596ac0c4f909f93652ad7f4c467e7c6686e16f8b3bcb3baf842668af24",
+        "notes": "08056f846e8ae6c0069e9de9281ee8b92147a518db0e5f45d45758a44df68863",
+        "positivePrompt": "4cfb100f2162c4dac68fc4a172a298d5e91d7cae827c50807a0aa065ac4513d1",
+        "sourceHeading": "891f1abb53e758db0851b2823be030cfd874b69d9b7f34bfeaca99317e86f76e",
+        "sourceLocator": "5ef5a9e210ca29c888b35626e87517eb747d9b7f6f675cf39ab095e9c44de8c9",
+        "title": "d14e41cfa0a0c9723b279bc4a0acc6018eebf95b2bbe85478a939bf853ba52ce"
+      },
+      "id": "ember-slime-companion",
+      "sha256": "5c1238547ce46fd3ce7e5f639c3887ec3083ec27424416a3e785ccbdc974f5cc"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "9593f2ea9ca31ed25b883e5191d33dc97fa0bf689bdec78dc8b7df335a238899",
+        "notes": "5cbf2c0b262b49ba8ae1b004bce14a8f277bd0a301918fe4128b3c9a42657ec3",
+        "positivePrompt": "68ca483b410dcedca6b3ad742eadcb43be77e14ec47fb341503b991362369f79",
+        "sourceHeading": "c7422dd78ce23b886a6dddd2494f608c20455a6a61574eefbc33f4b56952d35f",
+        "sourceLocator": "177bdc41bff6bc126e96cae5dee1c2567f819a94df3d6dc5ba94de1ad4da655d",
+        "title": "38a62ec3c87dca4029b069fb275691f566f81fc2712dc7e87cd03699e84b88ef"
+      },
+      "id": "crystal-export-station",
+      "sha256": "64289210c8b46097f40452325331c94be23e4dae0ce056c9ad34fd8d9f8cd38b"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "721932a54a3ffbb9a8b588146c686bb5b43799535b6907f246fbc85cb48f2c29",
+        "notes": "45d98a4d0467adc9395a94a9752a11707388764e1c6376cd824bcc7bb65430c4",
+        "positivePrompt": "f1b033f4e8ff2b80caffbc10bdab8dfd43c061194e6de1d5431a747523c06a38",
+        "sourceHeading": "9af56af7e060531207535b1b4774b4ad6473899fc0cd1b0c6b616ffdfb828b3b",
+        "sourceLocator": "322023e91cf50d193f62b028c8961a5534f13fc77e6f8c956c85056a581f93a8",
+        "title": "92af3e2baf40ab7ad018406cac38765fa0a38743f66652ad5084cb9092482c2d"
+      },
+      "id": "rainy-neon-forest-tile",
+      "sha256": "7495b9984a8b05cbbc9f8e1b06880d5c9ac05f9eff61d9d2c13bbeb79304d92f"
+    },
+    {
+      "fieldHashes": {
+        "negativePrompt": "2f1e4d673be1fa38093a68cc5c1084e794be2104ccaceb3cfd5c88d59867dc68",
+        "notes": "0f4fb0c5a180fdb126da862d7ca09fcab7cb98ad1a8b3b208ef840a616650c24",
+        "positivePrompt": "b85a71ad0c9d820906fa6c7291baff833d5f6e9eb706866b10b9c3139783fac7",
+        "sourceHeading": "15eb0373d4605da5ab804b383bb3c42124dbde69b06c42ad874a71a4aaa93b65",
+        "sourceLocator": "afb3b4cea8890c5097bbc1ed96733bf663d8825be94aec75245b00b97968486f",
+        "title": "9452a5adec9ea236efcf3157a7220c2b0cec490b147ae9e2ffafd25599abff61"
+      },
+      "id": "sprite-sheet-workbench",
+      "sha256": "ba7a1d366c696e4f1003f36021a0ee5d8c179a7d4a24dc5cbe5841840325191d"
+    }
+  ],
+  "entryCount": 107,
+  "schemaVersion": 1,
+  "sourceFileHashes": {
+    "docs/prompt-examples/basic-character-prompts.md": "bcee213b2682f405ef02f7ddc71fcbe5762967e6e42b8e14abf20688f6c964ed",
+    "docs/prompt-examples/monster-girl-prompts.md": "3c4071911ebf976aa4dd2b676ff954fa11997ee0a59068bf07867e662e21a000",
+    "docs/prompt-examples/monster-prompts.md": "3cd679a833e7aec38d4c1228f0bee8439c6980f6005f39aa5f62102eff010d71",
+    "docs/prompt-examples/profession-character-prompts.md": "8abc0743da13934efc59a491577a09688266b87d774018a0592905e1578c92b6",
+    "src/App.tsx": "ecf7cc14771b242b7fa4d24235ed413c2ee97bbd2dfc8b0c3a3ac1088625d0e2"
+  },
+  "upstreamRevision": "b997e78609773975a98617568818ac32f40cf1a7"
+}

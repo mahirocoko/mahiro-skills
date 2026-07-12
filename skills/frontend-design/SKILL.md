@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Creates repo-grounded, brand-relative frontend design briefs, taste theses, reference synthesis, redesign preservation decisions, reference-set plans, asset requirements, and rendered fidelity contracts. Use explicitly for those artifacts or decisions, not ordinary frontend implementation or bug fixes. Do not auto-load for native model-taste baselines.
+description: Creates repo-grounded, brand-relative frontend design briefs, taste theses, reference synthesis, redesign preservation decisions, reference-set plans, asset requirements, rendered fidelity reviews, and scoped comparison/selection contracts. Use explicitly for those artifacts or decisions, not ordinary frontend implementation or bug fixes. Do not auto-load for native model-taste baselines.
 ---
 
 # Frontend Design
@@ -18,6 +18,7 @@ Use this skill only when the user explicitly asks for one of these:
 - a web/mobile reference-set plan
 - an image-first frontend implementation handoff
 - a fidelity review between references and rendered UI
+- an explicit comparison of multiple rendered frontend directions
 
 Do not auto-load it for every frontend implementation task. For native model-taste experiments, keep the first pass limited to repo rules, the product brief, explicit references/assets, and the model's own judgment. Use this skill only in a separately named comparison lane or when explicitly requested.
 
@@ -46,10 +47,12 @@ This skill does not own:
 ## Usage
 
 ```text
-/frontend-design [brief|redesign|reference-set|fidelity] [context]
+/frontend-design [brief|redesign|reference-set|fidelity|comparison] [context]
 ```
 
 Default mode is `brief`. Interpret arguments conversationally; there is no script or hidden scoring layer.
+
+`comparison` is an opt-in review mode, not a default design phase. Keep retention separate as `session-only | project-private | project-shared`; default to `session-only` unless the human owner explicitly approves durable project retention.
 
 ## Evidence Priority
 
@@ -70,6 +73,7 @@ Use the smallest workflow that can change the decision:
 - **Bounded task** — current evidence, requested change, preserve boundary, and focused verification only.
 - **Design/redesign brief** — add material Brand Read, mode, structure, and reference decisions.
 - **Whole-composition or high-risk work** — add separate audits, claim tracing, section map, approval gates, whole-composition checkpoint, and durable rendered QA.
+- **Comparison (opt-in)** — use two directions for material pairwise ambiguity or two to three isolated directions for whole-composition selection; do not add comparison artifacts to bounded work by default.
 
 Do not complete ceremony merely because a template exists. Omit non-material sections instead of marking a large packet `not applicable`.
 
@@ -143,6 +147,8 @@ For each reference, separate:
 
 Then classify its **Reference Fit** for the target brand/job as Exemplary, Near miss, Repetitive formula, Reject for this job, or Unproven. Prefer pairwise rationale over a context-free numeric taste score. A reference that looks polished but can move across unrelated brands through a token swap is weak brand evidence.
 
+For an explicitly requested multi-variant composition exploration, keep product content, assets, constraints, and target states matched; isolate lanes; preserve an immutable pre-reveal critic verdict; let the human owner select an option or `Neither` before revealing the mapping; and use the comparison contract in [references/reference-contracts.md](references/reference-contracts.md).
+
 Generated images are reference boards, not proof of responsive behavior, accessibility, real copy, motion, or implementation correctness.
 
 ### Phase 5: Build the Brief
@@ -193,6 +199,7 @@ For reference-set and fidelity templates, load [references/reference-contracts.m
 - Do not add dependencies, design systems, fonts, icon libraries, or animation engines without repo evidence and approval where required.
 - Do not silently change route slugs, nav labels, form names/order, analytics identifiers, legal copy, logos, or established accessibility behavior.
 - If a reference conflicts with the product or repo, document the conflict instead of forcing fidelity.
+- In `comparison` mode, critic and agent votes remain advisory. Do not promote a direction, reveal the mapping, retain a project decision, or edit skill guidance before the human owner selects an option or `Neither` and explicitly approves the requested retention scope.
 - Before implementing a whole-composition reset that changes regulated or safety-critical claims, consent, authentication, transactions, legal disclosures, privacy/data-flow promises, or conversion mechanics, require explicit approval of those changed contracts. The current request counts only when it names and approves those changes; otherwise stop after the proposed brief and verification plan.
 - Do not treat a clean build or one full-page screenshot as visual proof. Preserve durable viewport/state evidence, and use section anchors plus DOM geometry when full-page capture output is duplicated, blank, or otherwise unreliable.
 - New or transformed production assets require a routed asset handoff; `frontend-design` specifies role, placement, viewport behavior, crop/safe-zone, truth/IP constraints, and visual acceptance criteria, then `asset-designer` coordinates source strategy, manifest, production routing, cleanup, QA, and delivery.
@@ -245,5 +252,6 @@ Before finishing:
 - [references/brief-workflow.md](references/brief-workflow.md) — redesign modes, reference review, and brief composition
 - [references/reference-contracts.md](references/reference-contracts.md) — reference-set manifest, generated-reference analysis, and fidelity matrix
 - [references/brand-taste.md](references/brand-taste.md) — Brand Read, Taste Thesis, Reference Fit, conditional principles, and rendered cross-brand comparison
+- [references/evidence-tools.md](references/evidence-tools.md) — executable capture sidecars, interaction coverage, same-state closure, and reproducible packet/receipt hashing
 
 ARGUMENTS: $ARGUMENTS

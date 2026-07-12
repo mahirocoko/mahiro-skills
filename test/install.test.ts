@@ -65,6 +65,21 @@ describe("install", () => {
     }
   });
 
+  test("preserves the receipt description when updating explicit installed items", () => {
+    const temp = makeTempEnv();
+    try {
+      const initial = install("opencode", "local", [], false, temp.env);
+      const initialReceipt = JSON.parse(readFileSync(initial.receiptPath!, "utf8"));
+      expect(initialReceipt.description).toContain("Packaged local skills");
+
+      const updated = install("opencode", "local", initialReceipt.installedSkills, true, temp.env);
+      const updatedReceipt = JSON.parse(readFileSync(updated.receiptPath!, "utf8"));
+      expect(updatedReceipt.description).toBe(initialReceipt.description);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("preserves opaque gemini subtree", () => {
     const temp = makeTempEnv();
     try {

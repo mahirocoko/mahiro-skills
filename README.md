@@ -80,7 +80,7 @@ Current workflow highlights:
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
 - **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
-- **Sprite asset pipeline** — `/sprite-workflow` now ships deterministic chroma-key extraction, light/dark/checker QA previews, safe edge-connected vs spill comparison, bounds/silhouette jitter gates, adjacent-frame zooms, motion-jitter reports, settle-frame smoothing, candidate scoring, center alignment, and safe named promotion helpers for generated mascot/sprite sheets.
+- **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
 
 Common commands:
 
@@ -145,7 +145,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
-| `sprite-workflow` | `/sprite-workflow` | You need a CLI-first sprite/Codex handoff, chroma-key extraction/dicut pipeline, manifest, contact sheet, preview GIF, QA, motion-jitter review, settle-frame smoothing, safe named promotion, or runtime sprite asset gate. |
+| `sprite-workflow` | `/sprite-workflow` | You need attributed sprite prompts/templates, imagegen handoff, motion-reference intake, chroma/grid extraction, anchor/scale/alpha/motion QA, native-grid recovery, approved atlas assembly, previews, or promotion gates. |
 | `uncodixify` | `/uncodixify` | You need an explicit or evidence-triggered second-pass audit/enforcement pass for generic AI-looking frontend UI and fake premium styling. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
@@ -171,7 +171,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
-| `sprite-workflow` | `python3`, ImageMagick `magick`; optional Pillow (`python3 -m pip install Pillow`) for animated GIF previews. Motion review helpers and named promotion are bundled Python scripts. |
+| `sprite-workflow` | `python3`, ImageMagick `magick`, and Pillow for hash-pinned production validation/promotion, GIF, native-grid, and atlas lanes; optional `ffmpeg` + `ffprobe` for bounded motion-reference intake. Use a Python interpreter that actually resolves `import PIL`. Catalog, manifest, QA, review, and promotion helpers are bundled. |
 
 ## Repo map
 
