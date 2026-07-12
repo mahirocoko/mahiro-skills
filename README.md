@@ -131,10 +131,10 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
 | `control-room-goals` | `/control-room-goals` | You need to draft or refine a Goal Mode objective, DoD, immediate next action, verification evidence, or handoff/reset boundary. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
-| `deep-research` | `/deep-research` | You need source-backed research through Gemini. |
+| `deep-research` | `/deep-research` | You need generic or broad source-backed research through Gemini. Use `frontend-design` for a large live frontend/site/app UI corpus tied to a named frontend design decision. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
-| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, or rendered fidelity review. |
+| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, rendered fidelity review, or a large frontend-reference corpus review tied to a named frontend design decision—not generic deep research. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |

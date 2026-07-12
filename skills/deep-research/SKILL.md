@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: Deep research via Gemini. Use when the user asks for comprehensive analysis or source-backed research.
+description: Deep research via Gemini. Use when the user asks for comprehensive analysis or source-backed research. Route a large corpus of live frontend/site/app UI references tied to a named frontend design decision to frontend-design instead.
 alias: /gemini research
 ---
 
@@ -9,6 +9,10 @@ alias: /gemini research
 **Alias for `/gemini research`** - Deep Research automation via Gemini.
 
 Opens new tab, selects Deep Research mode, sends prompt, and starts research.
+
+## Routing Boundary
+
+Use `frontend-design`, not this skill, when the request combines all three: a large reference corpus, live frontend/site/app UIs as the units, and a named frontend design decision. Use `deep-research` for generic topics, broad source-backed synthesis, non-frontend corpora, or research without that design decision.
 
 ## Usage
 

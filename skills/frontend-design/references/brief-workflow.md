@@ -1,6 +1,6 @@
 # Frontend Design Brief Workflow
 
-Use this reference when the task needs redesign planning, reference synthesis, or a durable implementation handoff.
+Use this reference when the task needs design/redesign planning, proof-led composition, reference synthesis, or a durable implementation handoff.
 
 ## Table of Contents
 
@@ -110,6 +110,7 @@ Check the current rendered surface and implementation:
 - content ownership and localization
 - forms, field names/order, autofill, validation
 - focus, keyboard, contrast, reduced motion
+- semantic landmarks, one meaningful page heading and logical heading hierarchy, accessible control names, useful alt text, and stable media fallbacks
 - analytics/test selectors and stable IDs
 - existing assets, source/runtime status, crop behavior
 - performance-sensitive media and motion
@@ -119,6 +120,8 @@ Check the current rendered surface and implementation:
 ### Reference Audit
 
 Record section anatomy, reading path, surface rhythm, media/proof roles, responsive behavior, and explicit borrow/adapt/reject decisions. Compare the reference and current baseline at matched viewports/states when making visual claims. A reference is not a source of product claims, brand tokens, or exact trade dress.
+
+When a live external reference supports a claim, use the optional live-reference state record in [reference-contracts.md](reference-contracts.md). Treat session-, referral-, region-, or overlay-dependent surfaces as partial evidence unless their state is frozen and reproducible.
 
 ### Brand Audit
 
@@ -187,6 +190,8 @@ Prefer pairwise explanation over numeric scoring. Ask whether the reference stil
 
 ## 5. Brief Template
 
+In the ledger below, include signature fields only when visual identity or brand differentiation is material. Include proof fields and proof position only when product proof is material. Omit those fields for bounded work where they cannot change the decision.
+
 ```markdown
 # Frontend Design Brief
 
@@ -200,7 +205,11 @@ Prefer pairwise explanation over numeric scoring. Ask whether the reference stil
 - Recommended direction:
 - Unknown:
 - Taste thesis:
-- Signature expression:
+- Signature expression (when material):
+- Signature carrier (when material):
+- Primary proof carrier / source / evidence status (when product proof is material):
+- Proof-validity check — exact claim supported / why this evidence form fits (when product proof is material):
+- Signature-proof relationship (when both are material):
 - Restraint boundary:
 
 ## Design Read
@@ -218,11 +227,12 @@ Prefer pairwise explanation over numeric scoring. Ask whether the reference stil
 - Approved to change:
 
 ## Structure
+- First meaningful proof position — desktop/mobile — rationale if delayed (when product proof is material):
 1. Section/screen — job — primary content/action
 
 For a multi-section whole-composition reset, add:
 
-| Section | User question | Verified product fact | Proof artifact | Surface / transition role | Mobile behavior | Evidence status |
+| Section | User question | Verified product fact | Proof artifact | Surface / transition role | Mobile behavior / proof-role parity | Evidence status |
 | --- | --- | --- | --- | --- | --- | --- |
 
 ## Reference Decisions
@@ -238,7 +248,7 @@ For a multi-section whole-composition reset, add:
 - Spacing/density:
 - Components/states:
 - Responsive behavior:
-- Motion/media purpose:
+- Motion/media role — evidence contribution — fallback/reduced-motion path:
 
 ## Asset Requirements
 - Role/placement/visual priority — intended viewport behavior — crop/focal/safe-zone constraints — truth/IP constraints — visual acceptance criteria — routed owner
@@ -279,8 +289,11 @@ Choose evidence that can disprove a weak brief:
 - rendered desktop and narrow/mobile screenshots
 - keyboard/focus walkthrough
 - real-content overflow and long-label checks
+- semantic landmark, heading, control-name, alt-text, and media-fallback checks
 - loading/empty/error states where applicable
 - motion and reduced-motion behavior
+- initial, fallback, and settled states listed as separate required cases when hero copy or proof depends on staged media or motion
+- critical overlap, occlusion, and z-order checks at narrow widths as recorded visual plus DOM/geometry judgment unless structured tooling is explicitly added; distinguish intentional overlap from blocked text, proof, or actions
 - contrast and interaction affordance
 - reference fidelity classification
 - brand-recognition review without relying on logo/name

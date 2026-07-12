@@ -4,10 +4,18 @@ Use the dependency-free `../scripts/evidence.ts` helper when comparison or high-
 
 ## Commands
 
+Set `$SKILL_DIR` to the installed `frontend-design` skill directory for the current agent. Replace the placeholder assignment once; do not hardcode an agent-specific path in reusable project scripts.
+
 ```bash
-bun skills/frontend-design/scripts/evidence.ts key <expected-state.json>
-bun skills/frontend-design/scripts/evidence.ts validate <evidence-manifest.json>
-bun skills/frontend-design/scripts/evidence.ts digest <digest-manifest.json> --write <result.json>
+SKILL_DIR="/absolute/path/to/installed/frontend-design" # replace with the actual installed directory
+EXPECTED_STATE="/absolute/path/to/expected-state.json" # replace
+EVIDENCE_MANIFEST="/absolute/path/to/evidence-manifest.json" # replace
+DIGEST_MANIFEST="/absolute/path/to/digest-manifest.json" # replace
+RESULT_JSON="/absolute/path/to/result.json" # replace
+test -f "$SKILL_DIR/scripts/evidence.ts"
+bun "$SKILL_DIR/scripts/evidence.ts" key "$EXPECTED_STATE"
+bun "$SKILL_DIR/scripts/evidence.ts" validate "$EVIDENCE_MANIFEST"
+bun "$SKILL_DIR/scripts/evidence.ts" digest "$DIGEST_MANIFEST" --write "$RESULT_JSON"
 ```
 
 All manifest paths are relative to the manifest directory. Absolute paths, parent traversal, duplicate digest paths, missing files, and hash mismatches fail.
@@ -96,7 +104,9 @@ The validator rejects wrong origin/route/sentinel/source, wrong language or sele
 }
 ```
 
-Every required case and every declared interaction state must map to an admitted sidecar. Keep intended inner scrollers separate from document overflow: a wide proof may scroll inside its owner, but the document must remain within the configured threshold.
+Every required case and every declared interaction state must map to an admitted sidecar. When staged media or motion materially affects the proposition, action, or proof, list distinct `initial`, `fallback`, and `settled` case keys in `requiredCases`; the validator does not infer missing material states from a settled capture. Keep intended inner scrollers separate from document overflow: a wide proof may scroll inside its owner, but the document must remain within the configured threshold.
+
+`requiredCases` proves declared capture coverage, not visual correctness. Critical overlap, occlusion, and z-order remain state-bound visual plus DOM/geometry judgments recorded in the rendered QA artifact. The validator does not enforce them unless explicit structured fields and tooling are added.
 
 For an issue/fix/recheck loop, append a closure:
 

@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "studyId": "frontend-design-macapp-supply-2026-07",
+  "studyVersion": "0.1.0",
+  "status": "reference-only-authoring-evidence",
+  "snapshot": {
+    "date": "2026-07-12",
+    "timezone": "Asia/Bangkok",
+    "region": "Bangkok, Thailand",
+    "indexUrl": "https://macapp.supply/",
+    "sitemapUrl": "https://macapp.supply/sitemap.xml",
+    "hostRevision": "a0238ae228d5c4b35f82590319e7d011322e4423",
+    "catalogEntries": 78,
+    "categories": 13
+  },
+  "artifacts": [
+    {
+      "path": "docs/authoring/frontend-design-reference-study-macapp-supply-2026-07.md",
+      "role": "versioned study synthesis and approved bounded promotion register",
+      "format": "markdown",
+      "bytes": 15018,
+      "sha256": "8cd39381c7d5c7b9c512ae275768074386f1e89b7286fb678c92dc18a50fa0af",
+      "sanitized": true
+    },
+    {
+      "path": "docs/authoring/frontend-design-reference-study-macapp-supply-2026-07.csv",
+      "role": "sanitized 78-entry catalog and legacy reachability sidecar",
+      "format": "csv",
+      "bytes": 15248,
+      "sha256": "a28e9e379ff2618fdde9ddf90b19edb0faef4a757cdfadbc36159d2cee4d9a39",
+      "sanitized": true
+    },
+    {
+      "path": "docs/authoring/frontend-design-reference-study-macapp-supply-2026-07/audit-01-26.md",
+      "role": "written visual and DOM observations 01-26",
+      "format": "markdown",
+      "bytes": 20486,
+      "sha256": "ca2173e97a54faaf1adb880d1267260c067698dbd60ccd937bc1a05e94a18c90",
+      "sanitized": true
+    },
+    {
+      "path": "docs/authoring/frontend-design-reference-study-macapp-supply-2026-07/audit-27-52.md",
+      "role": "written visual and structure observations 27-52",
+      "format": "markdown",
+      "bytes": 11828,
+      "sha256": "18a7236c1fe89826e0e61f482df2749901f815077bd836c03ff9aeebdd6ae126",
+      "sanitized": true
+    },
+    {
+      "path": "docs/authoring/frontend-design-reference-study-macapp-supply-2026-07/audit-53-78.md",
+      "role": "written visual and DOM observations 53-78",
+      "format": "markdown",
+      "bytes": 16414,
+      "sha256": "232b6220e508fe5b0f895eeecabda8c053ddbae0feb20419745af591b862ca44",
+      "sanitized": true
+    }
+  ],
+  "coverage": {
+    "population": 78,
+    "browserVisibleSurface": 74,
+    "structureOrAssetsOnly": [
+      "obs-50",
+      "obs-51"
+    ],
+    "visualEvidenceGap": [
+      "obs-49",
+      "obs-52"
+    ],
+    "transport": {
+      "http200": 76,
+      "automatedHttp403": 1,
+      "noUsableResponse": 1
+    },
+    "accessConstraints": {
+      "browserReachableDespiteAutomatedBlock": [
+        "obs-28"
+      ],
+      "sessionOrReferralSensitive": [
+        "obs-10",
+        "obs-14"
+      ],
+      "regionLimited": [
+        "obs-61"
+      ],
+      "staleOrUnreachableSurface": [
+        "obs-49"
+      ]
+    },
+    "legacyCompositeReachability": {
+      "reachable": 75,
+      "browserReachableAutomatedGetDenied": 1,
+      "regionUnavailableSurface": 1,
+      "staleOrUnreachable": 1
+    }
+  },
+  "sanitization": {
+    "redactions": [
+      "Cursor referral identifier replaced with REDACTED",
+      "Framer dub_id replaced with REDACTED"
+    ],
+    "retainedPublicAttribution": [
+      "ref=macapp.supply",
+      "atp=solt",
+      "via=solt",
+      "framer.link/solt"
+    ],
+    "excludedFromCommit": [
+      "third-party screenshots and contact sheets",
+      "downloaded site HTML, JavaScript, media, and bundles",
+      "cookies, local storage, session storage, and auth/session exports",
+      "personal data and secret, opaque, or non-public referral identifiers"
+    ]
+  },
+  "retention": {
+    "committedScope": "sanitized authoring evidence only; never packaged with frontend-design",
+    "localEvidenceScope": "ignored session-private research archive",
+    "owner": "Mahiro",
+    "reviewAt": "2026-08-12",
+    "rule": "Committing, sharing, extending retention, and deleting local evidence each require separate owner approval."
+  },
+  "limitations": [
+    {
+      "id": "lim-category-skew",
+      "detail": "Utility and Productivity account for 46 of 78 entries; this is not a category-neutral market sample."
+    },
+    {
+      "id": "lim-visual-gaps",
+      "detail": "Four observations lack comparable full visual evidence; two retain structure/assets only and two have material visual gaps."
+    },
+    {
+      "id": "lim-schema-drift",
+      "detail": "The three audit shards use different schemas and unmatched desktop viewport metadata; shard 27-52 has no embedded audit date."
+    },
+    {
+      "id": "lim-state-context",
+      "detail": "Auth, session, referral, consent, overlay, and entry context changed several observed surfaces and are separate from transport reachability."
+    },
+    {
+      "id": "lim-geo-context",
+      "detail": "Capture context is Bangkok-only; one destination resolved to a region-unavailable surface."
+    },
+    {
+      "id": "lim-no-formal-saturation",
+      "detail": "The retrospective study had no predeclared strata, admissibility target, quiet window, independence plan, or batch novelty ledger."
+    },
+    {
+      "id": "lim-local-visuals",
+      "detail": "Third-party screenshots, DOM snapshots, and source snapshots remain ignored local evidence and are unavailable from a fresh clone."
+    },
+    {
+      "id": "lim-legacy-reachability",
+      "detail": "The CSV reachability column is a preserved mixed-dimension note; use this manifest's transport and access-constraint fields for normalized interpretation."
+    }
+  ]
+}

@@ -88,6 +88,14 @@ Plan coverage first. Generate additional detail views only when a missing state 
 
 Do not infer exact spacing, accessibility, component states, or motion timing from a still image unless separately documented.
 
+For a live external reference, also record:
+
+- requested/canonical URL, resolved URL, redirect chain, and network transport result;
+- access context separately: anonymous/authenticated state, session/referral constraints, region/locale, capture time, and consent/cookie/overlay policy; redact sensitive values;
+- initial and settled motion state when the first frame changes materially.
+
+Treat a surface that cannot be reproduced under its recorded state as partial or unproven evidence rather than explaining away the mismatch.
+
 ## 3. Fidelity Comparison
 
 Compare a rendered implementation against the approved brief/reference:
@@ -170,7 +178,7 @@ When testing fresh composition rather than refining the current UI, exclude curr
 
 ### Admissibility Gate
 
-Apply the rendered QA contract in section 6 before visual criticism. Every option must pass the same packet, identity, readiness, viewport/state, and completion checks. An inadmissible option pauses the comparison; it is not a loser. If the critic requests an implementation fix, keep the mapping sealed, return the option to its maker or declared QA owner, recapture the same state after the fix, rerender every option affected by a fairness change, and start a new immutable critic verdict record.
+Apply the rendered QA contract in section 6 before visual criticism. Every option must pass the same packet, identity, readiness, viewport/state, and completion checks. An inadmissible option pauses the comparison; it is not a loser. If the critic requests an implementation fix, keep the mapping sealed, return the option to its maker or declared QA owner, recapture the same state after the fix, and rerender every option affected by a fairness change. Corrected options must pass the matched admissibility gate again, return through `critic-pending`, and receive a new immutable critic verdict before human review resumes. Preserve any earlier verdict unchanged as prior or superseded evidence; never rewrite or reuse it for corrected renders.
 
 ### Maker → Critic → Human Selection
 
@@ -183,6 +191,8 @@ Apply the rendered QA contract in section 6 before visual criticism. Every optio
 7. If the human selects `Neither`, promote no option or principle. Correct the packet, hypotheses, assets, or execution before rerunning.
 8. Append a scoped Decision Record only when the human explicitly approves durable retention.
 
+A human selection is a session-only result. Project promotion remains pending until the human separately approves `project-private` or `project-shared` retention, even when selection and retention instructions arrive together.
+
 Use the judgment questions and conditional-principle semantics in [brand-taste.md](brand-taste.md); do not duplicate or replace them with numeric scoring here.
 
 ### Comparison State Contract
@@ -190,14 +200,17 @@ Use the judgment questions and conditional-principle semantics in [brand-taste.m
 | Current state | Event or condition | Next state | Mapping | Durable record | Promotion |
 | --- | --- | --- | --- | --- | --- |
 | inactive | bounded task or comparison not explicitly requested | inactive | none | none | none |
+| inactive | human explicitly requests comparison and packet preparation starts | preparing | sealed | none | none |
 | preparing | hypotheses differ only by palette, font, radius, decoration, or tokens | blocked | sealed | none | none |
 | preparing | any rendered option is inadmissible or unmatched | blocked | sealed | none | none |
+| preparing | every rendered option passes the matched admissibility gate | admissible | sealed | none | none |
+| blocked | blocking issue corrected and affected options re-enter the admissibility gate | preparing | sealed | none | none |
 | admissible | critic verdict not yet written | critic-pending | sealed | none | none |
 | critic-pending | immutable critic verdict written | human-pending | sealed | none | none |
 | human-pending | human selection not provided | human-pending | sealed | none | none |
-| human-pending | human selects an option | revealed-selected | reveal now | retention-dependent | selected project/surface only |
-| human-pending | human selects Neither | revealed-neither | reveal now | retention-dependent | none |
-| admissible or human-pending | critic requests an implementation fix | blocked | sealed | none | none; same-state recapture and new critic record required |
+| human-pending | human selects an option | revealed-selected | reveal now | none | session-only result; project promotion pending explicit retention approval |
+| human-pending | human selects Neither | revealed-neither | reveal now | none | none; session-only Neither result |
+| admissible or critic-pending or human-pending | critic requests an implementation fix | blocked | sealed | none | none; same-state recapture, matched re-admission, and a new immutable critic verdict required |
 | revealed-selected or revealed-neither | retention is session-only | closed | revealed | none | session result only; Neither still promotes nothing |
 | revealed-selected | project retention explicitly approved | recorded | revealed | append Decision Record | project/surface only |
 | revealed-neither | project retention explicitly approved | recorded | revealed | append Decision Record | none |
@@ -261,7 +274,7 @@ A `portable-candidate` remains unavailable cross-project until explicitly promot
 
 Use durable QA artifacts when implementation is part of the task and visual, responsive, localization, state, or proof-quality claims need evidence. Choose a risk-based matrix; do not impose every viewport or state on a small bounded change.
 
-For comparison or high-risk work that needs machine-checkable state identity, interaction coverage, same-state closure, or reproducible packet/receipt hashes, use [evidence-tools.md](evidence-tools.md) and its dependency-free validator. Browser tooling still owns capture; the validator decides whether the resulting artifact is admissible.
+For comparison or high-risk work that needs machine-checkable state identity, interaction coverage, same-state closure, or reproducible packet/receipt hashes, use [evidence-tools.md](evidence-tools.md) and its dependency-free validator. Browser tooling still owns capture. The validator checks only machine-verifiable admission criteria; complete admissibility still requires the recorded visual and DOM/geometry review.
 
 ```markdown
 # Rendered QA Evidence
@@ -280,8 +293,10 @@ For comparison or high-risk work that needs machine-checkable state identity, in
 - Captured at:
 - Source commit/worktree state:
 - Capture readiness: fonts / critical media / lazy content / intended animation or UI state
+- First-paint resilience, when media/effects are critical: proposition / primary action / stable poster or semantic fallback before settle
 - Console / page errors:
 - Horizontal overflow:
+- Critical overlap / occlusion / z-order: intentional or blocking; affected text, proof, controls, and safe areas
 - Keyboard / focus result:
 - Reduced-motion result:
 - Issue found:
@@ -300,11 +315,12 @@ Do not label an artifact `current`, `desktop`, `mobile`, or with a language/stat
 ### Capture Reliability
 
 - Wait for the declared ready condition before capture: fonts loaded, critical images decoded, lazy content present, and the intended animation/UI state reached or deliberately frozen. Record what was actually ready.
+- When the hero proposition or proof enters through staged media or motion, declare every material initial, fallback, and settled state as a separate required case, then capture them separately. A stable final frame does not prove first-paint resilience.
 - Attempt a whole-composition capture when page-level rhythm is under review.
 - Validate full-page output against DOM geometry before treating it as evidence.
 - If fixed/sticky regions duplicate, blank bands appear, or geometry disagrees, mark the capture unreliable.
 - If a dynamic reference cannot reach a stable ready state, mark the image incomplete and fall back to section-anchor captures, important DOM rectangles, content/heading inventory, and per-state screenshots rather than explaining away a broken image.
-- Keep console/page errors, horizontal overflow, focus, open controls, long content, and reduced-motion checks tied to the same recorded state.
+- Keep console/page errors, horizontal overflow, critical overlap/occlusion, focus, open controls, long content, and reduced-motion checks tied to the same recorded state. Critical overlap, occlusion, and z-order remain recorded visual plus DOM/geometry judgment unless explicit structured fields and tooling are added.
 
 ### QA Closure Loop
 

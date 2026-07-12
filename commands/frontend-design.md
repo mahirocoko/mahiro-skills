@@ -1,5 +1,5 @@
 ---
-description: Create an explicit repo-grounded, brand-relative frontend design brief, taste thesis, reference breakdown, redesign plan, or reference-to-implementation fidelity contract. Do not auto-load for native model-taste baselines.
+description: Create an explicit repo-grounded, brand-relative frontend design brief, taste thesis, reference breakdown, redesign plan, reference-to-implementation fidelity contract, or large frontend-reference corpus review tied to a named frontend design decision. Use deep-research for generic source-backed research. Do not auto-load for native model-taste baselines.
 allowed-tools:
   - Bash
   - Read

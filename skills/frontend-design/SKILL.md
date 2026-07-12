@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Creates repo-grounded, brand-relative frontend design briefs, taste theses, reference synthesis, redesign preservation decisions, reference-set plans, asset requirements, rendered fidelity reviews, and scoped comparison/selection contracts. Use explicitly for those artifacts or decisions, not ordinary frontend implementation or bug fixes. Do not auto-load for native model-taste baselines.
+description: Creates repo-grounded, brand-relative frontend design briefs, taste theses, reference synthesis, redesign preservation decisions, reference-set plans, asset requirements, rendered fidelity reviews, and scoped comparison/selection contracts. Also use for a large frontend-reference corpus review when the user asks to inspect or reverse engineer many live site/app UIs, synthesize frontend-design evidence, or decide corpus adequacy for a named frontend design decision. Do not use this corpus trigger for generic deep research or broad source-backed synthesis without that frontend design decision. Do not auto-load for ordinary implementation, bug fixes, or native model-taste baselines.
 ---
 
 # Frontend Design
@@ -19,6 +19,9 @@ Use this skill only when the user explicitly asks for one of these:
 - an image-first frontend implementation handoff
 - a fidelity review between references and rendered UI
 - an explicit comparison of multiple rendered frontend directions
+- a large frontend-reference corpus review to inspect or reverse engineer many live site/app UIs, synthesize frontend-design evidence, or judge corpus adequacy for a named frontend design decision
+
+Route generic topic research, broad source-backed synthesis, and non-frontend corpora without a named frontend design decision to `deep-research` instead.
 
 Do not auto-load it for every frontend implementation task. For native model-taste experiments, keep the first pass limited to repo rules, the product brief, explicit references/assets, and the model's own judgment. Use this skill only in a separately named comparison lane or when explicitly requested.
 
@@ -50,7 +53,7 @@ This skill does not own:
 /frontend-design [brief|redesign|reference-set|fidelity|comparison] [context]
 ```
 
-Default mode is `brief`. Interpret arguments conversationally; there is no script or hidden scoring layer.
+Default mode is `brief`. Interpret arguments conversationally; there is no command-dispatch or brief-generation script, and no hidden scoring layer.
 
 `comparison` is an opt-in review mode, not a default design phase. Keep retention separate as `session-only | project-private | project-shared`; default to `session-only` unless the human owner explicitly approves durable project retention.
 
@@ -91,7 +94,7 @@ Inspect only enough evidence to answer:
 
 Label missing evidence instead of filling it with portable taste defaults.
 
-For multi-section redesign or composition work, keep four evidence views separate before planning:
+For multi-section redesign or composition work, keep the material evidence views separate before planning:
 
 - **Baseline audit** — what the current rendered surface does well, fails to explain, or cannot prove.
 - **Reference audit** — anatomy, pacing, media roles, responsive behavior, and explicit keep/adapt/reject decisions.
@@ -134,9 +137,11 @@ Select a composition strategy separately from the work mode:
 
 A whole-composition reset may reorder sections only within the approved IA and content inventory. It does not authorize invented product behavior, new brand language, navigation or route/IA changes, unsupported copy, or replacement of verified assets. Preserve those contracts unless the user explicitly approves changing them.
 
-For redesign details, load [references/brief-workflow.md](references/brief-workflow.md).
+For design/redesign planning, proof-led composition, or a durable implementation handoff, load [references/brief-workflow.md](references/brief-workflow.md).
 
 ### Phase 4: Analyze References as Evidence
+
+When the large frontend-reference corpus trigger above applies, load [references/reference-corpus.md](references/reference-corpus.md) and use its coverage, clustering, saturation, outlier, provenance, and promotion contracts. Do not load it for a normal one- or two-reference brief or a research-completeness question without a named frontend design decision.
 
 For each reference, separate:
 
@@ -199,7 +204,7 @@ For reference-set and fidelity templates, load [references/reference-contracts.m
 - Do not add dependencies, design systems, fonts, icon libraries, or animation engines without repo evidence and approval where required.
 - Do not silently change route slugs, nav labels, form names/order, analytics identifiers, legal copy, logos, or established accessibility behavior.
 - If a reference conflicts with the product or repo, document the conflict instead of forcing fidelity.
-- In `comparison` mode, critic and agent votes remain advisory. Do not promote a direction, reveal the mapping, retain a project decision, or edit skill guidance before the human owner selects an option or `Neither` and explicitly approves the requested retention scope.
+- In `comparison` mode, critic and agent votes remain advisory. Do not reveal the mapping before the human owner selects an option or `Neither`. Treat selection as session-only with project promotion pending; do not durably promote a direction, retain a project decision, or edit skill guidance without separate approval for the requested retention scope.
 - Before implementing a whole-composition reset that changes regulated or safety-critical claims, consent, authentication, transactions, legal disclosures, privacy/data-flow promises, or conversion mechanics, require explicit approval of those changed contracts. The current request counts only when it names and approves those changes; otherwise stop after the proposed brief and verification plan.
 - Do not treat a clean build or one full-page screenshot as visual proof. Preserve durable viewport/state evidence, and use section anchors plus DOM geometry when full-page capture output is duplicated, blank, or otherwise unreliable.
 - New or transformed production assets require a routed asset handoff; `frontend-design` specifies role, placement, viewport behavior, crop/safe-zone, truth/IP constraints, and visual acceptance criteria, then `asset-designer` coordinates source strategy, manifest, production routing, cleanup, QA, and delivery.
@@ -236,12 +241,12 @@ Before finishing:
 - Reference Fit was judged against the target brand/job, not universal attractiveness or a numeric taste score.
 - The design would not become a different brand merely through a token swap unless shared anatomy is justified by product/design-system reality.
 - Brand-specific typographic voice, hero cadence, proof framing, and CTA closure were checked for deeper cross-brand convergence.
-- The signature expression shapes the main composition, interaction, or proof relationship rather than surviving as removable decoration.
+- When brand differentiation is material, the signature expression shapes the main composition, interaction, or evidence relationship rather than surviving as removable decoration.
 - Required states include focus, loading, empty, error, and disabled only where the product needs them.
 - Responsive behavior is explicit for high-risk layouts.
 - Motion has a product purpose and a reduced-motion path when non-trivial.
 - Asset counts come from planned coverage, not a universal one-image-per-section rule.
-- Product/proof media remains meaningfully inspectable at target viewports; uncropped-but-unreadable evidence is not accepted.
+- When product/proof media is present, it remains meaningfully inspectable at target viewports; uncropped-but-unreadable evidence is not accepted.
 - Requested, planned, completed, and blocked deliverables reconcile when producing a reference set.
 - Native model-taste experiments were not preconditioned by this skill unless explicitly selected.
 - Multi-section composition resets have a section map and a whole-composition rendered checkpoint before local polish.
@@ -253,5 +258,6 @@ Before finishing:
 - [references/reference-contracts.md](references/reference-contracts.md) — reference-set manifest, generated-reference analysis, and fidelity matrix
 - [references/brand-taste.md](references/brand-taste.md) — Brand Read, Taste Thesis, Reference Fit, conditional principles, and rendered cross-brand comparison
 - [references/evidence-tools.md](references/evidence-tools.md) — executable capture sidecars, interaction coverage, same-state closure, and reproducible packet/receipt hashing
+- [references/reference-corpus.md](references/reference-corpus.md) — large-collection coverage, clustering, saturation, outlier, provenance, and safe-promotion workflow
 
 ARGUMENTS: $ARGUMENTS

@@ -62,6 +62,54 @@ describe("frontend-design skill", () => {
     }
   });
 
+  test("discovers only decision-scoped large frontend-reference corpus work", () => {
+    const skill = read("skills", "frontend-design", "SKILL.md");
+    const frontmatter = readFrontmatter(skill);
+    const llms = read("skills", "llms.txt");
+    const readme = read("README.md");
+    const command = read("commands", "frontend-design.md");
+    const geminiCommand = read("commands-gemini", "mh-frontend-design.toml");
+    const deepResearchSkill = read("skills", "deep-research", "SKILL.md");
+    const deepResearch = readFrontmatter(deepResearchSkill);
+    const deepResearchCommand = read("commands", "deep-research.md");
+    const deepResearchGeminiCommand = read("commands-gemini", "mh-deep-research.toml");
+    const marketplace = JSON.parse(read(".claude-plugin", "marketplace.json")) as {
+      bundles: Array<{ skills: string[]; commands: string[] }>;
+    };
+    const defaultBundle = marketplace.bundles[0];
+    const llmsEntry = llms.split("\n").find((line) => line.startsWith("- `frontend-design`")) ?? "";
+    const deepResearchLlmsEntry = llms.split("\n").find((line) => line.startsWith("- `deep-research`")) ?? "";
+    const readmeEntry = readme.split("\n").find((line) => line.startsWith("| `frontend-design`")) ?? "";
+    const deepResearchReadmeEntry = readme.split("\n").find((line) => line.startsWith("| `deep-research`")) ?? "";
+
+    expect(frontmatter.description).toContain("large frontend-reference corpus review");
+    expect(frontmatter.description).toContain("named frontend design decision");
+    expect(frontmatter.description).toContain("generic deep research");
+    expect(skill).toContain("judge corpus adequacy for a named frontend design decision");
+    expect(skill).toContain("to `deep-research` instead");
+    expect(llmsEntry).toContain("large frontend-reference corpus review");
+    expect(llmsEntry).toContain("named frontend design decision");
+    expect(readmeEntry).toContain("large frontend-reference corpus review");
+    expect(readmeEntry).toContain("not generic deep research");
+    expect(command).toContain("large frontend-reference corpus review");
+    expect(command).toContain("named frontend design decision");
+    expect(command).toContain("deep-research for generic source-backed research");
+    expect(geminiCommand).toContain("large frontend-reference corpus review");
+    expect(geminiCommand).toContain("named frontend design decision");
+    expect(geminiCommand).toContain("deep-research for generic source-backed research");
+    expect(deepResearch.description).toContain("comprehensive analysis or source-backed research");
+    expect(deepResearch.description).toContain("named frontend design decision");
+    expect(deepResearch.description).toContain("to frontend-design instead");
+    expect(deepResearch.alias).toBe("/gemini research");
+    expect(deepResearchSkill).toContain("when the request combines all three");
+    expect(deepResearchLlmsEntry).toContain("to `frontend-design` instead");
+    expect(deepResearchReadmeEntry).toContain("Use `frontend-design`");
+    expect(deepResearchCommand).toContain("named frontend design decision to frontend-design");
+    expect(deepResearchGeminiCommand).toContain("named frontend design decision to frontend-design");
+    expect(defaultBundle.skills).not.toContain("deep-research");
+    expect(defaultBundle.commands).not.toContain("deep-research");
+  });
+
   test("ships progressive-disclosure brief and reference contracts", () => {
     expect(existsSync(join(skillRoot, "references", "brief-workflow.md"))).toBe(true);
     expect(existsSync(join(skillRoot, "references", "reference-contracts.md"))).toBe(true);
@@ -74,12 +122,26 @@ describe("frontend-design skill", () => {
     expect(brief).toContain("### Preserve");
     expect(brief).toContain("Current reality:");
     expect(brief).toContain("Keep | Does it improve hierarchy");
+    expect(brief).toContain("include signature fields only when visual identity or brand differentiation is material");
+    expect(brief).toContain("Include proof fields and proof position only when product proof is material");
+    expect(brief).toContain("Signature carrier (when material):");
+    expect(brief).toContain("Primary proof carrier / source / evidence status (when product proof is material):");
+    expect(brief).toContain("Proof-validity check");
+    expect(brief).toContain("First meaningful proof position");
+    expect(brief).toContain("proof-role parity");
+    expect(brief).toContain("initial, fallback, and settled states listed as separate required cases");
+    expect(brief).toContain("recorded visual plus DOM/geometry judgment unless structured tooling is explicitly added");
     expect(brief).toContain("Do not call the brief validated merely because the code builds");
     expect(references).toContain("## 1. Reference-Set Manifest");
     expect(references).toContain("Generated-Reference Analysis");
     expect(references).toContain("Fidelity Comparison");
     expect(references).toContain("Brand-Relative Pairwise Comparison");
     expect(references).toContain("Anonymous Composition Exploration");
+    expect(references).toContain("For a live external reference");
+    expect(references).toContain("requested/canonical URL, resolved URL, redirect chain, and network transport result");
+    expect(references).toContain("access context separately");
+    expect(references).toContain("First-paint resilience");
+    expect(references).toContain("Critical overlap / occlusion / z-order");
     expect(references).toContain("Requested deliverables: N");
     expect(brandTaste).toContain("## 1. Evidence and Brand Read");
     expect(brandTaste).toContain("## 2. Taste Thesis");

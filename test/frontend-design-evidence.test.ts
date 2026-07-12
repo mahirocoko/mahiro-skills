@@ -13,6 +13,14 @@ import {
 } from "../skills/frontend-design/scripts/evidence";
 
 const scriptPath = join(import.meta.dir, "..", "skills", "frontend-design", "scripts", "evidence.ts");
+const guidePath = join(
+  import.meta.dir,
+  "..",
+  "skills",
+  "frontend-design",
+  "references",
+  "evidence-tools.md",
+);
 
 interface ITestManifest {
   schemaVersion: number;
@@ -117,6 +125,42 @@ function baseManifest(captures: ReturnType<typeof writeCapture>[]): ITestManifes
 }
 
 describe("frontend-design executable evidence tools", () => {
+  test("documents a directly runnable installed-skill command setup", () => {
+    const guide = readFileSync(guidePath, "utf8");
+    const assignment = 'SKILL_DIR="/absolute/path/to/installed/frontend-design"';
+    const command = 'bun "$SKILL_DIR/scripts/evidence.ts"';
+
+    expect(guide).toContain(assignment);
+    expect(guide).toContain('test -f "$SKILL_DIR/scripts/evidence.ts"');
+    expect(guide.indexOf(assignment)).toBeLessThan(guide.indexOf(command));
+    expect(guide).toContain(command);
+    expect(guide).not.toContain("CODEX_HOME");
+  });
+
+  test("requires material motion cases without pretending overlap judgment is structured", () => {
+    const guide = readFileSync(guidePath, "utf8");
+    const references = readFileSync(
+      join(import.meta.dir, "..", "skills", "frontend-design", "references", "reference-contracts.md"),
+      "utf8",
+    );
+
+    expect(guide).toContain("list distinct `initial`, `fallback`, and `settled` case keys in `requiredCases`");
+    expect(guide).toContain("the validator does not infer missing material states");
+    expect(references).toContain("declare every material initial, fallback, and settled state as a separate required case");
+    expect(guide).toContain("remain state-bound visual plus DOM/geometry judgments");
+    expect(guide).toContain("The validator does not enforce them unless explicit structured fields and tooling are added");
+  });
+
+  test("derives distinct keys for initial, fallback, and settled motion states", () => {
+    const source = "0".repeat(64);
+    const initial = createState(source, { motion: "initial" });
+    const fallback = createState(source, { motion: "fallback" });
+    const settled = createState(source, { motion: "settled" });
+
+    expect(new Set([deriveCaseKey(initial), deriveCaseKey(fallback), deriveCaseKey(settled)]).size).toBe(3);
+    expect(new Set([deriveStateKey(initial), deriveStateKey(fallback), deriveStateKey(settled)]).size).toBe(3);
+  });
+
   test("validates truthful matched language states and the CLI-derived keys", () => {
     const root = createRoot();
     try {

@@ -90,23 +90,69 @@ describe("frontend-design comparison contract", () => {
     expect(inadmissible["Promotion"]).toBe("none");
   });
 
-  test("keeps critic, human selection, reveal, fixes, and Neither in the required order", () => {
+  test("models comparison entry, admissibility success, and blocked recovery", () => {
+    const requested = findRow(stateRows, "Event or condition", "human explicitly requests comparison");
+    const admitted = findRow(stateRows, "Event or condition", "passes the matched admissibility gate");
+    const recovered = findRow(stateRows, "Event or condition", "blocking issue corrected");
+
+    expect(requested["Next state"]).toBe("preparing");
+    expect(requested.Mapping).toBe("sealed");
+    expect(admitted["Next state"]).toBe("admissible");
+    expect(recovered["Next state"]).toBe("preparing");
+    expect(skill).toContain("do not durably promote a direction");
+  });
+
+  test("keeps critic, human selection, reveal, and Neither in the required order", () => {
     const criticRecorded = findRow(stateRows, "Event or condition", "immutable critic verdict written");
     const humanPending = findRow(stateRows, "Event or condition", "human selection not provided");
-    const humanSelected = findRow(stateRows, "Event or condition", "human selects an option");
     const neither = findRow(stateRows, "Event or condition", "human selects Neither");
-    const criticFix = findRow(stateRows, "Event or condition", "critic requests an implementation fix");
 
     expect(criticRecorded["Next state"]).toBe("human-pending");
     expect(criticRecorded.Mapping).toBe("sealed");
     expect(humanPending["Next state"]).toBe("human-pending");
     expect(humanPending["Durable record"]).toBe("none");
-    expect(humanSelected.Mapping).toBe("reveal now");
-    expect(humanSelected.Promotion).toBe("selected project/surface only");
     expect(neither.Mapping).toBe("reveal now");
-    expect(neither.Promotion).toBe("none");
+    expect(neither.Promotion).toBe("none; session-only Neither result");
+  });
+
+  test("routes critic-requested fixes through sealed re-admission and a new immutable verdict", () => {
+    const criticFix = findRow(stateRows, "Event or condition", "critic requests an implementation fix");
+    const recovered = findRow(stateRows, "Event or condition", "blocking issue corrected");
+    const admitted = findRow(stateRows, "Event or condition", "passes the matched admissibility gate");
+    const criticPending = findRow(stateRows, "Event or condition", "critic verdict not yet written");
+    const criticRecorded = findRow(stateRows, "Event or condition", "immutable critic verdict written");
+    const admissibility = extractSection(comparison, "### Admissibility Gate");
+
+    for (const state of ["admissible", "critic-pending", "human-pending"]) {
+      expect(criticFix["Current state"]).toContain(state);
+    }
     expect(criticFix["Next state"]).toBe("blocked");
-    expect(criticFix.Promotion).toContain("same-state recapture");
+    expect(criticFix.Mapping).toBe("sealed");
+    expect(criticFix["Durable record"]).toBe("none");
+    expect(criticFix.Promotion).toContain("matched re-admission");
+    expect(criticFix.Promotion).toContain("new immutable critic verdict");
+    expect(recovered["Next state"]).toBe("preparing");
+    expect(admitted["Next state"]).toBe("admissible");
+    expect(criticPending["Next state"]).toBe("critic-pending");
+    expect(criticRecorded["Next state"]).toBe("human-pending");
+    expect(admissibility).toContain("Preserve any earlier verdict unchanged");
+    expect(admissibility).toContain("never rewrite or reuse it for corrected renders");
+  });
+
+  test("keeps human selection session-only until explicit project retention approval", () => {
+    const humanSelected = findRow(stateRows, "Event or condition", "human selects an option");
+    const projectApproved = findRow(stateRows, "Event or condition", "project retention explicitly approved");
+
+    expect(humanSelected.Mapping).toBe("reveal now");
+    expect(humanSelected["Durable record"]).toBe("none");
+    expect(humanSelected.Promotion).toContain("session-only");
+    expect(humanSelected.Promotion).toContain("pending explicit retention approval");
+    expect(humanSelected.Promotion).not.toContain("selected project/surface only");
+    expect(projectApproved["Current state"]).toBe("revealed-selected");
+    expect(projectApproved["Next state"]).toBe("recorded");
+    expect(projectApproved["Durable record"]).toBe("append Decision Record");
+    expect(projectApproved.Promotion).toBe("project/surface only");
+    expect(comparison).toContain("A human selection is a session-only result");
   });
 
   test("parses a complete post-selection schema without converting feasibility into taste", () => {
