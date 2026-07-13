@@ -78,7 +78,7 @@ describe("studying-codrops skill", () => {
     }
   });
 
-  test("is discoverable but intentionally outside the default bundle", () => {
+  test("is discoverable and included in the default bundle with explicit-trigger guards", () => {
     const llms = read("skills", "llms.txt");
     const readme = read("README.md");
     const marketplace = JSON.parse(read(".claude-plugin", "marketplace.json")) as {
@@ -92,8 +92,8 @@ describe("studying-codrops skill", () => {
     expect(llmsEntry).toContain("Trigger only");
     expect(readmeEntry).toContain("Codrops/Tympanus");
     expect(readmeEntry).toContain("universal frontend style");
-    expect(defaultBundle.skills).not.toContain("studying-codrops");
-    expect(defaultBundle.commands).not.toContain("studying-codrops");
+    expect(defaultBundle.skills).toContain("studying-codrops");
+    expect(defaultBundle.commands).toContain("studying-codrops");
   });
 
   test("parses public sitemap metadata without retaining article bodies", () => {

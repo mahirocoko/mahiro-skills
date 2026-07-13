@@ -185,7 +185,7 @@ Expected ordered set: **58 URLs**, SHA-256 `525ad0cb1a075a1dfa067972d49973c017ab
 
 ## Skill decisions
 
-- Keep the skill explicit-trigger and outside the default bundle initially.
+- Keep the skill explicit-trigger. After the v0.1.56 install gap, include it in the default bundle because trigger guards prevent ordinary frontend auto-loading while default installation makes the released capability discoverable.
 - Keep `frontend-design` as owner of final brand/product decisions.
 - Keep live inventory metadata-only and session-only by default; write beneath `.agent-state` only after project-private retention approval.
 - Do not package source snapshots, article copies, screenshots, or assets.

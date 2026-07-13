@@ -74,7 +74,7 @@ describe("cli", () => {
     }
   });
 
-  test("default all-agent installs include frontend-design", () => {
+  test("default all-agent installs include explicit-trigger design and Codrops skills", () => {
     const temp = makeTempEnv();
 
     try {
@@ -87,8 +87,11 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       expect(payload.length).toBe(6);
       expect(payload.every((entry) => entry.installedSkills.includes("frontend-design"))).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("frontend-design");
+      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("frontend-design"))).toBe(true);
+      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -201,22 +204,10 @@ describe("cli", () => {
           detail: "Command 'deep-research' is not listed in the default bundle.",
         },
         {
-          code: "command-missing-default-bundle",
-          severity: "warning",
-          item: "studying-codrops",
-          detail: "Command 'studying-codrops' is not listed in the default bundle.",
-        },
-        {
           code: "skill-missing-default-bundle",
           severity: "warning",
           item: "deep-research",
           detail: "Skill 'deep-research' is not listed in the default bundle.",
-        },
-        {
-          code: "skill-missing-default-bundle",
-          severity: "warning",
-          item: "studying-codrops",
-          detail: "Skill 'studying-codrops' is not listed in the default bundle.",
         },
       ]);
     } finally {
