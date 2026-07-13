@@ -1,0 +1,10 @@
+description = "Explicit Codrops/Tympanus study lane for article, demo, source, showcase, and project-fit evidence. Do not auto-route ordinary frontend work here."
+prompt = """
+Execute the `studying-codrops` skill with args: {{args}}
+
+Use only when Codrops/Tympanus is explicitly named or this command is invoked. Do not auto-route ordinary frontend work here.
+
+If you have a Skill tool available: Use it directly with `skill: \"studying-codrops\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/studying-codrops/SKILL.md` for local installs or `~/.gemini/skills/studying-codrops/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

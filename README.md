@@ -146,6 +146,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
 | `sprite-workflow` | `/sprite-workflow` | You need attributed sprite prompts/templates, imagegen handoff, motion-reference intake, chroma/grid extraction, anchor/scale/alpha/motion QA, native-grid recovery, approved atlas assembly, previews, or promotion gates. |
+| `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
 | `uncodixify` | `/uncodixify` | You need an explicit or evidence-triggered second-pass audit/enforcement pass for generic AI-looking frontend UI and fake premium styling. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
@@ -159,6 +160,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
+| Creative web study | `bun ./src/cli.ts install studying-codrops frontend-design learn --agent opencode --scope local` | Codrops evidence study, project-relative frontend decisions, and linked source-repo exploration |
 | Frontend design and assets | `bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Explicit design briefs, post-render taste audits, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
@@ -171,6 +173,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
+| `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |
 | `sprite-workflow` | `python3`, ImageMagick `magick`, and Pillow for hash-pinned production validation/promotion, GIF, native-grid, and atlas lanes; optional `ffmpeg` + `ffprobe` for bounded motion-reference intake. Use a Python interpreter that actually resolves `import PIL`. Catalog, manifest, QA, review, and promotion helpers are bundled. |
 
 ## Repo map

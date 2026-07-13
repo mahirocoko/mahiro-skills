@@ -23,6 +23,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
 - `rrr` — Session retrospective with lessons learned. Trigger on: retrospective, end of session, lessons learned, durable memory note.
 - `sprite-workflow` — CLI-first sprite/Codex handoff workflow with an attributed 107-example prompt catalog/templates, sprite and effect jobs, selected-cycle motion-reference intake, chroma-key extraction, dicut cleanup, 2D-grid extraction, native and target-size anchor/scale/body-FX/alpha QA, motion-jitter reports, native-grid recovery, strict approved atlases, previews, manifests, and safe promotion gates. Trigger on: sprite prompt, sprite sheet, mascot frames, animation strip, motion reference, pixel snap, sprite atlas, contact sheet, preview GIF, imagegen handoff, sprite QA, or promote generated assets.
+- `studying-codrops` — Explicit Codrops/Tympanus learning lane for mapping the site, studying article + live demo + source/case-study evidence, comparing creative-web techniques, and producing project-fit adaptation guidance. Trigger only when Codrops/Tympanus is named or `/studying-codrops` is invoked; do not auto-load for ordinary frontend work or use Codrops as universal taste.
 - `uncodixify` — Explicit/evidence-triggered frontend audit and enforcement filter for generic AI/Codex output. Trigger on: explicit uncodixify request, second-pass UI audit, rendered reference leakage, AI-looking layouts, fake-premium SaaS polish, unsupported motion/filler UI. Skip before the first rendered pass when evaluating native model taste.
 - `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
 - `watch` — Learn from YouTube videos via Gemini transcription. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
@@ -35,6 +36,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
 - **Frontend design and assets bundle**: `frontend-design`, `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
+- **Creative web study bundle**: `studying-codrops`, `frontend-design`, `learn`
 - **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`
 
 ## Install examples
@@ -42,6 +44,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 ```bash
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
+bun ./src/cli.ts install studying-codrops --agent letta-code --scope global
 bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope global
 ```
