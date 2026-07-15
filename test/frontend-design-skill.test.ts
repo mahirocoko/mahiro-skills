@@ -35,6 +35,8 @@ describe("frontend-design skill", () => {
     expect(skill).toContain("Bounded task");
     expect(skill).toContain("Whole-composition or high-risk work");
     expect(skill).toContain("## Stop Gates");
+    expect(skill).toContain("Preserve the active bounded lane when feedback is ambiguous");
+    expect(skill).toContain("Ask one concise question before crossing lanes");
     expect(skill).toContain("## Output Contract");
     expect(skill).toContain("## Validation / Self-check");
     expect(command).toContain('skill: "frontend-design"');
@@ -130,7 +132,10 @@ describe("frontend-design skill", () => {
     expect(brief).toContain("Proof-validity check");
     expect(brief).toContain("First meaningful proof position");
     expect(brief).toContain("proof-role parity");
-    expect(brief).toContain("initial, fallback, and settled states listed as separate required cases");
+    expect(brief).toContain("declare its ownership before choosing an engine");
+    expect(brief).toContain("Motion PASS is not Composition, Hero, or Page PASS");
+    expect(brief).toContain("initial, meaningful mid, settled, reduced-motion, and failed-media/fallback states");
+    expect(brief).toContain("fast-scroll, back-scroll, viewport-bottom reachability");
     expect(brief).toContain("recorded visual plus DOM/geometry judgment unless structured tooling is explicitly added");
     expect(brief).toContain("Do not call the brief validated merely because the code builds");
     expect(references).toContain("## 1. Reference-Set Manifest");

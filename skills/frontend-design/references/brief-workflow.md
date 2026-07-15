@@ -284,6 +284,8 @@ Do not use this workflow to expand a small component fix into a page redesign.
 
 ## 7. Verification Planning
 
+When motion is material, declare its ownership before choosing an engine: isolated CSS state transition, native shared-object continuity, coordinated timeline, or viewport-triggered choreography are different jobs. Do not select or reject CSS, View Transitions, GSAP, ScrollTrigger, or another engine from dependency preference alone; choose the smallest mechanism that owns the required sequencing, responsive behavior, interruption, cleanup, and fallback contract.
+
 Choose evidence that can disprove a weak brief:
 
 - rendered desktop and narrow/mobile screenshots
@@ -291,8 +293,9 @@ Choose evidence that can disprove a weak brief:
 - real-content overflow and long-label checks
 - semantic landmark, heading, control-name, alt-text, and media-fallback checks
 - loading/empty/error states where applicable
-- motion and reduced-motion behavior
-- initial, fallback, and settled states listed as separate required cases when hero copy or proof depends on staged media or motion
+- motion and reduced-motion behavior, with every verdict scoped to the exact surface and states reviewed; Motion PASS is not Composition, Hero, or Page PASS
+- initial, meaningful mid, settled, reduced-motion, and failed-media/fallback states listed as separate required cases when copy, proof, action, or navigation depends on staged media or motion
+- fast-scroll, back-scroll, viewport-bottom reachability, interrupted/reloaded state, inline-style cleanup, overflow, and hidden-content checks when viewport triggers or coordinated timelines are material
 - critical overlap, occlusion, and z-order checks at narrow widths as recorded visual plus DOM/geometry judgment unless structured tooling is explicitly added; distinguish intentional overlap from blocked text, proof, or actions
 - contrast and interaction affordance
 - reference fidelity classification

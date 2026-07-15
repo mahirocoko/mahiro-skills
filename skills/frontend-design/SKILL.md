@@ -205,6 +205,7 @@ For reference-set and fidelity templates, load [references/reference-contracts.m
 ## Stop Gates
 
 - Stop and ask when preserve versus overhaul materially changes the requested result and cannot be inferred.
+- Preserve the active bounded lane when feedback is ambiguous. During motion, typography, responsive, interaction-state, or asset-QA work, interpret words such as “overall,” “incomplete,” or “not pass” inside that lane unless the owner explicitly reopens composition, anatomy, IA, or asset scope. Ask one concise question before crossing lanes when the broader scope would materially change the implementation.
 - Do not invent brand assets, product data, metrics, legal copy, routes, or user-owned content.
 - Do not claim a generated image proves runtime behavior.
 - Do not add dependencies, design systems, fonts, icon libraries, or animation engines without repo evidence and approval where required.
