@@ -114,6 +114,7 @@ describe("frontend-design skill", () => {
     expect(existsSync(join(skillRoot, "references", "brief-workflow.md"))).toBe(true);
     expect(existsSync(join(skillRoot, "references", "reference-contracts.md"))).toBe(true);
     expect(existsSync(join(skillRoot, "references", "brand-taste.md"))).toBe(true);
+    expect(existsSync(join(skillRoot, "references", "mahiro-mac-product-profile.md"))).toBe(true);
 
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
     const references = read("skills", "frontend-design", "references", "reference-contracts.md");
@@ -171,6 +172,48 @@ describe("frontend-design skill", () => {
     expect(doctrine).not.toContain("all wellness brands");
   });
 
+  test("applies the Mahiro Mac product profile only as a scoped Web and App fallback", () => {
+    const skill = read("skills", "frontend-design", "SKILL.md");
+    const brandTaste = read("skills", "frontend-design", "references", "brand-taste.md");
+    const profile = read(
+      "skills",
+      "frontend-design",
+      "references",
+      "mahiro-mac-product-profile.md",
+    );
+
+    expect(skill).toContain("references/mahiro-mac-product-profile.md");
+    expect(skill).toContain("confirmed as a Mahiro personal project");
+    expect(skill).toContain("strong positive prior for both presentation and working-surface jobs");
+    expect(skill).toContain("across Web and App runtimes");
+    expect(skill).toContain("repo-local docs/trusted project memory");
+    expect(skill).toContain("a repository namespace, package author, remote owner, or local path alone is insufficient");
+    expect(skill).toContain("Do not activate it for client/team/third-party/uncertain ownership");
+    expect(skill).toContain("merely because a product runs on or targets macOS");
+    expect(skill).toContain("during a native model-taste baseline");
+    expect(profile).toContain("owner-approved **strong positive prior**");
+    expect(profile).toContain("confirmed Mahiro personal project");
+    expect(profile).toContain("## 3. Presentation-Surface Profile");
+    expect(profile).toContain("## 4. Working-Surface Profile");
+    expect(profile).toContain("A repository namespace, package author, remote owner, or local path alone is not proof");
+    expect(profile).toContain("merely because a product runs on or targets macOS");
+    expect(profile).toContain("browser-based editor, dashboard, configuration surface");
+    expect(profile).toContain("regardless of whether the runtime is native, desktop-web, or browser-based");
+    expect(profile).toContain("client, employer, team, third-party, or uncertain-ownership work");
+    expect(profile).toContain("Explicit user/product requirements, repo evidence");
+    expect(profile).toContain("product-derived signature relationship");
+    expect(profile).toContain("Object → transformation → result");
+    expect(profile).toContain("List → workspace → inspector");
+    expect(profile).toContain("Name the generic composition rejected");
+    expect(profile).toContain("selection and state meaning without relying on color alone");
+    expect(profile).toContain("text zoom and scaling against compact geometry");
+    expect(profile).toContain("Thai as a first-class content shape");
+    expect(profile).toContain("mandated fonts, palettes, radii, section counts, frameworks");
+    expect(brandTaste).toContain("Owner-Approved Fallback Profiles");
+    expect(brandTaste).toContain("approved direction");
+    expect(brandTaste).toContain("not repo-proven reality or a universal taste claim");
+  });
+
   test("ships conditional whole-composition and durable QA contracts", () => {
     const skill = read("skills", "frontend-design", "SKILL.md");
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
@@ -213,7 +256,7 @@ describe("frontend-design skill", () => {
     expect(doctrine).not.toContain("omit or mark the rest `not applicable`");
   });
 
-  test("keeps strong taste priors out while shipping through the default bundle", () => {
+  test("keeps universal taste priors out while shipping through the default bundle", () => {
     const skill = read("skills", "frontend-design", "SKILL.md");
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
     const references = read("skills", "frontend-design", "references", "reference-contracts.md");

@@ -37,6 +37,7 @@ This skill owns:
 - section/screen structure and high-level asset requirements/roles
 - reference-set, analysis, and fidelity contracts
 - a concise implementation handoff
+- an owner-approved Mac product aesthetic fallback for confirmed Mahiro personal Web/App projects when material brand/repo direction is thin
 
 This skill does not own:
 
@@ -65,7 +66,8 @@ Use this order:
 2. repo-local `AGENTS.md`, docs, tokens, primitives, assets, and current implementation
 3. user-provided references and named products
 4. current official design-system guidance when the repo actually uses that system
-5. fallback design judgment
+5. the owner-approved Mac product profile only for confirmed Mahiro personal work when material brand/repo direction is thin
+6. fallback design judgment
 
 Do not transplant a reference's framework, component anatomy, palette, typography, or motion stack when the target repo contradicts it.
 
@@ -92,7 +94,7 @@ Inspect only enough evidence to answer:
 - What brand promise, audience, emotional read, visual heritage, and category expectations are repo-proven or explicitly approved?
 - Is this greenfield, a visual preservation pass, or an approved overhaul?
 
-Label missing evidence instead of filling it with portable taste defaults.
+Label missing evidence instead of filling it with portable taste defaults. The approved owner profile is not repo evidence: activate it only through its narrow personal-project gate and record it as approved direction.
 
 For multi-section redesign or composition work, keep the material evidence views separate before planning:
 
@@ -106,6 +108,8 @@ Use only the audit views that can materially change the task. Do not impose a wh
 ### Phase 2: Write the Brand Read, Taste Thesis, and Design Read
 
 Separate brand evidence into repo-proven reality, approved direction, reference-derived hypothesis, recommended direction, and unknown. Load [references/brand-taste.md](references/brand-taste.md) when positive visual judgment or cross-brand differentiation is material.
+
+When `frontend-design` is already active for a material visual-direction decision, ownership is confirmed as a Mahiro personal project, and explicit product/brand plus repo direction are too thin for that decision, load [references/mahiro-mac-product-profile.md](references/mahiro-mac-product-profile.md). Treat it as a strong positive prior for both presentation and working-surface jobs across Web and App runtimes, not repo truth or corpus-derived doctrine. Ownership may be confirmed by Mahiro's statement, an explicit request for the profile, or repo-local docs/trusted project memory that explicitly labels the work as Mahiro's personal project; a repository namespace, package author, remote owner, or local path alone is insufficient. If ownership alone remains material and unknown, ask one bundled question. Explicit requirements, repo evidence, established design systems, accessibility behavior, and approved references override it. Do not activate it for client/team/third-party/uncertain ownership, merely because a product runs on or targets macOS, or during a native model-taste baseline.
 
 When visual direction, brand differentiation, reference selection, or whole-composition identity is material, record one conditional Taste Thesis. Omit it for bounded accessibility, state, spacing, or component work.
 
@@ -172,6 +176,8 @@ Define only what the implementer needs:
 10. high-level asset roles, placement constraints, and ownership route
 11. implementation constraints, ambiguities, and verification plan
 
+When the owner profile is active, identify the evidence gap it fills, whether the surface uses the presentation or working-surface lane, which product object/transformation determines the composition, which generic composition was rejected, which decisions came from the profile, and which stronger evidence overrode it.
+
 Do not force layout diversity, asymmetry, bento, dual themes, image generation, or animation merely to make the output look designed.
 
 For a multi-section whole-composition reset, map each section's user question, verified product fact, proof artifact, surface/transition role, mobile behavior, and evidence status before implementation. A proposed claim or product demonstration without source evidence must be removed, qualified, or marked blocked.
@@ -204,6 +210,8 @@ For reference-set and fidelity templates, load [references/reference-contracts.m
 - Do not add dependencies, design systems, fonts, icon libraries, or animation engines without repo evidence and approval where required.
 - Do not silently change route slugs, nav labels, form names/order, analytics identifiers, legal copy, logos, or established accessibility behavior.
 - If a reference conflicts with the product or repo, document the conflict instead of forcing fidelity.
+- Do not activate the owner Mac product profile when ownership is unknown or the work belongs to a client, employer, team, or third party.
+- Do not let the owner profile override explicit product/brand direction, repo implementation, accessibility behavior, an established design system, or approved references.
 - In `comparison` mode, critic and agent votes remain advisory. Do not reveal the mapping before the human owner selects an option or `Neither`. Treat selection as session-only with project promotion pending; do not durably promote a direction, retain a project decision, or edit skill guidance without separate approval for the requested retention scope.
 - Before implementing a whole-composition reset that changes regulated or safety-critical claims, consent, authentication, transactions, legal disclosures, privacy/data-flow promises, or conversion mechanics, require explicit approval of those changed contracts. The current request counts only when it names and approves those changes; otherwise stop after the proposed brief and verification plan.
 - Do not treat a clean build or one full-page screenshot as visual proof. Preserve durable viewport/state evidence, and use section anchors plus DOM geometry when full-page capture output is duplicated, blank, or otherwise unreliable.
@@ -237,6 +245,7 @@ Before finishing:
 - The Brand Read distinguishes repo-proven reality, approved direction, hypothesis, recommendation, and unknown.
 - The Taste Thesis defines a positive brand direction and relevant failure boundary without becoming a house style.
 - The brief states what is current reality versus recommended direction.
+- When the owner profile is active, the brief labels it as approved personal preference, confirms the personal-project gate, selects the presentation or working-surface lane, records overrides, and keeps the recommendation reversible.
 - References were decomposed into anatomy rather than copied as a style package.
 - Reference Fit was judged against the target brand/job, not universal attractiveness or a numeric taste score.
 - The design would not become a different brand merely through a token swap unless shared anatomy is justified by product/design-system reality.
@@ -257,6 +266,7 @@ Before finishing:
 - [references/brief-workflow.md](references/brief-workflow.md) — redesign modes, reference review, and brief composition
 - [references/reference-contracts.md](references/reference-contracts.md) — reference-set manifest, generated-reference analysis, and fidelity matrix
 - [references/brand-taste.md](references/brand-taste.md) — Brand Read, Taste Thesis, Reference Fit, conditional principles, and rendered cross-brand comparison
+- [references/mahiro-mac-product-profile.md](references/mahiro-mac-product-profile.md) — owner-approved strong Web/App aesthetic fallback for confirmed Mahiro personal projects with thin direction
 - [references/evidence-tools.md](references/evidence-tools.md) — executable capture sidecars, interaction coverage, same-state closure, and reproducible packet/receipt hashing
 - [references/reference-corpus.md](references/reference-corpus.md) — large-collection coverage, clustering, saturation, outlier, provenance, and safe-promotion workflow
 

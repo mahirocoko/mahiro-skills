@@ -372,6 +372,12 @@ describe("frontend-design reference research", () => {
   test("keeps source-specific corpus artifacts outside the packaged skill", () => {
     const packagedFiles = collectFiles(skillRoot);
     const packagedText = packagedFiles.map((path) => readFileSync(path, "utf8")).join("\n");
+    const ownerProfile = read(
+      "skills",
+      "frontend-design",
+      "references",
+      "mahiro-mac-product-profile.md",
+    );
     const committedStudyRoot = join(
       repoRoot,
       "docs",
@@ -386,6 +392,14 @@ describe("frontend-design reference research", () => {
     expect(packagedText).not.toMatch(/Macapp Supply|macapp\.supply/i);
     expect(packagedText).not.toContain(".agent-state/frontend-design/research");
     expect(packagedText).not.toContain("/tmp/macapp");
+    expect(ownerProfile).toContain("owner-approved **strong positive prior**");
+    expect(ownerProfile).toContain("not repo-proven reality, a corpus-derived truth, or universal design doctrine");
+    expect(ownerProfile).not.toMatch(/Macapp Supply|macapp\.supply/i);
+    expect(ownerProfile).not.toContain("docs/authoring");
+    expect(ownerProfile).not.toMatch(/\bobs-\d+/i);
+    expect(ownerProfile).not.toMatch(/fd-proof-evidence-001|fd-corpus-method-001|fd-proof-validity-001/);
+    expect(ownerProfile).not.toContain(".agent-state/frontend-design/research");
+    expect(ownerProfile).not.toContain("/tmp/macapp");
     expect(
       committedStudyFiles.some((path) => [".png", ".jpg", ".jpeg", ".webp", ".html", ".js", ".zip"].includes(extname(path))),
     ).toBe(false);
@@ -410,6 +424,7 @@ describe("frontend-design reference research", () => {
       expect(result.status).toBe("installed");
       expect(installedFiles).toEqual(sourceFiles);
       expect(installedFiles).toContain("references/reference-corpus.md");
+      expect(installedFiles).toContain("references/mahiro-mac-product-profile.md");
       expect(installedFiles).toContain("scripts/evidence.ts");
 
       for (const path of sourceFiles) {

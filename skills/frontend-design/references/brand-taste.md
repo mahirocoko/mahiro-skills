@@ -50,6 +50,17 @@ Unknowns:
 
 If brand evidence is thin, make a restrained recommendation and keep it reversible. Do not invent a detailed personality system merely to complete the template.
 
+### Owner-Approved Fallback Profiles
+
+An explicitly approved owner profile can supply a strong positive prior when its activation contract is satisfied. It is **approved direction**, not repo-proven reality or a universal taste claim.
+
+- Apply it only within its named ownership, product, and evidence-gap scope.
+- Record which decisions come from the profile and keep them reversible.
+- Let explicit user/product direction, repo evidence, established systems, accessibility behavior, and approved references override it.
+- Do not launder a personal preference into a corpus finding or apply it to unrelated client/team work.
+
+For confirmed Mahiro personal Web/App projects with materially thin direction, `SKILL.md` may route to the owner-approved Mac product profile.
+
 ## 2. Taste Thesis
 
 Write one sentence that connects brand character to product behavior:
