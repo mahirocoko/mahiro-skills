@@ -123,6 +123,16 @@ Reference A vs Reference B
 - What did the losing option do better?
 ```
 
+Before asking the owner to choose, explain each option in visible language:
+
+- what is visibly on screen;
+- what action, reading path, or behavior it creates;
+- which product/page decision is being judged.
+
+Do not rely on compressed labels such as `premium`, `editorial`, `technical`, `quiet`, or `playful` without naming the concrete visual relationship. If the comparison mixes materially different questions—such as brand impact, product proof, design-system fit, or repeated-work clarity—name those questions first and allow different winners.
+
+After selection, ask which concrete factors caused the preference. Record the winning relationship rather than converting the selected reference into a general style preference. `Not selected` is not `rejected`; preserve useful loser strengths and do not infer that an unselected palette, material, category, or visual family is broadly disliked.
+
 Do not aggregate taste into a numeric score. Record the rationale and the evidence.
 
 ## 5. Conditional Principles

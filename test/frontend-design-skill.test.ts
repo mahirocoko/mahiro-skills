@@ -171,6 +171,11 @@ describe("frontend-design skill", () => {
     expect(brandTaste).toContain("A signature expression must shape the main composition");
     expect(brandTaste).toContain("Product or proof media must remain meaningfully inspectable");
     expect(brandTaste).toContain("If two unrelated brands retain substantially the same expressive anatomy");
+    expect(brandTaste).toContain("what is visibly on screen");
+    expect(brandTaste).toContain("allow different winners");
+    expect(brandTaste).toContain("`Not selected` is not `rejected`");
+    expect(skill).toContain("translate abstract visual labels into visible evidence");
+    expect(skill).toContain("does not establish a broad style preference");
     expect(skill).toContain("Brand-specific typographic voice, hero cadence, proof framing, and CTA closure");
     expect(doctrine).not.toContain("universal tasteful palette");
     expect(doctrine).not.toContain("all finance brands");

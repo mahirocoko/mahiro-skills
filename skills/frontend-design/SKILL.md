@@ -156,6 +156,8 @@ For each reference, separate:
 
 Then classify its **Reference Fit** for the target brand/job as Exemplary, Near miss, Repetitive formula, Reject for this job, or Unproven. Prefer pairwise rationale over a context-free numeric taste score. A reference that looks polished but can move across unrelated brands through a token swap is weak brand evidence.
 
+Before asking the human owner to choose, translate abstract visual labels into visible evidence: what is on screen, what it helps the user understand or do, and which material evaluation job is being judged. After selection, record the concrete relationship that caused the choice; `not selected` is not automatically `rejected`, and one selected reference does not establish a broad style preference. When brand impact, product proof, design-system fit, or working-surface clarity are separate material decisions, allow different winners instead of forcing one overall result.
+
 For an explicitly requested multi-variant composition exploration, keep product content, assets, constraints, and target states matched; isolate lanes; preserve an immutable pre-reveal critic verdict; let the human owner select an option or `Neither` before revealing the mapping; and use the comparison contract in [references/reference-contracts.md](references/reference-contracts.md).
 
 Generated images are reference boards, not proof of responsive behavior, accessibility, real copy, motion, or implementation correctness.
