@@ -282,7 +282,51 @@ Before coding, accept the section map as one product story: each section must an
 
 Do not use this workflow to expand a small component fix into a page redesign.
 
-## 7. Verification Planning
+## 7. Typography Hierarchy Gate
+
+Use this gate when typography materially carries the composition, realistic localized copy can change its shape, the surface contains long-form reading, or the user asks for an overall typography review. Omit it for bounded work where typography cannot change the decision.
+
+Before implementation, define a semantic type ladder from the roles that actually exist. A common editorial ladder is:
+
+```text
+Issue or product display
+→ page or article title
+→ section title
+→ pull quote or callout
+→ deck or lead
+→ body
+→ metadata, caption, or media marker
+```
+
+Prefer one top display tier per composition unless explicit product, brand, or information-hierarchy evidence supports more. A page title inside a reading flow should not silently inherit the issue-cover or campaign-hero scale. Quotes, media markers, and navigation rows should emphasize their local job without competing as additional heroes.
+
+After the first render, record computed evidence for every material role rather than trusting token names or isolated CSS declarations:
+
+| Role | Selector/token | Primary viewport size / line height | Narrow viewport size / line height | Measure and wrap | Section anchor | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+
+Check the primary desktop, every intermediate width where the relationship changes, narrow mobile, and the smallest supported mobile. Include representative section anchors such as a mid-page heading, quote, list/row title, media marker, caption, and disclosure when present; a first-viewport screenshot alone cannot prove the hierarchy.
+
+For Thai and other scripts with material vertical or shaping behavior:
+
+- use realistic final-language copy rather than translated placeholders;
+- inspect vowel/diacritic clearance, mixed-language baselines, line breaks, and any fixed-height clipping;
+- prefer measure and line-height corrections before enlarging body or quote text;
+- compare adjacent mobile targets so one breakpoint does not create an unexplained size cliff;
+- avoid negative tracking or English-authored wraps imposed on the localized text.
+
+Treat these as hierarchy failures even when each section looks attractive in isolation:
+
+- the page reads like stacked posters because several tiers compete at display scale;
+- a pull quote behaves like a second hero or a section title restarts the page;
+- body and deck are nearly indistinguishable;
+- media markers or navigation rows compete with content headings;
+- typography jumps abruptly between adjacent breakpoints;
+- only the initially reported selector was reduced while equivalent oversized roles remain elsewhere.
+
+Correct the role-owned token or semantic tier, then recapture or remeasure the same anchors. Do not whack-a-mole selectors one at a time. When the first rendered composition shows generic oversized editorial drift, run an evidence-triggered `uncodixify` audit after this hierarchy check; do not precondition a native model-taste baseline with it.
+
+## 8. Verification Planning
 
 When motion is material, declare its ownership before choosing an engine: isolated CSS state transition, native shared-object continuity, coordinated timeline, or viewport-triggered choreography are different jobs. Do not select or reject CSS, View Transitions, GSAP, ScrollTrigger, or another engine from dependency preference alone; choose the smallest mechanism that owns the required sequencing, responsive behavior, interruption, cleanup, and fallback contract.
 

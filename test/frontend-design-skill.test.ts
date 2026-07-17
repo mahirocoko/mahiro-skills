@@ -266,6 +266,27 @@ describe("frontend-design skill", () => {
     expect(doctrine).not.toContain("omit or mark the rest `not applicable`");
   });
 
+  test("ships a whole-page typography hierarchy gate", () => {
+    const skill = read("skills", "frontend-design", "SKILL.md");
+    const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
+
+    expect(skill).toContain("define a semantic type ladder before implementation");
+    expect(skill).toContain("prefers one top display tier per composition");
+    expect(skill).toContain("computed size, line height, measure, and wrapping");
+    expect(skill).toContain("including mid-page section anchors rather than only the first viewport");
+    expect(skill).toContain("diacritics, mixed-language baselines, breakpoint continuity");
+    expect(brief).toContain("## 7. Typography Hierarchy Gate");
+    expect(brief).toContain("Issue or product display");
+    expect(brief).toContain("page or article title");
+    expect(brief).toContain("pull quote or callout");
+    expect(brief).toContain("Role | Selector/token | Primary viewport size / line height");
+    expect(brief).toContain("a first-viewport screenshot alone cannot prove the hierarchy");
+    expect(brief).toContain("the page reads like stacked posters");
+    expect(brief).toContain("Do not whack-a-mole selectors one at a time");
+    expect(brief).toContain("run an evidence-triggered `uncodixify` audit");
+    expect(brief).toContain("do not precondition a native model-taste baseline with it");
+  });
+
   test("keeps universal taste priors out while shipping through the default bundle", () => {
     const skill = read("skills", "frontend-design", "SKILL.md");
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");

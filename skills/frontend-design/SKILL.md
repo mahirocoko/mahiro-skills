@@ -178,6 +178,8 @@ Define only what the implementer needs:
 10. high-level asset roles, placement constraints, and ownership route
 11. implementation constraints, ambiguities, and verification plan
 
+When typography materially carries the composition, realistic localized copy changes wrapping, or the user asks for an overall typography review, define a semantic type ladder before implementation and use the typography hierarchy gate in [references/brief-workflow.md](references/brief-workflow.md). Do not let display, page title, section title, quote, deck, body, metadata, or media-marker roles drift into one oversized tier.
+
 When the owner profile is active, identify the evidence gap it fills, whether the surface uses the presentation or working-surface lane, which product object/transformation determines the composition, which generic composition was rejected, which decisions came from the profile, and which stronger evidence overrode it.
 
 Do not force layout diversity, asymmetry, bento, dual themes, image generation, or animation merely to make the output look designed.
@@ -253,6 +255,9 @@ Before finishing:
 - Reference Fit was judged against the target brand/job, not universal attractiveness or a numeric taste score.
 - The design would not become a different brand merely through a token swap unless shared anatomy is justified by product/design-system reality.
 - Brand-specific typographic voice, hero cadence, proof framing, and CTA closure were checked for deeper cross-brand convergence.
+- Typography-led and long-form work defines a semantic type ladder, prefers one top display tier per composition unless product/brand evidence supports more, and keeps quote, body, metadata, and media markers in their reading roles.
+- Rendered typography QA checks computed size, line height, measure, and wrapping for every material role at primary and narrow viewports, including mid-page section anchors rather than only the first viewport.
+- Localized and Thai-first work uses real copy to check diacritics, mixed-language baselines, breakpoint continuity, and whether line height/measure can solve readability before increasing font size.
 - When brand differentiation is material, the signature expression shapes the main composition, interaction, or evidence relationship rather than surviving as removable decoration.
 - Required states include focus, loading, empty, error, and disabled only where the product needs them.
 - Responsive behavior is explicit for high-risk layouts.
