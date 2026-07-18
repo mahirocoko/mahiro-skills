@@ -37,6 +37,18 @@ describe("frontend-design skill", () => {
     expect(skill).toContain("## Stop Gates");
     expect(skill).toContain("Preserve the active bounded lane when feedback is ambiguous");
     expect(skill).toContain("Ask one concise question before crossing lanes");
+    expect(skill).toContain("### Reference-driven learning mode");
+    expect(skill).toContain("complete visible page anatomy as the default scope");
+    expect(skill).toContain("use owner- or repo-provided product facts first");
+    expect(skill).toContain("clearly fictional placeholder values");
+    expect(skill).toContain("not a live transaction");
+    expect(skill).toContain("The only exception is the clearly fictional placeholder access/pricing values");
+    expect(skill).toContain("do not stop after the first implemented section");
+    expect(skill).toContain("define the shared experience contract before propagating it");
+    expect(skill).toContain("Do not leave the accepted anchor as a polished special case");
+    expect(skill).toContain("prefer the same runtime or component family with an explicit compact mode");
+    expect(skill).toContain("Update prompts, specs, notes, and accessibility names in the same change");
+    expect(skill).toContain("compact/detail evidence is matched");
     expect(skill).toContain("## Output Contract");
     expect(skill).toContain("## Validation / Self-check");
     expect(command).toContain('skill: "frontend-design"');

@@ -82,6 +82,16 @@ Use the smallest workflow that can change the decision:
 
 Do not complete ceremony merely because a template exists. Omit non-material sections instead of marking a large packet `not applicable`.
 
+### Reference-driven learning mode
+
+When the owner supplies a live reference and asks to learn from or make a frontend lab “like this,” treat the reference's complete visible page anatomy as the default scope unless they explicitly bound it. Before the first implementation edit, make a compact section map of the material sequence and label each section Keep, Adapt, or Reject.
+
+Implement adapted non-regulated anatomy through original copy, brand, and content without waiting for a separate prompt for ordinary sections such as a gallery, access/pricing comparison, CTA, or footer. For access/pricing comparisons, use owner- or repo-provided product facts first. In an explicitly sandboxed learning lab only, clearly fictional placeholder values may be used when the surface is visibly labeled as a demo and not a live transaction; never present them as real product data. Ask before changing or inventing a real payment, authentication, legal, consent, privacy, or conversion contract—not merely because the reference contains its visual anatomy.
+
+When the owner accepts one rendered section or screen as the axis for a larger family, define the shared experience contract before propagating it. Record the shared visual grammar, media/content ownership, input and reduced-motion rules, and compact/detail relationship separately from each variant's interaction job. Do not leave the accepted anchor as a polished special case while other items imitate only its surface styling.
+
+When a compact preview claims to represent a detail experience, prefer the same runtime or component family with an explicit compact mode. If that is not feasible, document the behavioral difference instead of implying parity. Update prompts, specs, notes, and accessibility names in the same change as the runtime mechanism, then verify matched compact/detail states at target viewports.
+
 ## Phase Workflow
 
 ### Phase 1: Ground in Repo Reality
@@ -209,8 +219,9 @@ For reference-set and fidelity templates, load [references/reference-contracts.m
 ## Stop Gates
 
 - Stop and ask when preserve versus overhaul materially changes the requested result and cannot be inferred.
+- For an explicitly reference-driven learning lab, do not stop after the first implemented section or wait for prompts for the remaining mapped non-regulated anatomy. Stop only at a real contract boundary or when the owner bounded the scope.
 - Preserve the active bounded lane when feedback is ambiguous. During motion, typography, responsive, interaction-state, or asset-QA work, interpret words such as “overall,” “incomplete,” or “not pass” inside that lane unless the owner explicitly reopens composition, anatomy, IA, or asset scope. Ask one concise question before crossing lanes when the broader scope would materially change the implementation.
-- Do not invent brand assets, product data, metrics, legal copy, routes, or user-owned content.
+- Do not invent brand assets, product data, metrics, legal copy, routes, or user-owned content. The only exception is the clearly fictional placeholder access/pricing values permitted for an explicitly sandboxed learning lab above.
 - Do not claim a generated image proves runtime behavior.
 - Do not add dependencies, design systems, fonts, icon libraries, or animation engines without repo evidence and approval where required.
 - Do not silently change route slugs, nav labels, form names/order, analytics identifiers, legal copy, logos, or established accessibility behavior.
@@ -267,6 +278,8 @@ Before finishing:
 - Requested, planned, completed, and blocked deliverables reconcile when producing a reference set.
 - Native model-taste experiments were not preconditioned by this skill unless explicitly selected.
 - Multi-section composition resets have a section map and a whole-composition rendered checkpoint before local polish.
+- Reference-driven learning labs map the complete visible anatomy before implementation, adapt ordinary non-regulated sections without extra prompts, and label any static transaction-like surface as non-live.
+- When an accepted anchor governs a collection, the shared-versus-variant contract is explicit, compact/detail evidence is matched, and prompts/specs describe the current runtime rather than a superseded mechanism.
 - Implementation-backed visual claims have durable, truthfully named viewport/language/state evidence rather than transient or mislabeled screenshots.
 
 ## References
