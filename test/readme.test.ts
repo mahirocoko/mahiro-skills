@@ -62,6 +62,9 @@ describe("README", () => {
     expect(content).toContain("Sprite asset pipeline");
     expect(content).toContain("bounds/silhouette jitter gates");
     expect(content).toContain("safe named promotion helpers");
+    expect(content).toContain("Game production stack");
+    expect(content).toContain("`game-production` | `/game-production`");
+    expect(content).toContain("`vfx-workflow` | `/vfx-workflow`");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
     expect(content).toContain("bun ./src/cli.ts manifest --json");
@@ -90,6 +93,8 @@ describe("README", () => {
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
     expect(index).toContain("`sprite-workflow` — CLI-first sprite/Codex handoff workflow");
+    expect(index).toContain("`game-production` — Thin production director for complete games.");
+    expect(index).toContain("`vfx-workflow` — Production runtime VFX workflow.");
     expect(index).toContain("chroma-key extraction, dicut cleanup");
     expect(index).toContain("motion-jitter reports");
     expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper.");
@@ -100,6 +105,8 @@ describe("README", () => {
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
     expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");
+    expect(index).toContain("**Game production bundle**: `game-production`, `vfx-workflow`, `sprite-workflow`, `codex-asset-production`, `asset-designer`, `frontend-design`");
+    expect(index).toContain("bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer frontend-design --agent opencode --scope local");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");
   });

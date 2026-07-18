@@ -1,0 +1,8 @@
+description = "Direct whole-game production maturity, inventories, specialist lanes, QA, performance, and release readiness."
+prompt = """
+Execute the `game-production` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"game-production\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/game-production/SKILL.md` for local installs or `~/.gemini/skills/game-production/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

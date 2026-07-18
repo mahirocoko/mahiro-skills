@@ -183,6 +183,23 @@ describe("sprite-workflow skill", () => {
     expect(master).toContain("Stop and regenerate");
   });
 
+  test("documents the v0.1.6 workflow follow-up without repinning the prompt catalog", () => {
+    const followUp = readFileSync(join(skillRoot, "references", "image-cockpit-v0.1.6-follow-up.md"), "utf8");
+    const geometry = readFileSync(join(skillRoot, "references", "generation-geometry-contracts.md"), "utf8");
+    const receipt = JSON.parse(readFileSync(join(skillRoot, "data", "prompt-catalog-upstream-receipt.json"), "utf8"));
+
+    expect(followUp).toContain("79a219c99a8923e9b341c6f9ffcfe5dfd844063e");
+    expect(followUp).toContain("v0.1.5 revision");
+    expect(followUp).toContain("Raw versus normalized QA");
+    expect(followUp).toContain("Separate body and raster FX");
+    expect(followUp).toContain("Effect-sheet QA");
+    expect(geometry).toContain("Accepted-master shared scale profile");
+    expect(geometry).toContain("Elongated creatures");
+    expect(geometry).toContain("Rooted bosses");
+    expect(geometry).toContain("Ground-contact FX");
+    expect(receipt.upstreamRevision).toBe("b997e78609773975a98617568818ac32f40cf1a7");
+  });
+
   test("new-job can scaffold an Image Cockpit-style walk prompt", () => {
     const temp = mkdtempSync(join(tmpdir(), "sprite-scaffold-"));
     const created = runScript("new-job.py", [

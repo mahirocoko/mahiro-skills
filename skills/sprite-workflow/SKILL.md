@@ -28,6 +28,8 @@ Use this skill when sprite or mascot assets need a repeatable workflow rather th
 - Decide true alpha vs chroma-key source before generation. If generated transparency bakes checkerboard/white matte, switch to chroma-key and run cleanup/QA rather than accepting it as final.
 - Treat motion video, native-grid recovery, prompt examples, and third-party material as typed inputs with explicit provenance. None of them upgrades an asset to production approval.
 - Run only the phases the asset needs. “All phases are available” does not mean every sprite should be video-derived, pixel-snapped, or packed into an atlas.
+- Keep playback/game metadata portable and optional. Per-frame timing, playback mode, pivots, anchors, sockets, events, and collision shapes must not mutate accepted raster masters or imply an engine-specific export pack.
+- Preserve raw/native QA beside normalized QA, and keep body sprites separate from wide raster FX unless the runtime explicitly supports a shared cell/origin contract.
 
 ## Default folder contract
 
@@ -124,13 +126,13 @@ Key scripts:
 1. Inspect target repo asset rules and current runtime contract. Decide whether the job needs only the core generation/cleanup path or optional motion-reference, native-grid, or atlas lanes; see `references/pipeline-phases.md`.
 2. Search the attributed prompt library when useful (`prompt-catalog.py search ...`), inspect the exact original and source locator, or render an adapted parameterized template. Treat catalog text as a brief source, not generated-asset provenance.
 3. Create a job with `new-job.py`; include literal target repo, kind, frame size, explicit frame count, action/direction, content and anchor policy, source lane, provenance usage, and stable lineage IDs where available.
-4. Preserve Image Cockpit-style fields separately: positive prompt, negative prompt / avoid, notes, selected source, sprite/effect context, and tournament metadata. Write the concrete prompt/brief into `prompt.md` and any human constraints into `provenance.md`.
+4. Preserve Image Cockpit-style fields separately: positive prompt, negative prompt / avoid, notes, selected source, sprite/effect context, and tournament metadata. Write the concrete prompt/brief into `prompt.md` and any human constraints into `provenance.md`. When needed, add portable timing/playback and optional pivot/anchor/socket/event/hitbox/hurtbox metadata; see `references/image-cockpit-v0.1.6-follow-up.md`.
 5. For hard animation/effect jobs, consider Image Cockpit-style parallel candidate lanes (`--tournament-candidates 3`) with isolated outboxes and a winner-selection QA pass. Dispatch subagents with literal paths. Use `references/subagent-prompts.md` for role templates.
 6. If motion video is useful, record it as `reference-only`, select one true cycle explicitly, and run `extract-motion-reference.py`. Never treat whole-clip even sampling as a production loop or hard-code one provider.
 7. Require outputs in `outbox/`: `manifest.json`, `frames/`, contact/native-review surfaces, optional `preview.gif`, and QA reports. Preserve raw generated/video/native-grid files separately from cleaned winner assets.
 8. For chroma-key imagegen outputs, run `extract-chroma-sheet.py` instead of ad-hoc cleanup. It supports horizontal and explicit row-major 2D grids; component recovery fails closed rather than silently falling back. Compare dicut modes when needed, then run manifest, contact, alpha-background, body/FX, enclosed-hole, center/bounds/bottom, and motion QA.
-9. Before normalization, create and inspect native review evidence. Use horizontal and bottom translation independently; never infer feet from detached FX. For mixed body/FX work, supply a body mask or fail closed. Compare body scale across related actions and roll up expected coverage/reuse for multi-action deliveries.
-10. Review target-size output, adjacent frames, light/dark/checker alpha, motion progression, and one-cycle seam. Script warnings are evidence, not aesthetic approval. Fix extraction/regenerate when needed; use settle-frame replacement only for deliberate calm holds and report reduced motion.
+9. Before normalization, create and inspect native review evidence. Use horizontal and bottom translation independently; never infer feet from detached FX. For mixed body/FX work, supply a body mask or fail closed. For compatible grounded multi-action characters, derive one shared scale profile from an accepted idle/run master and reuse it; see `references/generation-geometry-contracts.md`.
+10. Review raw versus normalized target-size output, correction amounts, adjacent frames, light/dark/checker alpha, motion progression, and one-cycle seam. For separate raster FX, also review event-timed body/effect composites and effect alpha, overdraw, bounds, and geometry overlays without baking guides. Script warnings are evidence, not aesthetic approval.
 11. Use native-grid recovery only for eligible square axis-aligned binary-alpha/opaque pixel-like PNGs. Refusal is a valid result. Preserve the report and upstream algorithm notices; pixel snapping does not cure source licensing or grant production approval.
 12. Promote named artifacts only after explicit review. Assemble a runtime atlas only from hashed `production-approved` manifests under the strict atlas contract; atlas assembly preserves approval but does not create it.
 
@@ -140,7 +142,9 @@ Key scripts:
 - `references/provenance-policy.md` — source vs reference vs production approval rules.
 - `references/subagent-prompts.md` — bounded worker prompts and write policies.
 - `references/repo-adapters.md` — repo-specific adapter notes for Traymori, Agent Halo, Otobun, and generic repos.
-- `references/image-cockpit-patterns.md` — detailed workflow patterns borrowed from Image Cockpit: prompt fields, motion/effect presets, tournament lanes, runner/outbox rules.
+- `references/image-cockpit-patterns.md` — v0.1.5 workflow baseline and the separately pinned 107-prompt catalog context.
+- `references/image-cockpit-v0.1.6-follow-up.md` — portable timing/playback metadata, raw-vs-normalized QA, body/FX composition, effect QA, and deliberate exclusions.
+- `references/generation-geometry-contracts.md` — accepted-master shared scale profiles plus conditional elongated-creature, rooted-boss, and ground-contact-FX prompts.
 - `references/prompt-presets.md` — Image Cockpit-style reusable prompt blocks for character, sprite animation, motion presets, image edit, and effect sheets.
 - `references/runner-contracts.md` — Codex/imagegen worker contract: real raster outputs, blocker sidecars, staging rules, and per-workflow obligations.
 - `references/tournament-scoring.md` — candidate isolation, quality classifications, scoring dimensions, and winner/publish gates.

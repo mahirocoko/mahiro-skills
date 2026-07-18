@@ -1,0 +1,8 @@
+description = "Direct production runtime VFX truth, geometry, cue timing, accessibility, pooling, performance, QA, and promotion."
+prompt = """
+Execute the `vfx-workflow` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"vfx-workflow\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/vfx-workflow/SKILL.md` for local installs or `~/.gemini/skills/vfx-workflow/SKILL.md` for global installs) and follow ALL instructions in it.
+"""

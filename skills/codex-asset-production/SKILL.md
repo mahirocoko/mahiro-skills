@@ -1,6 +1,6 @@
 ---
 name: codex-asset-production
-description: Coordinates Codex imagegen and asset-designer/dicut lanes for production-ish web/game visual assets. Use when asset work needs Codex to generate source art, cut out, clean up, QA, or report provenance for mascots, icons, UI plates, props, share cards, or sprite-like assets.
+description: Coordinates Codex imagegen and asset-designer/dicut lanes for production-ish web/game visual assets and bounded game-VFX asset production. Use when asset work needs Codex to generate source art, cut out, clean up, QA, or report provenance for mascots, icons, UI plates, props, share cards, sprite-like assets, or effect textures/atlases.
 ---
 
 # Codex Asset Production
@@ -15,7 +15,9 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 | Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
 | Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
-| Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Sprite sheets, animation frames, raster bodies, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Runtime VFX design, timing, emitters, shaders, and integration architecture | `vfx-workflow` |
+| Source textures, dicut, atlases, and bounded composite QA for game VFX | `codex-asset-production` |
 | Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
 
 
@@ -44,7 +46,16 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Main agent should act as orchestrator: define contract, dispatch lanes early, capture pane outputs, compare candidates, pick winners, assign final cleanup, inspect actual files, then integrate. Do not let a lane self-promote its own output into runtime paths without main-agent review.
    - Use subagents alongside direct panes when useful: repo-scout for asset contracts/runtime paths, sprite-forge for sprite/frame QA, ui-review for in-app composition, thai-copy-review/kien-thai for copy-bearing images, and asset-designer for alpha/edge review.
 
-4. **Generate assets by role, not by screen crop**
+4. **Use a bounded game-VFX orchestration lane**
+   - Route runtime VFX design, timing, emitters, shaders, and integration architecture to `vfx-workflow`; route raster contracts, extraction, alpha/frame validation, canonical atlas assembly, and frame promotion to `sprite-workflow`. This lane owns bounded candidate execution and handoff for source effects, cleanup, candidate atlas layout, and composite review—not collision/damage semantics, VFX runtime architecture, canonical validation, or promotion.
+   - Define the contract first: effect taxonomy and mechanical geometry (for example telegraph, trail, impact, aura, or screen-space accent plus radius/arc/path/footprint), friendly/hostile/neutral ownership, target viewport and actual-size footprint, and a body-free source requirement. Source sheets must isolate the effect from characters, projectiles, weapons, UI labels, and scene backgrounds.
+   - Record alpha and blend expectations (`straight` or `premultiplied`; `alpha`, `additive`, or another named mode), luminance/color envelope across intended backgrounds, and a reduced-effects fallback that preserves mechanical readability without relying on bloom, hue alone, or high-intensity flashes.
+   - Use explicit roles: `vfx-source` generates isolated source effects; `vfx-dicut` executes matte/residue cleanup and returns candidate alpha evidence under the `sprite-workflow` contract; `vfx-atlas` prepares a candidate trim/padding/order/UV handoff but never replaces `sprite-workflow` validation, approved-atlas assembly, or promotion; `vfx-runtime-composition` builds review composites in the real target viewport/runtime; `vfx-accessibility-review` checks ownership readability, luminance/color limits, and the reduced-effects fallback.
+   - Keep existing executor, candidate, cleanup, and promotion boundaries: each role writes only to its assigned scratch/family path, never self-promotes, and reports provenance including source lane/model/prompt plus file hashes for accepted inputs and outputs. The main agent selects candidates and promotes only after cleanup and QA.
+   - Require real-runtime composite QA with actual stage layers, camera scale, blend mode, ownership variants, and reduced-effects mode. Contact sheets and synthetic previews are supporting evidence, not runtime approval.
+   - Do not copy or reimplement Image Cockpit UI/state; consume only the narrow asset contract and outputs needed by the owning runtime workflow.
+
+5. **Generate assets by role, not by screen crop**
    - For icons, generate icon sheets or individual icons explicitly; prefer SVG/CSS-colorable redraws for production if raster icons fail dark/light theming.
    - For faithful icon SVG refinement, especially when Mahiro says to use `direct-cli`/Agy/Gemini 3.5 High, open an Agy lane with the visible model set to Gemini 3.5 Flash (High), constrain writes to the icon SVG/QA/manifest paths, and have it redraw/trace from the named reference rather than inventing new metaphors. If the user wants exact source alignment, narrow the visual source to the specified contact sheet and compare generated SVGs over that source; adjust only mismatched parts.
    - For mascots, generate state-specific isolated source art with a consistent character model.
@@ -54,19 +65,19 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - For building/object source sheets, a pretty illustration board is not enough: require clear grid/cell spacing, generous padding around every asset, no crowded bottom rows, and a flat or easily sampled background before dicut. If equal-grid cropping touches neighboring pieces, switch to full-sheet background removal plus connected-component bounds instead of forcing fixed cell crops.
    - When the user asks for faithful reference alignment, compare the generated source against the named reference before cleanup: geometry, proportions, role, and visual language must match. If it merely borrows the mood while inventing a new kit, label it `inspired/drifted candidate`, do not promote it, and regenerate or defer before dicut.
 
-5. **Prefer chroma-key sources over fake transparency**
+6. **Prefer chroma-key sources over fake transparency**
    - If direct transparent PNGs show checkerboards or uncertain alpha, reject them and use a clean chroma key that does not appear in the art.
    - For generated sprite sheets, push source quality before cleanup: require an exact flat chroma background, no gradient/lighting/shadow/glow/anti-alias matte around the silhouette, generous spacing between frames, and one isolated character per cell.
    - Sample the actual matte/background color from the generated source instead of assuming the requested key was exact (for example, a requested `#ff00ff` can come back as a nearby magenta gradient or shaded matte). Use fuzzed transparency carefully and preserve sRGBA/alpha rather than accidentally converting the image to grayscale or dropping channels.
    - Verify alpha by compositing on light, sky/cream, peach, checker, and dark backgrounds; do not trust a contact sheet or checkerboard preview as real transparency.
 
-6. **Make Codex own final dicut and edge QA**
+7. **Make Codex own final dicut and edge QA**
    - Codex should perform the cutout/cleanup and inspect edges using asset-designer criteria.
    - Start dicut lanes in normal workspace-write when possible, but if Codex hits sandbox write errors, stop and ask before retrying with scoped full-access. State the allowed paths, no-app-code, no-destructive, and no-commit constraints in the prompt.
    - Have Codex write trial outputs to a separate folder first. The main agent should compare trial vs canonical QA, ask/confirm before replacement, then move accepted outputs into canonical paths and remove or neutralize duplicate trial assets so future implementers do not pick the wrong folder.
    - Main-shell cleanup is only diagnostic/integration fallback unless Mahiro explicitly approves it as final. Do not claim main-shell cutouts are final Codex dicut.
 
-7. **QA before promotion**
+8. **QA before promotion**
    - Require contact sheets and previews on multiple backgrounds, but also open the actual output PNGs: contact sheets can hide loose trim, star/dot bounding-box bloat, or edge residue.
    - For SVG icon QA, do not rely on ImageMagick rasterization when stroke rendering looks suspicious; use browser-rendered HTML previews/screenshots instead. If direct source matching matters, add an overlay QA view that places the SVG over the reference/contact sheet, regenerate it after patches, and keep reports honest about single-color `currentColor` limitations versus watercolor/texture parity.
    - Build composition mocks from the real target stage/runtime layers plus the candidate PNGs, not from QA preview composites, debug labels, or contact-sheet screenshots; rebuild mocks after replacing canonical cleaned assets.
@@ -79,7 +90,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Keep runtime promotion separate from design-reference approval until the app has concrete asset path, size, and responsive contracts.
    - Once a candidate is accepted into a fixed-size runtime surface, measure the actual DOM/target boxes before export, create delivery PNGs at those sizes in a runtime-specific folder, and point CSS/runtime imports there. Keep large clean/source masters separate; if fixed-size export reveals edge artifacts, rebuild from a trimmed/centered master instead of hiding the issue with CSS.
 
-8. **Report provenance and limitations**
+9. **Report provenance and limitations**
    - Say which lane generated each source, which lane performed dicut/cleanup, and which assets were rejected.
    - Be explicit about limitations like rough alpha, dark-mode failure, raster-not-production, or text placeholders.
 
@@ -94,4 +105,4 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 - Scaling large source/clean UI assets directly in production CSS after the runtime size is known, which can hide blurry edges or reveal unbalanced transparent padding later.
 - Leaving manifests with stale `pending` or overconfident status after a cleanup/QA pass.
 
-Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, `sprite-workflow` for sprite-sheet/frame promotion gates, and `direct-cli` when opening bounded Codex/Gemini/Agy lanes.
+Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, `sprite-workflow` for raster body/sprite-sheet/frame promotion gates, `vfx-workflow` for runtime VFX design and architecture, and `direct-cli` when opening bounded Codex/Gemini/Agy lanes.

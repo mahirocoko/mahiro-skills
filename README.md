@@ -81,6 +81,7 @@ Current workflow highlights:
 - **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 - **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
+- **Game production stack** — `/game-production` coordinates whole-game maturity, content/art/UI/audio/save/performance/browser/release gates while `/vfx-workflow` keeps runtime effects mechanically truthful, accessible, bounded, and separately promotable from body sprites.
 
 Common commands:
 
@@ -135,6 +136,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, rendered fidelity review, or a large frontend-reference corpus review tied to a named frontend design decision—not generic deep research. |
+| `game-production` | `/game-production` | You need a whole-game production inventory, maturity/readiness audit, specialist-lane plan, cross-domain QA, or release gate. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
@@ -148,6 +150,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `sprite-workflow` | `/sprite-workflow` | You need attributed sprite prompts/templates, imagegen handoff, motion-reference intake, chroma/grid extraction, anchor/scale/alpha/motion QA, native-grid recovery, approved atlas assembly, previews, or promotion gates. |
 | `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
 | `uncodixify` | `/uncodixify` | You need an explicit or evidence-triggered second-pass audit/enforcement pass for generic AI-looking frontend UI and fake premium styling. |
+| `vfx-workflow` | `/vfx-workflow` | You need mechanically truthful game VFX cues, sockets, timing, geometry, accessibility, pooling, effect budgets, runtime QA, or promotion gates. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
 
@@ -162,6 +165,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
 | Creative web study | `bun ./src/cli.ts install studying-codrops frontend-design learn --agent opencode --scope local` | Codrops evidence study, project-relative frontend decisions, and linked source-repo exploration |
 | Frontend design and assets | `bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Explicit design briefs, post-render taste audits, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
+| Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer frontend-design --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, UI/meta direction, performance/device QA, and release gates |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites

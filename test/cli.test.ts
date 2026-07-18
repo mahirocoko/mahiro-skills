@@ -88,10 +88,16 @@ describe("cli", () => {
       expect(payload.length).toBe(6);
       expect(payload.every((entry) => entry.installedSkills.includes("frontend-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("game-production"))).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("vfx-workflow"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("frontend-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
+      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
+      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("vfx-workflow");
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("frontend-design"))).toBe(true);
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
+      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
+      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("vfx-workflow"))).toBe(true);
     } finally {
       temp.cleanup();
     }

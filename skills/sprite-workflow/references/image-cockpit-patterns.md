@@ -2,7 +2,7 @@
 
 Source analyzed: `dreiachse-cyber/image-cockpit-for-codex-workflows` (`src/App.tsx`, `server/index.ts`, README, smoke scripts).
 
-Current pinned follow-up: `b997e78609773975a98617568818ac32f40cf1a7` (`v0.1.5`). The bundled prompt catalog includes all 107 app-visible examples: 101 Markdown-backed entries plus six legacy inline examples. Full MIT text and source locators ship with the skill.
+Pinned v0.1.5 baseline and prompt-catalog source: `b997e78609773975a98617568818ac32f40cf1a7`. The bundled prompt catalog includes all 107 app-visible examples: 101 Markdown-backed entries plus six legacy inline examples. Full MIT text and source locators ship with the skill. Keep this catalog receipt unchanged; later workflow evidence is documented separately in `image-cockpit-v0.1.6-follow-up.md`.
 
 ## Core model
 
