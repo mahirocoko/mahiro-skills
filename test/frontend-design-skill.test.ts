@@ -249,6 +249,9 @@ describe("frontend-design skill", () => {
     expect(skill).toContain("require explicit approval of those changed contracts");
     expect(skill).toContain("return only material sections");
     expect(skill).toContain("Run `uncodixify` only after the first rendered composition exists");
+    expect(skill).toContain("include the **website frame** in that anatomy map");
+    expect(skill).toContain("must not simply disappear on mobile without an equivalent");
+    expect(skill).toContain("A logo row or metadata strip alone is not a complete website footer");
     expect(brief).toContain("`Overhaul` describes how much visual language changes");
     expect(brief).toContain("Claim or demonstration | Source path/evidence");
     expect(brief).toContain("Section | User question | Verified product fact | Proof artifact");
@@ -256,6 +259,12 @@ describe("frontend-design skill", () => {
     expect(brief).toContain("which existing anatomy survives and which is replaced");
     expect(brief).toContain("after copy and visual polish");
     expect(brief).toContain("reconcile routed asset manifests or delivery notes with runtime files");
+    expect(brief).toContain("### Website Frame Gate");
+    expect(brief).toContain("choose static, sticky, or fixed behavior");
+    expect(brief).toContain("do not hide desktop primary navigation without a replacement");
+    expect(brief).toContain("focus containment and return");
+    expect(brief).toContain("does not count as a complete full-website footer");
+    expect(brief).toContain("mobile navigation closed and open when applicable");
     expect(brief).toContain("Do not use this workflow to expand a small component fix");
     expect(references).toContain("## 6. Rendered QA Evidence Contract");
     expect(references).toContain("CSS viewport and DPR");

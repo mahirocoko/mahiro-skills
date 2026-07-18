@@ -328,6 +328,20 @@ Correct the role-owned token or semantic tier, then recapture or remeasure the s
 
 ## 8. Verification Planning
 
+### Website Frame Gate
+
+Use this gate for a full-page website whose header/navigation and footer materially establish orientation, site completeness, trust, or the next action. Do not impose it on a bounded embedded surface or a page whose product evidence supports a different shell.
+
+Before implementation, record the website frame as deliberately as the main section sequence:
+
+- **Header/navigation ownership** — choose static, sticky, or fixed behavior from page length, orientation needs, available space, and overlap risk. For long product or marketing pages where navigation remains useful, prefer a persistent sticky/fixed frame rather than an opening-only brand strip.
+- **Mobile equivalence** — do not hide desktop primary navigation without a replacement. Choose a truthful compact navigation, menu, or modal drawer that preserves the same destinations and priority.
+- **Mobile interaction contract** — when a drawer/modal is used, verify control naming, open/close, keyboard access, Escape, focus containment and return, background scroll lock, viewport fit, and reduced-motion behavior.
+- **Footer closure** — make the footer answer the site's real closing questions: where else can I go, what can I do next, who owns this, and which trust/contact/legal/provenance facts are supported. Include only roles the product can prove; not every footer needs every conventional column.
+- **Insufficient closure** — a logo row, copyright line, or metadata strip by itself does not count as a complete full-website footer when the page job needs navigation, utility, trust, or ownership closure.
+
+Rendered proof must include the desktop header at the top and after meaningful scroll, mobile navigation closed and open when applicable, and the footer at desktop and narrow/mobile widths. Check content occlusion under persistent headers, anchor offsets, stacking, overflow, console/runtime errors, and accessibility in the open mobile state—not only the Hero and middle sections.
+
 When motion is material, declare its ownership before choosing an engine: isolated CSS state transition, native shared-object continuity, coordinated timeline, or viewport-triggered choreography are different jobs. Do not select or reject CSS, View Transitions, GSAP, ScrollTrigger, or another engine from dependency preference alone; choose the smallest mechanism that owns the required sequencing, responsive behavior, interruption, cleanup, and fallback contract.
 
 Choose evidence that can disprove a weak brief:
