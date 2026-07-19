@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { createHash } from "crypto";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { spawnSync } from "child_process";
@@ -44,6 +45,9 @@ describe("sprite-workflow skill", () => {
     expect(existsSync(join(scriptsRoot, "promote-named-artifact.py"))).toBe(true);
     expect(existsSync(join(repoRoot, "commands", "sprite-workflow.md"))).toBe(true);
     expect(existsSync(join(repoRoot, "commands-gemini", "mh-sprite-workflow.toml"))).toBe(true);
+    expect(readFileSync(join(skillRoot, "references", "runner-contracts.md"), "utf8")).toContain("source-ready-normalization-required");
+    expect(readFileSync(join(skillRoot, "references", "subagent-prompts.md"), "utf8")).toContain("main orchestrator owns canonical extraction");
+    expect(readFileSync(join(skillRoot, "references", "tournament-scoring.md"), "utf8")).toContain("Mechanical score is advisory only");
   });
 
   test("creates jobs, validates manifests, and writes contact sheets", () => {
@@ -80,27 +84,133 @@ describe("sprite-workflow skill", () => {
     expect(job.spriteContext.chromaKey).toBe("green");
     expect(job.tournament.candidateCount).toBe(3);
     expect(job.tournament.isolateOutboxes).toBe(true);
+    expect(job.provenance.sourceRequirement).toBe("imagegen-required");
+    expect(readFileSync(join(payload.jobDir, "prompt.md"), "utf8")).toContain("Do not substitute Pillow/manual transforms");
+    expect(readFileSync(join(payload.jobDir, "prompt.md"), "utf8")).toContain("<!-- sprite-workflow:sourceRequirement=imagegen-required -->");
 
     const framesDir = join(payload.jobDir, "outbox", "frames");
+    const rawDir = join(payload.jobDir, "outbox", "raw-generated");
     mkdirSync(framesDir, { recursive: true });
+    mkdirSync(rawDir, { recursive: true });
     writeFileSync(join(framesDir, "idle-00.png"), "not-a-real-png-but-a-frame-file");
+    writeFileSync(join(rawDir, "provider-source.png"), "provider-source-fixture");
+    const sourceHash = createHash("sha256").update(readFileSync(join(rawDir, "provider-source.png"))).digest("hex");
     writeFileSync(payload.manifest, JSON.stringify({
       frameSize: [16, 16],
       states: ["idle", "work"],
       frames: [{ file: "frames/idle-00.png", state: "idle", index: 0, durationMs: 120 }],
       anchors: { default: [8, 15] },
-      provenance: { sourceLane: "codex", usage: "source-candidate" },
+      provenance: {
+        sourceLane: "codex",
+        sourceRequirement: "imagegen-required",
+        poseAuthorship: "generated-poses",
+        providerReceipt: {
+          provider: "codex-imagegen",
+          model: "gpt-image",
+          operation: "imagegen",
+          sourceArtifacts: [{ file: "raw-generated/provider-source.png", sha256: sourceHash }],
+        },
+        usage: "source-candidate",
+      },
     }, null, 2));
 
     const validated = runScript("validate-manifest.py", [payload.manifest, "--json"], temp);
     expect(validated.status).toBe(0);
     expect(JSON.parse(validated.stdout).ok).toBe(true);
 
+    const stripped = JSON.parse(readFileSync(payload.manifest, "utf8"));
+    delete stripped.provenance.sourceRequirement;
+    writeFileSync(payload.manifest, JSON.stringify(stripped, null, 2));
+    const downgraded = runScript("validate-manifest.py", [payload.manifest, "--json"], temp);
+    expect(downgraded.status).toBe(1);
+    expect(downgraded.stdout).toContain("must match bound job.json value 'imagegen-required'");
+    stripped.provenance.sourceRequirement = "imagegen-required";
+    writeFileSync(payload.manifest, JSON.stringify(stripped, null, 2));
+
     const sheet = runScript("make-contact-sheet.py", [payload.manifest], temp);
     expect(sheet.status).toBe(0);
     const sheetPath = join(payload.jobDir, "outbox", "contact-sheet.html");
     expect(existsSync(sheetPath)).toBe(true);
     expect(readFileSync(sheetPath, "utf8")).toContain("Sprite contact sheet");
+  });
+
+  test("defaults Gemini generation to imagegen-required and rejects conflicting structured prompt markers", () => {
+    const temp = mkdtempSync(join(tmpdir(), "sprite-source-requirement-"));
+    const root = join(temp, ".agent-state", "sprite-workflow");
+    const gemini = runScript("new-job.py", [
+      "--root", root,
+      "--target-repo", temp,
+      "--job-id", "gemini-source",
+      "--title", "Gemini move",
+      "--workflow-mode", "sprite-generate",
+      "--source-lane", "gemini",
+    ], temp);
+    expect(gemini.status).toBe(0);
+    const payload = JSON.parse(gemini.stdout) as { jobDir: string };
+    const job = JSON.parse(readFileSync(join(payload.jobDir, "job.json"), "utf8"));
+    expect(job.provenance.sourceRequirement).toBe("imagegen-required");
+
+    const conflict = runScript("new-job.py", [
+      "--root", root,
+      "--target-repo", temp,
+      "--job-id", "conflicting-source",
+      "--title", "Conflicting source",
+      "--workflow-mode", "sprite-generate",
+      "--source-requirement", "diagnostic-only",
+      "--prompt", "<!-- sprite-workflow:sourceRequirement=manual-rig-allowed -->",
+    ], temp);
+    expect(conflict.status).toBe(1);
+    expect(conflict.stderr + conflict.stdout).toContain("sourceRequirement marker conflicts with structured provenance.sourceRequirement");
+  });
+
+  test("fails closed when imagegen-required provenance lacks provider artifacts", () => {
+    const temp = mkdtempSync(join(tmpdir(), "sprite-imagegen-gate-"));
+    const framesDir = join(temp, "frames");
+    const rawDir = join(temp, "raw-generated");
+    mkdirSync(framesDir, { recursive: true });
+    mkdirSync(rawDir, { recursive: true });
+    writeFileSync(join(framesDir, "move-00.png"), "candidate-frame");
+    writeFileSync(join(rawDir, "provider-source.png"), "real-provider-source-receipt-fixture");
+    const hash = createHash("sha256").update(readFileSync(join(rawDir, "provider-source.png"))).digest("hex");
+    const manifest = join(temp, "manifest.json");
+    const base = {
+      frameSize: [16, 16],
+      states: ["move"],
+      frames: [{ file: "frames/move-00.png", state: "move", index: 0 }],
+      provenance: {
+        sourceLane: "codex",
+        sourceRequirement: "imagegen-required",
+        usage: "source-candidate",
+      },
+    };
+    writeFileSync(manifest, JSON.stringify(base, null, 2));
+    const blocked = runScript("validate-manifest.py", [manifest, "--json"], temp);
+    expect(blocked.status).toBe(1);
+    expect(blocked.stdout).toContain("providerReceipt");
+    expect(blocked.stdout).toContain("generated-poses");
+
+    writeFileSync(manifest, JSON.stringify({
+      ...base,
+      provenance: {
+        ...base.provenance,
+        poseAuthorship: "generated-poses",
+        providerReceipt: {
+          provider: "codex-imagegen",
+          model: "gpt-image",
+          operation: "imagegen",
+          sourceArtifacts: [{ file: "raw-generated/provider-source.png", sha256: hash }],
+        },
+      },
+    }, null, 2));
+    expect(runScript("validate-manifest.py", [manifest, "--json"], temp).status).toBe(0);
+
+    writeFileSync(manifest, JSON.stringify({
+      ...base,
+      provenance: { sourceLane: "manual", sourceRequirement: "diagnostic-only", usage: "production-approved" },
+    }, null, 2));
+    const diagnostic = runScript("validate-manifest.py", [manifest, "--json"], temp);
+    expect(diagnostic.status).toBe(1);
+    expect(diagnostic.stdout).toContain("diagnostic-only provenance cannot be production-approved");
   });
 
   test("keeps promotion gated by provenance and explicit approval", () => {
@@ -130,14 +240,27 @@ describe("sprite-workflow skill", () => {
     const temp = mkdtempSync(join(tmpdir(), "sprite-named-promote-"));
     const outbox = join(temp, "job", "outbox");
     mkdirSync(outbox, { recursive: true });
-    expect(spawnSync(imagePython, ["-c", `from PIL import Image\nim=Image.new('RGBA',(16,16),(255,0,0,255)); im.save(${JSON.stringify(join(outbox, "sheet.png"))},'PNG'); im.save(${JSON.stringify(join(outbox, "preview.gif"))},'GIF'); im.save(${JSON.stringify(join(outbox, "idle-frame.png"))},'PNG')`]).status).toBe(0);
+    mkdirSync(join(outbox, "raw-generated"), { recursive: true });
+    expect(spawnSync(imagePython, ["-c", `from PIL import Image\nim=Image.new('RGBA',(16,16),(255,0,0,255)); im.save(${JSON.stringify(join(outbox, "sheet.png"))},'PNG'); im.save(${JSON.stringify(join(outbox, "preview.gif"))},'GIF'); im.save(${JSON.stringify(join(outbox, "idle-frame.png"))},'PNG'); im.save(${JSON.stringify(join(outbox, "raw-generated", "provider-source.png"))},'PNG')`]).status).toBe(0);
+    const providerHash = createHash("sha256").update(readFileSync(join(outbox, "raw-generated", "provider-source.png"))).digest("hex");
     const manifest = join(outbox, "manifest.json");
     writeFileSync(manifest, JSON.stringify({
       frameSize: [16, 16],
       states: ["idle"],
       frames: [{ file: "idle-frame.png", state: "idle", index: 0 }],
       anchors: { default: [8, 15] },
-      provenance: { sourceLane: "codex", usage: "source-candidate" },
+      provenance: {
+        sourceLane: "codex",
+        sourceRequirement: "imagegen-required",
+        poseAuthorship: "generated-poses",
+        providerReceipt: {
+          provider: "codex-imagegen",
+          model: "gpt-image",
+          operation: "imagegen",
+          sourceArtifacts: [{ file: "raw-generated/provider-source.png", sha256: providerHash }],
+        },
+        usage: "source-candidate",
+      },
       artifacts: { sheet: "sheet.png", previewGif: "preview.gif" },
     }, null, 2));
     const promoted = runScript("promote-named-artifact.py", [
@@ -154,6 +277,119 @@ describe("sprite-workflow skill", () => {
     expect(outputManifest.name).toBe("cat-sit-tea");
     expect(outputManifest.artifacts.sheet.file).toBe("cat-sit-tea-sprite-sheet.png");
     expect(outputManifest.provenance.usage).toBe("production-approved");
+    expect(outputManifest.provenance.providerReceipt.sourceArtifacts[0].file).toBe("raw-generated/source-0000.png");
+    expect(existsSync(join(temp, "public-assets", "raw-generated", "source-0000.png"))).toBe(true);
+  });
+
+  test("preserves imagegen receipt artifacts through plain promotion and blocks atlas bypass", () => {
+    const temp = mkdtempSync(join(tmpdir(), "sprite-receipt-promote-"));
+    const jobDir = join(temp, "job");
+    const outbox = join(jobDir, "outbox");
+    mkdirSync(join(outbox, "frames"), { recursive: true });
+    mkdirSync(join(outbox, "raw-generated"), { recursive: true });
+    writeFileSync(join(jobDir, "job.json"), JSON.stringify({
+      provenance: { sourceLane: "codex", sourceRequirement: "imagegen-required", usage: "source-candidate" },
+    }, null, 2));
+    expect(spawnSync(imagePython, ["-c", `from PIL import Image\nim=Image.new('RGBA',(8,8),(20,40,60,255)); im.save(${JSON.stringify(join(outbox, "frames", "move-00.png"))},'PNG'); im.save(${JSON.stringify(join(outbox, "raw-generated", "provider-source.png"))},'PNG')`]).status).toBe(0);
+    const frameHash = createHash("sha256").update(readFileSync(join(outbox, "frames", "move-00.png"))).digest("hex");
+    const sourceHash = createHash("sha256").update(readFileSync(join(outbox, "raw-generated", "provider-source.png"))).digest("hex");
+    const manifest = join(outbox, "manifest.json");
+    const provenance = {
+      sourceLane: "codex",
+      sourceRequirement: "imagegen-required",
+      poseAuthorship: "generated-poses",
+      providerReceipt: {
+        provider: "codex-imagegen",
+        model: "gpt-image",
+        operation: "imagegen",
+        sourceArtifacts: [{ file: "raw-generated/provider-source.png", sha256: sourceHash }],
+      },
+      usage: "production-approved",
+    };
+    writeFileSync(manifest, JSON.stringify({
+      frameSize: [8, 8],
+      frameCount: 1,
+      states: ["move"],
+      frames: [{ id: "move-0", file: "frames/move-00.png", state: "move", index: 0, anchor: [4, 7], sha256: frameHash, dimensions: [8, 8] }],
+      provenance,
+    }, null, 2));
+    const promoted = runScript("promote-artifact.py", [manifest, "--target-dir", join(temp, "plain-promoted"), "--approve"], temp);
+    expect(promoted.status).toBe(0);
+    expect(existsSync(join(temp, "plain-promoted", "raw-generated", "provider-source.png"))).toBe(true);
+    const promotedManifest = join(temp, "plain-promoted", "manifest.json");
+    expect(runScript("validate-manifest.py", [promotedManifest], temp).status).toBe(0);
+    const promotedData = JSON.parse(readFileSync(promotedManifest, "utf8"));
+    expect(promotedData.provenance.sourceWorkflow.endsWith("/job/outbox")).toBe(true);
+    delete promotedData.provenance.sourceRequirement;
+    writeFileSync(promotedManifest, JSON.stringify(promotedData, null, 2));
+    const promotedLegacyReview = join(temp, "promoted-legacy-review.json");
+    writeFileSync(promotedLegacyReview, JSON.stringify({
+      schemaVersion: 1,
+      decision: "approved-legacy-provenance",
+      reviewer: "sprite workflow fixture",
+      reviewedAt: "2026-07-19T00:00:00Z",
+      reason: "Attempted promoted downgrade regression fixture.",
+      sourceManifestSha256: createHash("sha256").update(readFileSync(promotedManifest)).digest("hex"),
+    }, null, 2));
+    const promotedDowngrade = runScript("assemble-approved-atlas.py", [
+      promotedManifest,
+      "--output", join(temp, "promoted-downgrade-atlas.png"),
+      "--atlas-manifest", join(temp, "promoted-downgrade-atlas.json"),
+      "--allow-legacy-provenance",
+      "--legacy-provenance-review", promotedLegacyReview,
+    ], temp);
+    expect(promotedDowngrade.status).toBe(2);
+    expect(promotedDowngrade.stderr).toContain("legacy provenance path is unavailable for a previously promoted manifest");
+
+    writeFileSync(manifest, JSON.stringify({
+      frameSize: [8, 8],
+      frameCount: 1,
+      states: ["move"],
+      frames: [{ id: "move-0", file: "frames/move-00.png", state: "move", index: 0, anchor: [4, 7], sha256: frameHash, dimensions: [8, 8] }],
+      provenance: { sourceLane: "codex", usage: "production-approved" },
+    }, null, 2));
+    const atlas = runScript("assemble-approved-atlas.py", [manifest, "--output", join(temp, "atlas.png"), "--atlas-manifest", join(temp, "atlas.json")], temp);
+    expect(atlas.status).toBe(2);
+    expect(atlas.stderr).toContain("manifest lacks sourceRequirement");
+    const legacyReview = join(temp, "legacy-review.json");
+    writeFileSync(legacyReview, JSON.stringify({
+      schemaVersion: 1,
+      decision: "approved-legacy-provenance",
+      reviewer: "sprite workflow fixture",
+      reviewedAt: "2026-07-19T00:00:00Z",
+      reason: "Attempted downgrade regression fixture.",
+      sourceManifestSha256: createHash("sha256").update(readFileSync(manifest)).digest("hex"),
+    }, null, 2));
+    const downgrade = runScript("assemble-approved-atlas.py", [
+      manifest,
+      "--output", join(temp, "downgrade-atlas.png"),
+      "--atlas-manifest", join(temp, "downgrade-atlas.json"),
+      "--allow-legacy-provenance",
+      "--legacy-provenance-review", legacyReview,
+    ], temp);
+    expect(downgrade.status).toBe(2);
+    expect(downgrade.stderr).toContain("legacy provenance path is unavailable for a job-bound manifest");
+  });
+
+  test("rejects a symlinked bound job provenance contract", () => {
+    const temp = mkdtempSync(join(tmpdir(), "sprite-bound-job-symlink-"));
+    const jobDir = join(temp, "job");
+    const outbox = join(jobDir, "outbox");
+    mkdirSync(join(outbox, "frames"), { recursive: true });
+    writeFileSync(join(temp, "outside-job.json"), JSON.stringify({ provenance: { sourceRequirement: "diagnostic-only" } }));
+    symlinkSync(join(temp, "outside-job.json"), join(jobDir, "job.json"));
+    writeFileSync(join(outbox, "frames", "idle-00.png"), "frame-fixture");
+    const manifest = join(outbox, "manifest.json");
+    writeFileSync(manifest, JSON.stringify({
+      frameSize: [8, 8],
+      states: ["idle"],
+      frames: [{ file: "frames/idle-00.png", state: "idle", index: 0 }],
+      provenance: { sourceLane: "manual", sourceRequirement: "manual-rig-allowed", usage: "source-candidate" },
+    }, null, 2));
+
+    const result = runScript("validate-manifest.py", [manifest, "--json"], temp);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("bound job.json must be a regular non-symlink");
   });
 
   test("documents Image Cockpit workflow patterns", () => {
@@ -170,12 +406,15 @@ describe("sprite-workflow skill", () => {
   test("documents deeper Image Cockpit prompt and runner contracts", () => {
     const presets = readFileSync(join(skillRoot, "references", "prompt-presets.md"), "utf8");
     const runner = readFileSync(join(skillRoot, "references", "runner-contracts.md"), "utf8");
+    const provenance = readFileSync(join(skillRoot, "references", "provenance-policy.md"), "utf8");
     const scoring = readFileSync(join(skillRoot, "references", "tournament-scoring.md"), "utf8");
     expect(presets).toContain("walk-cycle");
     expect(presets).toContain("Shared negative prompt");
     expect(presets).toContain("Standard direction-split animation");
     expect(runner).toContain("blocker JSON sidecar");
     expect(runner).toContain("sprite-generate");
+    expect(provenance).toContain("Never infer imagegen authorship from `sourceLane: codex` alone");
+    expect(provenance).toContain("not a signed provider attestation");
     expect(scoring).toContain("Quality classifications");
     expect(scoring).toContain("visual honesty");
     const master = readFileSync(join(skillRoot, "references", "master-sprite-first.md"), "utf8");
@@ -245,9 +484,16 @@ describe("sprite-workflow skill", () => {
   test("documents target-size visual honesty before promotion", () => {
     const skill = readFileSync(join(skillRoot, "SKILL.md"), "utf8");
     const cleanup = readFileSync(join(skillRoot, "references", "asset-cleanup.md"), "utf8");
+    const runner = readFileSync(join(skillRoot, "references", "runner-contracts.md"), "utf8");
     expect(skill).toContain("Passing scripts/QA does not mean an asset is production-ready");
     expect(skill).toContain("visual honesty gate");
     expect(skill).toContain("do not call it final");
+    expect(skill).toContain("imagegen-required");
+    expect(skill).toContain("static or near-static rows fail");
+    expect(runner).toContain("## Source-authorship gate");
+    expect(runner).toContain("hash-bound provider receipt");
+    expect(runner).toContain("Manual transforms, Pillow rigs");
+    expect(runner).toContain("not `image-cockpit.animation.v2`");
     expect(cleanup).toContain("Visual honesty gate");
     expect(cleanup).toContain("do not describe it as final");
   });

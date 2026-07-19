@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Create hash-bound native pre-normalization review evidence."""
 from __future__ import annotations
-import argparse, hashlib, json, os, shutil, tempfile
+import argparse, hashlib, importlib.util, json, os, shutil, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+
+HELPER_PATH = Path(__file__).with_name("derived-manifest.py")
+SPEC = importlib.util.spec_from_file_location("sprite_derived_manifest", HELPER_PATH)
+if SPEC is None or SPEC.loader is None: raise RuntimeError("cannot load derived manifest helper")
+HELPER = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(HELPER)
 
 def sha(path: Path) -> str: return hashlib.sha256(path.read_bytes()).hexdigest()
 def flat(value: str, label: str) -> str:
@@ -46,6 +51,7 @@ def main() -> int:
         evidence={"kind":"native-pre-normalization-review","approved":a.approve,"sourceManifest":{"path":str(manifest),"sha256":sha(manifest)},"sourceSheet":{"path":str(source),"sha256":sha(source)},"reviewArtifact":{"file":artifact.name,"sha256":sha(artifact)},"reviewedAt":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),"notes":a.notes}
         evidence_path=stage/"native-review.json"; evidence_path.write_text(json.dumps(evidence,indent=2)+"\n"); evidence["evidence"]={"file":evidence_path.name,"sha256":sha(evidence_path)}
         reviewed["reviews"]["nativePreNormalization"]=evidence
+        HELPER.copy_provider_sources(reviewed, base, stage)
         (stage/"manifest.json").write_text(json.dumps(reviewed,indent=2)+"\n")
         stage.rename(output)
     payload={"ok":a.approve,"artifact":str(output/"native-pre-normalization.png"),"evidence":str(output/"native-review.json"),"manifest":str(output/"manifest.json")}

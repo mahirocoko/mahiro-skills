@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Assemble an atlas only from hash-pinned production-approved PNG frames."""
-import argparse, hashlib, json, math, os, sys, tempfile
+import argparse, hashlib, json, math, os, subprocess, sys, tempfile
 from pathlib import Path
 
 ALGORITHM = "approved-atlas-layout-v1"
@@ -14,10 +14,27 @@ def contained_file(base, value):
     if not resolved.is_file() or resolved.stat().st_nlink != 1: raise ValueError(f"frame must be a regular non-hardlinked file: {value}")
     return resolved
 
+def legacy_review(path, manifest_path):
+    if path is None: raise ValueError("--legacy-provenance-review is required with --allow-legacy-provenance")
+    raw = Path(path)
+    if raw.is_symlink(): raise ValueError("legacy provenance review must not be a symlink")
+    resolved = raw.resolve(strict=True)
+    if not resolved.is_file() or resolved.stat().st_nlink != 1: raise ValueError("legacy provenance review must be a regular non-hardlinked file")
+    try: payload = json.loads(resolved.read_text())
+    except Exception as error: raise ValueError(f"invalid legacy provenance review JSON: {error}")
+    if payload.get("schemaVersion") != 1 or payload.get("decision") != "approved-legacy-provenance": raise ValueError("legacy provenance review decision must be approved-legacy-provenance schemaVersion 1")
+    for key in ("reviewer", "reviewedAt", "reason"):
+        if not isinstance(payload.get(key), str) or not payload[key].strip(): raise ValueError(f"legacy provenance review {key} must be a non-empty string")
+    if payload.get("sourceManifestSha256") != sha(manifest_path): raise ValueError("legacy provenance review sourceManifestSha256 mismatch")
+    return resolved, payload
+
 def main():
     p = argparse.ArgumentParser(description="Build a deterministic unscaled atlas from an approved manifest.")
     p.add_argument("manifest"); p.add_argument("--output", required=True); p.add_argument("--atlas-manifest", required=True)
-    p.add_argument("--layout", choices=["row", "column", "compact"], default="compact"); args = p.parse_args()
+    p.add_argument("--layout", choices=["row", "column", "compact"], default="compact")
+    p.add_argument("--allow-legacy-provenance", action="store_true", help="Explicitly allow an older approved manifest without sourceRequirement")
+    p.add_argument("--legacy-provenance-review", help="Hash-bound JSON review required for the exceptional legacy path")
+    args = p.parse_args()
     try:
         from PIL import Image
     except ImportError: return refuse("Pillow is required: install it with `python3 -m pip install Pillow`.")
@@ -26,6 +43,24 @@ def main():
     manifest_path = manifest_raw.resolve(); base = manifest_path.parent
     try: source = json.loads(manifest_path.read_text())
     except Exception as error: return refuse(f"invalid manifest JSON: {error}")
+    bound_job = manifest_path.parent.parent / "job.json" if manifest_path.parent.name == "outbox" else None
+    source_requirement = source.get("provenance", {}).get("sourceRequirement")
+    legacy_review_path = None; legacy_review_payload = None
+    if source_requirement is None:
+        if not args.allow_legacy_provenance:
+            return refuse("manifest lacks sourceRequirement; the exceptional legacy path requires --allow-legacy-provenance and a review record")
+        if bound_job is not None and (bound_job.exists() or bound_job.is_symlink()):
+            return refuse("legacy provenance path is unavailable for a job-bound manifest")
+        if source.get("provenance", {}).get("sourceWorkflow"):
+            return refuse("legacy provenance path is unavailable for a previously promoted manifest")
+        try: legacy_review_path, legacy_review_payload = legacy_review(args.legacy_provenance_review, manifest_path)
+        except (ValueError, OSError) as error: return refuse(str(error))
+    elif args.allow_legacy_provenance or args.legacy_provenance_review:
+        return refuse("legacy provenance options are valid only when sourceRequirement is absent")
+    if source_requirement is not None or (bound_job is not None and (bound_job.exists() or bound_job.is_symlink())):
+        validator = Path(__file__).with_name("validate-manifest.py")
+        checked = subprocess.run([sys.executable, str(validator), str(manifest_path)], text=True, capture_output=True)
+        if checked.returncode != 0: return refuse("source-authorship validation failed: " + (checked.stdout or checked.stderr).strip())
     if source.get("provenance", {}).get("usage") != "production-approved": return refuse("manifest is not production-approved")
     frames = source.get("frames")
     if not isinstance(frames, list) or not frames: return refuse("manifest must contain frames")
@@ -71,6 +106,8 @@ def main():
                "sourceManifest": {"path": str(manifest_path), "sha256": sha(manifest_path), "usage": "production-approved"},
                "atlas": {"path": str(output), "sha256": sha(temp_output), "dimensions": list(atlas.size)}, "frames": output_frames,
                "transformPolicy": {"scaling": False, "trimming": False, "rotation": False}}
+    if legacy_review_path is not None:
+        payload["legacyProvenanceReview"] = {"path": str(legacy_review_path), "sha256": sha(legacy_review_path), "decision": legacy_review_payload["decision"], "reviewer": legacy_review_payload["reviewer"], "reviewedAt": legacy_review_payload["reviewedAt"]}
     with tempfile.NamedTemporaryFile(prefix=".atlas-manifest-", suffix=".json", dir=atlas_manifest.parent, mode="w", delete=False) as stream:
         stream.write(json.dumps(payload, indent=2, sort_keys=True) + "\n"); temp_manifest=Path(stream.name)
     try:

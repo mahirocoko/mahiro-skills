@@ -113,6 +113,15 @@ Classifications:
 
 Always test actual target viewports and real content. A visual similarity claim without rendered evidence remains unverified.
 
+### Whole-page fidelity closure ledger
+
+When the owner requests a full page to match a live or captured reference, carry the pre-implementation anatomy map into this closure ledger instead of reviewing only high-profile sections:
+
+| Frame / section | Target anatomy, material, state, responsive contract | Current DOM/CSS owner | Implementation status | Matched reference/current evidence | Remaining drift |
+| --- | --- | --- | --- | --- | --- |
+
+Use `unmapped`, `legacy owner remains`, `implemented-unreviewed`, `drifted`, `intentionally adapted`, or `closed` rather than a generic progress percentage. Close a row only after section-level captures at matched viewports/states and relevant DOM geometry agree with the contract. Behavior tests and builds support runtime confidence but do not prove visual closure; a downscaled full-page capture supports composition rhythm but can hide local drift. A reviewer claiming whole-page coverage must return a verdict for every ledger row. Before final handoff, remove stale implementation artifacts or label them as historical so an older surface cannot be cited as current evidence.
+
 ## 4. Brand-Relative Pairwise Comparison
 
 Use pairwise review when choosing references or comparing current and candidate briefs/renders:

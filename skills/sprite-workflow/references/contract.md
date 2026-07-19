@@ -41,6 +41,7 @@ Required fields:
   "gridExtraction": null,
   "provenance": {
     "sourceLane": "codex",
+    "sourceRequirement": "imagegen-required",
     "usage": "source-candidate"
   }
 }
@@ -66,6 +67,14 @@ Supported provenance `usage` values:
 - `reference-only`
 - `source-candidate`
 - `production-approved`
+
+Supported provenance `sourceRequirement` values:
+
+- `imagegen-required`
+- `manual-rig-allowed`
+- `diagnostic-only`
+
+Jobs created by `new-job.py` bind their outbox manifest to the job's `sourceLane` and `sourceRequirement`; the manifest may not omit or downgrade either value. Legacy standalone manifests remain readable when this field is absent.
 
 Schema-v2 fields are optional for backward compatibility. When any are present, set `schemaVersion: 2` and preserve them through extraction, normalization, QA, and promotion:
 
@@ -143,6 +152,16 @@ Required fields:
   },
   "provenance": {
     "sourceLane": "codex",
+    "sourceRequirement": "imagegen-required",
+    "poseAuthorship": "generated-poses",
+    "providerReceipt": {
+      "provider": "codex-imagegen",
+      "model": "provider-model-id",
+      "operation": "imagegen",
+      "sourceArtifacts": [
+        { "file": "raw-generated/provider-source.png", "sha256": "..." }
+      ]
+    },
     "usage": "source-candidate"
   }
 }
@@ -158,6 +177,10 @@ Rules:
 - Normalized outputs must retain native pre-normalization review evidence before named promotion. Review evidence describes an actual inspection; it is not created by QA success alone.
 - Translation-only normalization records integer shifts and must fail rather than clip alpha.
 - `action`, direction, content/anchor policy, lineage, frame timing, and provenance survive promotion when present.
-- Keep raw provider details out of manifest files; use `qa-report.md` for human-readable notes.
+- For `imagegen-required`, keep only the compact local provenance assertion above in the manifest and preserve the hash-bound raw raster artifacts through promotion. This verifies local artifact continuity, not a signed provider attestation. Put verbose provider logs and human-readable notes in `qa-report.md`.
+- When `extract-chroma-sheet.py` consumes an `imagegen-required` `--source-job`, pass the worker's `--provider-receipt`. Extraction verifies that the selected input is one of the receipt's hash-bound source artifacts, copies all receipt artifacts under the normalized output's `raw-generated/`, and preserves `sourceLane`, `sourceRequirement`, `poseAuthorship`, and `providerReceipt` in the derived manifest. Missing or mismatched receipt evidence fails before extraction.
+- Extraction without a structured source job is `diagnostic-only`; it may support cleanup/QA but cannot later become `production-approved`. Use a real job contract rather than the legacy atlas path when the output is intended for promotion.
+
+This local manifest is conceptually aligned with Image Cockpit's handoff and quality gates but is not schema-compatible with `image-cockpit.animation.v2`. Do not claim import/export compatibility or copy Image Cockpit's timeline/editor/pack machinery without a separate adapter contract.
 
 The strict native-grid report and approved-atlas contracts are separate because their security/integrity requirements differ from legacy frame manifests. See `native-grid-snap-contract.md`, `pixel-snap-provenance.md`, and `atlas-contract.md`.

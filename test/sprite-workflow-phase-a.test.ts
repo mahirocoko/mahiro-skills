@@ -18,12 +18,15 @@ const png = (path: string, width = 16, height = 16) => spawnSync(imagePython, ["
 describe("sprite workflow Phase A", () => {
   test("keeps frame count independent and carries optional schema-v2 metadata", () => {
     const temp = mkdtempSync(join(tmpdir(), "sprite-v2-"));
-    const result = run("new-job.py", ["--root", join(temp, "state"), "--target-repo", temp, "--job-id", "v2", "--title", "Walk side", "--states", "walk", "--frame-count", "6", "--action", "walk", "--direction", "side", "--content-policy", "character-only", "--anchor-policy", "feet", "--lineage-source-id", "master-1"], temp);
+    const result = run("new-job.py", ["--root", join(temp, "state"), "--target-repo", temp, "--job-id", "v2", "--title", "Walk side", "--states", "walk", "--frame-count", "6", "--action", "walk", "--direction", "side", "--content-policy", "character-only", "--anchor-policy", "feet", "--lineage-source-id", "master-1", "--grid-columns", "3", "--grid-rows", "2", "--grid-mode", "fixed"], temp);
     expect(result.status).toBe(0);
     const job = JSON.parse(readFileSync(join(JSON.parse(result.stdout).jobDir, "job.json"), "utf8"));
     expect(job.frameCount).toBe(6); expect(job.states).toEqual(["walk"]); expect(job.spriteContext.frameCount).toBe(6);
+    expect(job.spriteContext.grid).toEqual({ columns: 3, rows: 2, gutter: 0 }); expect(job.gridExtraction).toEqual({ mode: "fixed", columns: 3, rows: 2, order: "row-major" });
     expect([job.action, job.direction, job.contentPolicy, job.anchorPolicy]).toEqual(["walk", "side", "character-only", "feet"]);
     expect(job.lineage.sourceIds).toEqual(["master-1"]);
+    const undersized = run("new-job.py", ["--root", join(temp, "state"), "--target-repo", temp, "--job-id", "too-small", "--title", "Too small", "--states", "walk", "--frame-count", "5", "--grid-columns", "2", "--grid-rows", "2"], temp);
+    expect(undersized.status).toBe(1); expect(undersized.stderr + undersized.stdout).toContain("enough cells");
   });
 
   test("validates legacy manifests and rejects inconsistent explicit frameCount", () => {

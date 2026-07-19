@@ -300,12 +300,16 @@ Issue or product display
 
 Prefer one top display tier per composition unless explicit product, brand, or information-hierarchy evidence supports more. A page title inside a reading flow should not silently inherit the issue-cover or campaign-hero scale. Quotes, media markers, and navigation rows should emphasize their local job without competing as additional heroes.
 
+Begin tracking calibration from the typeface's normal spacing. Negative tracking is an optical correction, not a default signal for premium, modern, editorial, or polished work. A numeric `letter-spacing` value observed in a reference or tuned for one typeface/weight does not transfer safely to another; changing the family, weight, width, size, case, or breakpoint requires recalibrating tracking, measure, line height, and wraps together.
+
 After the first render, record computed evidence for every material role rather than trusting token names or isolated CSS declarations:
 
-| Role | Selector/token | Primary viewport size / line height | Narrow viewport size / line height | Measure and wrap | Section anchor | Verdict |
-| --- | --- | --- | --- | --- | --- | --- |
+| Role | Selector/token | Primary viewport size / line height | Narrow viewport size / line height | Measure and wrap | Section anchor | Family / weight / letter spacing / optical fit | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
 Check the primary desktop, every intermediate width where the relationship changes, narrow mobile, and the smallest supported mobile. Include representative section anchors such as a mid-page heading, quote, list/row title, media marker, caption, and disclosure when present; a first-viewport screenshot alone cannot prove the hierarchy.
+
+Inspect material headings and titles at 100% rendered scale rather than judging only a downscaled full-page screenshot. Check tight glyph pairs, counters, punctuation, word boundaries, and whether adjacent letters visually merge or lose breathing room. Recheck actual line breaks after every tracking change. Do not carry a desktop `em` tracking value mechanically into smaller text or mobile; normalize it when optical separation or reading speed degrades.
 
 For Thai and other scripts with material vertical or shaping behavior:
 
@@ -322,6 +326,8 @@ Treat these as hierarchy failures even when each section looks attractive in iso
 - body and deck are nearly indistinguishable;
 - media markers or navigation rows compete with content headings;
 - typography jumps abruptly between adjacent breakpoints;
+- display, title, or heading glyphs touch or visually merge because negative tracking is doing the work of font, weight, or width selection;
+- one aggressive tracking value is reused across display, page-title, section-title, and mobile roles despite different optical needs;
 - only the initially reported selector was reduced while equivalent oversized roles remain elsewhere.
 
 Correct the role-owned token or semantic tier, then recapture or remeasure the same anchors. Do not whack-a-mole selectors one at a time. When the first rendered composition shows generic oversized editorial drift, run an evidence-triggered `uncodixify` audit after this hierarchy check; do not precondition a native model-taste baseline with it.

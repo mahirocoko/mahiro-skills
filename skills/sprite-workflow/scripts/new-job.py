@@ -16,6 +16,7 @@ from pathlib import Path
 KIND_CHOICES = ["sprite-sheet", "animation-strip", "icon-frame-extract", "qa-only"]
 WORKFLOW_MODES = ["image-generate", "image-edit", "sprite-generate", "sprite-edit", "effect-animation"]
 SOURCE_LANES = ["codex", "gemini", "imagegen", "manual", "external-reference"]
+SOURCE_REQUIREMENTS = ["imagegen-required", "manual-rig-allowed", "diagnostic-only"]
 USAGE_CHOICES = ["reference-only", "source-candidate", "production-approved"]
 PROMPT_PRESETS = [
     "pixel-character",
@@ -97,6 +98,7 @@ def split_csv(value: str) -> list[str]:
 
 
 JOB_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+SOURCE_REQUIREMENT_MARKER_RE = re.compile(r"<!--\s*sprite-workflow:sourceRequirement=([A-Za-z0-9-]+)\s*-->")
 
 
 def copy_assets(paths: list[str], assets_dir: Path) -> list[str]:
@@ -195,8 +197,13 @@ def build_scaffold_prompt(args: argparse.Namespace, copied_assets: list[str], st
         "",
         "## QA and promotion gate",
         "",
+        f"Source requirement: {args.source_requirement}.",
         "visual honesty gate: before calling this final, inspect target-size output. Script QA passing is not enough. Fail the candidate if silhouette, detail, alpha/chroma, motion readability, or style match is weak.",
     ]
+    if args.source_requirement == "imagegen-required":
+        lines += [
+            "This job requires real provider-backed image generation/editing. Do not substitute Pillow/manual transforms, procedural redraws, copied/rotated master pixels, SVG, canvas, or placeholder art. Return raw generated raster sources plus a hash-bound provider receipt, or write a blocker sidecar.",
+        ]
     if args.notes.strip():
         lines += ["", "## Job notes", "", args.notes.strip()]
     return "\n".join(lines).rstrip() + "\n"
@@ -237,6 +244,7 @@ def main() -> int:
     parser.add_argument("--effect-loop", default="")
     parser.add_argument("--effect-anchor", default="")
     parser.add_argument("--source-lane", choices=SOURCE_LANES, default="codex")
+    parser.add_argument("--source-requirement", choices=SOURCE_REQUIREMENTS, default="")
     parser.add_argument("--usage", choices=USAGE_CHOICES, default="source-candidate")
     parser.add_argument("--source-asset", action="append", default=[], help="Reference/source asset to copy into assets/ (repeatable)")
     parser.add_argument("--motion-reference", default="", help="Optional local video/reference path metadata; does not trigger extraction")
@@ -248,6 +256,14 @@ def main() -> int:
     parser.add_argument("--grid-rows", type=int, default=None)
     parser.add_argument("--grid-mode", choices=["fixed", "component-grid"], default=None)
     args = parser.parse_args()
+
+    if not args.source_requirement:
+        if args.workflow_mode in {"image-generate", "image-edit", "sprite-generate", "sprite-edit", "effect-animation"} and args.source_lane in {"codex", "gemini", "imagegen"}:
+            args.source_requirement = "imagegen-required"
+        elif args.source_lane == "manual":
+            args.source_requirement = "manual-rig-allowed"
+        else:
+            args.source_requirement = "diagnostic-only"
 
     target_repo = Path(args.target_repo).expanduser().resolve() if args.target_repo else repo_root()
     agent_state = Path(os.environ.get("AGENT_STATE_DIR", target_repo / ".agent-state")).expanduser()
@@ -304,7 +320,16 @@ def main() -> int:
     } if args.workflow_mode == "effect-animation" else None
     should_scaffold_prompt = bool(args.scaffold_prompt or args.prompt_preset)
     prompt_text = build_scaffold_prompt(args, copied_assets, states, directions) if should_scaffold_prompt else (args.prompt or f"# {args.title}\n\nDescribe the sprite task here.\n")
-    job_prompt = prompt_text if should_scaffold_prompt and not args.prompt else args.prompt
+    declared_requirements = SOURCE_REQUIREMENT_MARKER_RE.findall(prompt_text)
+    if any(value != args.source_requirement for value in declared_requirements):
+        raise SystemExit("prompt sourceRequirement marker conflicts with structured provenance.sourceRequirement")
+    if "Source requirement:" not in prompt_text:
+        prompt_text = prompt_text.rstrip() + f"\n\n## Source requirement\n\nSource requirement: {args.source_requirement}.\n"
+        if args.source_requirement == "imagegen-required":
+            prompt_text += "Do not substitute Pillow/manual transforms, procedural redraws, copied/rotated master pixels, SVG, canvas, or placeholder art. Return raw generated raster sources plus a hash-bound provider receipt, or write a blocker sidecar.\n"
+    if not declared_requirements:
+        prompt_text = prompt_text.rstrip() + f"\n\n<!-- sprite-workflow:sourceRequirement={args.source_requirement} -->\n"
+    job_prompt = prompt_text
 
     motion_reference = None
     if args.motion_reference:
@@ -318,7 +343,11 @@ def main() -> int:
     if args.grid_columns is not None or args.grid_rows is not None or args.grid_mode is not None:
         if not args.grid_columns or not args.grid_rows:
             raise SystemExit("grid metadata requires positive --grid-columns and --grid-rows")
+        if args.grid_columns * args.grid_rows < frame_count:
+            raise SystemExit("grid metadata does not provide enough cells for --frame-count")
         grid_metadata = {"mode": args.grid_mode or "fixed", "columns": args.grid_columns, "rows": args.grid_rows, "order": "row-major"}
+        if sprite_context is not None:
+            sprite_context["grid"] = {"columns": args.grid_columns, "rows": args.grid_rows, "gutter": 0}
 
     job = {
         "id": job_id,
@@ -339,7 +368,7 @@ def main() -> int:
         "spriteContext": sprite_context,
         "effectContext": effect_context,
         "tournament": {"candidateCount": max(1, args.tournament_candidates), "isolateOutboxes": args.tournament_candidates > 1},
-        "provenance": {"sourceLane": args.source_lane, "usage": args.usage},
+        "provenance": {"sourceLane": args.source_lane, "sourceRequirement": args.source_requirement, "usage": args.usage},
         "motionReference": motion_reference,
         "gridExtraction": grid_metadata,
     }
@@ -355,7 +384,7 @@ def main() -> int:
         job.update(metadata)
     (job_dir_stage / "job.json").write_text(json.dumps(job, indent=2) + "\n")
     (job_dir_stage / "prompt.md").write_text(prompt_text if prompt_text.endswith("\n") else prompt_text + "\n")
-    (job_dir_stage / "provenance.md").write_text(f"# Provenance\n\n- sourceLane: {args.source_lane}\n- usage: {args.usage}\n- targetRepo: {target_repo}\n")
+    (job_dir_stage / "provenance.md").write_text(f"# Provenance\n\n- sourceLane: {args.source_lane}\n- sourceRequirement: {args.source_requirement}\n- usage: {args.usage}\n- targetRepo: {target_repo}\n")
     (job_dir_stage / "status.json").write_text(json.dumps({"status": "created", "updatedAt": job["createdAt"]}, indent=2) + "\n")
     job_dir_stage.rename(job_dir)
     staging_parent.rmdir()

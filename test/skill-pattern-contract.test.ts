@@ -163,6 +163,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("do not invent effort-suffixed slugs");
     expect(skill).toContain("Treat Codex `ultra` as a job-level automatic-delegation choice");
     expect(skill).toContain("Do not combine several manual Codex panes with ultra in every pane");
+    expect(skill).toContain("Propagate the owning workflow's source requirement unchanged");
+    expect(skill).toContain("hash-bound provider receipt");
+    expect(skill).toContain("do not let later dicut, manifest, or mechanical QA upgrade it");
+    expect(skill).toContain("source-ready-normalization-required");
   });
 
   test("uncodixify preserves native model taste before evidence-triggered audit", () => {

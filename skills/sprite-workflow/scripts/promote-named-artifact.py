@@ -37,7 +37,7 @@ def main():
  p=argparse.ArgumentParser();p.add_argument("manifest",type=Path);p.add_argument("--target-dir",type=Path,required=True);p.add_argument("--asset-name",required=True);p.add_argument("--approve",action="store_true");p.add_argument("--dry-run",action="store_true");p.add_argument("--allow-source-candidate",action="store_true");p.add_argument("--usage",choices=["production-approved"],default="production-approved");p.add_argument("--allow-missing-native-review",action="store_true");a=p.parse_args()
  if not SAFE.fullmatch(a.asset_name) or a.asset_name in {".",".."}:raise SystemExit("--asset-name must be a safe flat filename prefix")
  if not a.approve and not a.dry_run:raise SystemExit("promotion requires --approve or --dry-run")
- manifest=a.manifest.resolve();validate(manifest);data=json.loads(manifest.read_text());base=manifest.parent
+ validate(a.manifest);manifest=a.manifest.resolve();data=json.loads(manifest.read_text());base=manifest.parent
  usage=(data.get("provenance") or {}).get("usage")
  if usage!="production-approved" and not (usage=="source-candidate" and a.allow_source_candidate):raise SystemExit(f"refusing promotion: provenance.usage={usage!r} is not production-approved")
  if (data.get("lineage") or {}).get("normalization") and not a.allow_missing_native_review:verify_review(data,base)
@@ -50,6 +50,12 @@ def main():
  with tempfile.TemporaryDirectory(prefix=f".{a.asset_name}-",dir=target.parent) as raw:
   stage=Path(raw)/"publish";stage.mkdir();sheet_name=f"{a.asset_name}-sprite-sheet.png";shutil.copy2(sheet,stage/sheet_name)
   promoted=json.loads(json.dumps(data));promoted["name"]=a.asset_name;promoted["schemaVersion"]=2;promoted["provenance"]={**(promoted.get("provenance") or {}),"usage":"production-approved","sourceWorkflow":str(base)}
+  receipt=(promoted.get("provenance") or {}).get("providerReceipt")
+  if isinstance(receipt,dict):
+   copied_sources=[];raw_dir=stage/"raw-generated";raw_dir.mkdir(exist_ok=True)
+   for i,item in enumerate(receipt.get("sourceArtifacts") or []):
+    src=regular(base,item.get("file","") if isinstance(item,dict) else "",f"providerReceipt.sourceArtifacts[{i}].file");suffix=src.suffix.lower() if src.suffix else ".bin";name=f"source-{i:04d}{suffix}";shutil.copy2(src,raw_dir/name);copied_sources.append({**item,"file":f"raw-generated/{name}","sha256":sha(raw_dir/name)})
+   promoted["provenance"]["providerReceipt"]={**receipt,"sourceArtifacts":copied_sources}
   promoted_frames=[]
   for i,frame in enumerate(data.get("frames",[])):
    src=regular(base,frame.get("file"),f"frames[{i}].file");name=f"{a.asset_name}-frame-{i:04d}.png";shutil.copy2(src,stage/name);meta=image_meta(stage/name,"PNG");promoted_frames.append({**frame,"file":name,**meta})

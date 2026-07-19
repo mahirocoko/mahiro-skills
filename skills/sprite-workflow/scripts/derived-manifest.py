@@ -36,6 +36,37 @@ def copy_native_review(manifest: dict[str, Any], source_base: Path, output_base:
     manifest.setdefault("reviews", {})["nativePreNormalization"] = copied
 
 
+def copy_provider_sources(manifest: dict[str, Any], source_base: Path, output_base: Path) -> None:
+    provenance = manifest.get("provenance")
+    receipt = provenance.get("providerReceipt") if isinstance(provenance, dict) else None
+    if not isinstance(receipt, dict):
+        return
+    artifacts = receipt.get("sourceArtifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise SystemExit("provenance.providerReceipt.sourceArtifacts is required")
+    raw_dir = output_base / "raw-generated"
+    raw_dir.mkdir(exist_ok=True)
+    copied = []
+    for index, item in enumerate(artifacts):
+        if not isinstance(item, dict) or not isinstance(item.get("file"), str):
+            raise SystemExit(f"providerReceipt.sourceArtifacts[{index}].file is required")
+        raw = source_base / item["file"]
+        if raw.is_symlink():
+            raise SystemExit(f"provider source {index} must not be a symlink")
+        source = raw.resolve(strict=True)
+        if not source.is_relative_to(source_base.resolve()) or not source.is_file() or source.stat().st_nlink != 1:
+            raise SystemExit(f"provider source {index} must be a contained regular non-hardlinked file")
+        if sha256(source) != item.get("sha256"):
+            raise SystemExit(f"provider source {index} hash mismatch")
+        suffix = source.suffix.lower() or ".bin"
+        target = raw_dir / f"source-{index:04d}{suffix}"
+        if target.exists():
+            raise SystemExit(f"provider source target collision: {target.name}")
+        shutil.copy2(source, target)
+        copied.append({**item, "file": f"raw-generated/{target.name}", "sha256": sha256(target)})
+    provenance["providerReceipt"] = {**receipt, "sourceArtifacts": copied}
+
+
 def rewrite_frames(manifest: dict[str, Any], frame_paths: list[Path], frame_size: tuple[int, int]) -> None:
     source_frames = manifest.get("frames") if isinstance(manifest.get("frames"), list) else []
     states = manifest.get("states") if isinstance(manifest.get("states"), list) and manifest.get("states") else ["animation"]

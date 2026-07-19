@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -10,6 +11,31 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Iterable
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def regular_file(path: Path, label: str) -> Path:
+    if path.is_symlink():
+        raise SystemExit(f"{label} must not be a symlink")
+    resolved = path.expanduser().resolve(strict=True)
+    if not resolved.is_file() or resolved.stat().st_nlink != 1:
+        raise SystemExit(f"{label} must be a regular non-hardlinked file")
+    return resolved
+
+
+def contained_regular(base: Path, value: object, label: str) -> Path:
+    if not isinstance(value, str) or not value or Path(value).is_absolute():
+        raise SystemExit(f"{label} must be a non-empty relative path")
+    raw = base / value
+    if raw.is_symlink():
+        raise SystemExit(f"{label} must not be a symlink")
+    resolved = raw.resolve(strict=True)
+    if not resolved.is_relative_to(base.resolve()) or not resolved.is_file() or resolved.stat().st_nlink != 1:
+        raise SystemExit(f"{label} must be a contained regular non-hardlinked file")
+    return resolved
 
 
 def parse_size(value: str) -> tuple[int, int]:
@@ -250,7 +276,7 @@ def main() -> int:
     parser.add_argument("--frames", type=int, required=True)
     parser.add_argument("--frame-size", type=parse_size, required=True)
     parser.add_argument("--chroma-key", type=parse_color, default=parse_color("#ff00ff"))
-    parser.add_argument("--key-tolerance", type=float, default=0.22)
+    parser.add_argument("--key-tolerance", type=float, default=0.22, help="Normalized RGB-distance/fuzz tolerance in [0,1], e.g. 0.18. Values such as 18 or 110 are invalid.")
     parser.add_argument("--background-mode", choices=["color-distance", "edge-connected"], default="color-distance", help="color-distance removes all key-like pixels; edge-connected flood-fills only background connected to image edges.")
     parser.add_argument("--spill", choices=["none", "magenta", "green"], default="magenta")
     parser.add_argument("--source-layout", choices=["horizontal", "grid"], default="horizontal")
@@ -280,6 +306,7 @@ def main() -> int:
     parser.add_argument("--clear-region", action="append", type=parse_region, default=[], help="Clear a frame-local region after extraction. Format FRAME:X,Y,W,H")
     parser.add_argument("--source-note", default="")
     parser.add_argument("--source-job", type=Path, default=None, help="Optional job.json supplying schema-v2 metadata and lineage")
+    parser.add_argument("--provider-receipt", type=Path, default=None, help="Required for imagegen-required source jobs; compact JSON receipt with poseAuthorship and hash-bound sourceArtifacts")
     parser.add_argument("--action", default="")
     parser.add_argument("--direction", default="")
     parser.add_argument("--content-policy", default="")
@@ -290,12 +317,56 @@ def main() -> int:
 
     if args.frames <= 0:
         raise SystemExit("--frames must be positive")
+    if not 0 <= args.key_tolerance <= 1:
+        raise SystemExit("--key-tolerance must be a normalized value in [0,1]")
     if args.resize_percent <= 0:
         raise SystemExit("--resize-percent must be positive")
     if args.component_min_body_area < 0 or not 0 < args.component_center_confidence <= 0.5 or args.component_overflow_distance < 0:
         raise SystemExit("component confidence values must be non-negative and center confidence must be in (0, 0.5]")
-    if not args.input.exists():
+    if not args.input.exists() and not args.input.is_symlink():
         raise SystemExit(f"input not found: {args.input}")
+    args.input = regular_file(args.input, "input")
+
+    source_job = {}
+    source_provenance = {}
+    provider_receipt = None
+    provider_sources: list[tuple[Path, dict[str, object]]] = []
+    if args.source_job:
+        source_job_path = regular_file(args.source_job, "source job")
+        source_job = json.loads(source_job_path.read_text())
+        source_provenance = source_job.get("provenance") if isinstance(source_job.get("provenance"), dict) else {}
+        source_requirement = source_provenance.get("sourceRequirement")
+        if source_requirement == "imagegen-required":
+            if args.provider_receipt is None:
+                raise SystemExit("imagegen-required extraction requires --provider-receipt")
+            receipt_path = regular_file(args.provider_receipt, "provider receipt")
+            receipt_payload = json.loads(receipt_path.read_text())
+            if receipt_payload.get("poseAuthorship") != "generated-poses":
+                raise SystemExit("provider receipt poseAuthorship must be generated-poses")
+            provider_receipt = receipt_payload.get("providerReceipt")
+            if not isinstance(provider_receipt, dict):
+                raise SystemExit("provider receipt must contain providerReceipt object")
+            for key in ("provider", "model"):
+                if not isinstance(provider_receipt.get(key), str) or not provider_receipt[key].strip():
+                    raise SystemExit(f"providerReceipt.{key} must be a non-empty string")
+            if provider_receipt.get("operation") not in {"imagegen", "image-edit"}:
+                raise SystemExit("providerReceipt.operation must be imagegen or image-edit")
+            artifacts = provider_receipt.get("sourceArtifacts")
+            if not isinstance(artifacts, list) or not artifacts:
+                raise SystemExit("providerReceipt.sourceArtifacts must be a non-empty array")
+            for index, item in enumerate(artifacts):
+                if not isinstance(item, dict):
+                    raise SystemExit(f"providerReceipt.sourceArtifacts[{index}] must be an object")
+                source = contained_regular(receipt_path.parent, item.get("file"), f"providerReceipt.sourceArtifacts[{index}].file")
+                if item.get("sha256") != sha256(source):
+                    raise SystemExit(f"providerReceipt.sourceArtifacts[{index}].sha256 mismatch")
+                provider_sources.append((source, item))
+            if args.input.resolve() not in {source for source, _ in provider_sources}:
+                raise SystemExit("input must be one of providerReceipt.sourceArtifacts")
+        elif args.provider_receipt is not None:
+            raise SystemExit("--provider-receipt is only valid for an imagegen-required source job")
+    elif args.provider_receipt is not None:
+        raise SystemExit("--provider-receipt requires --source-job")
 
     magick = magick_bin()
     input_width, input_height = image_size(magick, args.input)
@@ -439,7 +510,11 @@ def main() -> int:
         "states": [args.state],
         "frames": frame_entries,
         "anchors": {"default": [round(frame_width / 2), max(0, frame_height - 4)]},
-        "provenance": {"sourceLane": "codex", "usage": "source-candidate"},
+        "provenance": {
+            "sourceLane": source_provenance.get("sourceLane", "codex"),
+            "sourceRequirement": source_provenance.get("sourceRequirement", "diagnostic-only"),
+            "usage": "source-candidate",
+        },
         "artifacts": {"sheet": sheet_path.name, "previewGif": preview_path.name},
         "source": {
             "input": str(args.input),
@@ -455,11 +530,19 @@ def main() -> int:
             "note": args.source_note,
         },
     }
-    source_job = {}
-    if args.source_job:
-        if not args.source_job.exists():
-            raise SystemExit(f"source job not found: {args.source_job}")
-        source_job = json.loads(args.source_job.read_text())
+    if provider_receipt is not None:
+        raw_dir = output_dir / "raw-generated"
+        raw_dir.mkdir(exist_ok=True)
+        copied_sources = []
+        for index, (source, item) in enumerate(provider_sources):
+            suffix = source.suffix.lower() or ".bin"
+            destination = raw_dir / f"source-{index:04d}{suffix}"
+            shutil.copy2(source, destination)
+            copied_sources.append({**item, "file": f"raw-generated/{destination.name}", "sha256": sha256(destination)})
+        manifest["provenance"].update({
+            "poseAuthorship": "generated-poses",
+            "providerReceipt": {**provider_receipt, "sourceArtifacts": copied_sources},
+        })
     metadata = {
         "action": args.action or source_job.get("action") or (source_job.get("spriteContext") or {}).get("action"),
         "direction": args.direction or source_job.get("direction"),

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync } from "fs";
+import { createHash } from "crypto";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { spawnSync } from "child_process";
@@ -41,6 +42,31 @@ describe("sprite-workflow real pipeline rehearsal", () => {
     ], temp);
     expect(created.status).toBe(0);
     const job = JSON.parse(created.stdout);
+    const receipt = join(temp, "provider-receipt.json");
+    writeFileSync(receipt, JSON.stringify({
+      poseAuthorship: "generated-poses",
+      providerReceipt: {
+        provider: "rehearsal-imagegen",
+        model: "fixture-model",
+        operation: "imagegen",
+        sourceArtifacts: [{
+          file: "raw.png",
+          sha256: createHash("sha256").update(readFileSync(raw)).digest("hex"),
+        }],
+      },
+    }, null, 2));
+
+    const missingReceipt = run("extract-chroma-sheet.py", [
+      "--input", raw,
+      "--output-dir", join(temp, "missing-receipt"),
+      "--frames", "2",
+      "--frame-size", "32x32",
+      "--source-layout", "horizontal",
+      "--source-cell-width", "32",
+      "--source-job", join(job.jobDir, "job.json"),
+    ], temp);
+    expect(missingReceipt.status).not.toBe(0);
+    expect(missingReceipt.stderr).toContain("imagegen-required extraction requires --provider-receipt");
 
     const extractedDir = join(temp, "extracted");
     const extracted = run("extract-chroma-sheet.py", [
@@ -55,6 +81,7 @@ describe("sprite-workflow real pipeline rehearsal", () => {
       "--background-mode", "edge-connected",
       "--spill", "none",
       "--source-job", join(job.jobDir, "job.json"),
+      "--provider-receipt", receipt,
       "--state", "idle",
       "--json",
     ], temp);
@@ -101,6 +128,10 @@ describe("sprite-workflow real pipeline rehearsal", () => {
     expect(manifest.lineage.normalization.translationOnly).toBe(true);
     expect(manifest.reviews.nativePreNormalization.approved).toBe(true);
     expect(manifest.frames).toHaveLength(2);
+    expect(manifest.provenance.sourceRequirement).toBe("imagegen-required");
+    expect(manifest.provenance.poseAuthorship).toBe("generated-poses");
+    expect(manifest.provenance.providerReceipt.sourceArtifacts[0].file).toBe("raw-generated/source-0000.png");
+    expect(existsSync(join(promotedDir, "raw-generated", "source-0000.png"))).toBe(true);
     expect(manifest.frames.every((frame: { file: string; sha256: string; dimensions: number[] }) =>
       existsSync(join(promotedDir, frame.file)) && frame.sha256.length === 64 && frame.dimensions.join("x") === "32x32",
     )).toBe(true);

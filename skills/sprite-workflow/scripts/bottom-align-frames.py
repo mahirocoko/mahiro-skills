@@ -100,6 +100,7 @@ def main() -> int:
         manifest["artifacts"] = {"sheet": HELPER.artifact(sheet, (fw * args.frames, fh))}
         if args.source_manifest:
             HELPER.copy_native_review(manifest, args.source_manifest.resolve().parent, stage)
+            HELPER.copy_provider_sources(manifest, args.source_manifest.resolve().parent, stage)
         lineage = manifest.setdefault("lineage", {})
         lineage["normalization"] = {"kind": "bottom-align", "sourceManifest": str(args.source_manifest.resolve()) if args.source_manifest else None, "translationOnly": True, "shifts": shifts}
         manifest.setdefault("schemaVersion", 2)

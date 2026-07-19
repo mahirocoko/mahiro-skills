@@ -144,6 +144,7 @@ def main() -> int:
             HELPER.rewrite_frames(manifest, frame_paths, (frame_width, frame_height))
             manifest["artifacts"] = {"sheet": HELPER.artifact(sheet_path, (frame_width * args.frames, frame_height)), "previewGif": HELPER.artifact(preview_path, (frame_width, frame_height))}
             HELPER.copy_native_review(manifest, args.source_manifest.resolve().parent, stage)
+            HELPER.copy_provider_sources(manifest, args.source_manifest.resolve().parent, stage)
             lineage = manifest.setdefault("lineage", {})
             previous_normalization = lineage.get("normalization")
             lineage["normalization"] = {"kind": "center-align", "translationOnly": True, "sourceManifest": str(args.source_manifest.resolve()), "shifts": shifts, "previous": previous_normalization}

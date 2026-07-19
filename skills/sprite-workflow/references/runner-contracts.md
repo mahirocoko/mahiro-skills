@@ -14,6 +14,20 @@ This adapts Image Cockpit's Codex runner contract into `sprite-workflow` languag
 - Verify workflow-specific capabilities before accepting a job. If a required image/video/runtime capability is absent, use the existing blocker sidecar; do not hard-code one provider as permanently capable.
 - Preserve `action`, direction, frame count, content/anchor policy, lineage/source IDs, and source hashes in returned metadata when the job provides them.
 
+## Source-authorship gate
+
+Every new job declares one source requirement:
+
+- `imagegen-required` — use real provider-backed image generation/editing. Return raw generated raster sources plus a hash-bound provider receipt. Manual transforms, Pillow rigs, procedural redraws, copied/rotated master pixels, SVG, canvas, and placeholder art fail this contract even if mechanical sprite QA passes.
+- `manual-rig-allowed` — human/manual pixel work or a transform rig is permitted, but provenance must say so directly. It must still pass target-size motion review and human promotion.
+- `diagnostic-only` — experiments, geometry probes, or fallback drafts only. They cannot become `production-approved`.
+
+For `imagegen-required`, return `provenance.poseAuthorship: "generated-poses"` and a `provenance.providerReceipt` containing a non-empty provider, model, `operation: "imagegen" | "image-edit"`, and hash-bound contained `sourceArtifacts`. This is a local provenance assertion binding the delivered bytes to the reported lane, not a signed provider attestation. If the lane cannot produce that evidence, write the blocker sidecar. Never downgrade the requirement silently.
+
+For Move/Basic/Hurt/Active or another action family, distinct file hashes and stable anchors are insufficient. The review must show readable anticipation/action/contact/recovery or equivalent motion phases at runtime size. Static or near-static rows fail, matching Image Cockpit's animation quality gate.
+
+This workflow adapts Image Cockpit's runner and quality-gate ideas. Its local manifest is not `image-cockpit.animation.v2` and no schema import/export compatibility is implied.
+
 Blocker sidecar schema:
 
 ```json
@@ -48,6 +62,9 @@ Blocker sidecar schema:
 - Inspect `selectedImage.assetPath` first.
 - Generate real raster sprite-sheet assets from the source character image.
 - Follow `spriteContext.grid`, `spriteContext.cell`, `spriteContext.directions`, `spriteContext.variant`, and `spriteContext.chromaKey` exactly.
+- Treat the provider raster as an authored source sheet, not the final runtime-sized sheet. Preserve its untouched bytes and receipt even when the provider returns a larger canvas or slightly varied chroma.
+- Do not mark a candidate `quality-failed` solely because raw dimensions differ from `grid × cell` or chroma is not byte-exact when the requested frame layout remains unambiguous and full bodies are recoverable. Report `source-ready-normalization-required`; canonical extraction/normalization belongs to the orchestrator.
+- Still fail real material problems: missing/cropped/merged frames, ambiguous cell ownership, identity/equipment drift, static action rows, detached anatomy, or action semantics that do not match the job.
 - Keep one full-body character centered inside each strict cell with padding.
 - No cropping, duplicated heads, detached parts, or body parts crossing cells.
 - Each populated cell must be a distinct frame for `spriteContext.action`; static rows fail.
@@ -99,5 +116,7 @@ WRITE outputs only under: <JOB_DIR>/outbox/<candidate-or-work-folder>/
 
 Trust job.json/prompt.md as the contract. Use imagegen/built-in image generation when available. Return real raster image artifacts only. If image generation is unavailable, write a blocker JSON sidecar; do not create placeholder art.
 
-Before finishing, self-check: output dimensions, frame count, grid/cell contract, full-body visibility, identity preservation, flat chroma/alpha safety, target-size readability, and motion progression.
+Honor structured `provenance.sourceRequirement` exactly; freeform prompt wording cannot downgrade it. When it is imagegen-required, do not substitute a manual transform/rotation rig; return provider receipt plus hash-bound raw source artifacts or block.
+
+Before finishing, self-check: provider source presence/hash, requested frame count and recoverable grid, full-body visibility, identity/equipment preservation, chroma/alpha cleanup feasibility, target-size readability, and motion progression. Report raw geometry/chroma differences as normalization evidence rather than pretending provider pixels are already runtime-ready.
 ```

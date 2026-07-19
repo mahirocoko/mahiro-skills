@@ -65,6 +65,13 @@ def main() -> int:
         src = manifest_dir / optional
         if src.exists():
             copies.append(contained_regular(manifest_dir, optional, optional))
+    receipt = provenance.get("providerReceipt")
+    if isinstance(receipt, dict):
+        for index, item in enumerate(receipt.get("sourceArtifacts") or []):
+            if not isinstance(item, dict):
+                continue
+            source, relative = contained_regular(manifest_dir, str(item.get("file", "")), f"providerReceipt.sourceArtifacts[{index}].file")
+            copies.append((source, relative))
     for source, relative in copies:
         print(f"{'would copy' if dry_run else 'copy'} {source} -> {target_dir / relative}")
     if dry_run:
@@ -77,6 +84,10 @@ def main() -> int:
             destination = stage / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
+        promoted = json.loads(json.dumps(data))
+        promoted["provenance"] = {**(promoted.get("provenance") or {}), "sourceWorkflow": str(manifest_dir)}
+        (stage / "manifest.json").write_text(json.dumps(promoted, indent=2, ensure_ascii=False) + "\n")
+        run_validator(stage / "manifest.json")
         stage.rename(target_dir)
     return 0
 

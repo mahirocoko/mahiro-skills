@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 SOURCE_LANES = {"codex", "gemini", "imagegen", "manual", "external-reference"}
+SOURCE_REQUIREMENTS = {"imagegen-required", "manual-rig-allowed", "diagnostic-only"}
 USAGE_CHOICES = {"reference-only", "source-candidate", "production-approved"}
 
 
@@ -46,9 +47,20 @@ def decoded(path: Path, expected: str) -> tuple[int, int]:
 
 def validate(path: Path) -> list[str]:
     errors: list[str] = []
+    if path.is_symlink(): return ["manifest must not be a symlink"]
+    if not path.is_file() or path.stat().st_nlink != 1: return ["manifest must be a regular non-hardlinked file"]
+    path = path.resolve()
     try: data = json.loads(path.read_text())
     except Exception as exc: return [f"invalid JSON: {exc}"]
     base = path.resolve().parent
+    bound_job = None
+    job_path = base.parent / "job.json" if base.name == "outbox" else None
+    if job_path is not None and (job_path.exists() or job_path.is_symlink()):
+        if job_path.is_symlink() or not job_path.is_file() or job_path.stat().st_nlink != 1:
+            errors.append("bound job.json must be a regular non-symlink, non-hardlinked file")
+        else:
+            try: bound_job = json.loads(job_path.read_text())
+            except Exception as exc: errors.append(f"invalid bound job.json: {exc}")
     frame_size = data.get("frameSize")
     if not pair(frame_size, True): errors.append("frameSize must be [positiveInt, positiveInt]")
     states = data.get("states")
@@ -105,6 +117,44 @@ def validate(path: Path) -> list[str]:
     else:
         if provenance.get("sourceLane") not in SOURCE_LANES: errors.append(f"provenance.sourceLane must be one of {sorted(SOURCE_LANES)}")
         if provenance.get("usage") not in USAGE_CHOICES: errors.append(f"provenance.usage must be one of {sorted(USAGE_CHOICES)}")
+        source_requirement = provenance.get("sourceRequirement")
+        if source_requirement is not None and source_requirement not in SOURCE_REQUIREMENTS:
+            errors.append(f"provenance.sourceRequirement must be one of {sorted(SOURCE_REQUIREMENTS)} when provided")
+        if source_requirement == "diagnostic-only" and provenance.get("usage") == "production-approved":
+            errors.append("diagnostic-only provenance cannot be production-approved")
+        if source_requirement == "imagegen-required":
+            if provenance.get("poseAuthorship") != "generated-poses":
+                errors.append("imagegen-required provenance.poseAuthorship must be generated-poses")
+            receipt = provenance.get("providerReceipt")
+            if not isinstance(receipt, dict):
+                errors.append("imagegen-required provenance.providerReceipt must be an object")
+            else:
+                for key in ("provider", "model"):
+                    if not isinstance(receipt.get(key), str) or not receipt[key].strip():
+                        errors.append(f"imagegen-required providerReceipt.{key} must be a non-empty string")
+                if receipt.get("operation") not in {"imagegen", "image-edit"}:
+                    errors.append("imagegen-required providerReceipt.operation must be imagegen or image-edit")
+                source_artifacts = receipt.get("sourceArtifacts")
+                if not isinstance(source_artifacts, list) or not source_artifacts:
+                    errors.append("imagegen-required providerReceipt.sourceArtifacts must be a non-empty array")
+                else:
+                    for i, item in enumerate(source_artifacts):
+                        if not isinstance(item, dict):
+                            errors.append(f"providerReceipt.sourceArtifacts[{i}] must be an object")
+                            continue
+                        try:
+                            artifact = contained_regular(base, item.get("file"), f"providerReceipt.sourceArtifacts[{i}].file")
+                            if item.get("sha256") != sha256(artifact):
+                                errors.append(f"providerReceipt.sourceArtifacts[{i}].sha256 mismatch")
+                        except Exception as exc:
+                            errors.append(str(exc))
+        if isinstance(bound_job, dict):
+            job_provenance = bound_job.get("provenance")
+            if isinstance(job_provenance, dict):
+                for key in ("sourceLane", "sourceRequirement"):
+                    expected = job_provenance.get(key)
+                    if expected is not None and provenance.get(key) != expected:
+                        errors.append(f"provenance.{key} must match bound job.json value {expected!r}")
     artifacts = data.get("artifacts") or {}
     for key, expected in (("sheet", "PNG"), ("previewGif", "GIF")):
         if key in artifacts:

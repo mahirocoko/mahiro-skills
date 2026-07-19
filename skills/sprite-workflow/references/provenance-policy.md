@@ -16,6 +16,14 @@ Use provenance to decide what an output is allowed to become.
 - `manual` — human-authored or hand-edited source.
 - `external-reference` — local reference only unless license and human approval say otherwise.
 
+`sourceLane` names the executor/origin lane; it does not prove how poses or pixels were authored. Pair new jobs with `sourceRequirement`:
+
+- `imagegen-required` requires `poseAuthorship: generated-poses`, a compact local provider receipt, and hash-bound raw generated raster artifacts;
+- `manual-rig-allowed` permits disclosed human/manual or transform-rig authorship but still needs target-size motion review and human promotion;
+- `diagnostic-only` cannot become `production-approved`.
+
+Never infer imagegen authorship from `sourceLane: codex` alone. The receipt binds local delivered bytes to the reported lane but is not a signed provider attestation.
+
 ## Attributed prompt and algorithm sources
 
 - The bundled Image Cockpit prompt catalog is MIT-licensed source text pinned to a specific upstream revision. Keep `image-cockpit-LICENSE.txt`, exact source locators, and the distinction between original prompts and adapted templates in installed copies.

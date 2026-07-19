@@ -24,6 +24,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 ## Steps
 1. **Define the asset contract before generation**
    - Write or update a short manifest: asset family, intended use, source references, allowed output folder, states/variants, background/alpha expectations, QA surfaces, and promotion status.
+   - Propagate the owning workflow's source requirement unchanged: `imagegen-required`, `manual-rig-allowed`, or `diagnostic-only`. Do not reinterpret an imagegen-required action family as permission for a procedural or transform-rig substitute.
    - Separate asset families instead of generating a full screen and cropping it later: e.g. mascot states, nav/action icons, UI surfaces/background plates, decorative props, share-card elements.
    - Mark generated Thai/English text in images as placeholder/reference unless copy has been separately authored.
 
@@ -34,6 +35,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Prefer two explicit passes when quality matters: an imagegen/source-sheet lane first, then a separate dicut-only lane that reads the source sheet and owns cutout/cleanup/QA. This avoids silently letting the main shell become the final dicut owner after an imagegen lane succeeds.
    - Ask Codex to use the asset-designer lens: create source art, cut/clean the assets, inspect edges, produce QA previews/contact sheets, and update manifests with honest status. If strict asset-designer behavior matters, explicitly require Codex to read/load the asset-designer skill before generation or dicut; do not rely on the main agent's contract language as proof every lane used the skill.
    - If the intended pass is imagegen, say so explicitly in the lane prompt (for example, generate raster source sheets with image generation before dicut). If Codex instead produces assets procedurally via scripts/libraries, label the output as a procedural draft/reference, not an imagegen pass.
+   - For an `imagegen-required` handoff, collect the raw generated raster artifacts and a hash-bound provider receipt before returning to `sprite-workflow`. If those are absent, treat the lane as blocked; do not let later dicut, manifest, or mechanical QA upgrade it.
 
 3. **Orchestrate multi-lane Codex imagegen jobs when speed or diversity matters**
    - One asset job can use one tmux session with multiple Codex panes; use `direct-cli` for the pane mechanics. Do not create scattered one-pane sessions for one visual problem.
@@ -67,7 +69,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 
 6. **Prefer chroma-key sources over fake transparency**
    - If direct transparent PNGs show checkerboards or uncertain alpha, reject them and use a clean chroma key that does not appear in the art.
-   - For generated sprite sheets, push source quality before cleanup: require an exact flat chroma background, no gradient/lighting/shadow/glow/anti-alias matte around the silhouette, generous spacing between frames, and one isolated character per cell.
+   - For generated sprite sheets, request an exact flat chroma background, no gradient/lighting/shadow/glow/anti-alias matte around the silhouette, generous spacing between frames, and one isolated character per cell. If the provider instead returns a larger canvas or slightly non-byte-exact chroma but every requested full-body frame remains unambiguous and recoverable, preserve the untouched raster/receipt and return `source-ready-normalization-required` to `sprite-workflow`; do not self-reject solely because raw provider pixels are not runtime-final.
    - Sample the actual matte/background color from the generated source instead of assuming the requested key was exact (for example, a requested `#ff00ff` can come back as a nearby magenta gradient or shaded matte). Use fuzzed transparency carefully and preserve sRGBA/alpha rather than accidentally converting the image to grayscale or dropping channels.
    - Verify alpha by compositing on light, sky/cream, peach, checker, and dark backgrounds; do not trust a contact sheet or checkerboard preview as real transparency.
 

@@ -252,6 +252,10 @@ describe("frontend-design skill", () => {
     expect(skill).toContain("include the **website frame** in that anatomy map");
     expect(skill).toContain("must not simply disappear on mobile without an equivalent");
     expect(skill).toContain("A logo row or metadata strip alone is not a complete website footer");
+    expect(skill).toContain("keep the anatomy map as a **closure ledger**");
+    expect(skill).toContain("If any mapped legacy section or unreviewed row remains");
+    expect(skill).toContain("coherent downscaled full-page screenshot");
+    expect(skill).toContain("remove or clearly mark stale QA artifacts");
     expect(brief).toContain("`Overhaul` describes how much visual language changes");
     expect(brief).toContain("Claim or demonstration | Source path/evidence");
     expect(brief).toContain("Section | User question | Verified product fact | Proof artifact");
@@ -273,6 +277,11 @@ describe("frontend-design skill", () => {
     expect(references).toContain("Wait for the declared ready condition before capture");
     expect(references).toContain("mark the image incomplete");
     expect(references).toContain("### QA Closure Loop");
+    expect(references).toContain("### Whole-page fidelity closure ledger");
+    expect(references).toContain("Current DOM/CSS owner");
+    expect(references).toContain("implemented-unreviewed");
+    expect(references).toContain("A reviewer claiming whole-page coverage must return a verdict for every ledger row");
+    expect(references).toContain("label them as historical");
     expect(references).toContain("clean recorded state");
     expect(references).toContain("recapture or re-measure the same state");
     expect(references).toContain("keep unresolved rows open");
@@ -293,14 +302,20 @@ describe("frontend-design skill", () => {
 
     expect(skill).toContain("define a semantic type ladder before implementation");
     expect(skill).toContain("prefers one top display tier per composition");
-    expect(skill).toContain("computed size, line height, measure, and wrapping");
     expect(skill).toContain("including mid-page section anchors rather than only the first viewport");
     expect(skill).toContain("diacritics, mixed-language baselines, breakpoint continuity");
+    expect(skill).toContain("do not use aggressive negative letter-spacing");
+    expect(skill).toContain("computed font family, weight, size, line height, letter spacing");
     expect(brief).toContain("## 7. Typography Hierarchy Gate");
     expect(brief).toContain("Issue or product display");
     expect(brief).toContain("page or article title");
     expect(brief).toContain("pull quote or callout");
     expect(brief).toContain("Role | Selector/token | Primary viewport size / line height");
+    expect(brief).toContain("Family / weight / letter spacing / optical fit");
+    expect(brief).toContain("does not transfer safely to another");
+    expect(brief).toContain("100% rendered scale");
+    expect(brief).toContain("tight glyph pairs, counters, punctuation, word boundaries");
+    expect(brief).toContain("Do not carry a desktop `em` tracking value mechanically");
     expect(brief).toContain("a first-viewport screenshot alone cannot prove the hierarchy");
     expect(brief).toContain("the page reads like stacked posters");
     expect(brief).toContain("Do not whack-a-mole selectors one at a time");
