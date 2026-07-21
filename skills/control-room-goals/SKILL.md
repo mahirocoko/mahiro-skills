@@ -1,6 +1,6 @@
 ---
 name: control-room-goals
-description: Helps draft or refine Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
+description: Drafts, applies, or refines Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
 ---
 
 # Goal Mode
@@ -38,20 +38,62 @@ Avoid vague DoD like “make it better” or “finish everything”.
 
 Only apply after explicit confirmation such as “use this”, “apply”, “set it”, “create it”, “ตั้งเลย”, or when the user explicitly commands a goal change.
 
+After confirmation, **the agent owns applying the goal**. Do not ask Mahiro to
+run a slash command when an agent-callable goal tool is available.
+
 When applying:
 
-- If a goal tool is available, use it only after confirmation. Do not set a token budget unless the user explicitly asked for one.
+- Inspect existing state first with `mh_get_goal` when the structured Mahiro
+  tools are available.
+- Use `mh_create_goal` yourself after confirmation. Convert the approved DoD
+  into explicit criteria: agent-owned for evidence the agent can check, and
+  human-owned for visual/product/foreground acceptance that only Mahiro can
+  verify.
+- Include `non_goals` and `next_action` when they materially prevent drift. Do
+  not set `token_budget` unless Mahiro explicitly requested one.
 - If an existing goal is present, do not replace it unless the user explicitly asked to replace/reset it; draft the replacement first.
-- If only slash commands are available, provide the exact `/goal ...` text for the user/runtime to run.
+- Objective/DoD replacement uses `mh_create_goal` with `replace: true` and the
+  current `expected_revision`; never silently replace stale state.
+- If Mahiro structured tools are unavailable but official `CreateGoal` /
+  `create_goal` exists, the agent should call that tool itself after approval.
+- If no agent-callable goal tool exists, keep the approved packet visible and
+  use `UpdatePlan`; explain the runtime limitation instead of automatically
+  delegating `/goal` typing back to Mahiro.
 - Keep the goal concise enough to be useful, but include compact DoD when it materially prevents drift.
 
-Example applied text:
+Example structured application:
 
-```text
-/goal Build and verify the Agy prompt-handling update. DoD: docs updated, tests pass, release notes align, final status reports risks.
+```json
+{
+  "objective": "Build and verify the Agy prompt-handling update",
+  "criteria": [
+    { "text": "Docs and focused checks pass", "owner": "agent", "required": true },
+    { "text": "Mahiro accepts the foreground behavior", "owner": "human", "required": true }
+  ],
+  "next_action": "Inspect the current implementation surface"
+}
 ```
 
 ## Goal Mode commands and tools
+
+### Preferred Mahiro structured tools
+
+- `mh_get_goal` — read current structured state and revision before planning or
+  mutation.
+- `mh_create_goal` — agent-created objective, criteria, non-goals, next action,
+  optional explicit token budget, and revision-guarded replacement.
+- `mh_update_goal` — update phase/next action, add evidence, claim agent-owned
+  criteria, manage blockers, or complete after the runtime audit.
+
+Add evidence before `claim_criterion`. Never claim or verify a human-owned
+criterion. Mahiro verifies it through `/mh-goal verify <criterion-id> [note]`.
+Use the current `expected_revision` for every model mutation.
+
+Human commands such as `/mh-goal status`, `/mh-goal-status`, pause/resume,
+verify, clear, force-complete, and abandoned-lock recovery remain inspection or
+explicit human-control surfaces; they are not the default creation path.
+
+### Official fallback surface
 
 Known command surface:
 
@@ -115,13 +157,18 @@ Do not add safety ceremony for pure discussion, small low-risk edits, or simple 
 
 - Pure discussion/recommendation: do not create or replace a goal unless work starts.
 - Draft Goal Mode packets before applying them during exploratory discussion.
-- Execution starts or user confirms the draft: set/apply the goal if tooling is available, then use `UpdatePlan` for step progress.
+- Execution starts or user confirms the draft: the agent must set/apply the goal
+  itself with the preferred available tool, then use `UpdatePlan` for step
+  progress. Terse approval such as `โอเค`, `ต่อ`, `ทำเลย`, or `continue` counts
+  when it clearly approves the proposed packet.
 - Update the plan on phase changes, not every message.
 - After checks pass: report claimed evidence and ask for human verification when acceptance matters.
 - Waiting for Mahiro: provide a handoff with the exact next human action.
 - Done: mark the goal complete only when the objective is actually achieved and no required work remains.
 - Blocked: mark blocked only after a repeated blocker leaves the agent at an impasse.
-- Obsolete/stale goal: suggest `/goal clear` and a new goal draft instead of silently overwriting it.
+- Obsolete/stale goal: draft the replacement, obtain approval, reread current
+  state, then use revision-guarded replacement instead of silently overwriting
+  it.
 
 ## Explain terms
 

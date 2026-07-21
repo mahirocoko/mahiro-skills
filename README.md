@@ -130,7 +130,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | --- | --- | --- |
 | `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
 | `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
-| `control-room-goals` | `/control-room-goals` | You need to draft or refine a Goal Mode objective, DoD, immediate next action, verification evidence, or handoff/reset boundary. |
+| `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, or handoff/reset boundary. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need generic or broad source-backed research through Gemini. Use `frontend-design` for a large live frontend/site/app UI corpus tied to a named frontend design decision. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
