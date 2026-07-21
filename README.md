@@ -173,7 +173,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | `tmux`, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes. For Agy, prefer exact `--model` labels and `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | `tmux`, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

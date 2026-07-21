@@ -21,7 +21,7 @@ Use this path when you want:
 
 - Prefer a **fresh tmux session** when an old session looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
-- Use discovery commands such as `agent --list-models`, `agent --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` when the launch command fails, when model availability is uncertain, or when local CLI behavior needs validation.
+- Use `agent models`, `agy models`, and `codex debug models` for current catalogs. Use `agent --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` when launch flags, features, or local health need validation.
 - Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
 - Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
 - Do not default to Codex non-interactive mode such as `codex exec`; use it only when the user explicitly asks for script/headless output.
@@ -167,16 +167,16 @@ Example asset lane registry:
 
 ### Antigravity multi-model notes
 
-Current local Antigravity (verified 2026-06-29, `agy 1.0.13`) supports exact model labels through `--model`. Prefer the flag when it exists, then verify the visible model label in the pane. Fall back to `/model` only if the flag is unavailable or the launch fails.
+Current local Antigravity (verified 2026-07-21, `agy 1.1.5`) supports stable model slugs through `--model` and native reasoning selection through `--effort`. Pass effort only when the selected model supports it, then verify the visible model and effort in the pane. Agy can warn and silently fall back to its default model when a model/effort pair is invalid; treat that as launch failure. Fall back to `/model` or `/effort` only if flag selection fails.
 
 For several Agy models in one job:
 
 1. Open one Agy pane per model.
-2. Launch `agy --model "<exact label>" --dangerously-skip-permissions` in each pane when supported.
-3. Verify the visible model label, or switch each pane through `/model` if automated flag selection is brittle.
+2. Launch `agy --model "<stable-slug>" --dangerously-skip-permissions` in each pane; add `--effort <level>` only when that model supports the requested effort.
+3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Known-good local label from `agy models`: `Claude Opus 4.6 (Thinking)`.
+Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review, `claude-sonnet-4-6` for balanced work, and `gemini-3.5-flash-medium` for a faster lane. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
 
 ### Antigravity multiline prompt caveat
 
@@ -191,7 +191,7 @@ tmux send-keys -t "$JOB:0.$pane" -l "$prompt"
 tmux send-keys -t "$JOB:0.$pane" Enter
 
 # fresh lane needing exact multiline initial prompt: interactive, not print/headless
-agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
+agy --model claude-opus-4-6-thinking --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
 ```
 
 Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
@@ -217,15 +217,19 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
 - Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
+- Cursor newer Sonnet candidate: `claude-sonnet-5-thinking-high` (explicit opt-in until direct-lane use proves it should replace a default)
 - Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
-- Antigravity heavy review model: `Claude Opus 4.6 (Thinking)`
+- Antigravity heavy review model: `claude-opus-4-6-thinking`
+- Antigravity balanced model: `claude-sonnet-4-6`
+- Antigravity fast model: `gemini-3.5-flash-medium`
 - Codex flagship model/effort: `gpt-5.6-sol` + `high`
 - Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
 - Codex automatic-delegation model/effort: `gpt-5.6-sol` + `ultra` for large parallelizable jobs
-- Codex fallback/legacy choices: `gpt-5.5` and `gpt-5.3-codex-spark`
+- Codex specialized ultra-fast model/effort: `gpt-5.3-codex-spark` + `high`
+- Codex fallback choice: `gpt-5.5`
 - Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
-- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and exact `--model` label when supported; verify the visible label, then send the prompt after readiness
+- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
 - Codex launch style: interactive tmux lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
 
 ### Model selection rule
@@ -236,35 +240,39 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   3. `claude-fable-5-thinking-high` — Fable 5 reasoning lane; use this when Mahiro says “Fable 5” unless he asks for another Fable variant.
   4. `claude-fable-5-thinking-xhigh` — Fable 5 extra-high lane for heavier review.
   5. `claude-opus-4-8-thinking-high` — Opus heavy review / deep reasoning lane.
+  6. `claude-sonnet-5-thinking-high` — newer Sonnet candidate; offer explicitly but do not silently replace the proven defaults.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
-  1. `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
+  1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
+  2. `claude-sonnet-4-6` — balanced reasoning lane.
+  3. `gemini-3.5-flash-medium` — faster scoped lane.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
   2. `gpt-5.6-terra` + `medium` — balanced everyday coding and follow-up work.
   3. `gpt-5.6-luna` + `medium` — fast/cost-efficient scoped work.
   4. `gpt-5.6-sol` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
+  5. `gpt-5.3-codex-spark` + `high` — specialized ultra-fast lane for small, bounded coding or commit work.
 - Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent model IDs such as `gpt-5.6-sol-high`.
 - Sol and Terra currently expose low, medium, high, extra-high (`xhigh`), max, and ultra. Luna exposes low through max and must not be launched with ultra.
-- `/direct-cli --effort <level>` is command/skill syntax, not a native Codex flag. Translate it to `-c model_reasoning_effort=<level>` at launch. When a recognized GPT-5.6 model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
-- Do not offer every model returned by Codex as the default picker; validate availability with `codex --help`, `codex doctor`, or current Codex docs if a model fails.
-- Antigravity CLI `1.0.13` has a verified `--model` flag; prefer exact labels like `--model "Claude Opus 4.6 (Thinking)"`, then verify the visible pane label. Use `/model` only as fallback if flag selection fails.
+- `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When a recognized GPT-5.6 Codex model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
+- Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
+- Antigravity CLI `1.1.5` has verified `--model` and `--effort` flags, but effort support is model-specific. Prefer the exact stable slug from `agy models`, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
-- Use `agent --list-models` or `agent models` before changing Cursor model names; Cursor's list changes faster than this playbook.
+- Model catalogs can change independently of binary versions. Use `agent models`, `agy models`, and `codex debug models` before changing model names or when a preferred launch fails.
 
 ## Current freshness checkpoints
 
 These are evidence checkpoints; verify again when models or CLI behavior matter.
 
-- Cursor CLI: local checked version was `2026.07.08-0c04a8a` on 2026-07-09. `agent models` showed Fable 5 IDs including `claude-fable-5-thinking-high` and `claude-fable-5-thinking-xhigh`; `agent --model claude-fable-5-thinking-high --yolo --approve-mcps` launched successfully and the pane showed `Fable 5 300K High`. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
-- Antigravity CLI: local checked version was `1.0.13` on 2026-06-29. `agy models` listed `Claude Opus 4.6 (Thinking)`, `--model "Claude Opus 4.6 (Thinking)"` launched the Opus pane, and `--prompt-interactive` preserved exact multiline initial prompts while keeping the session interactive.
-- Codex CLI: local/latest checked version was `0.144.1` on 2026-07-10. The TTY `/model` picker listed `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.3-codex-spark`. Sol/Terra exposed low, medium, high, extra-high, max, and ultra; Luna exposed low through max. Ultra was labeled “automatic task delegation.” `codex --help` still exposes interactive `--image`, `--model`, `--sandbox`, `--ask-for-approval`, and `--search`; `codex exec` is explicitly non-interactive. `codex features list` showed `image_generation`, `multi_agent`, and `fast_mode` stable/enabled. Generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
+- Cursor CLI: local version and official installer were both `2026.07.17-3e2a980` on 2026-07-21. `agent models` exposed Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertised 1M for Fable/Sonnet/Opus/GPT-5.6, while `agent about` for the active Fable session still reported `Fable 5 300K High`; effective context remains session-dependent until a fresh launch proves otherwise. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
+- Antigravity CLI: local checked version was `1.1.5` on 2026-07-21. `agy models` exposed stable slugs for Opus 4.6 Thinking, Sonnet 4.6, Gemini 3.1 Pro, Gemini 3.5 Flash, and GPT-OSS 120B. Foreground tmux launches proved `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, and `gemini-3.5-flash-medium`. Adding `--effort high` to Opus warned that effort was unsupported and fell back to Gemini Flash; launching catalog-listed `gemini-3.1-pro-high` reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.5.
+- Codex CLI: local and npm stable were `0.144.6` on 2026-07-21; alpha `0.145.0-alpha.28` was available but is not the default lane. `codex debug models` listed user-visible Sol/Terra/Luna/GPT-5.5/Spark. Sol/Terra exposed low through ultra, Luna low through max, and Spark low through xhigh. Model metadata reported 272,000-token context for Sol/Terra/Luna/GPT-5.5 and 128,000 for Spark. `codex features list` still showed `image_generation`, `multi_agent`, and `fast_mode` stable/enabled. Generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Launch examples
 
-These examples preserve the tmux-first launch shape used while refining this skill. Model availability changes quickly; validate with `agent --list-models`, `agy --help`, or `codex --help` if a command fails.
+These examples preserve the tmux-first launch shape used while refining this skill. Model availability changes quickly; validate with `agent models`, `agy models`, or `codex debug models` if a model fails, and use each CLI's help/doctor surface for flag or health failures.
 
 ### Cursor interactive review lane
 
@@ -292,8 +300,11 @@ Use these when you need to validate local behavior rather than guessing:
 
 ```bash
 agent --list-models
+agent models
 agent --help
+agy models
 agy --help
+codex debug models
 codex --help
 codex features list
 codex doctor
@@ -392,22 +403,22 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ### Fresh session
 
-Use the known-good Antigravity defaults first. Prefer exact `--model` labels when available, then verify the visible model label in the pane. Use `/model` TUI switching only as a fallback.
+Use the known-good Antigravity defaults first. Prefer exact stable `--model` slugs and add native `--effort` only for models that support it, then verify the visible model/effort and reject fallback warnings. Use `/model` or `/effort` TUI switching only as a fallback.
 
 ```bash
 tmux new-session -d -s "agy-task"
-tmux send-keys -t agy-task 'agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-task 'agy --model claude-opus-4-6-thinking --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-task -S -120
 tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
 ```
 
 ### Model selection
 
-If a non-current Antigravity model is required, launch with the exact label first:
+If a non-current Antigravity model is required, launch with its exact stable slug first and add effort only when supported:
 
 ```bash
 tmux new-session -d -s "agy-opus"
-tmux send-keys -t agy-opus 'agy --model "Claude Opus 4.6 (Thinking)" --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-opus 'agy --model claude-opus-4-6-thinking --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-opus -S -120
 ```
 
@@ -418,9 +429,11 @@ tmux send-keys -t agy-task '/model' Enter
 tmux capture-pane -p -t agy-task -S -120
 ```
 
-Then choose the skill-defined label in the TUI:
+Then choose the skill-defined model/effort in the TUI:
 
-- `Claude Opus 4.6 (Thinking)` — heavy reasoning/review.
+- `claude-opus-4-6-thinking` — heavy reasoning/review; no separate effort flag.
+- `claude-sonnet-4-6` — balanced reasoning.
+- `gemini-3.5-flash-medium` — faster scoped lane.
 
 ### Prompt template
 

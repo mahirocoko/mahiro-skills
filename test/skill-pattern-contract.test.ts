@@ -105,6 +105,9 @@ describe("skill pattern adaptation phase a", () => {
     const skill = readRepoFile("skills", "direct-cli", "SKILL.md");
     const playbook = readRepoFile("skills", "direct-cli", "playbook.md");
     const readme = readRepoFile("skills", "direct-cli", "README.md");
+    const command = readRepoFile("commands", "direct-cli.md");
+    const geminiCommand = readRepoFile("commands-gemini", "mh-direct-cli.toml");
+    const rootReadme = readRepoFile("README.md");
 
     expect(skill).toContain("## Multi-pane Job Sessions");
     expect(skill).toContain("same-prompt fanout");
@@ -114,14 +117,26 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Antigravity newline caveat");
     expect(skill).toContain("--prompt-interactive");
     expect(skill).toContain("claude-fable-5-thinking-high");
-    expect(skill).toContain("Use the exact model ID, not the display shorthand");
+    expect(skill).toContain("Use exact model IDs, not display shorthand");
     expect(skill).toContain("`gpt-5.6-sol` high");
     expect(skill).toContain("`gpt-5.6-terra` medium");
     expect(skill).toContain("`gpt-5.6-luna` medium");
     expect(skill).toContain("`gpt-5.6-sol` ultra");
+    expect(skill).toContain("`claude-sonnet-5-thinking-high`");
+    expect(skill).toContain("`claude-opus-4-6-thinking` for heavy review/reasoning");
+    expect(skill).toContain("`claude-sonnet-4-6`");
+    expect(skill).toContain("`gemini-3.5-flash-medium`");
+    expect(skill).toContain("`gpt-5.3-codex-spark` high");
+    expect(skill).toContain("`codex debug models`");
+    expect(skill).toContain("pass native `agy --effort <level>` only after the selected model is known to support it");
+    expect(skill).toContain("silently falls back to the default model");
     expect(skill).toContain("model_reasoning_effort");
     expect(skill).toContain("Codex itself does not expose a `--effort` flag");
     expect(skill).toContain("Never infer `ultra`");
+    expect(skill).toContain("2026.07.17-3e2a980");
+    expect(skill).toContain("Antigravity `agy` is `1.1.5`");
+    expect(skill).toContain("Codex CLI local and npm stable are `0.144.6`");
+    expect(skill).toContain("272,000-token context");
     expect(skill).not.toContain("gpt-5.3-codex-high");
     expect(skill).not.toContain("gpt-5.3-codex-high-fast");
     expect(skill).not.toContain("Gemini CLI");
@@ -134,12 +149,18 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Send byte-identical prompt content to every pane.");
     expect(playbook).toContain("Main agent owns final merge/synthesis into the real worktree.");
     expect(playbook).toContain("Antigravity multiline prompt caveat");
-    expect(playbook).toContain("agy --model \"Claude Opus 4.6 (Thinking)\"");
+    expect(playbook).toContain("agy --model claude-opus-4-6-thinking --dangerously-skip-permissions");
+    expect(playbook).toContain("`claude-sonnet-4-6`");
+    expect(playbook).toContain("`gemini-3.5-flash-medium`");
+    expect(playbook).toContain("launching catalog-listed `gemini-3.1-pro-high` reported it was no longer available");
+    expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
     expect(playbook).toContain("Luna exposes low through max and must not be launched with ultra");
+    expect(playbook).toContain("`gpt-5.3-codex-spark` + `high`");
+    expect(playbook).toContain("Codex CLI: local and npm stable were `0.144.6`");
     expect(playbook).not.toContain("gpt-5.3-codex-high");
     expect(playbook).not.toContain("gpt-5.3-codex-high-fast");
     expect(playbook).not.toContain("Gemini CLI");
@@ -150,10 +171,30 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
+    expect(readme).toContain("`claude-sonnet-5-thinking-high` stays opt-in");
+    expect(readme).toContain("`claude-opus-4-6-thinking` for heavy review");
+    expect(readme).toContain("`claude-sonnet-4-6` for balanced work");
+    expect(readme).toContain("`codex debug models`");
     expect(readme).toContain("`gpt-5.6-sol` with high reasoning");
     expect(readme).toContain("`gpt-5.6-sol` ultra");
+    expect(readme).toContain("`gpt-5.3-codex-spark` high");
     expect(readme).not.toContain("Gemini CLI");
     expect(readme).not.toContain("/direct-cli gemini");
+
+    for (const wrapper of [command, geminiCommand]) {
+      expect(wrapper).toContain("`claude-opus-4-6-thinking`");
+      expect(wrapper).toContain("`claude-sonnet-4-6`");
+      expect(wrapper).toContain("`gemini-3.5-flash-medium`");
+      expect(wrapper).toContain("`claude-sonnet-5-thinking-high`");
+      expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
+      expect(wrapper).toContain("`codex debug models`");
+      expect(wrapper).toContain("reject any fallback warning or visible model mismatch");
+      expect(wrapper).not.toContain("Antigravity `Claude Opus 4.6 (Thinking)`");
+    }
+
+    expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
+    expect(rootReadme).toContain("reject fallback warnings/model mismatches");
+    expect(rootReadme).not.toContain("For Agy, prefer exact `--model` labels");
   });
 
   test("codex asset production delegates model policy without nested ultra fanout", () => {
