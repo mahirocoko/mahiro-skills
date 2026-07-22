@@ -123,6 +123,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`gpt-5.6-luna` medium");
     expect(skill).toContain("`gpt-5.6-sol` ultra");
     expect(skill).toContain("`claude-sonnet-5-thinking-high`");
+    expect(skill).toContain("`claude-fable-5-thinking-xhigh`");
     expect(skill).toContain("`claude-opus-4-6-thinking` for heavy review/reasoning");
     expect(skill).toContain("`claude-sonnet-4-6`");
     expect(skill).toContain("`gemini-3.6-flash-high`");
@@ -175,6 +176,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
+    expect(readme).toContain("`claude-fable-5-thinking-xhigh` for heavier review");
     expect(readme).toContain("`claude-sonnet-5-thinking-high` stays opt-in");
     expect(readme).toContain("`claude-opus-4-6-thinking` for heavy review");
     expect(readme).toContain("`claude-sonnet-4-6` for balanced work");
@@ -192,6 +194,7 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("`gemini-3.6-flash-medium`");
       expect(wrapper).toContain("`gemini-3.5-flash-medium` fallback");
       expect(wrapper).toContain("`claude-sonnet-5-thinking-high`");
+      expect(wrapper).toContain("`claude-fable-5-thinking-xhigh`");
       expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
       expect(wrapper).toContain("`codex debug models`");
       expect(wrapper).toContain("reject any fallback warning or visible model mismatch");
