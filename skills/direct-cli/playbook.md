@@ -167,7 +167,7 @@ Example asset lane registry:
 
 ### Antigravity multi-model notes
 
-Current local Antigravity (verified 2026-07-21, `agy 1.1.5`) supports stable model slugs through `--model` and native reasoning selection through `--effort`. Pass effort only when the selected model supports it, then verify the visible model and effort in the pane. Agy can warn and silently fall back to its default model when a model/effort pair is invalid; treat that as launch failure. Fall back to `/model` or `/effort` only if flag selection fails.
+Current local Antigravity (verified 2026-07-22, `agy 1.1.5`) supports stable model slugs through `--model` and native reasoning selection through `--effort`. Pass effort only when the selected model supports it, then verify the visible model and effort in the pane. Agy can warn and silently fall back to its default model when a model/effort pair is invalid; treat that as launch failure. Fall back to `/model` or `/effort` only if flag selection fails.
 
 For several Agy models in one job:
 
@@ -176,7 +176,7 @@ For several Agy models in one job:
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review, `claude-sonnet-4-6` for balanced work, and `gemini-3.5-flash-medium` for a faster lane. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
+Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review, `claude-sonnet-4-6` for balanced work, and `gemini-3.6-flash-high` for a faster lane. Keep `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
 
 ### Antigravity multiline prompt caveat
 
@@ -221,7 +221,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
 - Antigravity balanced model: `claude-sonnet-4-6`
-- Antigravity fast model: `gemini-3.5-flash-medium`
+- Antigravity fast model: `gemini-3.6-flash-high` (`gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium` fallback)
 - Codex flagship model/effort: `gpt-5.6-sol` + `high`
 - Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
@@ -245,7 +245,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
   2. `claude-sonnet-4-6` — balanced reasoning lane.
-  3. `gemini-3.5-flash-medium` — faster scoped lane.
+  3. `gemini-3.6-flash-high` — faster scoped lane; fall back to `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only if High fails.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
@@ -266,9 +266,9 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 
 These are evidence checkpoints; verify again when models or CLI behavior matter.
 
-- Cursor CLI: local version and official installer were both `2026.07.17-3e2a980` on 2026-07-21. `agent models` exposed Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertised 1M for Fable/Sonnet/Opus/GPT-5.6, while `agent about` for the active Fable session still reported `Fable 5 300K High`; effective context remains session-dependent until a fresh launch proves otherwise. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
-- Antigravity CLI: local checked version was `1.1.5` on 2026-07-21. `agy models` exposed stable slugs for Opus 4.6 Thinking, Sonnet 4.6, Gemini 3.1 Pro, Gemini 3.5 Flash, and GPT-OSS 120B. Foreground tmux launches proved `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, and `gemini-3.5-flash-medium`. Adding `--effort high` to Opus warned that effort was unsupported and fell back to Gemini Flash; launching catalog-listed `gemini-3.1-pro-high` reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.5.
-- Codex CLI: local and npm stable were `0.144.6` on 2026-07-21; alpha `0.145.0-alpha.28` was available but is not the default lane. `codex debug models` listed user-visible Sol/Terra/Luna/GPT-5.5/Spark. Sol/Terra exposed low through ultra, Luna low through max, and Spark low through xhigh. Model metadata reported 272,000-token context for Sol/Terra/Luna/GPT-5.5 and 128,000 for Spark. `codex features list` still showed `image_generation`, `multi_agent`, and `fast_mode` stable/enabled. Generated images save as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
+- Cursor CLI: local version updated from `2026.07.17-3e2a980` to `2026.07.20-8cc9c0b` on 2026-07-22 and matches the official installer. The help diff adds `--endpoint` / `CURSOR_API_ENDPOINT`, and `--trust` is no longer documented as headless-only. `agent models` still exposes Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertise 1M for Fable/Sonnet/Opus/GPT-5.6, while `agent about` for the active Fable session still reports `Fable 5 300K High`; effective context remains session-dependent until a fresh launch proves otherwise. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
+- Antigravity CLI: local `1.1.5` remained latest on 2026-07-22, while `agy models` added Gemini 3.6 Flash alongside the previous families. Fresh interactive tmux launches proved both `gemini-3.6-flash-high` and `gemini-3.6-flash-medium` with the correct visible model and response. Mahiro selected High as the curated fast default; 3.6 Medium and then `gemini-3.5-flash-medium` remain fallbacks. Earlier proof for `claude-opus-4-6-thinking` and `claude-sonnet-4-6` remains valid. Adding `--effort high` to Opus has a known silent-fallback risk, and catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.5.
+- Codex CLI: local and npm stable updated from `0.144.6` to `0.145.0` on 2026-07-22. The release adds paginated thread history, broader Cursor/Claude import, audio/realtime support, and stable-but-opt-in multi-agent V2, plus long-conversation rendering, MCP startup/auth, and approval-safety fixes. The direct-lane flags remain valid. `codex debug models` still lists Sol/Terra/Luna/GPT-5.5/Spark: Sol/Terra expose low through ultra, Luna low through max, Spark low through xhigh, and context remains 272,000 for Sol/Terra/Luna/GPT-5.5 versus 128,000 for Spark. `image_generation`, `multi_agent`, and `fast_mode` remain stable/enabled; `multi_agent_v2` is stable and disabled by default. Generated images remain under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Launch examples
 
@@ -433,7 +433,7 @@ Then choose the skill-defined model/effort in the TUI:
 
 - `claude-opus-4-6-thinking` — heavy reasoning/review; no separate effort flag.
 - `claude-sonnet-4-6` — balanced reasoning.
-- `gemini-3.5-flash-medium` — faster scoped lane.
+- `gemini-3.6-flash-high` — faster scoped lane; use `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only as fallbacks.
 
 ### Prompt template
 

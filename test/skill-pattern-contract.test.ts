@@ -125,7 +125,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`claude-sonnet-5-thinking-high`");
     expect(skill).toContain("`claude-opus-4-6-thinking` for heavy review/reasoning");
     expect(skill).toContain("`claude-sonnet-4-6`");
-    expect(skill).toContain("`gemini-3.5-flash-medium`");
+    expect(skill).toContain("`gemini-3.6-flash-high`");
+    expect(skill).toContain("`gemini-3.6-flash-medium`");
+    expect(skill).toContain("`gemini-3.5-flash-medium` as fallbacks");
     expect(skill).toContain("`gpt-5.3-codex-spark` high");
     expect(skill).toContain("`codex debug models`");
     expect(skill).toContain("pass native `agy --effort <level>` only after the selected model is known to support it");
@@ -133,9 +135,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("model_reasoning_effort");
     expect(skill).toContain("Codex itself does not expose a `--effort` flag");
     expect(skill).toContain("Never infer `ultra`");
-    expect(skill).toContain("2026.07.17-3e2a980");
-    expect(skill).toContain("Antigravity `agy` is `1.1.5`");
-    expect(skill).toContain("Codex CLI local and npm stable are `0.144.6`");
+    expect(skill).toContain("2026.07.20-8cc9c0b");
+    expect(skill).toContain("Antigravity `agy 1.1.5` remains the latest binary");
+    expect(skill).toContain("Codex CLI and npm stable updated from `0.144.6` to `0.145.0`");
     expect(skill).toContain("272,000-token context");
     expect(skill).not.toContain("gpt-5.3-codex-high");
     expect(skill).not.toContain("gpt-5.3-codex-high-fast");
@@ -151,8 +153,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Antigravity multiline prompt caveat");
     expect(playbook).toContain("agy --model claude-opus-4-6-thinking --dangerously-skip-permissions");
     expect(playbook).toContain("`claude-sonnet-4-6`");
-    expect(playbook).toContain("`gemini-3.5-flash-medium`");
-    expect(playbook).toContain("launching catalog-listed `gemini-3.1-pro-high` reported it was no longer available");
+    expect(playbook).toContain("`gemini-3.6-flash-high`");
+    expect(playbook).toContain("`gemini-3.6-flash-medium`");
+    expect(playbook).toContain("`gemini-3.5-flash-medium` remain fallbacks");
+    expect(playbook).toContain("catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available");
     expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
@@ -160,7 +164,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
     expect(playbook).toContain("Luna exposes low through max and must not be launched with ultra");
     expect(playbook).toContain("`gpt-5.3-codex-spark` + `high`");
-    expect(playbook).toContain("Codex CLI: local and npm stable were `0.144.6`");
+    expect(playbook).toContain("Codex CLI: local and npm stable updated from `0.144.6` to `0.145.0`");
     expect(playbook).not.toContain("gpt-5.3-codex-high");
     expect(playbook).not.toContain("gpt-5.3-codex-high-fast");
     expect(playbook).not.toContain("Gemini CLI");
@@ -184,7 +188,9 @@ describe("skill pattern adaptation phase a", () => {
     for (const wrapper of [command, geminiCommand]) {
       expect(wrapper).toContain("`claude-opus-4-6-thinking`");
       expect(wrapper).toContain("`claude-sonnet-4-6`");
-      expect(wrapper).toContain("`gemini-3.5-flash-medium`");
+      expect(wrapper).toContain("`gemini-3.6-flash-high`");
+      expect(wrapper).toContain("`gemini-3.6-flash-medium`");
+      expect(wrapper).toContain("`gemini-3.5-flash-medium` fallback");
       expect(wrapper).toContain("`claude-sonnet-5-thinking-high`");
       expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
       expect(wrapper).toContain("`codex debug models`");
