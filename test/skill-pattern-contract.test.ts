@@ -246,6 +246,14 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Add evidence before `claim_criterion`");
     expect(skill).toContain("Mahiro verifies it through `/mh-goal verify");
     expect(skill).toContain("the agent should call that tool itself after approval");
+    expect(skill).toContain("Goal Mode owns objective truth");
+    expect(skill).toContain("Execution Run is optional coordination for complex external lanes");
+    expect(skill).toContain("Do not require it\n  for simple edits");
+    expect(skill).toContain("A handed-off `code_evidence_intake` is caller metadata, not proof");
+    expect(skill).toContain("Code Evidence owns fresh repository/check attribution");
+    expect(skill).toContain("neither an\n  executor report nor a Code Evidence intake may auto-claim criteria");
+    expect(skill).toContain("Official Goal Mode is not installed by default");
+    expect(skill).toContain("Do not reinstall the official package merely to satisfy this skill");
     expect(skill).toContain("/goal status");
     expect(skill).toContain("/goal pause` / `/goal resume");
     expect(skill).toContain("/goal complete");
@@ -260,6 +268,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(command).toContain("Drafts, applies, or refines Goal Mode objectives");
     expect(geminiCommand).toContain("Drafts, applies, or refines Goal Mode objectives");
     expect(index).toContain("Goal Mode objective/DoD/next-action drafting and agent-owned application workflow");
+    expect(index).toContain("optional Execution Run and explicit Code Evidence attachment boundaries");
     expect(index).not.toContain("legacy skill name");
   });
 });

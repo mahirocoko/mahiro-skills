@@ -93,7 +93,30 @@ Human commands such as `/mh-goal status`, `/mh-goal-status`, pause/resume,
 verify, clear, force-complete, and abandoned-lock recovery remain inspection or
 explicit human-control surfaces; they are not the default creation path.
 
-### Official fallback surface
+## Workflow ownership boundaries
+
+- **Goal Mode owns objective truth**: objective, DoD criteria, agent claims,
+  human verification, blockers, next action, and completion audit.
+- **`UpdatePlan` owns immediate execution visibility**. Do not turn every small
+  step into a Goal mutation.
+- **Execution Run is optional coordination for complex external lanes**. Use the
+  `mh_*_execution_run` tools only when multiple executors, worktrees, target
+  ownership, or a bounded cross-lane handoff materially help. Do not require it
+  for simple edits, and never imply that it launches or controls executors.
+- When Goal and Execution Run are both active, bind the relevant Goal criterion
+  refs while the run is still in `plan`; after `ready`, treat that binding as
+  immutable. A handed-off `code_evidence_intake` is caller metadata, not proof.
+- **Code Evidence owns fresh repository/check attribution** after implementation.
+  Attach selected evidence to Goal explicitly with `mh_update_goal`; neither an
+  executor report nor a Code Evidence intake may auto-claim criteria, verify a
+  human gate, or complete a Goal.
+
+### Optional official fallback surface
+
+Official Goal Mode is not installed by default in Mahiro's current runtime; the
+Mahiro structured tools above are the intended owner. Use the following fallback
+only when those commands/tools are actually exposed by another environment.
+Do not reinstall the official package merely to satisfy this skill.
 
 Known command surface:
 
