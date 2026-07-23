@@ -143,6 +143,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |
 | `mahiro-guidance-refine` | `/mahiro-guidance-refine` | You need to turn session feedback into approved docs, rules, or style guidance updates. |
 | `mahiro-style` | `/mahiro-style` | You need Mahiro's cross-repo code style doctrine. |
+| `motion-design` | `/motion-design` | You explicitly need a UI/product motion brief, motion personality or tokens, timing/easing/spring/stagger decisions, choreography, interaction-state motion, reduced-motion planning, or rendered motion audit—not ordinary frontend work or game VFX. |
 | `philosophy` | `/philosophy` | You need the local philosophy and alignment rules. |
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
@@ -164,6 +165,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
 | Creative web study | `bun ./src/cli.ts install studying-codrops frontend-design learn --agent opencode --scope local` | Codrops evidence study, project-relative frontend decisions, and linked source-repo exploration |
+| Motion design | `bun ./src/cli.ts install motion-design frontend-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits, brand-relative design ownership, and optional Codrops evidence |
 | Frontend design and assets | `bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Explicit design briefs, post-render taste audits, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
 | Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer frontend-design --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, UI/meta direction, performance/device QA, and release gates |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |

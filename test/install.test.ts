@@ -58,7 +58,7 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(result.installed).toEqual(["asset-designer", "cocoindex-rules-init", "codex-asset-production", "control-room-goals", "direct-cli", "forward", "frontend-design", "game-production", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "philosophy", "project", "recap", "rrr", "sprite-workflow", "studying-codrops", "uncodixify", "vfx-workflow", "web-asset-prompts", "watch"]);
+      expect(result.installed).toEqual(["asset-designer", "cocoindex-rules-init", "codex-asset-production", "control-room-goals", "direct-cli", "forward", "frontend-design", "game-production", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "philosophy", "project", "recap", "rrr", "sprite-workflow", "studying-codrops", "uncodixify", "vfx-workflow", "web-asset-prompts", "watch"]);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
       temp.cleanup();
