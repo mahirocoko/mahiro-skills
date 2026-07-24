@@ -77,8 +77,8 @@ Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, a
 Current workflow highlights:
 
 - **Interactive install/uninstall/update TUI plus non-interactive `guided --mode update --yes`** — open with `bun ./src/cli.ts`; supports Install, Uninstall, Update installed, List installed, and Receipt detail. Uninstall can target one agent or all agents, then remove selected receipt-recorded items or everything for the chosen scope. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
-- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in tmux. Single-lane work remains the default for narrow implementation or recovery.
-- **Multi-pane direct jobs** — one job can use one tmux session with several panes, a lane registry, explicit write policy, role fanout, or same-prompt fanout through a shared tmux buffer.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long Herdr jobs can detach into a private durable watcher registry for later collection.
+- **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 - **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
 - **Game production stack** — `/game-production` coordinates whole-game maturity, content/art/UI/audio/save/performance/browser/release gates while `/vfx-workflow` keeps runtime effects mechanically truthful, accessible, bounded, and separately promotable from body sprites.
@@ -133,7 +133,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, or its optional Execution Run/Code Evidence ownership boundary. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
 | `deep-research` | `/deep-research` | You need generic or broad source-backed research through Gemini. Use `frontend-design` for a large live frontend/site/app UI corpus tied to a named frontend design decision. |
-| `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes in tmux, including multi-pane same-prompt fanout. |
+| `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, rendered fidelity review, or a large frontend-reference corpus review tied to a named frontend design decision—not generic deep research. |
 | `game-production` | `/game-production` | You need a whole-game production inventory, maturity/readiness audit, specialist-lane plan, cross-domain QA, or release gate. |
@@ -175,7 +175,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | `tmux`, Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI; multi-pane jobs use one named tmux session with multiple panes. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Multi-pane jobs use one named Herdr tab or tmux session. Detached Phase 1 jobs are Herdr-only and persist watcher/results for later `list`/`show`/`collect`; they do not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

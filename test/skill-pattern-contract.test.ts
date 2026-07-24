@@ -105,12 +105,32 @@ describe("skill pattern adaptation phase a", () => {
     const skill = readRepoFile("skills", "direct-cli", "SKILL.md");
     const playbook = readRepoFile("skills", "direct-cli", "playbook.md");
     const readme = readRepoFile("skills", "direct-cli", "README.md");
+    const selector = readRepoFile("skills", "direct-cli", "scripts", "select-backend.sh");
+    const jobs = readRepoFile("skills", "direct-cli", "scripts", "herdr-jobs.py");
     const command = readRepoFile("commands", "direct-cli.md");
     const geminiCommand = readRepoFile("commands-gemini", "mh-direct-cli.toml");
     const rootReadme = readRepoFile("README.md");
 
     expect(skill).toContain("## Multi-pane Job Sessions");
+    expect(skill).toContain("## Backend Selection");
+    expect(skill).toContain("`--backend auto|herdr|tmux`");
+    expect(skill).toContain("`HERDR_ENV=1`");
+    expect(skill).toContain("`HERDR_PANE_ID`");
+    expect(skill).toContain("`herdr status --json`");
+    expect(skill).toContain("Never silently change backends after creating a tab, pane, or tmux session");
+    expect(skill).toContain("Never run `herdr integration install` without explicit user approval");
+    expect(skill).toContain("Do not hard-code a Herdr protocol number");
+    expect(skill).toContain("`herdr agent start`");
+    expect(skill).toContain("`herdr agent prompt`");
     expect(skill).toContain("same-prompt fanout");
+    expect(skill).toContain("scripts/prompt-fanout.py");
+    expect(skill).toContain("do not call `agent wait` against the old idle state");
+    expect(skill).toContain("## Detached Herdr Jobs");
+    expect(skill).toContain("scripts/herdr-jobs.py");
+    expect(skill).toContain("reject `--backend tmux --detach`");
+    expect(skill).toContain("does not inject a new message into the current Letta conversation");
+    expect(skill).toContain("never prompt, result, or failure-summary text");
+    expect(skill).toContain("reconcile a missing or mismatched watcher process");
     expect(skill).toContain("tmux load-buffer");
     expect(skill).toContain("one writer per file/asset contract");
     expect(skill).toContain("Sandbox verification");
@@ -128,7 +148,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`claude-sonnet-4-6`");
     expect(skill).toContain("`gemini-3.6-flash-high`");
     expect(skill).toContain("`gemini-3.6-flash-medium`");
-    expect(skill).toContain("`gemini-3.5-flash-medium` as fallbacks");
+    expect(skill).toContain("`gemini-3.5-flash-medium` as ordered automatic fallbacks");
     expect(skill).toContain("`gpt-5.3-codex-spark` high");
     expect(skill).toContain("`codex debug models`");
     expect(skill).toContain("pass native `agy --effort <level>` only after the selected model is known to support it");
@@ -137,7 +157,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Codex itself does not expose a `--effort` flag");
     expect(skill).toContain("Never infer `ultra`");
     expect(skill).toContain("2026.07.20-8cc9c0b");
-    expect(skill).toContain("Antigravity `agy 1.1.5` remains the latest binary");
+    expect(skill).toContain("Antigravity is `agy 1.1.6`");
+    expect(skill).toContain("explicit `gemini-3.5-flash-high`");
     expect(skill).toContain("Codex CLI and npm stable updated from `0.144.6` to `0.145.0`");
     expect(skill).toContain("272,000-token context");
     expect(skill).not.toContain("gpt-5.3-codex-high");
@@ -147,6 +168,29 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).not.toContain("gemini --help");
 
     expect(playbook).toContain("## Multi-pane job sessions");
+    expect(playbook).toContain("## Backend contract");
+    expect(playbook).toContain("scripts/select-backend.sh");
+    expect(selector).toContain('herdr pane get "$HERDR_PANE_ID"');
+    expect(selector).toContain("no usable backend");
+    expect(jobs).toContain('f"Job finished with status: {status}"');
+    expect(jobs).not.toContain('f"{status}: {summary}"');
+    expect(jobs).toContain("reconcile_job");
+    expect(playbook).toContain("One job maps to one `direct-<job-slug>` tab");
+    expect(playbook).toContain('herdr agent start "$CODEX_AGENT"');
+    expect(playbook).toContain('herdr agent wait "$CODEX_AGENT"');
+    expect(playbook).toContain('CODEX_AGENT="d${PANE_HASH}c"');
+    expect(playbook).toContain("requested.isdisjoint(active)");
+    expect(playbook).toContain("agent_name_taken");
+    expect(playbook).toContain("wait_for_herdr_shell");
+    expect(playbook).toContain("DIRECT_CLI_SHELL_READY_");
+    expect(playbook).toContain("herdr pane process-info --pane");
+    expect(playbook).toContain("agent_pane_busy");
+    expect(playbook).toContain("Running inside Herdr with `--backend tmux` intentionally creates a nested multiplexer");
+    expect(playbook).toContain("byte-identical input at the Herdr CLI argument boundary");
+    expect(playbook).toContain("A naive `agent prompt` followed immediately by `agent wait` is unsafe");
+    expect(playbook).toContain("### Detached Herdr jobs");
+    expect(playbook).toContain("list --json");
+    expect(playbook).toContain("collect \"$JOB_ID\"");
     expect(playbook).toContain("Role fanout");
     expect(playbook).toContain("Same-prompt fanout");
     expect(playbook).toContain("Send byte-identical prompt content to every pane.");
@@ -156,7 +200,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("`claude-sonnet-4-6`");
     expect(playbook).toContain("`gemini-3.6-flash-high`");
     expect(playbook).toContain("`gemini-3.6-flash-medium`");
-    expect(playbook).toContain("`gemini-3.5-flash-medium` remain fallbacks");
+    expect(playbook).toContain("`gemini-3.5-flash-medium` remain ordered automatic fallbacks");
     expect(playbook).toContain("catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available");
     expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
@@ -173,6 +217,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("gemini --help");
 
     expect(readme).toContain("same-prompt fanout");
+    expect(readme).toContain("`--backend auto`");
+    expect(readme).toContain("`--backend herdr`");
+    expect(readme).toContain("`--backend tmux`");
+    expect(readme).toContain("binary presence alone is not enough");
     expect(readme).toContain("matching SHA-256 hashes across three pane captures");
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
@@ -188,6 +236,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).not.toContain("/direct-cli gemini");
 
     for (const wrapper of [command, geminiCommand]) {
+      expect(wrapper).toContain("`--backend auto|herdr|tmux`");
+      expect(wrapper).toContain("`--workspace ID`");
+      expect(wrapper).toContain("`--detach`");
+      expect(wrapper).toContain("Reject tmux detach");
+      expect(wrapper).toContain("never silently switch after creating state");
       expect(wrapper).toContain("`claude-opus-4-6-thinking`");
       expect(wrapper).toContain("`claude-sonnet-4-6`");
       expect(wrapper).toContain("`gemini-3.6-flash-high`");
@@ -202,6 +255,8 @@ describe("skill pattern adaptation phase a", () => {
     }
 
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
+    expect(rootReadme).toContain("auto-selected Herdr/tmux backends");
+    expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
     expect(rootReadme).not.toContain("For Agy, prefer exact `--model` labels");
   });

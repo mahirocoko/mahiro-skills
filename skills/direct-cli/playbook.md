@@ -6,7 +6,8 @@ The intended model is simple:
 
 - Mahiro Code / the main agent stays the conversation owner.
 - Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
-- Tmux pane output is treated as the nearest source of execution truth.
+- Herdr-managed panes are preferred when the invocation already runs inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
+- The selected backend's pane output is treated as the nearest source of execution truth.
 - For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow. For sprite-like sheets, route through `sprite-workflow` first.
 
 ## When to use direct CLI
@@ -14,34 +15,213 @@ The intended model is simple:
 Use this path when you want:
 
 - a fresh executor session without wrapper state
-- direct tmux visibility into prompts, thinking, approval blocking, and errors
+- direct pane visibility into prompts, thinking, approval blocking, and errors
 - narrow follow-up work on the current worktree
 
 ## Core operator rules
 
-- Prefer a **fresh tmux session** when an old session looks unhealthy.
+- Prefer a **fresh Herdr tab or tmux session** when an old job container looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
 - Use `agent models`, `agy models`, and `codex debug models` for current catalogs. Use `agent --help`, `agy --help`, `codex --help`, `codex features list`, or `codex doctor` when launch flags, features, or local health need validation.
-- Keep the lane **interactive in tmux**. Do not default to Cursor headless mode such as `agent -p`.
+- Keep the lane **interactive in the selected pane backend**. Do not default to Cursor headless mode such as `agent -p`.
 - Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
 - Do not default to Codex non-interactive mode such as `codex exec`; use it only when the user explicitly asks for script/headless output.
 - Do not default to Codex `--dangerously-bypass-approvals-and-sandbox`; use workspace-write sandboxing by default.
 - If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
-- Launch Cursor, Antigravity, and Codex in tmux with yolo approvals, but without the task prompt inline.
-- Capture the pane and confirm the session is ready before sending the real task prompt with `tmux send-keys`.
+- Launch Cursor, Antigravity, and Codex in the selected backend with yolo approvals, but without the task prompt inline.
+- Confirm readiness through Herdr's `agent start` plus pane/agent reads, or through `tmux capture-pane`, before sending the real task prompt.
 - Remember that yolo approvals do not bypass workspace trust prompts. If the pane shows a trust prompt for the intended repo, accept it in the pane or hand it to the user to accept before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
 - Tell the executor to **continue from the current worktree only**.
 - Tell it to **not restart from scratch**.
 - Verify that the prompt was actually submitted by checking pane output.
-- Trust the tmux pane more than a high-level assumption.
+- Trust the selected backend's pane more than a high-level assumption.
+
+## Backend contract
+
+`/direct-cli` accepts `--backend auto|herdr|tmux`. Omission means `auto`.
+
+### Selection rules
+
+1. Parse an explicit backend before creating any lane.
+2. `auto` selects Herdr only when all of these are true:
+   - `herdr` is on `PATH`
+   - `HERDR_ENV=1`
+   - `HERDR_PANE_ID` is non-empty
+   - `herdr status --json` reports `server.running: true` and `server.compatible: true`
+   - `herdr pane get "$HERDR_PANE_ID"` resolves a live pane; Herdr may return a new public ID when the launch-time value is a retained move alias
+3. If any Herdr auto check fails, select tmux only when tmux is on `PATH`; otherwise fail before creating state.
+4. Explicit `herdr` fails clearly when its preflight fails; explicit `tmux` always keeps the historical tmux path.
+5. Print the selected backend and why. Never create state in one backend and silently retry in the other.
+
+Use the packaged executable selector rather than copying a weaker marker-only check. Resolve `DIRECT_CLI_SKILL_ROOT` as the directory containing the loaded `SKILL.md`, and pass the parsed skill argument directly:
+
+```bash
+REQUESTED_BACKEND="<parsed --backend value, or auto>"
+backend_report="$(
+  "$DIRECT_CLI_SKILL_ROOT/scripts/select-backend.sh" \
+    --backend "$REQUESTED_BACKEND"
+)" || exit $?
+printf '%s\n' "$backend_report"
+DIRECT_BACKEND="$(printf '%s\n' "$backend_report" | sed -n 's/^backend=//p')"
+```
+
+The selector validates both backend availability, Herdr status JSON, and a live pane binding. It prints the selected backend plus selection evidence. Do not use binary presence alone for `auto`; Herdr may be installed while the user works in an ordinary terminal. Do not hard-code protocol numbers. Herdr integrations are optional enhancements and must never be installed without explicit user approval because they edit other CLI configuration.
+
+### Herdr lane lifecycle
+
+One job maps to one `direct-<job-slug>` tab in the caller workspace by default. Pass direct-cli `--workspace ID` when the job should live in another existing workspace; do not guess from labels. Focus the new job tab before launching agents: this keeps the workflow visibly pane-first and lets Herdr observe interactive readiness instead of hiding the lane in an unseen background tab. Each direct executor maps to one named pane/agent. Parse IDs returned by Herdr; never predict them.
+
+Agent names are session-wide, must be unique, and match `[a-z][a-z0-9_-]{0,31}`. Derive compact names from the full pane ID, then check the live agent list before launch. Pane titles remain the human-readable role labels.
+
+```bash
+JOB="direct-<job-slug>"
+TARGET_CWD="$(pwd)"
+# Set DIRECT_HERDR_WORKSPACE_ID from a parsed direct-cli --workspace ID.
+TARGET_WORKSPACE_ID="${DIRECT_HERDR_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}"
+[ -n "$TARGET_WORKSPACE_ID" ] || {
+  echo "direct-cli: Herdr workspace id is required" >&2
+  exit 1
+}
+
+tab_json="$(herdr tab create \
+  --workspace "$TARGET_WORKSPACE_ID" \
+  --cwd "$TARGET_CWD" \
+  --label "$JOB" \
+  --focus)"
+
+TAB_ID="$(printf '%s' "$tab_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["tab"]["tab_id"])')"
+ROOT_PANE="$(printf '%s' "$tab_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')"
+
+PANE_HASH="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16])' "$ROOT_PANE")"
+CODEX_AGENT="d${PANE_HASH}c"
+
+split_json="$(herdr pane split "$ROOT_PANE" \
+  --direction right \
+  --cwd "$TARGET_CWD" \
+  --no-focus)"
+REVIEW_PANE="$(printf '%s' "$split_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')"
+REVIEW_HASH="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16])' "$REVIEW_PANE")"
+AGY_AGENT="d${REVIEW_HASH}a"
+
+wait_for_herdr_shell() {
+  pane_id="$1"
+  marker="DIRECT_CLI_SHELL_READY_$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:12])' "$pane_id")"
+
+  herdr pane run "$pane_id" "echo $marker" >/dev/null || return 1
+  herdr pane wait-output "$pane_id" \
+    --regex "^${marker}\\r?$" \
+    --source recent-unwrapped \
+    --timeout 15000 >/dev/null || return 1
+
+  attempt=0
+  while [ "$attempt" -lt 50 ]; do
+    attempt=$((attempt + 1))
+    process_json="$(herdr pane process-info --pane "$pane_id")" || return 1
+    if printf '%s' "$process_json" | python3 -c '
+import json
+import sys
+
+info = json.load(sys.stdin)["result"]["process_info"]
+shell_pid = info.get("shell_pid")
+processes = info.get("foreground_processes") or []
+raise SystemExit(0 if shell_pid and processes and all(item.get("pid") == shell_pid for item in processes) else 1)
+'; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  return 1
+}
+
+if ! wait_for_herdr_shell "$ROOT_PANE" || ! wait_for_herdr_shell "$REVIEW_PANE"; then
+  herdr tab close "$TAB_ID" >/dev/null
+  echo "direct-cli: new Herdr pane shell did not become available" >&2
+  exit 1
+fi
+
+if ! agent_list_json="$(herdr agent list)"; then
+  herdr tab close "$TAB_ID" >/dev/null
+  echo "direct-cli: failed to list active Herdr agents" >&2
+  exit 1
+fi
+
+collision_status=0
+printf '%s' "$agent_list_json" | python3 -c '
+import json
+import sys
+
+requested = set(sys.argv[1:])
+payload = json.load(sys.stdin)
+agents = payload.get("result", {}).get("agents")
+if not isinstance(agents, list):
+    raise SystemExit(2)
+active = {agent.get("name") for agent in agents}
+raise SystemExit(0 if requested.isdisjoint(active) else 1)
+' "$CODEX_AGENT" "$AGY_AGENT" || collision_status=$?
+
+if [ "$collision_status" -eq 1 ]; then
+  herdr tab close "$TAB_ID" >/dev/null
+  echo "direct-cli: derived Herdr agent name is already active; create a fresh job tab and derive new names" >&2
+  exit 1
+elif [ "$collision_status" -ne 0 ]; then
+  herdr tab close "$TAB_ID" >/dev/null
+  echo "direct-cli: Herdr agent list returned an invalid response" >&2
+  exit 1
+fi
+```
+
+Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness:
+
+```bash
+herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
+  --model gpt-5.6-sol \
+  -c model_reasoning_effort=high \
+  --sandbox workspace-write \
+  --ask-for-approval never
+
+herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
+  --model claude-opus-4-6-thinking \
+  --dangerously-skip-permissions
+```
+
+Then use agent names as stable lane targets:
+
+```bash
+herdr agent read "$CODEX_AGENT" --source recent-unwrapped --lines 120
+herdr agent prompt "$CODEX_AGENT" 'Continue from the current worktree only. <TASK>'
+herdr agent wait "$CODEX_AGENT" --until idle --until done --until blocked --timeout 120000
+herdr agent send-keys "$CODEX_AGENT" ctrl+c
+```
+
+The shell-readiness gate above is required even though `tab create` and `pane split` already returned IDs. Those commands create topology before a login shell and its startup hooks are necessarily idle; skipping the marker/process gate can fail immediately with `agent_pane_busy`.
+
+`agent wait` is lifecycle evidence, while `agent read` remains execution evidence. If agent detection cannot become ready, report that concrete blocker; do not silently migrate the job to tmux after the tab exists. Use `herdr pane run` and `pane read` only when a shell-shaped launch is required.
+
+If `agent start` still reports `agent_name_taken` because another process won the race after the preflight, close the new job tab and retry with fresh pane-derived names in Herdr. Do not switch backends.
+
+For a fresh exact multiline Agy prompt, preserve the existing `agy --prompt-interactive "$(cat prompt.txt)"` path through `herdr pane run`; Herdr multiline prompt behavior is not yet foreground-proven. Ordinary Agy follow-ups should remain one line.
+
+Cleanup is explicit and destructive to the executor process:
+
+```bash
+herdr agent send-keys "$CODEX_AGENT" ctrl+c
+herdr agent send-keys "$AGY_AGENT" ctrl+c
+herdr tab close "$TAB_ID"
+```
+
+Do not close a job tab merely because one lane finishes; inspect every registered lane first.
+
+### tmux fallback lifecycle
+
+The existing tmux launch, fanout, capture, recovery, and cleanup commands below remain authoritative when `DIRECT_BACKEND=tmux`. Running inside Herdr with `--backend tmux` intentionally creates a nested multiplexer; expect Herdr to see the foreground process as `tmux`, not the agents inside it.
 
 ## Multi-pane job sessions
 
 Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Antigravity with Opus for critique, Cursor for alternatives, and Codex or Cursor for implementation cleanup.
 
-The goal is one job, one tmux session, many panes — not scattered sessions that lose the shared context.
+The goal is one job, one Herdr tab or tmux session, many panes — not scattered containers that lose the shared context.
 
 ### When to use
 
@@ -51,9 +231,9 @@ The goal is one job, one tmux session, many panes — not scattered sessions tha
 - The same worktree/context should stay visible while lanes differ by CLI/model.
 - The user asks for several Cursor/Codex/Agy lanes at once for independent implementation, review, or verification.
 
-### Session naming and lane registry
+### Job naming and lane registry
 
-Name the tmux session for the job:
+For Herdr, use the tab and pane IDs returned by the lifecycle above. For tmux, name the session for the job:
 
 ```bash
 JOB="direct-<job-slug>"
@@ -136,6 +316,69 @@ Optional audit if the panes are test/sandbox panes that capture stdin to files:
 shasum -a 256 "$PROMPT_FILE" /tmp/direct-cli-fanout.*/pane-*.txt
 ```
 
+For Herdr, use the packaged helper. It avoids shell quoting drift and command-substitution removal of trailing newlines, records each agent's baseline sequence, dispatches the same prompt, waits for a real activity transition, and only then waits for settled state:
+
+```bash
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/prompt-fanout.py" \
+  --prompt-file "$PROMPT_FILE" \
+  "$AGENT_A" "$AGENT_B" "$AGENT_C"
+```
+
+This proves byte-identical input at the Herdr CLI argument boundary. It does not prove model receipt or response equality. A naive `agent prompt` followed immediately by `agent wait` is unsafe because `agent wait` can match the old idle state before work starts. If the helper reports no activity transition, inspect the named pane and submit one Enter only when the prompt is visibly unsent; this foreground recovery was required for Cursor Fable during the 2026-07-24 three-model review. Capture each lane independently before synthesis.
+
+### Detached Herdr jobs
+
+Detached mode lets the main agent return control after dispatch while a local watcher owns completion capture. It is not a callback into the current Letta conversation and does not make the direct CLI agent headless: Cursor/Agy/Codex remain interactive in visible Herdr panes.
+
+Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete:
+
+```bash
+JOB_ID="review-$(date +%Y%m%d-%H%M%S)"
+PROMPT_FILE="/tmp/$JOB_ID.prompt.txt"
+cat > "$PROMPT_FILE" <<'PROMPT'
+<ONE JOB PROMPT>
+PROMPT
+
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
+  --job-id "$JOB_ID" \
+  --prompt-file "$PROMPT_FILE" \
+  --cwd "$TARGET_CWD" \
+  --tab-id "$TAB_ID" \
+  "$AGENT_A" "$AGENT_B"
+```
+
+The helper performs these controller-owned steps:
+
+1. Validate the job ID and named agents, then query each baseline `state_change_seq` before creating durable job state.
+2. Create a mode-0700 job directory and mode-0600 `job.json`, `prompt.txt`, watcher log, and result files.
+3. Dispatch the exact prompt to each named Herdr agent with a bounded client-side call; local summaries and notifications never embed prompt text.
+4. Spawn a detached watcher and return immediately with the job ID and directory.
+5. Require a real activity transition, then run settled waits concurrently.
+6. Capture bounded `recent-unwrapped` output and atomically record `done`, `attention`, or `error`.
+7. Send only a generic best-effort macOS notification containing job ID and terminal status; prompt, result, and failure-summary content stays in local files.
+
+Default state root:
+
+```text
+$XDG_STATE_HOME/mahiro-skills/direct-cli/jobs
+~/.local/state/mahiro-skills/direct-cli/jobs  # when XDG_STATE_HOME is unset
+```
+
+Use `DIRECT_CLI_STATE_DIR` or `--state-dir` for an explicit local root. The helper never prunes or deletes jobs automatically.
+
+At the start of the next direct-cli turn, inspect durable state before launching duplicate work:
+
+```bash
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" list
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" list --json
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" show "$JOB_ID"
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
+```
+
+`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. `attention` is intentionally terminal for Phase 1: inspect the named pane for an unsent prompt, provider/account warning, or model fallback. Submit one Enter only when the prompt is visibly unsent; otherwise resolve the provider/model blocker and use a new job ID for a deliberate retry. `error` preserves the failure summary and watcher log. `list`, `show`, and `collect` also verify the recorded watcher PID plus command identity; an interrupted or reboot-lost watcher becomes a terminal collectible error instead of staying `watching` forever. A Herdr restart, unavailable agent, hung bounded call, or failed result capture does not silently retry or switch to tmux.
+
+Reject detached mode when tmux is selected. Phase 1 has no automatic cross-conversation injection, restart/replay controller, cancellation, pruning, or synthesis. Those require a Letta-aware controller rather than a shell watcher.
+
 ### Write policy for multi-pane work
 
 - Default to one writer lane per file or asset contract.
@@ -159,7 +402,7 @@ Example asset lane registry:
 | 2 | `codex-dicut` | Codex `gpt-5.6-terra` high | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
 | 3 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
 
-- Put all panes in one `direct-<asset-job>` tmux session.
+- Put all panes in one `direct-<asset-job>` Herdr tab or tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
 - Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `codex-dicut`, `codex-qa`, and optional `agy-review`.
 - Record each pane's output folder and collect Codex generated PNGs from `$CODEX_HOME/generated-images/<session>/<call_id>.png` when the lane leaves images there.
@@ -167,7 +410,7 @@ Example asset lane registry:
 
 ### Antigravity multi-model notes
 
-Current local Antigravity (verified 2026-07-22, `agy 1.1.5`) supports stable model slugs through `--model` and native reasoning selection through `--effort`. Pass effort only when the selected model supports it, then verify the visible model and effort in the pane. Agy can warn and silently fall back to its default model when a model/effort pair is invalid; treat that as launch failure. Fall back to `/model` or `/effort` only if flag selection fails.
+Current local Antigravity (verified 2026-07-24, `agy 1.1.6`) supports stable model slugs through `--model` and native reasoning selection through `--effort`. Pass effort only when the selected model supports it, then verify the visible model and effort in the pane. Agy can warn and silently fall back to its default model when a model/effort pair is invalid; treat that as launch failure. Fall back to `/model` or `/effort` only if flag selection fails.
 
 For several Agy models in one job:
 
@@ -180,7 +423,7 @@ Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy rev
 
 ### Antigravity multiline prompt caveat
 
-Agy treats literal newline paste differently from the tmux sandbox. Verified 2026-06-29: `tmux paste-buffer` of a multiline prompt into Agy split the prompt into separate queued messages, causing the first incomplete line to run before the rest of the prompt. Use the safe prompt delivery patterns below instead of raw multiline paste.
+Agy treats literal newline paste differently from the tmux sandbox. Verified 2026-06-29: `tmux paste-buffer` of a multiline prompt into Agy split the prompt into separate queued messages, causing the first incomplete line to run before the rest of the prompt. Exact multiline delivery through Herdr is not yet foreground-proven. Use the safe prompt delivery patterns below instead of assuming either backend is lossless.
 
 Preferred Agy prompt delivery:
 
@@ -190,11 +433,14 @@ prompt="$(tr '\n' ' ' < /tmp/direct-job.prompt.txt)"
 tmux send-keys -t "$JOB:0.$pane" -l "$prompt"
 tmux send-keys -t "$JOB:0.$pane" Enter
 
+# Herdr ordinary follow-up: still keep Agy input on one line
+herdr agent prompt agy-review "$prompt"
+
 # fresh lane needing exact multiline initial prompt: interactive, not print/headless
 agy --model claude-opus-4-6-thinking --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
 ```
 
-Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
+For Herdr, run the exact multiline initial command through `herdr pane run <pane-id> '<shell command>'`, then inspect with `pane read`; this shell-shaped exception does not get `agent start` readiness, so detection and visible model verification remain mandatory. Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
 
 ### Sandbox verification
 
@@ -207,6 +453,8 @@ This pattern was sandbox-tested on 2026-06-23:
 - SHA-256 hashes for the shared prompt and all three pane captures matched
 
 Conclusion: same-prompt fanout through `tmux load-buffer` / `tmux paste-buffer` is practical and avoids manual copy/paste drift. For Agy, use the multiline caveat above instead of raw `paste-buffer`.
+
+Herdr backend capability was checked locally on 2026-07-24 with `herdr 0.7.5`: the managed pane exported the Herdr markers, `herdr status --json` reported a running compatible server, and the stable CLI exposed the tab/pane/agent methods used above for Cursor, Agy, and Codex. This is a capability baseline, not a hard-coded protocol or evergreen version promise; every invocation still runs preflight.
 
 ## Known-good defaults
 
@@ -228,9 +476,9 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Codex automatic-delegation model/effort: `gpt-5.6-sol` + `ultra` for large parallelizable jobs
 - Codex specialized ultra-fast model/effort: `gpt-5.3-codex-spark` + `high`
 - Codex fallback choice: `gpt-5.5`
-- Cursor launch style: interactive tmux lane with `--yolo --approve-mcps`, then send the prompt after readiness
-- Antigravity launch style: interactive tmux lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
-- Codex launch style: interactive tmux lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
+- Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps`, then send the prompt after readiness
+- Antigravity launch style: interactive selected-backend lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
+- Codex launch style: interactive selected-backend lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
 
 ### Model selection rule
 
@@ -257,7 +505,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Sol and Terra currently expose low, medium, high, extra-high (`xhigh`), max, and ultra. Luna exposes low through max and must not be launched with ultra.
 - `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When a recognized GPT-5.6 Codex model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
-- Antigravity CLI `1.1.5` has verified `--model` and `--effort` flags, but effort support is model-specific. Prefer the exact stable slug from `agy models`, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
+- Antigravity CLI `1.1.6` has verified `--model` and `--effort` flags, but effort support is model-specific. Prefer the exact stable slug from `agy models`, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Mention `composer-2-fast` only as a fallback if the preferred Composer 2.5 models fail or are unavailable.
 - Model catalogs can change independently of binary versions. Use `agent models`, `agy models`, and `codex debug models` before changing model names or when a preferred launch fails.
@@ -267,7 +515,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 These are evidence checkpoints; verify again when models or CLI behavior matter.
 
 - Cursor CLI: local version updated from `2026.07.17-3e2a980` to `2026.07.20-8cc9c0b` on 2026-07-22 and matches the official installer. The help diff adds `--endpoint` / `CURSOR_API_ENDPOINT`, and `--trust` is no longer documented as headless-only. `agent models` still exposes Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertise 1M for Fable/Sonnet/Opus/GPT-5.6, while `agent about` for the active Fable session still reports `Fable 5 300K High`; effective context remains session-dependent until a fresh launch proves otherwise. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
-- Antigravity CLI: local `1.1.5` remained latest on 2026-07-22, while `agy models` added Gemini 3.6 Flash alongside the previous families. Fresh interactive tmux launches proved both `gemini-3.6-flash-high` and `gemini-3.6-flash-medium` with the correct visible model and response. Mahiro selected High as the curated fast default; 3.6 Medium and then `gemini-3.5-flash-medium` remain fallbacks. Earlier proof for `claude-opus-4-6-thinking` and `claude-sonnet-4-6` remains valid. Adding `--effort high` to Opus has a known silent-fallback risk, and catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.5.
+- Antigravity CLI: local `1.1.6` was verified on 2026-07-24. Earlier interactive tmux launches proved both `gemini-3.6-flash-high` and `gemini-3.6-flash-medium`; a Herdr-native smoke also proved explicit `gemini-3.5-flash-high`, the correct visible model, `agent prompt --wait`, Done lifecycle, and exact response. Mahiro selected 3.6 High as the curated fast default; 3.6 Medium and then `gemini-3.5-flash-medium` remain ordered automatic fallbacks, while explicit 3.5 High requests are supported. Earlier proof for `claude-opus-4-6-thinking` and `claude-sonnet-4-6` remains valid. Adding `--effort high` to Opus has a known silent-fallback risk, and catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.6.
 - Codex CLI: local and npm stable updated from `0.144.6` to `0.145.0` on 2026-07-22. The release adds paginated thread history, broader Cursor/Claude import, audio/realtime support, and stable-but-opt-in multi-agent V2, plus long-conversation rendering, MCP startup/auth, and approval-safety fixes. The direct-lane flags remain valid. `codex debug models` still lists Sol/Terra/Luna/GPT-5.5/Spark: Sol/Terra expose low through ultra, Luna low through max, Spark low through xhigh, and context remains 272,000 for Sol/Terra/Luna/GPT-5.5 versus 128,000 for Spark. `image_generation`, `multi_agent`, and `fast_mode` remain stable/enabled; `multi_agent_v2` is stable and disabled by default. Generated images remain under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
 ## Launch examples
@@ -643,7 +891,7 @@ Symptoms:
 Mitigation:
 
 - abandon the session
-- create a fresh interactive tmux session
+- create a fresh Herdr job tab when `DIRECT_BACKEND=herdr`, or a fresh tmux session when `DIRECT_BACKEND=tmux`
 - resend a shorter prompt with narrower scope
 - never recover by switching Codex to `codex exec` unless the user explicitly asked for headless/script output
 
@@ -657,13 +905,24 @@ Symptoms:
 Mitigation:
 
 - inspect the pane
-- if the message still appears unsent in the inbox or input area, try pressing `Enter` once before assuming the session is stuck
+- if the message still appears unsent in the inbox or input area, send `enter` once through `herdr agent send-keys <target> enter` or the matching tmux pane before assuming the session is stuck
 - if needed, send `Enter` again explicitly
 - if the prompt was not submitted, resend the real task prompt only after the pane is ready
 
 ---
 
-## Minimal tmux command cheatsheet
+## Minimal backend command cheatsheet
+
+Herdr jobs:
+
+```bash
+herdr agent read <target> --source recent-unwrapped --lines 120
+herdr agent send-keys <target> ctrl+c
+herdr agent wait <target> --until idle --until done --until blocked --timeout 120000
+herdr tab close <tab-id>
+```
+
+Tmux fallback:
 
 List sessions:
 
@@ -709,11 +968,11 @@ tmux new-session -d -s "codex-task-fresh"
 
 Before launching Codex:
 
-1. Am I using tmux?
+1. Did the packaged selector choose and report a usable Herdr or tmux backend?
 2. Am I launching `codex`, not `codex exec`?
 3. Am I avoiding `--dangerously-bypass-approvals-and-sandbox`?
 4. Is `--sandbox workspace-write --ask-for-approval never` present unless the task needs stricter approvals?
-5. Will I verify readiness with `tmux capture-pane` before `tmux send-keys`?
+5. Will I verify readiness with `herdr agent start` plus `agent read`, or with `tmux capture-pane`, before prompting?
 
 If any answer is no, do not launch Codex yet.
 
@@ -723,11 +982,11 @@ When a direct CLI lane looks stuck:
 
 1. Check the pane.
 2. Decide whether it is thinking, blocked on approval, or unhealthy.
-3. If unhealthy, abandon the old session.
-4. Start a fresh interactive tmux session.
+3. If unhealthy, abandon the old Herdr tab or tmux session without silently changing backends.
+4. Start a fresh interactive job container in the already selected backend.
 5. Confirm the launch is ready, then send a shorter, narrower prompt.
 6. Confirm the new prompt was actually submitted.
 7. Keep Antigravity pane-first unless the user explicitly asks for print/headless output.
 8. Keep Codex pane-first unless the user explicitly asks for `codex exec` or script/headless output.
 
-The key rule is simple: **fresh session, narrow scope, pane-first truth**.
+The key rule is simple: **fresh backend container, narrow scope, pane-first truth**.

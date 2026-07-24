@@ -58,7 +58,7 @@ describe("README", () => {
     expect(content).toContain("Current workflow highlights:");
     expect(content).toContain("Interactive install/uninstall/update TUI");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
-    expect(content).toContain("same-prompt fanout through a shared tmux buffer");
+    expect(content).toContain("backend-specific same-prompt fanout");
     expect(content).toContain("Sprite asset pipeline");
     expect(content).toContain("bounds/silhouette jitter gates");
     expect(content).toContain("safe named promotion helpers");
@@ -72,7 +72,7 @@ describe("README", () => {
     expect(content).toContain("bun ./src/cli.ts new my-skill --copy-template --json");
     expect(content).toContain("bun ./src/cli.ts install project --agent letta-code --scope local");
     expect(content).toContain("Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`");
-    expect(content).toContain("including multi-pane same-prompt fanout");
+    expect(content).toContain("including multi-pane fanout or detached Herdr result collection");
     expect(content).toContain("sprite-workflow --agent opencode --scope local");
     expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code` for packaged skill installs; Letta Code is skills-only in v0 because its documented Agent Skills surface does not define a command-wrapper directory.");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");

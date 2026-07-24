@@ -1,4 +1,4 @@
-description = "Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through fresh tmux sessions without going through the usual orchestration runtime. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."
+description = "Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."
 prompt = """
 Execute the `direct-cli` skill with args: {{args}}
 
@@ -6,7 +6,9 @@ If you have a Skill tool available: Use it directly with `skill: \"direct-cli\"`
 
 Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/direct-cli/SKILL.md` for local installs or `~/.gemini/skills/direct-cli/SKILL.md` for global installs) and follow ALL instructions in it.
 
-Prefer the known-good tmux launch commands from the skill playbook first, then wait for pane readiness and send the task prompt with `tmux send-keys`.
+Parse `--backend auto|herdr|tmux` before creating any lane; omission means `auto`. Parse an optional Herdr `--workspace ID` into the playbook's workspace target instead of guessing by label. Auto selects Herdr only inside a healthy compatible Herdr-managed pane and otherwise selects tmux. Announce the backend, never silently switch after creating state, then use the matching known-good launch/read/prompt commands from the skill playbook.
+
+Treat `--detach` as a skill-level Herdr-only mode after agents are visibly ready. Require or derive a unique `--job-id`, start the packaged durable watcher, return its job ID without blocking, and use `list`/`show`/`collect` on later turns. Reject tmux detach and never claim the watcher injects a Letta conversation turn.
 
 If {{args}} names a lane (`cursor`, `agy`, or `codex`) but does not explicitly name a model, ask the user which skill-defined model to use before launching. For Codex, ask for a model/effort pair. Do not show the full CLI model list unless requested or troubleshooting. Use the skill-defined choices: Cursor `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, `claude-fable-5-thinking-xhigh`, `claude-opus-4-8-thinking-high`, or opt-in `claude-sonnet-5-thinking-high`; Antigravity `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, or `gemini-3.6-flash-high` (`gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium` fallback); Codex `gpt-5.6-sol` high, `gpt-5.6-terra` medium, `gpt-5.6-luna` medium, `gpt-5.6-sol` ultra, or specialized-fast `gpt-5.3-codex-spark` high.
 
