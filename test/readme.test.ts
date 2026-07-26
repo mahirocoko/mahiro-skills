@@ -53,7 +53,7 @@ describe("README", () => {
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
-    expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
+    expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
     expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.");
     expect(content).toContain("Current workflow highlights:");
     expect(content).toContain("Interactive install/uninstall/update TUI");
@@ -67,6 +67,7 @@ describe("README", () => {
     expect(content).toContain("`vfx-workflow` | `/vfx-workflow`");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
+    expect(content).toContain("bun ./src/cli.ts audit --agent-id \"$AGENT_ID\" --start-date 2026-06-01");
     expect(content).toContain("bun ./src/cli.ts manifest --json");
     expect(content).toContain("bun ./src/cli.ts gaps --json");
     expect(content).toContain("bun ./src/cli.ts new my-skill --copy-template --json");

@@ -192,8 +192,43 @@ export interface DoctorResult {
   checks: DoctorCheck[];
 }
 
+export interface SkillUsageAuditOptions {
+  dataDir?: string;
+  agentId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface SkillUsageAuditSkill {
+  name: string;
+  inCurrentCatalog: boolean;
+  invocations: number;
+  conversations: number;
+  firstUsedAt?: string;
+  lastUsedAt?: string;
+}
+
+export interface SkillUsageAuditResult {
+  type: "skill-usage-audit";
+  source: {
+    dataRoot: string;
+    transcriptFilesScanned: number;
+    linesRead: number;
+    malformedLines: number;
+    startDate?: string;
+    endDate?: string;
+    agentId?: string;
+  };
+  totalInvocations: number;
+  observedSkills: SkillUsageAuditSkill[];
+  catalogSkills: SkillUsageAuditSkill[];
+  unobservedCatalogSkills: string[];
+  outsideCurrentCatalogSkills: string[];
+  warnings: string[];
+}
+
 export interface CliOptions {
-  command: "plan" | "install" | "uninstall" | "list" | "doctor" | "guided" | "tui" | "manifest" | "search" | "gaps" | "new";
+  command: "plan" | "install" | "uninstall" | "list" | "doctor" | "audit" | "guided" | "tui" | "manifest" | "search" | "gaps" | "new";
   items: string[];
   /** From repeated `--agent` and/or comma-separated values; empty when omitted (interactive TUI). */
   agents: ScopedAgent[];
@@ -202,4 +237,8 @@ export interface CliOptions {
   copyTemplate: boolean;
   mode?: "plan" | "install" | "uninstall" | "list" | "update";
   yes: boolean;
+  dataDir?: string;
+  agentId?: string;
+  startDate?: string;
+  endDate?: string;
 }

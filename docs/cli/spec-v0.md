@@ -124,6 +124,7 @@ mahiro-skills install [items...] --agent <agent> [--agent <agent> ...] --scope <
 mahiro-skills uninstall [items...] --agent <agent|all> [--agent <agent> ...] --scope <global|local>
 mahiro-skills list --agent <agent> [--agent <agent> ...] --scope <global|local>
 mahiro-skills doctor --agent <agent> [--agent <agent> ...] [--scope <global|local>]
+mahiro-skills audit [--data-dir <local-backend-dir>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>] [--json]
 mahiro-skills manifest [--json]
 mahiro-skills search <query> [--json]
 mahiro-skills gaps [--json]
@@ -140,8 +141,9 @@ The CLI also exposes read-only source-catalog commands for agents and authoring 
 - `search <query>` searches skill names and descriptions, returning scored matches with command coverage and default-bundle membership.
 - `gaps` returns the authoring gap report for missing `SKILL.md` files, frontmatter name mismatches, command/skill mismatches, stale bundle references, and default-bundle omissions.
 - `new <skill-name> --copy-template` copies the starter `template/` tree into `skills/<skill-name>/`, rewrites minimal `SKILL.md` frontmatter/title placeholders, refuses collisions, and returns manual next steps for marketplace, command wrappers, `skills/llms.txt`, README, and tests.
+- `audit` reads local Letta JSONL transcripts without modifying them. It counts only explicit `Skill` tool calls, compares observed names against this repo's current source catalog, and returns counts/timestamps/conversation totals plus parse warnings. Names outside the catalog may be built-in, separately installed, or retired; the audit does not classify them further. It never infers calls from prose or returns transcript text. By default it reads `~/.letta/lc-local-backend`; `--data-dir` overrides that root for another local backend or fixture.
 
-These commands inspect or scaffold repo source (`skills/`, `commands/`, `commands-gemini/`, `.claude-plugin/marketplace.json`, `template/`) only. They do not read installed copies and do not modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
+Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `commands/`, `commands-gemini/`, `.claude-plugin/marketplace.json`, `template/`) only. `audit` reads local transcript evidence only; none of these commands modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
 
 ### Guided / TUI command behavior
 

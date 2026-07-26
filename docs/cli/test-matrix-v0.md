@@ -136,6 +136,7 @@ For successful install:
 - interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
 - receipt detail shows readable receipt metadata plus reconstructed target files grouped by skill/command when installed names are present
 - direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`; direct uninstall also accepts `--agent all`
+- `audit` reads only explicit Letta `Skill` tool-call records, supports agent/date filters, never returns transcript text, and reports unobserved packaged skills separately from names outside the current repo catalog
 - multi-agent plan/install/uninstall in the TUI end with a batch summary note card; multi-agent install and uninstall use one batch confirmation after all previews, not one confirmation per agent
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete

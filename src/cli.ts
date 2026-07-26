@@ -5,6 +5,7 @@ import { createSkillFromTemplate } from "./new-skill";
 import { uninstall } from "./uninstall";
 import { listInstalled } from "./list";
 import { doctor } from "./doctor";
+import { auditSkillUsage } from "./audit";
 import { runGuided } from "./guided";
 import { getRepoGaps, getRepoManifest, searchSkillCatalog } from "./repo";
 import { createPromptIO, isPromptCancelError } from "./prompt";
@@ -65,7 +66,7 @@ function parseArgs(argv: string[]): CliOptions {
   }
 
   const [commandRaw, ...rest] = argv;
-  if (!["plan", "install", "uninstall", "list", "doctor", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw)) {
+  if (!["plan", "install", "uninstall", "list", "doctor", "audit", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw)) {
     throw new Error(`Unsupported command '${commandRaw}'.`);
   }
 
@@ -75,6 +76,10 @@ function parseArgs(argv: string[]): CliOptions {
   let copyTemplate = false;
   let mode: CliOptions["mode"];
   let yes = false;
+  let dataDir: string | undefined;
+  let agentId: string | undefined;
+  let startDate: string | undefined;
+  let endDate: string | undefined;
   const items: string[] = [];
 
   for (let i = 0; i < rest.length; i += 1) {
@@ -91,6 +96,18 @@ function parseArgs(argv: string[]): CliOptions {
     }
     if (token === "--scope") {
       scope = rest[i + 1] as InstallScope;
+      i += 1;
+      continue;
+    }
+    if (token === "--data-dir" || token === "--agent-id" || token === "--start-date" || token === "--end-date") {
+      const value = rest[i + 1];
+      if (value === undefined) {
+        throw new Error(`Missing value for ${token}.`);
+      }
+      if (token === "--data-dir") dataDir = value;
+      if (token === "--agent-id") agentId = value;
+      if (token === "--start-date") startDate = value;
+      if (token === "--end-date") endDate = value;
       i += 1;
       continue;
     }
@@ -124,11 +141,11 @@ function parseArgs(argv: string[]): CliOptions {
 
   const resolvedAgents = dedupeAgents(agents);
 
-  if (!["guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && resolvedAgents.length === 0) {
+  if (!["doctor", "audit", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && resolvedAgents.length === 0) {
     throw new Error("Missing required flag --agent.");
   }
 
-  if (!["doctor", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && !scope) {
+  if (!["doctor", "audit", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw) && !scope) {
     throw new Error("Missing required flag --scope.");
   }
 
@@ -141,6 +158,10 @@ function parseArgs(argv: string[]): CliOptions {
     copyTemplate,
     mode,
     yes,
+    dataDir,
+    agentId,
+    startDate,
+    endDate,
   };
 }
 
@@ -210,6 +231,15 @@ async function main(): Promise<void> {
       const agents = requireAgents(options);
       const results = agents.flatMap((agent) => doctor(agent, options.scope));
       console.log(JSON.stringify(results, null, 2));
+      return;
+    }
+    case "audit": {
+      console.log(JSON.stringify(auditSkillUsage({
+        dataDir: options.dataDir,
+        agentId: options.agentId,
+        startDate: options.startDate,
+        endDate: options.endDate,
+      }), null, 2));
       return;
     }
     case "guided":

@@ -42,6 +42,10 @@ describe("frontend-design skill", () => {
     expect(skill).toContain("use owner- or repo-provided product facts first");
     expect(skill).toContain("clearly fictional placeholder values");
     expect(skill).toContain("not a live transaction");
+    expect(skill).toContain("Production-grade lab gate");
+    expect(skill).toContain("production-grade product build");
+    expect(skill).toContain("anti-slop composition check");
+    expect(skill).toContain("decorative fake waitlist or checkout");
     expect(skill).toContain("The only exception is the clearly fictional placeholder access/pricing values");
     expect(skill).toContain("do not stop after the first implemented section");
     expect(skill).toContain("define the shared experience contract before propagating it");

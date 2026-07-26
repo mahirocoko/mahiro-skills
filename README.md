@@ -70,7 +70,7 @@ The TUI wraps the same planner, installer, and uninstaller core. Use it when you
 
 ## Use
 
-Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.
+Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.
 
 Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
 
@@ -102,6 +102,9 @@ bun ./src/cli.ts uninstall --agent all --scope local
 
 # Check installed files
 bun ./src/cli.ts doctor --agent opencode --scope local
+
+# Audit actual Letta Skill tool calls from local transcripts (read-only)
+bun ./src/cli.ts audit --agent-id "$AGENT_ID" --start-date 2026-06-01
 
 # Inspect the source skill catalog for agents/tooling
 bun ./src/cli.ts manifest --json
@@ -193,6 +196,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
 - `bun ./src/cli.ts manifest --json` — machine-readable source catalog for skills, command coverage, bundle membership, and inventory gaps
+- `bun ./src/cli.ts audit [--data-dir <local-backend-dir>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>]` — read-only local Letta transcript audit that counts explicit `Skill` tool calls, identifies unobserved packaged skills, and separates names outside this repo's current catalog without exposing transcript text
 - `bun ./src/cli.ts gaps --json` — read-only authoring check for missing skill files, stale bundle references, and command/skill mismatches
 - `bun ./src/cli.ts new my-skill --copy-template --json` — copy the starter `template/` into `skills/my-skill/` and report manual bundle/command/index follow-up work
 - `docs/authoring/` — maintainer notes for release, path, inventory, and skill-writing conventions

@@ -224,6 +224,33 @@ describe("cli", () => {
     }
   });
 
+  test("audits local Letta Skill calls without requiring adapter flags", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const transcriptDirectory = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "lc-local-backend", "conversations", "sample");
+      mkdirSync(transcriptDirectory, { recursive: true });
+      writeFileSync(join(transcriptDirectory, "messages.jsonl"), `${JSON.stringify({
+        type: "message",
+        timestamp: "2026-07-10T12:00:00.000Z",
+        message: {
+          metadata: { agent_id: "agent-a", conversation_id: "conversation-a" },
+          content: [{ type: "toolCall", name: "Skill", arguments: { skill: "recap" } }],
+        },
+      })}\n`);
+
+      const result = runCli(["audit", "--agent-id", "agent-a", "--json"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { type: string; totalInvocations: number; observedSkills: Array<{ name: string }> };
+      expect(payload.type).toBe("skill-usage-audit");
+      expect(payload.totalInvocations).toBe(1);
+      expect(payload.observedSkills).toEqual([expect.objectContaining({ name: "recap" })]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("creates a skill from template without requiring agent or scope", () => {
     const temp = makeTemplateRepo();
 

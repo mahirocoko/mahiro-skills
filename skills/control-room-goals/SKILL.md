@@ -49,8 +49,9 @@ When applying:
   into explicit criteria: agent-owned for evidence the agent can check, and
   human-owned for visual/product/foreground acceptance that only Mahiro can
   verify.
-- Include `non_goals` and `next_action` when they materially prevent drift. Do
-  not set `token_budget` unless Mahiro explicitly requested one.
+- Include `non_goals` and `next_action` when they materially prevent drift.
+  A long-running task stays active until its evidence, blocker, checkpoint, or
+  human handoff changes its state.
 - If an existing goal is present, do not replace it unless the user explicitly asked to replace/reset it; draft the replacement first.
 - Objective/DoD replacement uses `mh_create_goal` with `replace: true` and the
   current `expected_revision`; never silently replace stale state.
@@ -81,7 +82,7 @@ Example structured application:
 - `mh_get_goal` — read current structured state and revision before planning or
   mutation.
 - `mh_create_goal` — agent-created objective, criteria, non-goals, next action,
-  optional explicit token budget, and revision-guarded replacement.
+  and revision-guarded replacement.
 - `mh_update_goal` — update phase/next action, add evidence, claim agent-owned
   criteria, manage blockers, or complete after the runtime audit.
 
@@ -121,8 +122,7 @@ Do not reinstall the official package merely to satisfy this skill.
 Known command surface:
 
 - `/goal <objective>` — starts a goal for the current conversation.
-- `/goal --token-budget N <objective>` — starts a goal with a soft token budget; use only when the user explicitly asks for a token budget.
-- `/goal status` — shows the current goal and usage.
+- `/goal status` — shows the current goal state.
 - `/goal pause` / `/goal resume` — pauses or resumes the active goal.
 - `/goal complete` — marks the active goal complete.
 - `/goal clear` — clears the active goal.
