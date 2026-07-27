@@ -317,6 +317,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Code Evidence owns fresh repository/check attribution");
     expect(skill).toContain("neither an\n  executor report nor a Code Evidence intake may auto-claim criteria");
     expect(skill).toContain("A long-running task stays active until its evidence");
+    expect(skill).toContain("[execution-contract.md](references/execution-contract.md)");
+    expect(skill).toContain("planning → executing → verifying → done");
+    expect(skill).toContain("executable Luna Max pilot record");
+    expect(skill).toContain("does not claim that a\nskill can intercept a provider turn");
     expect(skill).not.toContain("token");
     expect(skill).toContain("Official Goal Mode is not installed by default");
     expect(skill).toContain("Do not reinstall the official package merely to satisfy this skill");

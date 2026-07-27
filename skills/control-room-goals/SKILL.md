@@ -112,6 +112,27 @@ explicit human-control surfaces; they are not the default creation path.
   executor report nor a Code Evidence intake may auto-claim criteria, verify a
   human gate, or complete a Goal.
 
+## Execute-to-DoD work
+
+For a non-trivial implementation goal, a model-routing experiment, or a handoff
+that explicitly transfers execution ownership, read
+[execution-contract.md](references/execution-contract.md) before dispatching a
+subagent or claiming completion.
+
+That contract adds three things without replacing Goal Mode:
+
+- explicit `planning → executing → verifying → done` state semantics, with
+  `needs_human` and `blocked` as the only alternative final-report exits
+- a bounded delegation packet whose model, artifact, checks, timebox, and
+  partial-handoff requirement are explicit
+- an executable Luna Max pilot record that keeps completion and routing evidence
+  in a reviewable file rather than relying on conversation memory
+
+The contract is an agent procedure and audit boundary. It does not claim that a
+skill can intercept a provider turn, enforce a wall-clock timeout, or switch the
+main conversation model. Keep those runtime capabilities labelled not
+established until the harness implements them.
+
 ### Optional official fallback surface
 
 Official Goal Mode is not installed by default in Mahiro's current runtime; the
