@@ -143,6 +143,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`gpt-5.6-luna` medium");
     expect(skill).toContain("`gpt-5.6-sol` ultra");
     expect(skill).toContain("`claude-sonnet-5-thinking-high`");
+    expect(skill).toContain("`claude-opus-5-thinking-high`");
+    expect(skill).toContain("`cursor-grok-4.5-high`");
     expect(skill).toContain("`claude-fable-5-thinking-xhigh`");
     expect(skill).toContain("`claude-opus-4-6-thinking` for heavy review/reasoning");
     expect(skill).toContain("`claude-sonnet-4-6`");
@@ -156,7 +158,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("model_reasoning_effort");
     expect(skill).toContain("Codex itself does not expose a `--effort` flag");
     expect(skill).toContain("Never infer `ultra`");
-    expect(skill).toContain("2026.07.20-8cc9c0b");
+    expect(skill).toContain("2026.07.23-e383d2b");
+    expect(skill).toContain("agent update");
     expect(skill).toContain("Antigravity is `agy 1.1.6`");
     expect(skill).toContain("explicit `gemini-3.5-flash-high`");
     expect(skill).toContain("Codex CLI and npm stable updated from `0.144.6` to `0.145.0`");
@@ -204,6 +207,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available");
     expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
+    expect(playbook).toContain("`claude-opus-5-thinking-high`");
+    expect(playbook).toContain("`cursor-grok-4.5-high`");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
@@ -225,7 +230,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`");
     expect(readme).toContain("`claude-fable-5-thinking-xhigh` for heavier review");
-    expect(readme).toContain("`claude-sonnet-5-thinking-high` stays opt-in");
+    expect(readme).toContain("`claude-opus-5-thinking-high`");
+    expect(readme).toContain("`cursor-grok-4.5-high`");
+    expect(readme).toContain("`claude-sonnet-5-thinking-high` as opt-in candidates");
     expect(readme).toContain("`claude-opus-4-6-thinking` for heavy review");
     expect(readme).toContain("`claude-sonnet-4-6` for balanced work");
     expect(readme).toContain("`codex debug models`");
@@ -247,6 +254,8 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("`gemini-3.6-flash-medium`");
       expect(wrapper).toContain("`gemini-3.5-flash-medium` fallback");
       expect(wrapper).toContain("`claude-sonnet-5-thinking-high`");
+      expect(wrapper).toContain("`claude-opus-5-thinking-high`");
+      expect(wrapper).toContain("`cursor-grok-4.5-high`");
       expect(wrapper).toContain("`claude-fable-5-thinking-xhigh`");
       expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
       expect(wrapper).toContain("`codex debug models`");

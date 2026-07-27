@@ -465,6 +465,8 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 - Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
 - Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
+- Cursor new Opus 5 catalog candidate: `claude-opus-5-thinking-high` (explicit opt-in until a fresh direct lane verifies launch and the visible model)
+- Cursor new Grok 4.5 catalog candidate: `cursor-grok-4.5-high` (explicit opt-in until a fresh direct lane verifies launch and the visible model)
 - Cursor newer Sonnet candidate: `claude-sonnet-5-thinking-high` (explicit opt-in until direct-lane use proves it should replace a default)
 - Cursor fallback legacy default model: `composer-2-fast` (only if preferred models fail)
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
@@ -488,7 +490,9 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
   3. `claude-fable-5-thinking-high` — Fable 5 reasoning lane; use this when Mahiro says “Fable 5” unless he asks for another Fable variant.
   4. `claude-fable-5-thinking-xhigh` — Fable 5 extra-high lane for heavier review.
   5. `claude-opus-4-8-thinking-high` — Opus heavy review / deep reasoning lane.
-  6. `claude-sonnet-5-thinking-high` — newer Sonnet candidate; offer explicitly but do not silently replace the proven defaults.
+  6. `claude-opus-5-thinking-high` — new Opus 5 catalog candidate; offer explicitly and verify the visible model before relying on it.
+  7. `cursor-grok-4.5-high` — new Cursor Grok 4.5 catalog candidate; offer explicitly and verify the visible model before relying on it.
+  8. `claude-sonnet-5-thinking-high` — newer Sonnet candidate; offer explicitly but do not silently replace the proven defaults.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
@@ -514,7 +518,7 @@ Use these defaults first. Only deviate when the user explicitly asks or a launch
 
 These are evidence checkpoints; verify again when models or CLI behavior matter.
 
-- Cursor CLI: local version updated from `2026.07.17-3e2a980` to `2026.07.20-8cc9c0b` on 2026-07-22 and matches the official installer. The help diff adds `--endpoint` / `CURSOR_API_ENDPOINT`, and `--trust` is no longer documented as headless-only. `agent models` still exposes Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertise 1M for Fable/Sonnet/Opus/GPT-5.6, while `agent about` for the active Fable session still reports `Fable 5 300K High`; effective context remains session-dependent until a fresh launch proves otherwise. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
+- Cursor CLI: local `agent` is `2026.07.23-e383d2b` as of 2026-07-27; `agent update` reports `Already up to date`, and `agent about` reports the active session as `Fable 5 300K High`. The help surface includes `--endpoint` / `CURSOR_API_ENDPOINT` and `--trust`. The live `agent models` catalog includes `claude-opus-5-thinking-high` (Opus 5 1M Thinking) and `cursor-grok-4.5-high` (Cursor Grok 4.5), alongside Composer 2.5, Fable 5, Sonnet 5, Opus 4.8, GPT-5.6 Sol/Terra/Luna, and other families. Catalog labels advertise 1M for several families, while effective context remains session-dependent until a fresh launch proves otherwise. The new Opus 5/Grok IDs are catalog evidence, not foreground launch proof; use them explicitly and verify the visible model before relying on them. If Mahiro says “Fable 5”, use `claude-fable-5-thinking-high`, not the display shorthand.
 - Antigravity CLI: local `1.1.6` was verified on 2026-07-24. Earlier interactive tmux launches proved both `gemini-3.6-flash-high` and `gemini-3.6-flash-medium`; a Herdr-native smoke also proved explicit `gemini-3.5-flash-high`, the correct visible model, `agent prompt --wait`, Done lifecycle, and exact response. Mahiro selected 3.6 High as the curated fast default; 3.6 Medium and then `gemini-3.5-flash-medium` remain ordered automatic fallbacks, while explicit 3.5 High requests are supported. Earlier proof for `claude-opus-4-6-thinking` and `claude-sonnet-4-6` remains valid. Adding `--effort high` to Opus has a known silent-fallback risk, and catalog-listed `gemini-3.1-pro-high` previously reported it was no longer available. The 2026-06-29 `--prompt-interactive` evidence remains the safe multiline path because raw multiline paste has not been re-tested on 1.1.6.
 - Codex CLI: local and npm stable updated from `0.144.6` to `0.145.0` on 2026-07-22. The release adds paginated thread history, broader Cursor/Claude import, audio/realtime support, and stable-but-opt-in multi-agent V2, plus long-conversation rendering, MCP startup/auth, and approval-safety fixes. The direct-lane flags remain valid. `codex debug models` still lists Sol/Terra/Luna/GPT-5.5/Spark: Sol/Terra expose low through ultra, Luna low through max, Spark low through xhigh, and context remains 272,000 for Sol/Terra/Luna/GPT-5.5 versus 128,000 for Spark. `image_generation`, `multi_agent`, and `fast_mode` remain stable/enabled; `multi_agent_v2` is stable and disabled by default. Generated images remain under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
 
