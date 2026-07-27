@@ -74,7 +74,7 @@ describe("cli", () => {
     }
   });
 
-  test("default all-agent installs include explicit-trigger design and Codrops skills", () => {
+  test("default all-agent installs keep frontend design audits opt-in", () => {
     const temp = makeTempEnv();
 
     try {
@@ -86,17 +86,18 @@ describe("cli", () => {
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       expect(payload.length).toBe(6);
-      expect(payload.every((entry) => entry.installedSkills.includes("frontend-design"))).toBe(true);
+      expect(payload.every((entry) => !entry.installedSkills.includes("frontend-design"))).toBe(true);
+      expect(payload.every((entry) => !entry.installedSkills.includes("uncodixify"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("game-production"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("vfx-workflow"))).toBe(true);
-      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("frontend-design");
+      expect(payload.every((entry) => !entry.installedCommands.includes("frontend-design"))).toBe(true);
+      expect(payload.every((entry) => !entry.installedCommands.includes("uncodixify"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("motion-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("vfx-workflow");
-      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("frontend-design"))).toBe(true);
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
       expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
@@ -213,10 +214,34 @@ describe("cli", () => {
           detail: "Command 'deep-research' is not listed in the default bundle.",
         },
         {
+          code: "command-missing-default-bundle",
+          severity: "warning",
+          item: "frontend-design",
+          detail: "Command 'frontend-design' is not listed in the default bundle.",
+        },
+        {
+          code: "command-missing-default-bundle",
+          severity: "warning",
+          item: "uncodixify",
+          detail: "Command 'uncodixify' is not listed in the default bundle.",
+        },
+        {
           code: "skill-missing-default-bundle",
           severity: "warning",
           item: "deep-research",
           detail: "Skill 'deep-research' is not listed in the default bundle.",
+        },
+        {
+          code: "skill-missing-default-bundle",
+          severity: "warning",
+          item: "frontend-design",
+          detail: "Skill 'frontend-design' is not listed in the default bundle.",
+        },
+        {
+          code: "skill-missing-default-bundle",
+          severity: "warning",
+          item: "uncodixify",
+          detail: "Skill 'uncodixify' is not listed in the default bundle.",
         },
       ]);
     } finally {

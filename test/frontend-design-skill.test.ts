@@ -327,7 +327,7 @@ describe("frontend-design skill", () => {
     expect(brief).toContain("do not precondition a native model-taste baseline with it");
   });
 
-  test("keeps universal taste priors out while shipping through the default bundle", () => {
+  test("keeps universal taste priors out while remaining opt-in", () => {
     const skill = read("skills", "frontend-design", "SKILL.md");
     const brief = read("skills", "frontend-design", "references", "brief-workflow.md");
     const references = read("skills", "frontend-design", "references", "reference-contracts.md");
@@ -348,8 +348,10 @@ describe("frontend-design skill", () => {
     expect(doctrine).not.toContain("Python randomization");
     expect(doctrine).not.toContain("Inter is banned");
     expect(doctrine).not.toContain("Fraunces");
-    expect(defaultBundle.skills).toContain("frontend-design");
-    expect(defaultBundle.commands).toContain("frontend-design");
+    expect(defaultBundle.skills).not.toContain("frontend-design");
+    expect(defaultBundle.commands).not.toContain("frontend-design");
+    expect(defaultBundle.skills).not.toContain("uncodixify");
+    expect(defaultBundle.commands).not.toContain("uncodixify");
   });
 
   test("routes asset production to the contract the asset skill actually provides", () => {

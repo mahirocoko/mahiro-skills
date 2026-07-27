@@ -39,6 +39,8 @@ Preview before writing:
 bun ./src/cli.ts plan --agent opencode --scope local
 ```
 
+The default bundle intentionally keeps `frontend-design` and `uncodixify` opt-in; install them explicitly when a design decision or second-pass UI audit calls for them.
+
 ### Tagged install without keeping a clone
 
 ```bash

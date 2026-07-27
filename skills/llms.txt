@@ -1,6 +1,6 @@
 # mahiro-skills skill index
 
-Use this file as a compact discovery map. Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`; this index is for humans and agents deciding which skill to load.
+Use this file as a compact discovery map. Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`; this index is for humans and agents deciding which skill to load. The default bundle intentionally keeps `frontend-design` and `uncodixify` opt-in.
 
 ## Skills
 
