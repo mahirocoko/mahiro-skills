@@ -10,6 +10,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Trigger on: create or patch `AGENTS.md` for `ccc` / `cocoindex-code`, semantic code-search doctrine, repo-local search rules, make agents prefer CocoIndex, `ดู repo หน่อย` / `หาโค้ดส่วนนี้` routing rules.
 - `deep-research` — Deep research via Gemini. Trigger on: comprehensive research, source-backed analysis, deep dive, web-backed synthesis. Route a large corpus of live frontend/site/app UI references tied to a named frontend design decision to `frontend-design` instead.
 - `direct-cli` — Direct executor playbook for Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback plus detached Herdr job collection. Trigger on: direct Cursor lane, direct Antigravity lane, agy lane, direct Codex lane, codex lane, Herdr pane, tmux pane, fresh CLI session, detached CLI job, collect direct job, yolo/offloaded executor lane.
+- `fable` — Bounded hard-task orchestration mode for explicit missions, falsifiable hypotheses, adaptive specialist lanes, retry budgets, checkpoints, and fresh verification. Trigger explicitly on `/fable` or Fable-style workflow. Auto-trigger immediately when static checks pass but required runtime behavior fails or the same hypothesis fails twice; otherwise require at least two hard-task signals such as ambiguity, long horizon, cross-system ownership, high risk, independent lanes, or costly wrong direction. Do not trigger for Cursor Fable model selection alone.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
 - `frontend-design` — Explicit repo-grounded, brand-relative frontend design planning, taste theses, and reference/fidelity contracts. Trigger on: design brief, brand-relative visual direction, reference anatomy, preserve/overhaul redesign plan, web/mobile reference set, image-first implementation handoff, rendered fidelity review, or a large frontend-reference corpus review tied to a named frontend design decision. Use `deep-research` instead for generic topic research or broad source-backed synthesis. Skip automatic loading for native model-taste baselines.
 - `game-production` — Thin production director for complete games. Trigger on: game production audit, whole-game inventory, prototype vs vertical-slice vs production vs release readiness, production roadmap, content-complete gate, cross-discipline game lanes, performance/device/browser QA, save/deploy/legal release readiness.
@@ -36,6 +37,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Orientation bundle**: `recap`, `rrr`, `forward`
 - **Project tracking bundle**: `project`, `learn`
 - **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
+- **Hard-task orchestration bundle**: `fable`, `control-room-goals`, `direct-cli`, `recap`, `rrr`
 - **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
 - **Frontend design and assets bundle**: `frontend-design`, `uncodixify`, `web-asset-prompts`, `asset-designer`, `codex-asset-production`
@@ -48,6 +50,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 
 ```bash
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
+bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
 bun ./src/cli.ts install studying-codrops --agent letta-code --scope global
 bun ./src/cli.ts install motion-design frontend-design studying-codrops --agent letta-code --scope global

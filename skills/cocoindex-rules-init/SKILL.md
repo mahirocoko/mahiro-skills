@@ -1,6 +1,6 @@
 ---
 name: cocoindex-rules-init
-description: Mahiro Skill | Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance that makes agents prefer cocoindex-code / ccc for semantic codebase search, repo exploration, and index maintenance.
+description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance that makes agents prefer cocoindex-code / ccc for semantic codebase search, repo exploration, and index maintenance.
 user-invocable: true
 ---
 
