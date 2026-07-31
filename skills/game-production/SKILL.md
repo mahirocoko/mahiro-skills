@@ -119,7 +119,7 @@ Route work; do not absorb specialist ownership.
 | Generated source art and bounded cleanup/QA orchestration | `codex-asset-production` |
 | Sprite sheets, animation families, anchors, frame QA, atlases, promotion | `sprite-workflow` |
 | Runtime VFX timing, geometry, ownership, emitters/shaders, reduced-effects integration | `vfx-workflow` when available; otherwise the repo's VFX/runtime owner |
-| Menu/meta/web shell visual brief and rendered fidelity | `frontend-design` when the task is explicitly design-led |
+| Menu/meta/web shell visual brief and rendered fidelity | current product/UI owner using repo-approved direction |
 | Audio direction, event map, implementation, mix and loudness/device QA | repo-local audio lane or a named audio specialist |
 | Engine scenes, gameplay rules, input, saves, tooling and integration | repo-local runtime guidance and engine-specific skills |
 | Browser interaction and viewport/state evidence | `playwright-cli` plus repo-local QA commands |

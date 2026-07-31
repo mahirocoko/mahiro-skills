@@ -1,8 +1,0 @@
-description = "Deep research via Gemini for comprehensive analysis or source-backed research. Route a large live frontend/site/app UI corpus tied to a named frontend design decision to frontend-design."
-prompt = """
-Execute the `deep-research` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"deep-research\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/deep-research/SKILL.md` for local installs or `~/.gemini/skills/deep-research/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

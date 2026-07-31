@@ -27,7 +27,7 @@ This is not a full repository copy. The upstream README, `.gitignore`, installat
 The following are local policy and ownership decisions, not claims made by upstream:
 
 - explicit-trigger-only activation and the non-trigger guard
-- ownership routing to `frontend-design`, `studying-codrops`, and `vfx-workflow`
+- ownership routing to the current product owner, `studying-codrops`, and `vfx-workflow`
 - target-repo code/runtime/browser QA as implementation authority
 - bounded modes, evidence posture, motion brief/output contract, stop gates, and validation checklist
 - rejection of default personality archetypes and motion-for-motion's-sake

@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex,
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, frontend taste, and web asset workflows.
+Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, motion design, and web asset workflows.
 
 ## Contents
 
@@ -39,18 +39,18 @@ Preview before writing:
 bun ./src/cli.ts plan --agent opencode --scope local
 ```
 
-The default bundle intentionally keeps `frontend-design` and `uncodixify` opt-in; install them explicitly when a design decision or second-pass UI audit calls for them.
+The canonical catalog is default-or-absent: every packaged skill and paired command belongs to the default bundle. Removed workflows can be recovered from Git history instead of remaining as dormant opt-in inventory.
 
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.73 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.74 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.73 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.74 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -138,11 +138,9 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
-| `deep-research` | `/deep-research` | You need generic or broad source-backed research through Gemini. Use `frontend-design` for a large live frontend/site/app UI corpus tied to a named frontend design decision. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection. |
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
-| `frontend-design` | `/frontend-design` | You explicitly need a repo-grounded, brand-relative design brief, taste thesis, reference anatomy, redesign plan, reference-set contract, rendered fidelity review, or a large frontend-reference corpus review tied to a named frontend design decision—not generic deep research. |
 | `game-production` | `/game-production` | You need a whole-game production inventory, maturity/readiness audit, specialist-lane plan, cross-domain QA, or release gate. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
@@ -157,7 +155,6 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
 | `sprite-workflow` | `/sprite-workflow` | You need attributed sprite prompts/templates, imagegen handoff, motion-reference intake, chroma/grid extraction, anchor/scale/alpha/motion QA, native-grid recovery, approved atlas assembly, previews, or promotion gates. |
 | `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
-| `uncodixify` | `/uncodixify` | You need an explicit or evidence-triggered second-pass audit/enforcement pass for generic AI-looking frontend UI and fake premium styling. |
 | `vfx-workflow` | `/vfx-workflow` | You need mechanically truthful game VFX cues, sockets, timing, geometry, accessibility, pooling, effect budgets, runtime QA, or promotion gates. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
@@ -172,10 +169,10 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
-| Creative web study | `bun ./src/cli.ts install studying-codrops frontend-design learn --agent opencode --scope local` | Codrops evidence study, project-relative frontend decisions, and linked source-repo exploration |
-| Motion design | `bun ./src/cli.ts install motion-design frontend-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits, brand-relative design ownership, and optional Codrops evidence |
-| Frontend design and assets | `bun ./src/cli.ts install frontend-design uncodixify web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Explicit design briefs, post-render taste audits, asset packs, Codex asset lanes, image prompts, sprite handoff/QA |
-| Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer frontend-design --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, UI/meta direction, performance/device QA, and release gates |
+| Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
+| Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
+| Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, and sprite handoff/QA |
+| Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, performance/device QA, and release gates |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites
@@ -184,7 +181,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
 | `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Multi-pane jobs use one named Herdr tab or tmux session. Detached Phase 1 jobs are Herdr-only and persist watcher/results for later `list`/`show`/`collect`; they do not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
-| `gemini`, `deep-research`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
+| `gemini`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
 | `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |

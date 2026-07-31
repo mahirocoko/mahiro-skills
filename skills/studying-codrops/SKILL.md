@@ -32,10 +32,10 @@ This skill owns:
 
 This skill does not own:
 
-- final product or brand direction: use `frontend-design`
-- broad research where Codrops is only one source among many: use `deep-research`
+- final product or brand direction: return evidence to the user or current product owner
+- broad research where Codrops is only one source among many: use an approved general research workflow
 - a full repository architecture study detached from Codrops evidence: use `learn`
-- generic-AI UI cleanup: use `uncodixify`
+- generic UI cleanup or implementation review: use the target repo's normal review workflow
 - copying Codrops code, assets, trade dress, demo composition, or client work
 
 Codrops findings are candidate evidence, not design authority. Repo rules, product truth, brand constraints, accessibility, and explicit user direction remain higher priority.
@@ -82,7 +82,7 @@ Compare multiple Codrops items, article claims against live behavior/source, or 
 
 ### Project Fit
 
-Translate selected evidence through a named repo/product. Produce `Keep | Adapt | Reject | Prototype | Unknown` decisions. This mode informs `frontend-design` or a bounded implementation spike; it does not replace repo grounding or a product brief.
+Translate selected evidence through a named repo/product. Produce `Keep | Adapt | Reject | Prototype | Unknown` decisions. This mode informs a product decision or bounded implementation spike; it does not replace repo grounding or a product brief.
 
 ### Refresh
 
@@ -167,9 +167,9 @@ Use the result as one of:
 
 - a learning note
 - a bounded prototype brief
-- a cited input to `frontend-design`
+- a cited input to the current product/design decision
 - a repo-study handoff to `learn`
-- a broader-source expansion through `deep-research`
+- a broader-source expansion through an approved research workflow
 
 Load [references/study-contract.md](references/study-contract.md) for the full evidence packet and comparison templates.
 
@@ -255,7 +255,7 @@ This is a partial Codrops study, not an implementation recommendation.
 - Transfer decisions are relative to a named job or clearly labeled as general learning.
 - Retention scope is explicit and defaults to session-only.
 - Multi-item studies include coverage, anti-bias, stop, and holdout logic.
-- The next owner is clear: learning note, prototype, `frontend-design`, `learn`, or `deep-research`.
+- The next owner is clear: learning note, prototype, product decision, `learn`, approved research workflow, or bounded implementation.
 
 ## References
 

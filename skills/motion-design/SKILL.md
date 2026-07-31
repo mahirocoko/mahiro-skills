@@ -41,7 +41,7 @@ This skill owns:
 
 Adjacent owners remain authoritative:
 
-- `frontend-design` owns brand, product, visual, layout, and composition direction. This skill translates approved direction into motion; it does not invent or overrule it.
+- the user, repo, and current product owner govern brand, visual, layout, and composition direction. This skill translates approved direction into motion; it does not invent or overrule it.
 - `studying-codrops` owns Codrops evidence, source relationships, and transferability. Codrops findings may inform a motion brief, but this skill does not claim that evidence.
 - `vfx-workflow` owns game/runtime VFX and gameplay-authoritative cue timing.
 - target-repo code, runtime behavior, and browser/device QA prove implementation. This skill does not replace repo inspection, executable tests, profiling, or rendered evidence.
@@ -85,7 +85,7 @@ For a target repo, inspect only enough to identify:
 - existing motion tokens, primitives, dependencies, platform APIs, and reduced-motion handling
 - established focus, keyboard, touch, pointer, scroll, loading, error, and responsive behavior
 - performance-sensitive surfaces and available browser/device/test tooling
-- approved brand/product direction from the user, repo, or `frontend-design`
+- approved brand/product direction from the user, repo, or current product owner
 
 Label repo-proven behavior, approved direction, recommendation, and unknown separately. A still image does not prove motion behavior; a prose brief does not prove runtime support.
 
@@ -179,7 +179,7 @@ This is a motion-design recommendation, not verified implementation behavior.
 Stop or narrow the affected boundary when:
 
 - motion has no named user, product, orientation, feedback, hierarchy, or approved expressive purpose
-- brand/product/composition direction is material but missing; route that decision to `frontend-design`
+- brand/product/composition direction is material but missing; stop for an explicit user or product-owner decision
 - Codrops evidence is being inferred without a `studying-codrops` study
 - the request crosses into gameplay-authoritative or game/runtime VFX; route it to `vfx-workflow`
 - the target state machine, semantic completion event, focus behavior, or interruption path is unknown and guessing would change product behavior
@@ -195,7 +195,7 @@ Before finishing, confirm:
 
 - the explicit trigger applies and the task did not expand from an incidental transition
 - every motion has a named purpose; unnecessary motion was removed
-- brand/product/composition decisions remain owned by `frontend-design`
+- brand/product/composition decisions remain owned by the user, repo, and current product owner
 - Codrops evidence and game/runtime VFX remain with their specialist owners
 - recommendations distinguish repo truth, approved direction, heuristic, observation, and unknown
 - the state map covers completion, cancel, interruption, rapid repeat, and responsive/input variants where material

@@ -74,7 +74,7 @@ describe("cli", () => {
     }
   });
 
-  test("default all-agent installs keep frontend design audits opt-in", () => {
+  test("default all-agent installs the complete canonical catalog", () => {
     const temp = makeTempEnv();
 
     try {
@@ -86,14 +86,11 @@ describe("cli", () => {
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       expect(payload.length).toBe(6);
-      expect(payload.every((entry) => !entry.installedSkills.includes("frontend-design"))).toBe(true);
-      expect(payload.every((entry) => !entry.installedSkills.includes("uncodixify"))).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("game-production"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("vfx-workflow"))).toBe(true);
-      expect(payload.every((entry) => !entry.installedCommands.includes("frontend-design"))).toBe(true);
-      expect(payload.every((entry) => !entry.installedCommands.includes("uncodixify"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("motion-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
@@ -206,44 +203,7 @@ describe("cli", () => {
       const payload = parseJson(result.stdout) as { type: string; ok: boolean; gaps: Array<{ code: string; item: string; severity: string; detail: string }> };
       expect(payload.type).toBe("gaps");
       expect(payload.ok).toBe(true);
-      expect(payload.gaps).toEqual([
-        {
-          code: "command-missing-default-bundle",
-          severity: "warning",
-          item: "deep-research",
-          detail: "Command 'deep-research' is not listed in the default bundle.",
-        },
-        {
-          code: "command-missing-default-bundle",
-          severity: "warning",
-          item: "frontend-design",
-          detail: "Command 'frontend-design' is not listed in the default bundle.",
-        },
-        {
-          code: "command-missing-default-bundle",
-          severity: "warning",
-          item: "uncodixify",
-          detail: "Command 'uncodixify' is not listed in the default bundle.",
-        },
-        {
-          code: "skill-missing-default-bundle",
-          severity: "warning",
-          item: "deep-research",
-          detail: "Skill 'deep-research' is not listed in the default bundle.",
-        },
-        {
-          code: "skill-missing-default-bundle",
-          severity: "warning",
-          item: "frontend-design",
-          detail: "Skill 'frontend-design' is not listed in the default bundle.",
-        },
-        {
-          code: "skill-missing-default-bundle",
-          severity: "warning",
-          item: "uncodixify",
-          detail: "Skill 'uncodixify' is not listed in the default bundle.",
-        },
-      ]);
+      expect(payload.gaps).toEqual([]);
     } finally {
       temp.cleanup();
     }

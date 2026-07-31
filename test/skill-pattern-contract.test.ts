@@ -283,22 +283,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("source-ready-normalization-required");
   });
 
-  test("uncodixify preserves native model taste before evidence-triggered audit", () => {
-    const skill = readRepoFile("skills", "uncodixify", "SKILL.md");
-    const command = readRepoFile("commands", "uncodixify.md");
-    const geminiCommand = readRepoFile("commands-gemini", "mh-uncodixify.toml");
-    const index = readRepoFile("skills", "llms.txt");
-
-    expect(skill).toContain("Do not auto-load this skill for every frontend generation task");
-    expect(skill).toContain("For native model-taste evaluation, including GPT-5.6 Sol experiments");
-    expect(skill).toContain("Audit mode (default for review/drift triggers)");
-    expect(skill).toContain("Enforce mode");
-    expect(skill).toContain("do not apply `uncodixify` before the first rendered pass");
-    expect(command).toContain("Do not apply before the first rendered pass");
-    expect(geminiCommand).toContain("Do not apply before the first rendered pass");
-    expect(index).toContain("Skip before the first rendered pass when evaluating native model taste");
-  });
-
   test("goal skill describes Goal Mode without old cockpit references", () => {
     const skill = readRepoFile("skills", "control-room-goals", "SKILL.md");
     const command = readRepoFile("commands", "control-room-goals.md");

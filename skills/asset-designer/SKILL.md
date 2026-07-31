@@ -29,7 +29,7 @@ Phase role: `asset-designer` is the asset director. It answers **what assets sho
 Recommended chain:
 
 ```txt
-frontend-design brief
+repo-grounded product/page brief
   -> asset-designer asset plan / manifest
   -> web-asset-prompts per-asset generation prompts
   -> image generation or cleanup
@@ -286,8 +286,7 @@ Otherwise choose the safest production default and proceed.
 
 - Use `web-asset-prompts` for prompt rewriting and generated-asset prompt doctrine.
 - Use `imagegen` when actual raster generation or editing is required.
-- Use `frontend-design` when the asset plan is derived from a landing-page or UI handoff.
-- Use `uncodixify` when assets must support restrained, non-generic frontend visual output.
+- Use the target repo's approved product/page brief when the asset plan belongs to a larger landing-page or UI handoff.
 
 ## Boundary with `web-asset-prompts`
 

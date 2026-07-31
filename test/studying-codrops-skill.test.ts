@@ -46,10 +46,10 @@ describe("studying-codrops skill", () => {
     expect(skill).toContain("## Stop Gates");
     expect(skill).toContain("## Output Contract");
     expect(skill).toContain("## Validation / Self-check");
-    expect(skill).toContain("use `frontend-design`");
-    expect(skill).toContain("use `deep-research`");
+    expect(skill).toContain("return evidence to the user or current product owner");
+    expect(skill).toContain("use an approved general research workflow");
     expect(skill).toContain("use `learn`");
-    expect(skill).toContain("use `uncodixify`");
+    expect(skill).toContain("use the target repo's normal review workflow");
     expect(skill).toContain("prints bounded metadata to stdout");
     expect(skill).not.toContain("--out");
     expect(command).toContain('skill: "studying-codrops"');

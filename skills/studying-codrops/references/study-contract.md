@@ -118,7 +118,7 @@ Unknown:
 - missing evidence and cheapest disconfirming check
 
 Route:
-- learning note | frontend-design | learn | deep-research | bounded implementation
+- learning note | product decision | learn | approved research workflow | bounded implementation
 ```
 
 ## Theme-study saturation

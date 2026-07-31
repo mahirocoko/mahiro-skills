@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.73 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.74 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -56,6 +56,7 @@ describe("README", () => {
     expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
     expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.");
     expect(content).toContain("Current workflow highlights:");
+    expect(content).toContain("The canonical catalog is default-or-absent");
     expect(content).toContain("Interactive install/uninstall/update TUI");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("backend-specific same-prompt fanout");
@@ -92,6 +93,7 @@ describe("README", () => {
 
     expect(index).toContain("# mahiro-skills skill index");
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
+    expect(index).toContain("The canonical catalog is default-or-absent");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
     expect(index).toContain("`sprite-workflow` — CLI-first sprite/Codex handoff workflow");
     expect(index).toContain("`game-production` — Thin production director for complete games.");
@@ -106,8 +108,8 @@ describe("README", () => {
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
     expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");
-    expect(index).toContain("**Game production bundle**: `game-production`, `vfx-workflow`, `sprite-workflow`, `codex-asset-production`, `asset-designer`, `frontend-design`");
-    expect(index).toContain("bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer frontend-design --agent opencode --scope local");
+    expect(index).toContain("**Game production bundle**: `game-production`, `vfx-workflow`, `sprite-workflow`, `codex-asset-production`, `asset-designer`");
+    expect(index).toContain("bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");
   });

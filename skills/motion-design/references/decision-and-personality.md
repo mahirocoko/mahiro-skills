@@ -35,7 +35,7 @@ Derive motion from:
 
 1. explicit product and accessibility requirements
 2. repo-proven states, primitives, tokens, and platform behavior
-3. approved brand/product/composition direction from `frontend-design`
+3. approved brand/product/composition direction from the user, repo, or current product owner
 4. user-provided motion references, treated as hypotheses until behavior is observed
 5. context-dependent motion judgment
 

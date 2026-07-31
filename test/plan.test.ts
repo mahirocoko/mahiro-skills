@@ -15,8 +15,6 @@ describe("plan", () => {
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(24);
       expect(plan.commands.length).toBe(24);
-      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(false);
-      expect(plan.skills.some((entry) => entry.name === "uncodixify")).toBe(false);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
@@ -44,8 +42,6 @@ describe("plan", () => {
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(24);
       expect(plan.commands.length).toBe(24);
-      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(false);
-      expect(plan.skills.some((entry) => entry.name === "uncodixify")).toBe(false);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
@@ -77,8 +73,6 @@ describe("plan", () => {
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
       expect(plan.skills.length).toBe(24);
       expect(plan.commands.length).toBe(24);
-      expect(plan.skills.some((entry) => entry.name === "frontend-design")).toBe(false);
-      expect(plan.skills.some((entry) => entry.name === "uncodixify")).toBe(false);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "gemini")).toBe(true);
     } finally {

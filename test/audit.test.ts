@@ -104,7 +104,7 @@ describe("auditSkillUsage", () => {
           timestamp: "2026-07-06T12:00:00.000Z",
           message: {
             metadata: { agent_id: "agent-a", conversation_id: "conversation-a" },
-            content: [{ type: "text", text: "I will use /frontend-design later." }],
+            content: [{ type: "text", text: "I will use /project later." }],
           },
         },
       ]);

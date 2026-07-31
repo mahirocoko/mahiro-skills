@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -35,6 +35,22 @@ function writeMarketplace(repoRoot: string, skills: string[], commands = skills)
 }
 
 describe("repo inventory", () => {
+  test("keeps the canonical catalog default-or-absent", () => {
+    const repoRoot = join(import.meta.dir, "..");
+    const manifest = getRepoManifest(repoRoot);
+    const removed = ["deep-research", "frontend-design", "uncodixify"];
+
+    expect(manifest.gaps).toEqual([]);
+    expect(manifest.skills.every((skill) => skill.inDefaultBundle)).toBe(true);
+
+    for (const name of removed) {
+      expect(existsSync(join(repoRoot, "skills", name))).toBe(false);
+      expect(existsSync(join(repoRoot, "commands", `${name}.md`))).toBe(false);
+      expect(existsSync(join(repoRoot, "commands-gemini", `mh-${name}.toml`))).toBe(false);
+      expect(manifest.commands).not.toContain(name);
+    }
+  });
+
   test("includes normalized Gemini command names from namespaced toml files", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-repo-"));
 
