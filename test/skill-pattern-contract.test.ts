@@ -145,6 +145,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`claude-sonnet-5-thinking-high`");
     expect(skill).toContain("`claude-opus-5-thinking-high`");
     expect(skill).toContain("`cursor-grok-4.5-high`");
+    expect(skill).toContain("`kimi-k3-high`");
+    expect(skill).toContain("`kimi-k2.7-code`");
+    expect(skill).toContain("`glm-5.2-high`");
+    expect(skill).toContain("`claude-opus-4-7-thinking-high`");
     expect(skill).toContain("`claude-fable-5-thinking-xhigh`");
     expect(skill).toContain("`claude-opus-4-6-thinking` for heavy review/reasoning");
     expect(skill).toContain("`claude-sonnet-4-6`");
@@ -209,6 +213,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("`claude-opus-5-thinking-high`");
     expect(playbook).toContain("`cursor-grok-4.5-high`");
+    expect(playbook).toContain("`kimi-k3-high`");
+    expect(playbook).toContain("raw model only");
     expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
@@ -232,7 +238,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("`claude-fable-5-thinking-xhigh` for heavier review");
     expect(readme).toContain("`claude-opus-5-thinking-high`");
     expect(readme).toContain("`cursor-grok-4.5-high`");
-    expect(readme).toContain("`claude-sonnet-5-thinking-high` as opt-in candidates");
+    expect(readme).toContain("`kimi-k3-high` as opt-in candidates");
+    expect(readme).toContain("raw model access");
     expect(readme).toContain("`claude-opus-4-6-thinking` for heavy review");
     expect(readme).toContain("`claude-sonnet-4-6` for balanced work");
     expect(readme).toContain("`codex debug models`");
@@ -256,6 +263,8 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("`claude-sonnet-5-thinking-high`");
       expect(wrapper).toContain("`claude-opus-5-thinking-high`");
       expect(wrapper).toContain("`cursor-grok-4.5-high`");
+      expect(wrapper).toContain("`kimi-k3-high`");
+      expect(wrapper).toContain("raw model access");
       expect(wrapper).toContain("`claude-fable-5-thinking-xhigh`");
       expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
       expect(wrapper).toContain("`codex debug models`");
