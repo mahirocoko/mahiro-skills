@@ -13,8 +13,9 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.length).toBe(25);
+      expect(plan.commands.length).toBe(25);
+      expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
@@ -40,8 +41,9 @@ describe("plan", () => {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.length).toBe(25);
+      expect(plan.commands.length).toBe(25);
+      expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
     } finally {
@@ -71,8 +73,9 @@ describe("plan", () => {
       const plan = createPlan("gemini", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.length).toBe(25);
+      expect(plan.commands.length).toBe(25);
+      expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "gemini")).toBe(true);
     } finally {

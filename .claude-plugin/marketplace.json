@@ -9,6 +9,7 @@
       "description": "Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.",
       "skills": [
         "asset-designer",
+        "auditing-context-contracts",
         "cocoindex-rules-init",
         "codex-asset-production",
         "control-room-goals",
@@ -35,6 +36,7 @@
       ],
       "commands": [
         "asset-designer",
+        "auditing-context-contracts",
         "cocoindex-rules-init",
         "codex-asset-production",
         "control-room-goals",

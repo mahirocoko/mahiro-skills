@@ -1,0 +1,9 @@
+description = "Audit repository text/context contracts for stale API, route, package, capability, ownership, generated-output, comment, agent-state, and historical claims without treating keyword scans as semantic proof."
+prompt = """
+Execute the `auditing-context-contracts` skill with args: {{args}}
+
+If you have a Skill tool available: Use it directly with `skill: \"auditing-context-contracts\"` instead of reading the file manually.
+
+Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/auditing-context-contracts/SKILL.md` for local installs or `~/.gemini/skills/auditing-context-contracts/SKILL.md` for global installs) and follow ALL instructions in it.
+"""
+

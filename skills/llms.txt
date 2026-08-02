@@ -5,6 +5,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 ## Skills
 
 - `asset-designer` — Asset director for production-ready website image assets and manifests. Trigger on: cutout/background removal, layer separation, transparent PNG packs, missing web assets, asset QA/delivery notes.
+- `auditing-context-contracts` — Repository context-contract audit for source/runtime drift across active docs, comments, generated prose, agent-state, and historical evidence. Trigger on: API/route/package/capability/ownership migrations, stale documentation or comments, competing current/historical owners, context cleanup, and material text-contract closeout. Its scanner only locates explicitly declared patterns; keyword absence is not semantic proof.
 - `codex-asset-production` — Codex asset-lane orchestrator for production-ish web/game visual assets. Trigger on: Codex imagegen plus dicut cleanup, source sheet lane, asset-designer cleanup lane, asset provenance, visual asset QA handoff.
 - `control-room-goals` — Goal Mode objective/DoD/next-action drafting and agent-owned application workflow, with optional Execution Run and explicit Code Evidence attachment boundaries, plus a model-aware execute-to-DoD/Luna-pilot contract for non-trivial goals. Trigger on: /goal, goal mode, create goal, DoD, next, safe boundary, verified/claimed evidence, execution handoff, reset, goal clarification.
 - `cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Trigger on: create or patch `AGENTS.md` for `ccc` / `cocoindex-code`, semantic code-search doctrine, repo-local search rules, make agents prefer CocoIndex, `ดู repo หน่อย` / `หาโค้ดส่วนนี้` routing rules.
@@ -35,7 +36,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Project tracking bundle**: `project`, `learn`
 - **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
 - **Hard-task orchestration bundle**: `fable`, `control-room-goals`, `direct-cli`, `recap`, `rrr`
-- **Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
+- **Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`
 - **CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`
 - **Web assets bundle**: `web-asset-prompts`, `asset-designer`, `codex-asset-production`
 - **Creative web study bundle**: `studying-codrops`, `learn`
@@ -49,6 +50,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 bun ./src/cli.ts install recap rrr forward --agent opencode --scope local
 bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local
 bun ./src/cli.ts install project learn --agent cursor,gemini --scope local
+bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init mahiro-guidance-refine --agent opencode --scope local
 bun ./src/cli.ts install studying-codrops --agent letta-code --scope global
 bun ./src/cli.ts install motion-design studying-codrops --agent letta-code --scope global
 bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local

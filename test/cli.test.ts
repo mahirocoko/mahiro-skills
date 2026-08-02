@@ -86,7 +86,8 @@ describe("cli", () => {
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       expect(payload.length).toBe(6);
-      expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("game-production"))).toBe(true);

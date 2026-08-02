@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.75 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.75 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -79,6 +79,7 @@ Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, a
 Current workflow highlights:
 
 - **Interactive install/uninstall/update TUI plus non-interactive `guided --mode update --yes`** — open with `bun ./src/cli.ts`; supports Install, Uninstall, Update installed, List installed, and Receipt detail. Uninstall can target one agent or all agents, then remove selected receipt-recorded items or everything for the chosen scope. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
+- **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long Herdr jobs can detach into a private durable watcher registry for later collection.
 - **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
@@ -135,6 +136,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Skill | Command | Use when |
 | --- | --- | --- |
 | `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
+| `auditing-context-contracts` | `/auditing-context-contracts` | APIs, routes, packages, capabilities, ownership, generated prose, comments, agent-state, or historical records may disagree with current source/runtime truth and need an evidence-backed audit or authorized repair. |
 | `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
@@ -166,7 +168,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Orientation | `bun ./src/cli.ts install recap rrr forward --agent opencode --scope local` | `/recap --now`, `/rrr`, `/forward` |
 | CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
-| Repo doctrine | `bun ./src/cli.ts install mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, apply Mahiro style lens |
+| Repo doctrine | `bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Audit active context contracts, bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, and apply the Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |

@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.75 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -104,7 +104,9 @@ describe("README", () => {
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");
-    expect(index).toContain("**Repo doctrine bundle**: `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
+    expect(index).toContain("`auditing-context-contracts` — Repository context-contract audit");
+    expect(index).toContain("keyword absence is not semantic proof");
+    expect(index).toContain("**Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
     expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");
