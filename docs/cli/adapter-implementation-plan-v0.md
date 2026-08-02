@@ -118,8 +118,8 @@ Status: implemented in the current repo pass for packaged Agent Skills trees and
 - `test/*.test.ts` for root resolution, receipts, command behavior, and partial-support cases
 - `docs/cli/spec-v0.md` and `docs/cli/test-matrix-v0.md` for truth-in-docs after runtime support changes
 
-## Recommendation
+## Implemented sequence and current direction
 
-Do not start with TUI.
+The original recommendation was to stabilize Cursor and Gemini adapters before adding an interaction shell. That sequence is now complete: the adapter/planner/receipt core and prompt-guided flow shipped first.
 
-Start by making Cursor real, then make Gemini project-level real, then wrap that stable behavior in a guided flow. That order gives the repo the highest chance of shipping something easy to use without creating adapter-specific drift or overpromising support that is still only partially modeled.
+The current `tui` command adds a full-screen Skill Manager over that stable core without replacing direct CLI automation or the guided compatibility path. Future adapter work must continue to land in planner/install/list/uninstall contracts first so the two UI shells cannot invent target-specific behavior independently.

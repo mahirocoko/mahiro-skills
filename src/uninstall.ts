@@ -80,6 +80,9 @@ function writeNextReceipt(path: string, receipt: InstallReceipt, removedSkills: 
     ...receipt,
     installedSkills: receipt.installedSkills.filter((item) => !removedSkillSet.has(item)),
     installedCommands: receipt.installedCommands.filter((item) => !removedCommandSet.has(item)),
+    targetStates: receipt.targetStates?.filter((state) => (
+      state.kind === "skill" ? !removedSkillSet.has(state.name) : !removedCommandSet.has(state.name)
+    )),
   };
 
   if (nextReceipt.installedSkills.length === 0 && nextReceipt.installedCommands.length === 0) {

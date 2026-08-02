@@ -27,7 +27,7 @@ export interface PromptOption<T extends string> {
 }
 
 export class PromptCancelError extends Error {
-  constructor(message = "Guided TUI cancelled.") {
+  constructor(message = "Guided flow cancelled.") {
     super(message);
     this.name = "PromptCancelError";
   }
@@ -342,8 +342,8 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
 
       return unwrapPromptValue(
         await selectWithFooter(label, options, input, output),
-        "Guided TUI cancelled.",
-        () => clackCancel("Guided TUI cancelled."),
+        "Guided flow cancelled.",
+        () => clackCancel("Guided flow cancelled."),
       );
     },
     async multiselect<T extends string>(label: string, options: readonly PromptOption<T>[]) {
@@ -353,8 +353,8 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
 
       return unwrapPromptValue(
         await multiselectWithFooter(label, options, input, output),
-        "Guided TUI cancelled.",
-        () => clackCancel("Guided TUI cancelled."),
+        "Guided flow cancelled.",
+        () => clackCancel("Guided flow cancelled."),
       );
     },
     async confirm(question: string) {
@@ -362,7 +362,7 @@ export function createPromptIO(input = process.stdin as Readable, output = proce
         throw new Error("Interactive prompt unavailable.");
       }
 
-      return unwrapPromptValue(await confirmWithFooter(question, input, output), "Guided TUI cancelled.", () => clackCancel("Guided TUI cancelled."));
+      return unwrapPromptValue(await confirmWithFooter(question, input, output), "Guided flow cancelled.", () => clackCancel("Guided flow cancelled."));
     },
     close() {
       return;

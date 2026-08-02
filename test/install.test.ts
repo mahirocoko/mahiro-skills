@@ -16,12 +16,14 @@ describe("install", () => {
       const installedSkillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "project", "SKILL.md");
       const installedCommandPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "project.md");
       const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        schemaVersion: number;
         agent: string;
         scope: string;
         root: string;
         sourceRepoPath: string;
         installedSkills: string[];
         installedCommands: string[];
+        targetStates: { name: string; kind: string; sourceHash: string; installedHash: string }[];
         installedAt: string;
       };
 
@@ -36,12 +38,19 @@ describe("install", () => {
       expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development with ghq plus .agent-state-backed tracking.");
       expect(existsSync(receiptPath)).toBe(true);
       expect(receipt.agent).toBe("opencode");
+      expect(receipt.schemaVersion).toBe(2);
       expect(receipt.scope).toBe("local");
       expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode"));
       expect(receipt.sourceRepoPath.length).toBeGreaterThan(0);
       expect(result.installed).toEqual(["project"]);
       expect(receipt.installedSkills).toEqual(["project"]);
       expect(receipt.installedCommands).toEqual(["project"]);
+      expect(receipt.targetStates).toHaveLength(2);
+      expect(receipt.targetStates.map(({ name, kind }) => ({ name, kind }))).toEqual([
+        { name: "project", kind: "skill" },
+        { name: "project", kind: "command" },
+      ]);
+      expect(receipt.targetStates.every(({ sourceHash, installedHash }) => sourceHash.length === 64 && installedHash.length === 64)).toBe(true);
       expect(receipt.installedAt.length).toBeGreaterThan(0);
     } finally {
       temp.cleanup();
@@ -76,6 +85,31 @@ describe("install", () => {
       const updated = install("opencode", "local", initialReceipt.installedSkills, true, temp.env);
       const updatedReceipt = JSON.parse(readFileSync(updated.receiptPath!, "utf8"));
       expect(updatedReceipt.description).toBe(initialReceipt.description);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("merges incremental installs into the existing receipt", () => {
+    const temp = makeTempEnv();
+    try {
+      install("opencode", "local", ["project"], false, temp.env);
+      const result = install("opencode", "local", ["recap"], false, temp.env);
+      const receipt = JSON.parse(readFileSync(result.receiptPath!, "utf8")) as {
+        installedSkills: string[];
+        installedCommands: string[];
+        targetStates: { name: string; kind: string }[];
+      };
+
+      expect(result.installed).toEqual(["recap"]);
+      expect(receipt.installedSkills).toEqual(["project", "recap"]);
+      expect(receipt.installedCommands).toEqual(["project", "recap"]);
+      expect(receipt.targetStates.map(({ name, kind }) => `${kind}:${name}`)).toEqual([
+        "skill:project",
+        "command:project",
+        "skill:recap",
+        "command:recap",
+      ]);
     } finally {
       temp.cleanup();
     }

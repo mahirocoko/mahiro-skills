@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -59,7 +59,13 @@ curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/insta
 bun ./src/cli.ts
 ```
 
-The TUI wraps the same planner, installer, and uninstaller core. Use it when you want menus for install, uninstall, update installed receipts, list installed items, or inspect receipt detail.
+The default command opens a persistent full-screen Skill Manager when the terminal is interactive and at least `72x18`. Its guided flow is `Target → Action → Skills → Review → Result`: choose All agents or a custom multi-agent set, choose one scope, choose Install/Update/Uninstall/Inspect, then review the exact per-agent plan before any write. Scope defaults to `global`; an explicit `--scope local` remains authoritative. Inspect stays read-only from Skills detail.
+
+Primary keys are visible on every screen: `↑/↓` focus, `Space` select or acknowledge, `Enter` continue, `Esc` back (or clear a query first), and `Ctrl+C` exit. Skills starts with a visible **Select all eligible** row that toggles every actionable item in the current filter. No mnemonic action key is required. Review is non-destructive until Enter, requires collision and modified/legacy acknowledgements, and explains sequential execution without whole-batch rollback. Result keeps per-agent receipt evidence and marks later agents Not attempted after the first thrown failure.
+
+Status is evidence-based rather than guessed: `current`, `outdated`, `modified`, `missing`, and `legacy` distinguish source updates, local target drift, missing targets, and older receipts that predate fingerprints. Unreadable receipts are shown as unknown; any unreadable selected agent blocks the batch until the target selection is corrected.
+
+Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Explicit `tui --mode ...`, non-interactive execution, small terminals, and `TERM=dumb` retain the guided direct/guided contracts; a small interactive launch prints one concise size message before falling back.
 
 ### Installer truth
 
@@ -78,7 +84,7 @@ Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, a
 
 Current workflow highlights:
 
-- **Interactive install/uninstall/update TUI plus non-interactive `guided --mode update --yes`** — open with `bun ./src/cli.ts`; supports Install, Uninstall, Update installed, List installed, and Receipt detail. Uninstall can target one agent or all agents, then remove selected receipt-recorded items or everything for the chosen scope. Prompt hints live at the bottom of active prompts, and `Esc` exits cleanly.
+- **Step-first full-screen Skill Manager plus guided compatibility flow** — open with `bun ./src/cli.ts` for `Target → Action → Skills → Review → Result`, exact safety paths, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long Herdr jobs can detach into a private durable watcher registry for later collection.

@@ -127,17 +127,22 @@ For successful install:
 
 ## Guided / TUI command checks
 
-- TUI install confirms before writing unless `--yes` is provided
-- collision handling uses the same overwrite rules as direct `install`
-- interactive item selection offers a default-bundle shortcut and multiselect over inventory (not numbered picks)
-- interactive agent selection offers either **All agents** or checkbox-style agent multiselect
-- without `--mode`, the home menu can run Install, Uninstall, Update installed, List, Receipt detail, and Exit in one session; Update installed refreshes all non-empty receipt-recorded installs automatically, uses one batch confirmation after previews, and does not ask for agent, scope, or item choices; with `--mode`, only plan/install/uninstall/list run once and exit
-- declining overwrite or final install from the **home** loop returns to the home menu (soft cancel); the same decline with **explicit `--mode`** still fails with an error
-- interactive list mode filters installed summaries to the selected agents without asking for scope first; non-interactive guided/tui list still returns all receipt summaries without an agent prompt
-- receipt detail shows readable receipt metadata plus reconstructed target files grouped by skill/command when installed names are present
+- interactive `tui` without `--mode` enters the alternate screen only for a non-dumb TTY at least `72x18`; small/dumb/non-interactive and explicit-mode calls use guided compatibility behavior, with one concise size message on interactive fallback
+- terminal lifecycle restores the previous raw-mode state, cursor, alternate screen, and input flow on normal exit, `Esc`, `Ctrl+C`, thrown errors, and resize redraw failures; split escape sequences remain buffered
+- the full-screen renderer stays within reported terminal display width for ASCII, Thai, combining characters, emoji, color, and no-color output; safety paths hard-wrap without ellipses
+- the shared stepper is `Target › Action › Skills › Review › Result`; Target covers All/custom exclusivity, every supported agent, one scope radio, empty-selection blocking, and CLI multi-agent preselection
+- Action lists Install, Update, Uninstall, and Inspect with plain descriptions and arrow/Enter navigation
+- Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Letta Code skills-only detail
+- `Space` toggles enabled rows; Enter reaches Review for writes or read-only Inspect detail; Esc clears a query first and then backs out
+- Review is full-screen and scrollable, shows per-agent plans/roots/actions/skips/warnings plus exact collision/overwrite/remove paths, explains sequential execution without whole-batch rollback, and requires overwrite plus modified/legacy acknowledgements before Enter can run
+- Review replans immediately before execution and stays in Review with an error if the safety shape changed; entering Review itself never writes
+- manager install skips receipt-installed names, Update runs only selected applicable names per agent, and Uninstall delegates receipt-recorded filtering to the existing core APIs
+- Result preserves per-agent success/skips/errors/receipt evidence, stops at the first thrown failure, marks later agents Not attempted, and aggregates Completed, Completed with skips, Partially completed, Failed, or No changes
+- v2 receipts distinguish current/outdated/modified/missing; legacy receipts remain explicitly unverified, and malformed receipts surface an actionable error without crashing catalog browsing
+- guided install still confirms before writing unless `--yes` is provided, and collision handling still uses the same overwrite rules as direct `install`
+- guided item/agent multiselect, Home soft-cancel, list filtering, receipt detail, and multi-agent batch summaries remain covered independently from the full-screen manager
 - direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`; direct uninstall also accepts `--agent all`
 - `audit` reads only explicit Letta `Skill` tool-call records, supports agent/date filters, never returns transcript text, and reports unobserved packaged skills separately from names outside the current repo catalog
-- multi-agent plan/install/uninstall in the TUI end with a batch summary note card; multi-agent install and uninstall use one batch confirmation after all previews, not one confirmation per agent
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete
 

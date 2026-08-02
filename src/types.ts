@@ -129,7 +129,15 @@ export interface InstallPlan {
   warnings: string[];
 }
 
+export interface InstallReceiptTargetState {
+  name: string;
+  kind: InstallUnitKind;
+  sourceHash: string;
+  installedHash: string;
+}
+
 export interface InstallReceipt {
+  schemaVersion?: 2;
   agent: ScopedAgent;
   scope: InstallScope;
   root: string;
@@ -137,6 +145,7 @@ export interface InstallReceipt {
   sourceRepoPath: string;
   installedSkills: string[];
   installedCommands: string[];
+  targetStates?: InstallReceiptTargetState[];
   installedAt: string;
 }
 

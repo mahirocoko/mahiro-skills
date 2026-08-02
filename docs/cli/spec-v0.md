@@ -129,8 +129,8 @@ mahiro-skills manifest [--json]
 mahiro-skills search <query> [--json]
 mahiro-skills gaps [--json]
 mahiro-skills new <skill-name> --copy-template [--json]
-mahiro-skills tui [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
-mahiro-skills guided [items...] [--mode <plan|install|uninstall|list>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills tui [items...] [--mode <plan|install|uninstall|list|update>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
+mahiro-skills guided [items...] [--mode <plan|install|uninstall|list|update>] [--agent <agent> ...] [--scope <global|local>] [--overwrite] [--yes]
 ```
 
 ### Source catalog / agent-facing inventory
@@ -147,25 +147,17 @@ Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `
 
 ### Guided / TUI command behavior
 
-- `tui` and `guided` invoke the same implementation; both are interactive wrappers over the same `createPlan()`, `install()`, and `uninstall()` flows used by the direct commands
-- The TUI keeps workflow logic separate from menu/summary rendering: prompt I/O owns TTY detection/cancel/outro behavior and bottom-of-prompt keyboard hints, while view helpers own the compact startup wordmark, menu options, and preview/summary text
-- Active prompts show grounded keyboard help on the bottom hint line: arrow keys navigate, `Enter` selects, `Esc` / `Ctrl+C` cancels, `Space` toggles multiselect entries.
-- **Interactive home session (no `--mode`):** when stdin/stdout are interactive and no `--mode` is passed, the CLI opens a **home menu** first: Install, Uninstall, Update installed, List installed, Receipt detail, Exit. `Update installed` discovers install receipts from the receipt-derived list API, previews every non-empty receipt update, asks one batch `Proceed with update?` confirmation unless `--yes` is provided, and installs each receipt's recorded items with overwrite enabled. It does not prompt for agent, scope, or item choices. The human can run multiple actions in one process; choosing Exit returns the last completed result (or an empty result if nothing ran yet)
-- **Single-pass interactive (`--mode`):** with `--mode plan`, `--mode install`, `--mode uninstall`, or `--mode list`, the CLI runs that action once and returns (no home menu). `Update installed` stays in the TUI home flow and is not a new `--mode update` command. Declining overwrite or final install/uninstall confirmation **ends with an error** (same as today), not a home loop
-- **Home-loop soft cancel:** when using the home menu, declining collision overwrite or the final install confirmation **returns to the home menu** with a short note instead of terminating the whole TUI with an error
-- Non-interactive mode does not prompt; it requires `--mode` and, for `plan` / `install` / `uninstall`, `--agent` and `--scope`. `list` may run with `--mode list` only
-- Item selection uses a default-bundle shortcut plus **checkbox-style multiselect** (`Space` to toggle, `Enter` to confirm) over repo inventory, not numbered readline picks
-- **Interactive agent selection** uses the same checkbox-style multiselect for one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`, and also offers an explicit **All agents** shortcut. Plan and install run **sequentially per selected agent** for the same scope and item selection; multiple agents yield an **array** of plans or install results in JSON output. Passing `--agent` on a single-pass interactive run skips the agent prompt; repeated flags and comma-separated values are both valid
-- Uninstall prompts for one or more agents (including **All agents**), one scope, then either **all installed items** from the selected receipts or selected installed item names. A selected item removes both the recorded skill and command target for that name when both exist. Multi-agent uninstall shows per-agent previews but uses one batch confirmation instead of asking once per agent.
-- Direct `uninstall` accepts repeated/comma-separated `--agent` values plus `--agent all`; omitting items removes every skill/command recorded in each selected receipt for that scope.
-- Plan and install flows render a normalized plan summary; install also shows an **install preview** with `source -> target` lines and `[collision]` markers before overwrite and confirmation prompts
-- When plan or install runs against multiple agents in the TUI, the flow ends with a lightweight **batch summary** card that aggregates one line per agent. Multi-agent install shows every agent preview first, then uses one overwrite confirmation if needed and one final batch confirmation instead of asking per agent.
-- Update installed returns an empty result with a note when no receipts exist, and skips empty receipts with a note instead of prompting for replacement choices
-- Install confirmation remains explicit unless `--yes` is provided
-- Prompt cancellation is centralized and exits before side effects; the empty home exit uses a terminal outro instead of a note card
-- Home-loop wizard prompts include a `Back to Home` option for keyboard navigation; choosing it returns to Home without planning, installing, or listing
-- Interactive `list` summarizes installed items per agent and scope (grouped cards) **filtered to the agents you select**; non-interactive `guided --mode list` still lists all receipts without an agent prompt
-- **Receipt detail** prompts for one scope, then one or more agents, and shows a readable receipt card **for each agent that has a receipt**: summary metadata, root/source paths, installed skill and command counts, and grouped target files. It reconstructs target files per receipt by running the same planner over the union of installed names, but renders them as `from:` / `to:` rows instead of dense `source -> target` lines.
+- `tui` and `guided` share the same planner, installer, list, and receipt-driven uninstaller core but own different interaction shells.
+- **Full-screen manager:** interactive `tui` without `--mode` uses an alternate screen when the terminal is not `TERM=dumb` and is at least `72x18`. Its fixed flow is `Target → Action → Skills → Review → Result`; it restores raw mode, cursor, alternate screen, and input flow on every exit path and redraws on resize.
+- **Target:** All agents is first and exclusive; selecting an individual changes the model to a custom set. Every supported agent is selectable, one local/global scope radio applies to the batch, scope defaults to `global`, and explicit CLI-supplied agents/scope remain authoritative.
+- **Action:** Install, Update, Uninstall, and Inspect are plain-language choices. **Skills** derives a per-agent inventory from selected snapshots: source names, receipt-only names for Inspect/Uninstall, coverage counts, disabled no-ops, command capability, and explicit unknown state for unreadable receipts.
+- **Review:** a full scrollable step, not an overlay. It shows every selected agent, root, action, skip, warning, collision, overwrite/remove path, and the sequential/no-rollback rule. Paths are hard-wrapped rather than shortened. Enter is the first point that may execute; collision and modified/legacy acknowledgements are required, and any unreadable selected-agent receipt blocks the batch until Target is corrected.
+- **Result:** agents execute sequentially. The first thrown failure stops the batch and later agents are Not attempted. The screen preserves per-agent success, skips, errors, and receipt evidence plus Completed, Completed with skips, Partially completed, Failed, or No changes aggregation.
+- Primary controls are visible `↑/↓`, `Space`, `Enter`, `Esc`, and `Ctrl+C`; the flow does not require mnemonic action keys. Search remains optional and Esc clears its query before backing out.
+- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Letta Code command omission remains adapter-derived and is shown as skills-only.
+- `guided` remains the prompt-by-prompt compatibility workflow: Home offers Install, Uninstall, Update installed, List installed, Receipt detail, and Exit; nested prompts retain Back-to-Home and explicit confirmation behavior.
+- Explicit `tui --mode ...`, small terminals, and `TERM=dumb` route to the guided compatibility path. Non-interactive `tui`/`guided` also use that path and retain their established required-flag rules.
+- Guided item/agent selection, direct repeated/comma-separated `--agent` flags, `--agent all`, and receipt detail remain unchanged and continue to use the shared core APIs.
 
 ### Items
 
@@ -246,6 +238,8 @@ v0 rules:
 
 Repeated installs with unchanged source content should converge to the same target state.
 
+Incremental installs merge newly installed skill/command names and target fingerprints into the matching existing receipt. They do not discard earlier receipt entries merely because the current invocation names only one new item; the command result still reports only targets written by the current invocation.
+
 v0 requires an install receipt written under the adapter root.
 
 Recommended receipt path pattern:
@@ -256,12 +250,24 @@ Recommended receipt path pattern:
 
 Receipt fields:
 
+- schema version (`2` for fingerprinted receipts; absent means legacy)
 - agent
 - scope
 - installed skills
 - installed commands
 - source repo path
+- per-target kind/name, source-content hash, and expected installed-content hash
 - install timestamp
+
+Fingerprint status rules:
+
+- `current`: current source and installed target match the receipt hashes.
+- `outdated`: source changed while the installed target still matches its recorded installed hash.
+- `modified`: installed target differs from its recorded installed hash.
+- `missing`: a receipt-recorded target is absent.
+- `legacy`: the receipt has no complete v2 fingerprint evidence.
+
+Hashes are deterministic SHA-256 fingerprints over sorted path entries, file content, symlink destinations, and permission bits. They are freshness/drift evidence, not signatures or a trust boundary.
 
 ## Uninstall behavior
 
@@ -358,7 +364,6 @@ mahiro-skills plan gemini watch --agent gemini --scope local
 
 ## Deferred after v0
 
-- Uninstall command
 - Standalone sync/update CLI command
 - Registry publishing
 - Zip artifact generation

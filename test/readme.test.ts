@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.76 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -57,7 +57,10 @@ describe("README", () => {
     expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.");
     expect(content).toContain("Current workflow highlights:");
     expect(content).toContain("The canonical catalog is default-or-absent");
-    expect(content).toContain("Interactive install/uninstall/update TUI");
+    expect(content).toContain("Step-first full-screen Skill Manager plus guided compatibility flow");
+    expect(content).toContain("Target → Action → Skills → Review → Result");
+    expect(content).toContain("No mnemonic action key is required");
+    expect(content).toContain("`current`, `outdated`, `modified`, `missing`, and `legacy`");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("backend-specific same-prompt fanout");
     expect(content).toContain("Sprite asset pipeline");

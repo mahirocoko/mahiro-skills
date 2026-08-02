@@ -28,6 +28,8 @@ describe("list", () => {
       expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
       expect(receipt?.installedSkills).toEqual(["project"]);
       expect(receipt?.installedCommands).toEqual(["project"]);
+      expect(receipt?.schemaVersion).toBe(2);
+      expect(receipt?.targetStates).toHaveLength(2);
       expect(receipt?.installedAt.length).toBeGreaterThan(0);
     } finally {
       temp.cleanup();

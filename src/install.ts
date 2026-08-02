@@ -1,9 +1,10 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
 import { dirname, extname, join } from "path";
 
+import { hashPath } from "./content-hash";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
-import type { InstallReceipt, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
+import type { InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
 const installedDescriptionPrefix = "Mahiro Skill | ";
 
@@ -95,11 +96,36 @@ function resolveStatus(installedCount: number, skippedCount: number): PlanStatus
   return skippedCount > 0 ? "skipped" : "unsupported";
 }
 
-function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, description: string | undefined, installedSkills: string[], installedCommands: string[], repoRoot: string): string {
+function targetState(target: InstallTarget): InstallReceiptTargetState {
+  const sourceHash = hashPath(target.source);
+  const installedHash = hashPath(target.target);
+
+  if (!sourceHash || !installedHash) {
+    throw new Error(`Unable to fingerprint installed target '${target.name}' (${target.kind}).`);
+  }
+
+  return {
+    name: target.name,
+    kind: target.kind,
+    sourceHash,
+    installedHash,
+  };
+}
+
+function mergeTargetStates(existing: InstallReceiptTargetState[], current: InstallReceiptTargetState[]): InstallReceiptTargetState[] {
+  const states = new Map(existing.map((state) => [`${state.kind}:${state.name}`, state]));
+  for (const state of current) {
+    states.set(`${state.kind}:${state.name}`, state);
+  }
+  return [...states.values()];
+}
+
+function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, description: string | undefined, installedSkills: string[], installedCommands: string[], targetStates: InstallReceiptTargetState[], repoRoot: string): string {
   const receiptPath = join(root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
   ensureParent(receiptPath);
 
   const receipt: InstallReceipt = {
+    schemaVersion: 2,
     agent,
     scope,
     root,
@@ -107,6 +133,7 @@ function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, des
     sourceRepoPath: repoRoot,
     installedSkills,
     installedCommands,
+    targetStates,
     installedAt: new Date().toISOString(),
   };
 
@@ -131,17 +158,20 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
     copyTarget(target, overwrite);
   }
 
-  const installedSkills = plan.skills.map((entry) => entry.name);
-  const installedCommands = plan.commands.map((entry) => entry.name);
-  const receiptPath = writeReceipt(agent, scope, plan.root, description, installedSkills, installedCommands, sourceRepoPath);
+  const installedNowSkills = plan.skills.map((entry) => entry.name);
+  const installedNowCommands = plan.commands.map((entry) => entry.name);
+  const installedSkills = unique([...(existingReceipt?.installedSkills ?? []), ...installedNowSkills]);
+  const installedCommands = unique([...(existingReceipt?.installedCommands ?? []), ...installedNowCommands]);
+  const targetStates = mergeTargetStates(existingReceipt?.targetStates ?? [], [...plan.skills, ...plan.commands].map(targetState));
+  const receiptPath = writeReceipt(agent, scope, plan.root, description, installedSkills, installedCommands, targetStates, sourceRepoPath);
 
   return {
-    status: resolveStatus(installedSkills.length + installedCommands.length, plan.skipped.length),
+    status: resolveStatus(installedNowSkills.length + installedNowCommands.length, plan.skipped.length),
     agent,
     scope,
     root: plan.root,
     description,
-    installed: unique([...installedSkills, ...installedCommands]),
+    installed: unique([...installedNowSkills, ...installedNowCommands]),
     skipped: plan.skipped,
     warnings: plan.warnings,
     receiptPath,

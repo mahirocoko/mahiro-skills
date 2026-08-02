@@ -9,6 +9,8 @@ import { auditSkillUsage } from "./audit";
 import { runGuided } from "./guided";
 import { getRepoGaps, getRepoManifest, searchSkillCatalog } from "./repo";
 import { createPromptIO, isPromptCancelError } from "./prompt";
+import { runTui } from "./tui";
+import { canUseFullScreenTerminal, createTerminal } from "./terminal";
 import { supportedAgents, type CliOptions, type InstallScope, type ScopedAgent } from "./types";
 
 const VALID_CLI_AGENTS = new Set<ScopedAgent>(supportedAgents);
@@ -242,8 +244,34 @@ async function main(): Promise<void> {
       }), null, 2));
       return;
     }
-    case "guided":
+    case "guided": {
+      const io = createPromptIO();
+      const result = await runGuided(options, process.env, io);
+      if (!io.isInteractive) {
+        console.log(JSON.stringify(result, null, 2));
+      }
+      return;
+    }
     case "tui": {
+      if (options.mode === undefined) {
+        const terminal = createTerminal();
+        if (canUseFullScreenTerminal(terminal, process.env)) {
+          await runTui({
+            terminal,
+            env: process.env,
+            initialAgents: options.agents.length > 0 ? options.agents : undefined,
+            initialScope: options.scope,
+            initialItems: options.items,
+          });
+          return;
+        }
+
+        if (terminal.isInteractive) {
+          const size = terminal.getSize();
+          console.log(`Full-screen TUI unavailable at ${size.columns}x${size.rows}; using guided mode.`);
+        }
+      }
+
       const io = createPromptIO();
       const result = await runGuided(options, process.env, io);
       if (!io.isInteractive) {

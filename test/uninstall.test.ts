@@ -26,6 +26,10 @@ describe("uninstall", () => {
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "recap.md"))).toBe(true);
       expect(receipt?.installedSkills).toEqual(["recap"]);
       expect(receipt?.installedCommands).toEqual(["recap"]);
+      expect(receipt?.targetStates?.map(({ name, kind }) => ({ name, kind }))).toEqual([
+        { name: "recap", kind: "skill" },
+        { name: "recap", kind: "command" },
+      ]);
     } finally {
       temp.cleanup();
     }
