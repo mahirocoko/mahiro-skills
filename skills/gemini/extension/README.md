@@ -66,12 +66,32 @@ If you change `background-src.js`, rebuild `background.js` before reloading the 
 | `get_html`     | tabId?, maxChars?  | Get page HTML (truncated)  |
 | `get_state`    | tabId?             | Get Gemini page state      |
 | `chat`         | tabId, text        | Send message to Gemini     |
+| `gem_submit_v1` | version, requestId, gemUrl, currentUrl, tabId, sources, message hashes, uploadReceipt, timeoutMs | Verify Browser Control's trusted pre-upload, then submit once |
+| `gem_start_v1` | version, requestId, gemUrl, images, message, timeoutMs, tabId? | Transactional two-image Custom Gem run |
+| `reload_extension_v1` | id | Acknowledge then reload this local extension; use after a reviewed local build |
 | `inject_badge` | tabId, text?       | Show visual badge          |
 | `select_model` | tabId, model       | Switch model (fast/pro/etc) |
 | `list_tools`   | tabId?             | List Tools menu items + disabled state |
 | `select_tool`  | tabId?, tool       | Activate a tool by name (e.g. create image) |
 | `create_image` | tabId?, prompt     | Select Create image + send prompt |
 | `create_with_tool` | tabId?, tool, prompt | Generic tool + prompt flow |
+
+### `gem_submit_v1` trusted-upload Custom Gem submit
+
+The production Studio route does not automate Gemini's native file chooser through synthetic page clicks. Mahiro Browser Control's Trusted build owns exact-tab creation and separate reviewed CDP chooser uploads in Product-then-Creator order, proving visible attachment-count transitions `0 → 1 → 2`. It persists one bounded attestation binding request UUID, message hash, exact tab/URL, receipt, and ordered source metadata, then publishes `gem_submit_v1` with metadata only. Local Gemini Proxy validates the complete exact shape, fingerprints and durably reserves the request before browser work, verifies exactly two visible media tiles, and atomically consumes that attestation through Chrome's sender-ID-authenticated extension channel before Send. Altered in-flight duplicates fail conflict; restart-incomplete requests and compacted completed tombstones never resend. The bounded durable store fails closed at capacity rather than evicting tombstones. Current Gemini image tiles omit filenames; no base64, local path, selector, debugger field, or attestation secret crosses MQTT.
+
+### `gem_start_v1` legacy standalone Custom Gem command
+
+This compatibility command is deliberately narrower than the legacy `chat` path, but it is no longer the current Studio upload owner. Its request must use:
+
+- `version: "custom-gem-browser-command-v1"` and a canonical UUID `requestId`;
+- `gemUrl: "https://gemini.google.com/gem/d6f1958dff66"` exactly;
+- exactly two ordered `images`: `product_gallery`, then `creator_image`. Each image has a basename `filename`, `mimeType` of `image/jpeg`, `image/png`, or `image/webp`, decoded raw-byte `bytes`, lowercase/uppercase-safe 64-character `sha256`, and canonical `base64`;
+- decoded image limits of 3 MiB per image and 4 MiB total, a non-empty minimal `message` no larger than 8192 UTF-8 bytes, a 64 KiB raw-response ceiling, and `timeoutMs` from 30000 through 360000.
+
+The extension decodes, hashes, and signature-checks both images before touching a tab. An explicit `tabId` is used exactly; when omitted, one inactive exact-URL tab is created. There is no active-tab or first-tab fallback. The result uses `version: "custom-gem-browser-result-v1"`, echoes `requestId`, reports `state: "succeeded" | "failed" | "ambiguous"`, ordered source hashes/bytes, `messageSha256`, bounded success-only response fields, and stage/error details. A request is replayed from cache by `requestId`; an ambiguous submission quarantines its tab and is never resent automatically.
+
+The browser path is fail-closed: it requires stable composer/upload/send selectors, exactly two visible filename-verifiable attachment markers, the pinned response-selector family with a pre-send node snapshot (which may be empty on a fresh Gem page), one Send click, and one new complete stable assistant response. It does not return DOM, HTML, or unrelated page text. If the current Custom Gem DOM cannot prove those conditions, the command returns `failed` or `ambiguous` rather than claiming success.
 
 ### New Flow UI Commands (Veo 3.1, Ingredients Mode)
 
