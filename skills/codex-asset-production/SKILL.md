@@ -18,7 +18,7 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 | Sprite sheets, animation frames, raster bodies, frame QA, GIF previews, promotion gates | `sprite-workflow` |
 | Runtime VFX design, timing, emitters, shaders, and integration architecture | `vfx-workflow` |
 | Source textures, dicut, atlases, and bounded composite QA for game VFX | `codex-asset-production` |
-| Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
+| Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 
 ## Steps
@@ -107,4 +107,4 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 - Scaling large source/clean UI assets directly in production CSS after the runtime size is known, which can hide blurry edges or reveal unbalanced transparent padding later.
 - Leaving manifests with stale `pending` or overconfident status after a cleanup/QA pass.
 
-Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, `sprite-workflow` for raster body/sprite-sheet/frame promotion gates, `vfx-workflow` for runtime VFX design and architecture, and `direct-cli` when opening bounded Codex/Gemini/Agy lanes.
+Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, `sprite-workflow` for raster body/sprite-sheet/frame promotion gates, `vfx-workflow` for runtime VFX design and architecture, and `direct-cli` when opening bounded Cursor/Agy/Codex/Pi lanes.

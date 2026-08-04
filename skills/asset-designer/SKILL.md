@@ -23,7 +23,7 @@ Phase role: `asset-designer` is the asset director. It answers **what assets sho
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
 | Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
 | Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
-| Open tmux panes for Gemini/Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
+| Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 
 Recommended chain:

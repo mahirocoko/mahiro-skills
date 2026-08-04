@@ -259,16 +259,17 @@ describe("install", () => {
       expect(statSync(installedFanoutPath).mode & 0o111).not.toBe(0);
       expect(existsSync(installedJobsPath)).toBe(true);
       expect(statSync(installedJobsPath).mode & 0o111).not.toBe(0);
-      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback");
+      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback");
       expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback");
+      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback");
       expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback");
-      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback");
+      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback");
+      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback");
       expect(readFileSync(installedPlaybookPath, "utf8")).not.toContain("## Gemini CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Pi direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh backend container, narrow scope, pane-first truth**");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
@@ -290,11 +291,12 @@ describe("install", () => {
       expect(existsSync(installedCommandPath)).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "direct-cli.md"))).toBe(false);
       expect(readFileSync(installedCommandPath, "utf8")).toContain(
-        'description = "Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through Herdr-managed panes with a tmux fallback. Use when you want a pane-first direct CLI lane, narrow current-worktree follow-up, or fresh-session recovery."',
+        'description = "Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback. Use when you want a pane-first direct CLI lane, ask to use Pi or ใช้ Pi, need narrow current-worktree follow-up, or need fresh-session recovery."',
       );
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Pi direct playbook");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
       temp.cleanup();

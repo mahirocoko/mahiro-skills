@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex,
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, motion design, and web asset workflows.
+Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex/Pi lanes, docs bootstrapping, research, video learning, motion design, and web asset workflows.
 
 ## Contents
 
@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -87,7 +87,7 @@ Current workflow highlights:
 - **Step-first full-screen Skill Manager plus guided compatibility flow** — open with `bun ./src/cli.ts` for `Target → Action → Skills → Review → Result`, exact safety paths, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
-- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long Herdr jobs can detach into a private durable watcher registry for later collection.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, Codex, and Pi pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. `use Pi` / `ใช้ Pi` selects the Pi lane; Pi uses an explicit tool allowlist and provider/model preflight. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs can detach into a private durable watcher registry for later collection.
 - **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 - **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
@@ -146,7 +146,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md guidance that makes agents prefer `cocoindex-code` / `ccc` for semantic code search and repo exploration. |
-| `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, or Codex lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection. |
+| `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, Codex, or bounded Pi lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection where the lane has named-agent lifecycle. |
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `game-production` | `/game-production` | You need a whole-game production inventory, maturity/readiness audit, specialist-lane plan, cross-domain QA, or release gate. |
@@ -175,7 +175,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch repo-local AGENTS.md so agents prefer CocoIndex Code for semantic code search |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Audit active context contracts, bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, and apply the Mahiro style lens |
-| Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, multi-pane fanout, transcript lanes |
+| Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, bounded Pi, supported multi-pane fanout, transcript lanes |
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
@@ -188,7 +188,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Multi-pane jobs use one named Herdr tab or tmux session. Detached Phase 1 jobs are Herdr-only and persist watcher/results for later `list`/`show`/`collect`; they do not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached Phase 1 jobs are Herdr-only and persist watcher/results for later `list`/`show`/`collect`; they do not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

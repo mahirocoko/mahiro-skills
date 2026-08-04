@@ -168,6 +168,12 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("explicit `gemini-3.5-flash-high`");
     expect(skill).toContain("Codex CLI and npm stable updated from `0.144.6` to `0.145.0`");
     expect(skill).toContain("272,000-token context");
+    expect(skill).toContain("## Pi Lane Contract");
+    expect(skill).toContain("`/direct-cli pi`, \"use Pi\", and `ใช้ Pi`");
+    expect(skill).toContain("`pi --list-models`");
+    expect(skill).toContain("`~/.9router-free/pi-pilot/run-pi.sh`");
+    expect(skill).toContain("`read,edit,write,grep,find,ls`");
+    expect(skill).toContain("Pi `--detach` and Pi same-prompt fanout");
     expect(skill).not.toContain("gpt-5.3-codex-high");
     expect(skill).not.toContain("gpt-5.3-codex-high-fast");
     expect(skill).not.toContain("Gemini CLI");
@@ -221,6 +227,19 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Luna exposes low through max and must not be launched with ultra");
     expect(playbook).toContain("`gpt-5.3-codex-spark` + `high`");
     expect(playbook).toContain("Codex CLI: local and npm stable updated from `0.144.6` to `0.145.0`");
+    expect(playbook).toContain("## Pi direct playbook");
+    expect(playbook).toContain('herdr agent start "$PI_AGENT" --kind pi');
+    expect(playbook).toContain('herdr pane run "$PI_PANE" "$PI_COMMAND"');
+    expect(playbook).toContain("accepts `<PANE_ID> <COMMAND>...`");
+    expect(playbook).toContain('herdr pane send-text "$PI_PANE"');
+    expect(playbook).toContain("Generic-pane Pi has no named-agent lifecycle");
+    expect(playbook).toContain("Pi `0.83.0`");
+    expect(playbook).toContain("`9router-free / ollama/minimax-m3`");
+    expect(playbook).toContain("never pass literal credentials on the command line");
+    expect(playbook).toContain('PI_PROVIDER="${PI_PROVIDER:?Select PI_PROVIDER from the live Pi model list}"');
+    expect(playbook).toContain('PI_MODEL="${PI_MODEL:?Select PI_MODEL from the live Pi model list}"');
+    expect(playbook).not.toContain('PI_PROVIDER="9router-free"');
+    expect(playbook).not.toContain('PI_MODEL="ollama/minimax-m3"');
     expect(playbook).not.toContain("gpt-5.3-codex-high");
     expect(playbook).not.toContain("gpt-5.3-codex-high-fast");
     expect(playbook).not.toContain("Gemini CLI");
@@ -246,6 +265,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("`gpt-5.6-sol` with high reasoning");
     expect(readme).toContain("`gpt-5.6-sol` ultra");
     expect(readme).toContain("`gpt-5.3-codex-spark` high");
+    expect(readme).toContain("`use Pi` or `ใช้ Pi`");
+    expect(readme).toContain("Pi has no per-tool approval popup");
     expect(readme).not.toContain("Gemini CLI");
     expect(readme).not.toContain("/direct-cli gemini");
 
@@ -268,6 +289,11 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("`claude-fable-5-thinking-xhigh`");
       expect(wrapper).toContain("`gpt-5.3-codex-spark` high");
       expect(wrapper).toContain("`codex debug models`");
+      expect(wrapper).toContain("`~/.9router-free/pi-pilot/run-pi.sh`");
+      expect(wrapper).toContain("first positional lane token is `pi`");
+      expect(wrapper).toContain("Do not substring-match words such as `pipeline`");
+      expect(wrapper).not.toContain("containing `pi`");
+      expect(wrapper).toContain("Reject Pi `--detach` and Pi fanout");
       expect(wrapper).toContain("reject any fallback warning or visible model mismatch");
       expect(wrapper).not.toContain("Antigravity `Claude Opus 4.6 (Thinking)`");
     }
@@ -276,6 +302,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("auto-selected Herdr/tmux backends");
     expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
+    expect(rootReadme).toContain("`use Pi` / `ใช้ Pi`");
+    expect(rootReadme).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
     expect(rootReadme).not.toContain("For Agy, prefer exact `--model` labels");
   });
 
@@ -290,6 +318,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("hash-bound provider receipt");
     expect(skill).toContain("do not let later dicut, manifest, or mechanical QA upgrade it");
     expect(skill).toContain("source-ready-normalization-required");
+    expect(skill).toContain("bounded Cursor/Agy/Codex/Pi lanes");
+    expect(skill).not.toContain("bounded Codex/Gemini/Agy lanes");
   });
 
   test("goal skill describes Goal Mode without old cockpit references", () => {

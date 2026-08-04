@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.77 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -63,6 +63,8 @@ describe("README", () => {
     expect(content).toContain("`current`, `outdated`, `modified`, `missing`, and `legacy`");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("backend-specific same-prompt fanout");
+    expect(content).toContain("`use Pi` / `ใช้ Pi` selects the Pi lane");
+    expect(content).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
     expect(content).toContain("Sprite asset pipeline");
     expect(content).toContain("bounds/silhouette jitter gates");
     expect(content).toContain("safe named promotion helpers");
