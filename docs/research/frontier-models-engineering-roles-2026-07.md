@@ -1,5 +1,7 @@
 # Frontier models: benchmark และบทบาทงาน engineering
 
+> **Status: historical research snapshot, not active routing guidance.** Do not reuse the model IDs, CLI versions, defaults, or recommendations below without fresh evidence. Current direct-lane routing is owned by [`skills/direct-cli/playbook.md`](../../skills/direct-cli/playbook.md); current Letta subagent routing is owned by [`skills/control-room-goals/references/execution-contract.md`](../../skills/control-room-goals/references/execution-contract.md).
+>
 > Research snapshot: 27 กรกฎาคม 2026 (เข้าถึงข้อมูลหลักช่วง 2026-07-27T08:54Z)  
 > เอกสารนี้เอา benchmark มาต่อกับงาน engineering ที่เจอจริง ไม่ได้พยายามประกาศว่า model ตัวไหน “เก่งที่สุด” แบบใช้ได้กับทุกงาน
 
@@ -450,7 +452,6 @@ Sol: ตรวจ methodology, code harness และ reproducibility
 ### Repo-local context
 
 - [GPT-5.5 vs GPT-5.6 routing research](./gpt-5-5-vs-5-6-routing-2026-07.md)
-- [GPT-5.6 workflow handoff](./gpt-5-6-workflow-handoff-conv-236.md)
 - [Conversation and model usage report](./mahiro-code-conversation-model-usage-2026-07.md)
 - [direct-cli skill](../../skills/direct-cli/SKILL.md)
 

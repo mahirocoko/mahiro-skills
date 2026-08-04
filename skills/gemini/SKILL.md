@@ -5,10 +5,7 @@ description: Control Gemini via MQTT WebSocket. Use when Gemini tab automation o
 
 # /gemini - Smooth MQTT Control for Gemini
 
-Direct control of Gemini browser tab via MQTT WebSocket. **Tab precision works!**
-
-For full identity-first video direction, prefer `/viral` as the primary workflow.
-Use `/gemini viral` when you specifically want the Gemini-routed variant inside the Gemini toolchain.
+Control a Gemini browser tab by exact tab ID through the bundled Local Gemini Proxy and MQTT. Treat precision and response capture as runtime claims: run the health/capability checks before reporting success.
 
 `$SKILL_DIR` = the installed `gemini` skill directory for the current agent.
 
@@ -24,7 +21,7 @@ Use `/gemini viral` when you specifically want the Gemini-routed variant inside 
 /gemini music "prompt"                    # Create music via Gemini tool
 /gemini guided "prompt"                   # Guided learning via Gemini tool
 /gemini tool "canvas" "prompt"            # Generic tool runner
-/gemini viral "fat cat"                   # Gemini-routed viral flow (use /viral for primary identity-first flow)
+/gemini viral "fat cat"                   # Identity-first Gemini prompt-pack flow
 /gemini doctor                             # Health checks (mqtt/state/tools/chat)
 /gemini canvas                            # Open Canvas mode
 ```
@@ -49,7 +46,7 @@ bun "$SKILL_DIR/scripts/doctor.ts" --account 1
 
 ## Viral Director Mode (Interview-First, Gemini-Routed)
 
-When user runs `/gemini viral ...`, mirror the same identity-first direction logic as `/viral`, then route final output through Gemini.
+When the user runs `/gemini viral ...`, use the identity-first direction logic in this section, then route the final prompt pack through Gemini when explicitly requested.
 
 ### Interaction Contract
 
@@ -178,7 +175,7 @@ If series mode is not one-off, add:
 - Treat tile surfaces as linked aliases: `editId`, `nameId`, `fe_id_*` UUID.
 - Always return explicit `selectionProof` and use it to verify deterministic selection.
 
-If the user asks for full presenter identity studio and Flow production orchestration, route to `/viral` and keep `/gemini viral` as the Gemini-routed execution path.
+`/gemini viral` owns prompt-pack preparation and the explicit Gemini handoff described here. Do not route to an absent standalone command or claim broader production-browser orchestration that this skill does not provide.
 
 ## Slash Command Router
 
@@ -203,9 +200,11 @@ Example:
 create_tab → tabId → inject_badge → chat → GEMINI RESPONDS!
 ```
 
+This is the intended sequence, not proof of success. Require a successful runtime postcondition from the exact tab before reporting that Gemini responded.
+
 ## Requirements
 
-1. **Gemini Proxy Extension** v2.8.8+ (green badge = connected)
+1. The bundled **Local Gemini Proxy** from `$SKILL_DIR/extension/`, built from `background-src.js` and loaded as an unpacked extension. Its own `manifest.json` is the version owner; do not compare it with an unrelated upstream extension version.
 2. **Mosquitto broker** with dual listeners:
    - TCP port 1883 (for CLI/Bun scripts)
    - WebSocket port 9001 (for browser extension)
@@ -222,7 +221,7 @@ Located in `scripts/` under the installed `gemini` skill directory:
 |--------|---------|
 | `status.ts` | Show extension status + all tabs (like debug console) |
 | `list-tabs.ts` | List all Gemini tabs with IDs |
-| `deep-research.ts` | Deep Research automation |
+| `deep-research.ts` | Fail-closed Deep Research-mode handoff |
 | `send-chat.ts` | Send single chat message |
 | `full-smooth.ts` | Complete flow demo |
 | `youtube-transcribe.ts` | Transcribe YouTube video |
@@ -234,7 +233,7 @@ Located in `scripts/` under the installed `gemini` skill directory:
 | `doctor.ts` | End-to-end health checks (`ping/state/tools/chat`) |
 | `viral-video.ts` | Build viral/ad/story/how-to video prompt workflow (direct or GEM mode) |
 
-**Note:** For YouTube learning, use `/watch` skill which includes Oracle integration.
+**Note:** For YouTube learning and local note capture, use `/watch`.
 
 **Runtime note:** `youtube-transcribe.ts` shells out to `mosquitto_pub` and `mosquitto_sub`, so those binaries must be installed and on `PATH`.
 
@@ -256,9 +255,9 @@ If you edit `skills/gemini/extension/background-src.js`, rebuild before loading 
 
 ```bash
 cd "$SKILL_DIR/scripts"
-node --experimental-strip-types full-smooth.ts
-node --experimental-strip-types send-chat.ts "Your message"
-node --experimental-strip-types youtube-transcribe.ts "https://youtube.com/..."
+bun full-smooth.ts
+bun send-chat.ts "Your message"
+bun youtube-transcribe.ts "https://youtube.com/..."
 bun "$SKILL_DIR/scripts/create-image.ts" "minimal logo with teal accents"
 bun "$SKILL_DIR/scripts/create-music.ts" "lofi ambient intro with warm synth"
 bun "$SKILL_DIR/scripts/canvas-prompt.ts" "draft an architecture decision record"
@@ -426,9 +425,9 @@ await send('inject_badge', {                    // 3. Verify targeting
 });
 await send('chat', {                            // 4. Send chat
   tabId: tab.tabId,
-  text: 'Hello from Claude!'
+  text: 'Hello from the local client!'
 });
-// → Gemini responds!
+// Observe the exact-tab response postcondition before reporting success.
 ```
 
 ## Troubleshooting
@@ -436,10 +435,10 @@ await send('chat', {                            // 4. Send chat
 | Issue | Solution |
 |-------|----------|
 | Commands timeout | Check topic names: `claude/browser/*` |
-| Chat doesn't type | Extension needs v2.8.8+ |
+| Chat doesn't type | Rebuild/reload the bundled extension, then run `doctor.ts` and inspect the exact-tab state/tool checks |
 | Tab not found | Use `list_tabs` to see available tabs |
 | Extension offline | Open extension sidebar |
 
 ## Extension Source
 
-`github.com/laris-co/claude-browser-proxy` (v2.8.8+)
+Canonical source is bundled under `$SKILL_DIR/extension/`. `background-src.js` owns the service-worker source and `background.js` is generated by the repo build command.

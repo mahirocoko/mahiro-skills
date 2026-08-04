@@ -99,7 +99,7 @@ Promotion requires all of:
 For chroma-key imagegen sheets, prefer this pipeline over ad-hoc commands:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/extract-chroma-sheet.py \
+python3 "$SKILL_DIR/scripts/extract-chroma-sheet.py" \
   --input outbox/raw-generated/candidate.png \
   --output-dir outbox/winner \
   --frames 8 \
@@ -113,8 +113,8 @@ python3 ~/.letta/skills/sprite-workflow/scripts/extract-chroma-sheet.py \
   --trim \
   --spill magenta
 
-python3 ~/.letta/skills/sprite-workflow/scripts/make-qa-previews.py outbox/winner/sprite-sheet.png
-python3 ~/.letta/skills/sprite-workflow/scripts/qa-sprite-sheet.py outbox/winner/sprite-sheet.png \
+python3 "$SKILL_DIR/scripts/make-qa-previews.py" outbox/winner/sprite-sheet.png
+python3 "$SKILL_DIR/scripts/qa-sprite-sheet.py" outbox/winner/sprite-sheet.png \
   --frames 8 \
   --frame-size 176x176 \
   --preserve-right-appendage \
@@ -128,7 +128,7 @@ If a QA gate fails, adjust extraction settings or regenerate from the same motio
 After extraction, run center and detached-sliver gates before promotion:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/qa-sprite-sheet.py outbox/winner/sprite-sheet.png \
+python3 "$SKILL_DIR/scripts/qa-sprite-sheet.py" outbox/winner/sprite-sheet.png \
   --frames 8 \
   --frame-size 176x176 \
   --allow-bottom-edge \
@@ -143,7 +143,7 @@ python3 ~/.letta/skills/sprite-workflow/scripts/qa-sprite-sheet.py outbox/winner
 If center drift is real but the candidate is otherwise good, align frames from the sheet rather than swapping candidates:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/center-align-frames.py \
+python3 "$SKILL_DIR/scripts/center-align-frames.py" \
   --input outbox/winner/sprite-sheet.png \
   --output-dir outbox/winner-centered \
   --frames 8 \

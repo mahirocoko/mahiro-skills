@@ -9,7 +9,7 @@ const since = sinceArg?.slice(8) || "6 months ago";
 const input = args.find((arg) => !arg.startsWith("--"));
 
 if (!input) {
-  console.log("Usage: bun skills/project/scripts/history.ts <slug|path> [--since=6months]");
+  console.log(`Usage: bun "${import.meta.path}" <slug|path> [--since=6months]`);
   process.exit(0);
 }
 

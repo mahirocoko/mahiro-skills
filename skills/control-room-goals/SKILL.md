@@ -77,7 +77,7 @@ Example structured application:
 
 ## Goal Mode commands and tools
 
-### Preferred Mahiro structured tools
+### Preferred Mahiro structured tools, when exposed
 
 - `mh_get_goal` — read current structured state and revision before planning or
   mutation.
@@ -87,10 +87,11 @@ Example structured application:
   criteria, manage blockers, or complete after the runtime audit.
 
 Add evidence before `claim_criterion`. Never claim or verify a human-owned
-criterion. Mahiro verifies it through `/mh-goal verify <criterion-id> [note]`.
+criterion. Mahiro verifies it through `/mh-goal verify <criterion-id> [note]`
+when that human command is exposed.
 Use the current `expected_revision` for every model mutation.
 
-Human commands such as `/mh-goal status`, `/mh-goal-status`, pause/resume,
+When exposed, human commands such as `/mh-goal status`, `/mh-goal-status`, pause/resume,
 verify, clear, force-complete, and abandoned-lock recovery remain inspection or
 explicit human-control surfaces; they are not the default creation path.
 
@@ -101,7 +102,7 @@ explicit human-control surfaces; they are not the default creation path.
 - **`UpdatePlan` owns immediate execution visibility**. Do not turn every small
   step into a Goal mutation.
 - **Execution Run is optional coordination for complex external lanes**. Use the
-  `mh_*_execution_run` tools only when multiple executors, worktrees, target
+  unified `mh_execution_run` tool only when multiple executors, worktrees, target
   ownership, or a bounded cross-lane handoff materially help. Do not require it
   for simple edits, and never imply that it launches or controls executors.
 - When Goal and Execution Run are both active, bind the relevant Goal criterion
@@ -125,8 +126,8 @@ That contract adds three things without replacing Goal Mode:
   `needs_human` and `blocked` as the only alternative final-report exits
 - a bounded delegation packet whose model, artifact, checks, timebox, and
   partial-handoff requirement are explicit
-- an executable Luna Max pilot record that keeps completion and routing evidence
-  in a reviewable file rather than relying on conversation memory
+- one current subagent-routing owner whose exact routes must pass live runtime
+  capability checks before dispatch
 
 The contract is an agent procedure and audit boundary. It does not claim that a
 skill can intercept a provider turn, enforce a wall-clock timeout, or switch the
@@ -135,9 +136,9 @@ established until the harness implements them.
 
 ### Optional official fallback surface
 
-Official Goal Mode is not installed by default in Mahiro's current runtime; the
-Mahiro structured tools above are the intended owner. Use the following fallback
-only when those commands/tools are actually exposed by another environment.
+The Mahiro structured tools above are the preferred owner when they are exposed.
+Use the following official fallback only when its commands/tools are actually
+exposed by the current environment.
 Do not reinstall the official package merely to satisfy this skill.
 
 Known command surface:

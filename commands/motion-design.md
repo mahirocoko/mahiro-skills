@@ -18,4 +18,4 @@ Use only for an explicitly named motion-design brief, system, choreography, inte
 
 **If you have a Skill tool available**: Use it directly with `skill: "motion-design"` instead of reading the file manually.
 
-**Otherwise**: Read the skill file at `skills/motion-design/SKILL.md` and follow ALL instructions in it.
+**Otherwise**: Resolve the installed `motion-design/SKILL.md` under the current agent's configured skills root, then follow ALL instructions in it. Do not assume a source-checkout-relative `skills/...` path.

@@ -16,7 +16,7 @@ const input = args.find((arg) => !arg.startsWith("--"));
 const keep = args.includes("--keep");
 
 if (!input) {
-  console.log("Usage: bun skills/project/scripts/reunion.ts [slug|all] [--keep]");
+  console.log(`Usage: bun "${import.meta.path}" [slug|all] [--keep]`);
   process.exit(1);
 }
 

@@ -27,6 +27,9 @@
 
 - Do not invent architecture conventions unsupported by local repo evidence.
 - Do not preserve ghost conventions as negative examples; named bad examples can become doctrine by repetition.
+- Git history is the provenance owner for superseded packaged guidance. Do not keep deprecated compatibility shims, stale snapshot appendices, or old command/model catalogs inside the active skill bundle merely to preserve history.
+- When volatile runtime facts change, replace the canonical current owner and remove the superseded wording from active `SKILL.md`, README, command wrappers, tests, and examples. Do not append a new “current” list beside the old one.
+- Dated evidence may remain only when it still explains a load-bearing compatibility boundary. Label it as non-authoritative evidence and require a fresh capability check before reuse.
 - Prefer conditional wording over concrete helper, folder, framework, or section-label names unless the target repo proves them.
 - `mahiro-docs-rules-init` must generate repo-reality-first docs. Mahiro preference can appear only as preferred direction, fallback, or contrast.
 - `mahiro-style` is fallback taste doctrine, not a replacement for target repo evidence.

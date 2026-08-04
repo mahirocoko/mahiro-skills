@@ -24,14 +24,14 @@ The catalog's `positivePrompt`, `negativePrompt`, and `notes` fields preserve th
 Run from any working directory:
 
 ```sh
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py list
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py search "forest mage" --json
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py show forest-mage-idle
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py render-original forest-mage-idle
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py template-list
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py template-show humanoid-character --json
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py template-render humanoid-character --param 'subject=a traveling mage'
-python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py validate --json
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" list
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" search "forest mage" --json
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" show forest-mage-idle
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" render-original forest-mage-idle
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" template-list
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" template-show humanoid-character --json
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" template-render humanoid-character --param 'subject=a traveling mage'
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" validate --json
 ```
 
 `list` and `search` accept `--collection`, `--category`, and `--tag`. `--json` may appear before or after the subcommand. Template parameters use repeatable `--param NAME=VALUE`; unknown, duplicate, missing, and empty parameters fail rather than being silently ignored.
@@ -41,7 +41,7 @@ python3 /path/to/skills/sprite-workflow/scripts/prompt-catalog.py validate --jso
 Verification requires an Image Cockpit checkout whose `HEAD` is exactly `b997e78609773975a98617568818ac32f40cf1a7`. The verifier rejects a dirty checkout by default, parses the four Markdown catalogs as 101 ordered fenced entries and the six literal legacy objects in `src/App.tsx`, checks the exact source distribution, then compares title, positive prompt, negative prompt, notes, source heading, and source locator.
 
 ```sh
-python3 skills/sprite-workflow/scripts/verify-image-cockpit-catalog.py \
+python3 "$SKILL_DIR/scripts/verify-image-cockpit-catalog.py" \
   --upstream-root /path/to/image-cockpit-for-codex-workflows
 ```
 

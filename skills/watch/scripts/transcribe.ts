@@ -4,7 +4,7 @@
  *
  * Supports multiple Gemini modes:
  * - chat (default): Quick transcription
- * - research: Deep Research mode for complex analysis
+ * - research: research-targeted tab and deeper-analysis prompt; capability must be verified separately
  * - canvas: Collaborative document mode
  *
  * Usage:
@@ -65,7 +65,7 @@ Format:
 
 Use double newlines between timestamps!`,
 
-  research: (meta, url) => `Deep research this YouTube video. Analyze thoroughly:
+  research: (meta, url) => `Analyze this YouTube video thoroughly in the available research context:
 
 \`\`\`json
 ${meta}
@@ -75,7 +75,7 @@ Please provide:
 1. Full transcript with timestamps
 2. Key concepts explained
 3. Related topics and context
-4. Fact-check any claims made
+4. Identify factual claims, supporting evidence, uncertainty, and items that still require independent verification
 5. Summary and takeaways`,
 
   canvas: (meta, url) => `Create a comprehensive document from this YouTube video:

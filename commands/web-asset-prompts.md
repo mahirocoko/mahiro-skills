@@ -17,4 +17,4 @@ Execute the `web-asset-prompts` skill with args: `$ARGUMENTS`
 
 **If you have a Skill tool available**: Use it directly with `skill: "web-asset-prompts"` instead of reading the file manually.
 
-**Otherwise**: Read the skill file at `skills/web-asset-prompts/SKILL.md` and follow ALL instructions in it.
+**Otherwise**: Resolve the installed `web-asset-prompts/SKILL.md` under the current agent's configured skills root, then follow ALL instructions in it. Do not assume a source-checkout-relative `skills/...` path.

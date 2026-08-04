@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.79 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.80 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.79 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.80 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -74,6 +74,7 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 - Otherwise `install.sh` clones the requested repo ref into a temp directory, runs `bun ./src/cli.ts install ...`, then removes the temp clone.
 - Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.
 - Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; local Pi installs always target the selected project's `.pi` root.
+- The Pi adapter installs skills only. It does not install the `pi` executable, create a PATH launcher, or configure a provider; direct Pi use requires a separately working `pi` command or explicit wrapper.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
 - Installed Gemini TOML command descriptions are also prefixed at install time, while source TOML in the repo stays unchanged.
 

@@ -14,7 +14,7 @@ import {
 const [slug, target] = process.argv.slice(2);
 
 if (!slug || !target) {
-  console.log("Usage: bun skills/project/scripts/spinoff.ts <slug> <target-org/repo>");
+  console.log(`Usage: bun "${import.meta.path}" <slug> <target-org/repo>`);
   process.exit(1);
 }
 

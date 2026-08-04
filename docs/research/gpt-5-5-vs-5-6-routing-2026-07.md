@@ -1,5 +1,7 @@
 # GPT-5.5 vs GPT-5.6: benchmark, runtime และแนวทางเลือก model
 
+> **Status: historical research snapshot, not active routing guidance.** Do not reuse the model IDs, CLI versions, defaults, or recommendations below without fresh evidence. Current direct-lane routing is owned by [`skills/direct-cli/playbook.md`](../../skills/direct-cli/playbook.md); current Letta subagent routing is owned by [`skills/control-room-goals/references/execution-contract.md`](../../skills/control-room-goals/references/execution-contract.md).
+>
 > ตรวจข้อมูลเมื่อ 26 กรกฎาคม 2026 เอกสารนี้สรุปตามหลักฐานที่หาได้ ณ ตอนนั้น ไม่ได้หมายความว่าคะแนน benchmark จะทำนายพฤติกรรม coding agent ระยะยาวได้ครบทุกด้าน
 
 ## สรุปเร็ว

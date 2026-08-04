@@ -197,8 +197,8 @@ describe('metadata-only Custom Gem submit validation', () => {
 
 test('the extension logs only the action name, never the full MQTT command', async () => {
   const source = await Bun.file('skills/gemini/extension/background-src.js').text();
-  expect(source).toContain("console.log('[Oracle Proxy] Command:', cmd.action);");
-  expect(source).not.toContain("console.log('[Oracle Proxy] Command:', cmd.action, cmd);");
+  expect(source).toContain("console.log('[Local Gemini Proxy] Command:', cmd.action);");
+  expect(source).not.toContain("console.log('[Local Gemini Proxy] Command:', cmd.action, cmd);");
   expect(source).toContain("case 'gem_start_v1':");
   expect(source).toContain("case 'gem_submit_v1':");
   expect(source).toContain("'gem-media-attachment.gem-attachment-tile'");

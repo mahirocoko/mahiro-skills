@@ -1,7 +1,7 @@
 # Model-aware execution contract
 
-Use this reference for non-trivial implementation goals, explicit execution
-handoffs, and the controlled GPT-5.6 Luna Max pilot. Goal Mode remains the owner
+Use this reference for non-trivial implementation goals and explicit execution
+handoffs. Goal Mode remains the owner
 of objective truth and criteria. This contract owns the procedure between an
 approved objective and an evidence-backed terminal report.
 
@@ -68,9 +68,9 @@ Human-owned gates
 If the requested artifact is ambiguous, resolve whether Mahiro expects chat
 text, a file, a commit, a PR, or runtime proof before claiming completion.
 
-## Pilot routing baseline
+## Local subagent routing policy
 
-This is a pilot policy, not a permanent universal ranking.
+These IDs belong to the Letta `Agent` routing surface, not direct CLI model slugs. Treat this table as the single current owner for this execution contract: verify each route against the live runtime before dispatch, replace superseded entries here, and never append an old and new catalog side by side. This is a local policy, not a universal model ranking.
 
 | Role | Explicit model | Use |
 | --- | --- | --- |
@@ -128,68 +128,3 @@ Before entering `done`, check:
 
 If one condition fails, remain in `executing` or `verifying`, or use the exact
 `needs_human`/`blocked` exit.
-
-## Luna Max pilot record
-
-For each of the first 3–5 real long tasks, create a repo-local record instead of
-tracking results only in memory:
-
-```bash
-SKILL_DIR="/absolute/path/to/installed/control-room-goals"
-RECORD="$PWD/.agent-state/model-pilots/<task-id>.json"
-
-bun "$SKILL_DIR/scripts/pilot-record.ts" init \
-  --output "$RECORD" \
-  --task-id "<task-id>" \
-  --objective "<objective>" \
-  --workspace "$PWD" \
-  --conversation-id "$CONVERSATION_ID" \
-  --deliverable-type "file" \
-  --deliverable-ref "<path-or-proof-reference>" \
-  --criterion "<required criterion>"
-```
-
-Update the JSON as execution proceeds. Record subagent models explicitly and
-finish the metrics from transcript/runtime evidence where available. Do not
-invent unavailable cost or token values; nullable fields stay `null`.
-For a human-owned criterion, keep `verifiedBy` and `verifiedAt` null until Mahiro
-explicitly accepts it. A passed human criterion must then record
-`verifiedBy: "mahiro"`, the acceptance timestamp, and an evidence reference whose
-kind is `user`; automated checks can never substitute for that provenance. The
-record validator checks this audit shape but does not authenticate conversation
-history. The structured Goal's human verification remains authoritative; copy
-its exact user/message reference into the pilot record instead of inventing one.
-
-Validate before reporting the pilot task terminal:
-
-```bash
-bun "$SKILL_DIR/scripts/pilot-record.ts" validate "$RECORD"
-```
-
-The validator requires evidence-backed criteria for `done`, a blocker for
-`blocked`, and an exact next human action for `needs_human`. It also checks that
-stopped-without-output subagents match the reported metric.
-
-Track at least:
-
-- “continue” prompts from Mahiro
-- premature reports
-- first-claim DoD result
-- defects and rework
-- elapsed time
-- tool/runtime errors
-- compactions
-- stopped subagents without usable output
-- verification coverage
-- available token/cache/cost telemetry
-
-## Not established yet
-
-- Luna Max as Mahiro Code's permanent default model
-- automatic parent-model switching or switch-back leases
-- runtime interception that prevents a premature assistant final turn
-- automatic wall-clock cancellation with guaranteed partial handoff
-- quality ranking from raw conversation token or cost totals
-
-Promote any of these only after runtime implementation or the 3–5 task pilot
-provides direct evidence.

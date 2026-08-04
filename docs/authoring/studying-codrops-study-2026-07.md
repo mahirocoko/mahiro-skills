@@ -166,7 +166,8 @@ These rows justify the v0 hypotheses in `references/observed-patterns.md`. They 
 Live inventory:
 
 ```bash
-bun skills/studying-codrops/scripts/codrops.ts inventory > /tmp/studying-codrops-inventory.json
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+bun "$REPO_ROOT/skills/studying-codrops/scripts/codrops.ts" inventory > /tmp/studying-codrops-inventory.json
 ```
 
 Ordered corpus digest recipe:

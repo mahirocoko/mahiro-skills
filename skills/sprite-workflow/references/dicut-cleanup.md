@@ -31,7 +31,7 @@ Use for generated sprite sheets with:
 ## Recommended command shape
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/extract-chroma-sheet.py \
+python3 "$SKILL_DIR/scripts/extract-chroma-sheet.py" \
   --input raw-candidate.png \
   --output-dir outbox/dicut-candidate-1 \
   --frames 8 \
@@ -79,7 +79,7 @@ Use `compare-dicut-modes.py` when you are unsure whether edge-connected cleanup 
 Recommended shape:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/compare-dicut-modes.py \
+python3 "$SKILL_DIR/scripts/compare-dicut-modes.py" \
   --input raw-candidate.png \
   --output-dir outbox/dicut-compare-candidate-1 \
   --frames 8 \
@@ -114,7 +114,7 @@ For idle, breathing, sipping, sleeping, or other subtle loops, center checks are
 Use `qa-sprite-sheet.py` bounds checks when reviewing subtle loops:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/qa-sprite-sheet.py sheet.png \
+python3 "$SKILL_DIR/scripts/qa-sprite-sheet.py" sheet.png \
   --frames 8 \
   --frame-size 176x176 \
   --max-center-range 12 \
@@ -131,14 +131,14 @@ If a single settle frame jitters, do not blindly shift it by center math only. C
 For subtle loops, use these deterministic helpers after QA previews:
 
 ```bash
-python3 ~/.letta/skills/sprite-workflow/scripts/make-frame-zoom.py sheet.png \
+python3 "$SKILL_DIR/scripts/make-frame-zoom.py" sheet.png \
   --output-dir outbox/review \
   --frames 8 \
   --frame-size 176x176 \
   --adjacent 6 \
   --json
 
-python3 ~/.letta/skills/sprite-workflow/scripts/motion-jitter-report.py qa.json \
+python3 "$SKILL_DIR/scripts/motion-jitter-report.py" qa.json \
   --output outbox/review/motion-jitter.json \
   --json
 ```

@@ -13,7 +13,7 @@ import {
 const input = process.argv[2];
 
 if (!input) {
-  console.log("Usage: bun skills/project/scripts/offload.ts [slug|all]");
+  console.log(`Usage: bun "${import.meta.path}" [slug|all]`);
   process.exit(1);
 }
 

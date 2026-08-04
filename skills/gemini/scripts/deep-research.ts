@@ -3,11 +3,11 @@ import {
   connectClient,
   createClient,
   findGeminiAppTab,
-  geminiAppUrl,
   parseGeminiAccountIndex,
   request,
   resolveGeminiAccountIndex,
 } from "./mqtt-rpc.js";
+import { requireDeepResearchToolLabel } from "./deep-research-capability.ts";
 
 const args = Bun.argv.slice(2);
 const forceNew = args.includes("--new");
@@ -61,7 +61,7 @@ async function main() {
     const created = await request(
       client,
       "create_tab",
-      { url: geminiAppUrl(accountIndex), accountIndex, mode: "research" },
+      { accountIndex, mode: "research" },
       12000,
     );
     if (created.success === false || typeof created.tabId !== "number") {
@@ -74,6 +74,20 @@ async function main() {
     console.log(`   ✓ Tab created: ${targetTabId}`);
   }
 
+  const researchRouteState = await request(client, "get_state", { tabId: targetTabId }, 12000);
+  const confirmedRoute =
+    typeof (researchRouteState as { mode?: unknown }).mode === "string"
+      ? ((researchRouteState as { mode?: string }).mode as string).toLowerCase()
+      : "";
+  if (researchRouteState.success !== true || confirmedRoute !== "research") {
+    client.end();
+    console.error(
+      `❌ The research route was not confirmed (${confirmedRoute || "unknown"}); refusing ordinary-chat fallback.`,
+    );
+    process.exit(1);
+  }
+  console.log("   ✓ Research route confirmed from exact-tab state");
+
   console.log("2️⃣ Selecting Deep Research tool...");
   const tools = await request(
     client,
@@ -82,30 +96,27 @@ async function main() {
     12000,
   );
 
-  const toolItems = Array.isArray(tools.items)
-    ? (tools.items as Array<{ label?: unknown; disabled?: unknown }>)
-    : [];
-  const deepResearchTool = toolItems.find((item) => {
-    const label = typeof item.label === "string" ? item.label : "";
-    return /deep\s*research|research/i.test(label) && item.disabled !== true;
-  });
-
-  if (deepResearchTool && typeof deepResearchTool.label === "string") {
-    const selected = await request(
-      client,
-      "select_tool",
-      { tabId: targetTabId, tool: deepResearchTool.label },
-      12000,
-    );
-    if (selected.success === false) {
-      client.end();
-      console.error(`❌ select_tool failed: ${String(selected.error || "unknown error")}`);
-      process.exit(1);
-    }
-    console.log(`   ✓ Tool selected: ${deepResearchTool.label}`);
-  } else {
-    console.log("   ⚠️ Deep Research tool not listed; continuing on research-mode tab.");
+  let deepResearchToolLabel: string;
+  try {
+    deepResearchToolLabel = requireDeepResearchToolLabel(tools);
+  } catch (error) {
+    client.end();
+    console.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
   }
+
+  const selected = await request(
+    client,
+    "select_tool",
+    { tabId: targetTabId, tool: deepResearchToolLabel },
+    12000,
+  );
+  if (selected.success !== true) {
+    client.end();
+    console.error(`❌ select_tool failed: ${String(selected.error || "unknown error")}`);
+    process.exit(1);
+  }
+  console.log(`   ✓ Deep Research tool selected: ${deepResearchToolLabel}`);
 
   console.log("3️⃣ Sending research prompt...");
   const chat = await request(
@@ -122,7 +133,7 @@ async function main() {
   }
 
   console.log(`   ✓ Prompt sent to tab ${targetTabId}`);
-  console.log("\n🎉 Deep Research prompt sent with research context. Check your Gemini tab.\n");
+  console.log("\n🎉 Prompt sent after Deep Research capability selection. Check your Gemini tab.\n");
 }
 
 main().catch((err) => {

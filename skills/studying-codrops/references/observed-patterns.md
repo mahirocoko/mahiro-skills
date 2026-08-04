@@ -1,6 +1,6 @@
 # Conditional Patterns from the Initial Study
 
-These are author hypotheses from a stratified 2026-07 Codrops inventory plus deep checks of named exemplars. The claim-to-evidence/status matrix lives in `docs/authoring/studying-codrops-study-2026-07.md`; numbered anchors below refer to that 58-item manifest. They are hypotheses to test against the current item and target—not portable style rules.
+These are dated author hypotheses from a stratified 2026-07 Codrops inventory plus deep checks of named exemplars. Numbered anchors refer to the 58-item authoring manifest preserved in repository history; installed copies do not require that repo-only study file. Treat every item as a hypothesis to test against the current source and target—not a portable style rule.
 
 ## Evidence lanes answer different questions
 

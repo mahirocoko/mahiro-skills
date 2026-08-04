@@ -30,7 +30,7 @@ export function resolveSlug(input: string): string | null {
 if (import.meta.main) {
   const input = process.argv[2];
   if (!input) {
-    console.log("Usage: bun skills/project/scripts/resolve-slug.ts <slug>");
+    console.log(`Usage: bun "${import.meta.path}" <slug>`);
     process.exit(1);
   }
 

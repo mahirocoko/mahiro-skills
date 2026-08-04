@@ -350,7 +350,7 @@ Then steps 3-5 same as default.
 
 ### 1. Gather Session History
 
-If the current agent supports `/trace --dig` or an equivalent session-history export, use it to get a timeline JSON for this session.
+If the current runtime exposes a session-history export, use that supported surface to obtain a timeline for this session. Do not route through retired slash commands.
 
 If the current agent does not expose session-history files or export tooling, reconstruct the timeline from:
 - current conversation memory

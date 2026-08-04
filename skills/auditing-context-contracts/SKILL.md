@@ -89,7 +89,8 @@ the paths and terms so another reviewer can reproduce the coverage.
 The bundled scanner is optional and deliberately narrow:
 
 ```bash
-bun skills/auditing-context-contracts/scripts/scan-context-contracts.ts \
+SKILL_DIR="/absolute/path/to/installed/auditing-context-contracts"
+bun "$SKILL_DIR/scripts/scan-context-contracts.ts" \
   --root . \
   --active-path 'AGENTS.md' \
   --active-path 'docs/**/*.md' \
@@ -165,6 +166,7 @@ When edits are authorized:
 6. Resolve stale Goal/handoff/agent-state claims that still present themselves
    as current.
 7. Add defect-specific tests where text drift can be checked deterministically.
+8. Let Git preserve superseded packaged prose. Do not keep redirect-only compatibility files or append stale snapshot catalogs inside the active skill bundle unless a verified external consumer still requires that exact path.
 
 Never change product behavior merely to satisfy stale prose unless the user
 chooses that product direction.

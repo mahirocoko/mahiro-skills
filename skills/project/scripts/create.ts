@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const name = args.find((arg) => !arg.startsWith("--"));
 
 if (!name) {
-  console.log("Usage: bun skills/project/scripts/create.ts <name> [--org org] [--public]");
+  console.log(`Usage: bun "${import.meta.path}" <name> [--org org] [--public]`);
   process.exit(1);
 }
 

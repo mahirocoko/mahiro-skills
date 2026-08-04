@@ -36,7 +36,7 @@ Learn from YouTube videos by sending them to Gemini for transcription, then savi
 # Simple (default chat mode)
 bun "$SKILL_DIR/scripts/transcribe.ts" <youtube-url>
 
-# With Deep Research mode
+# Request a research-oriented Gemini tab and prompt
 bun "$SKILL_DIR/scripts/transcribe.ts" --mode=research <youtube-url>
 
 # With specific model
@@ -50,7 +50,7 @@ bun "$SKILL_DIR/scripts/transcribe.ts" --mode=canvas <youtube-url>
 | Mode | Use Case |
 |------|----------|
 | `chat` | Quick transcription (default) |
-| `research` | Deep analysis with fact-checking |
+| `research` | Requests deeper analysis in a research-targeted tab; does not by itself prove Deep Research capability or factual verification |
 | `canvas` | Structured document output |
 
 **Models:**
@@ -69,14 +69,15 @@ The script handles:
 
 ### Step 2: Wait for Gemini Response
 
-Check the Gemini tab for the transcription. For long videos, this may take 30-60 seconds.
+Check the exact Gemini tab for the transcription. Long-video completion time depends on the current provider, account, and video.
 
 ### Step 3: Save to Knowledge
 
 Once you have the Gemini transcription, save it:
 
 ```bash
-bun "$SKILL_DIR/scripts/save-learning.ts" "$TITLE" "$URL" "$VIDEO_ID" "$TRANSCRIPT" "$CC_TEXT"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT="$REPO_ROOT" bun "$SKILL_DIR/scripts/save-learning.ts" "$TITLE" "$URL" "$VIDEO_ID" "$TRANSCRIPT" "$CC_TEXT"
 ```
 
 Or manually create a learning file at `.agent-state/memory/learnings/YYYY-MM-DD_video-slug.md`.
@@ -101,7 +102,7 @@ Add clear tags, source links, and a concise summary to the learning file so late
 - Retrieval hints: Added locally ✓
 
 ### Quick Access
-`/trace [SLUG]`
+`rg -n "[SLUG]" .agent-state/memory/learnings/`
 ```
 
 ## IMPORTANT: Save Gemini Conversation Link
@@ -125,7 +126,7 @@ gemini_conversation: https://gemini.google.com/app/[conversation_id]
 ## Notes
 
 - Gemini has YouTube understanding built-in (can process video directly)
-- Long videos may take 30-60 seconds to process
+- Long-video completion time is provider/account dependent; do not promise a fixed wait
 - If Gemini can't access video, it will say so — fallback to manual notes
 - Works with: youtube.com, youtu.be, youtube.com/shorts/
 

@@ -7,7 +7,7 @@ const query = args[0];
 const remote = args.includes("--remote");
 
 if (!query) {
-  console.log("Usage: bun skills/project/scripts/search.ts <query> [--remote]");
+  console.log(`Usage: bun "${import.meta.path}" <query> [--remote]`);
   process.exit(1);
 }
 

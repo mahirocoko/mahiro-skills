@@ -6,11 +6,11 @@ It is for situations where you want to bypass the usual orchestration runtime bu
 
 The default posture is now explicit: `--backend auto` selects Herdr only when the invocation already runs inside a healthy compatible Herdr pane; otherwise it uses tmux. `--backend herdr` and `--backend tmux` are explicit overrides. Launch interactively, verify readiness from the selected pane backend, then send the real prompt. Avoid Cursor, Antigravity, Codex, and Pi headless modes by default. Antigravity is the exception for exact multiline initial prompts: `agy --prompt-interactive "$(cat prompt.txt)"` keeps the pane interactive and avoids the known tmux multiline split; Herdr exact multiline delivery is still treated as unproven. Model catalogs can change independently of binary versions; use `agent models`, `agy models`, `codex debug models`, and `pi --list-models` for current catalog truth, and use each CLI's help/doctor commands for flags and health.
 
-Pi is deliberately bounded. Every launch passes an explicit `--tools` allowlist because Pi has no per-tool approval popup: review uses `read,grep,find,ls`, ordinary edits use `read,edit,write,grep,find,ls`, and `bash` is added only for an explicitly authorized bounded need. The command resolver prefers `DIRECT_PI_COMMAND`, then `pi` on `PATH`, then Mahiro's isolated `~/.9router-free/pi-pilot/run-pi.sh`. It never installs Pi, writes global provider config, or exposes literal API keys. Pi launches use `--no-session --no-extensions --no-prompt-templates --approve`; the task prompt is sent only after readiness.
+Pi is deliberately bounded. The mahiro-skills Pi adapter installs skill trees only—it does not install Pi, create a PATH launcher, or configure a provider. The direct lane resolves `DIRECT_PI_COMMAND`, then `pi` on `PATH`, then Mahiro's isolated wrapper; it must verify the executable, live models, and every required launch flag before creating pane state. Use an explicit tool allowlist and never expose literal API keys. PATH presence alone does not prove a canonical binary because `pi` may resolve to a wrapper; use named Herdr lifecycle only when the target pane proves it will launch the same executable and provider environment that passed preflight.
 
 For production-ish asset/imagegen work, use `/codex-asset-production` as the front door and `/direct-cli` as the executor layer. For sprite-like sheets, start from `/sprite-workflow` and use direct lanes only for scoped handoff/execution.
 
-For one job with several direct lanes, use a single Herdr job tab or tmux job session with multiple panes. The playbook supports **role fanout** (shared context, different lane roles) and **same-prompt fanout**. Tmux uses one byte-identical prompt pasted through a buffer and was sandbox-verified locally with matching SHA-256 hashes across three pane captures. Herdr uses the packaged `prompt-fanout.py` to pass one UTF-8 prompt to every named agent, require a real activity transition, and only then wait for settled state; this avoids matching stale idle state immediately after dispatch. For Agy specifically, use the playbook's multiline caveat instead of assuming either backend is lossless.
+For one job with several direct lanes, use a single Herdr job tab or tmux job session with multiple panes. The playbook supports **role fanout** (shared context, different lane roles) and **same-prompt fanout**. Tmux loads one prompt buffer and checks byte identity at the boundary. Herdr uses the packaged `prompt-fanout.py` to pass one UTF-8 prompt to every named agent, require a real activity transition, and only then wait for settled state; this avoids matching stale idle state immediately after dispatch. For Agy specifically, use the playbook's multiline caveat instead of assuming either backend is lossless.
 
 Long Herdr work may use skill-level `--detach`. The packaged `herdr-jobs.py` stores a private durable job record, exact prompt hash/copy, lifecycle baselines, watcher status, and bounded per-agent result captures under the local user state directory; it returns after bounded dispatch and sends a generic best-effort macOS completion notification containing only job ID and status. A later main-agent turn uses `list`, `show`, and `collect` to reconcile interrupted watchers, recover results, and synthesize them. This Phase 1 path is Herdr-only and deliberately does not inject messages into a Letta conversation, cancel agents, prune history, or silently fall back to tmux.
 
@@ -18,11 +18,9 @@ Backend selection is deterministic and observable through the packaged `scripts/
 
 Herdr topology creation is not shell readiness. After creating a tab or split, direct-cli submits and waits for an exact shell-ready marker, then checks that the shell is the only foreground process before `agent start`; this avoids the foreground-proven `agent_pane_busy` startup race.
 
-Default models are explicit too: Cursor quick implementation / cleanup uses `composer-2.5-fast`; Cursor balanced implementation uses `composer-2.5`; Cursor Fable 5 reasoning uses `claude-fable-5-thinking-high`, with `claude-fable-5-thinking-xhigh` for heavier review; Cursor heavy Opus review uses `claude-opus-4-8-thinking-high`. The live catalog also exposes `claude-opus-5-thinking-high`, `cursor-grok-4.5-high`, `claude-sonnet-5-thinking-high`, and `kimi-k3-high` as opt-in candidates until a fresh direct lane verifies launch and the visible model. Kimi through Cursor is raw model access, not proof of Kimi product's hidden `webapp-building` skill or template runtime. Antigravity uses foreground-verified stable slugs: `claude-opus-4-6-thinking` for heavy review, `claude-sonnet-4-6` for balanced work, and `gemini-3.6-flash-high` for faster work, with `gemini-3.6-flash-medium` then `gemini-3.5-flash-medium` as fallbacks. Codex uses `gpt-5.6-sol` with high reasoning for flagship work, `gpt-5.6-terra` medium for balanced work, `gpt-5.6-luna` medium for fast/cost-efficient work, `gpt-5.6-sol` ultra for large parallelizable work, and `gpt-5.3-codex-spark` high for specialized ultra-fast bounded work.
+The curated role-to-model mapping has one owner: `playbook.md`. This README and the command wrappers intentionally do not copy the model catalog. Before launch, intersect the current playbook choices with the live CLI catalog; if the requested/default route is unavailable, report that fact rather than reviving an older catalog entry. For Pi, announce and use the model only when `--list-models` returns one configured choice; otherwise ask for provider/model.
 
-If a command-style invocation names Cursor, Agy, or Codex but not the model, ask which skill-defined model/effort pair to use before launching. For Pi, preflight the selected command with `--list-models` before pane creation: announce and use the model when exactly one configured choice exists, otherwise ask for provider/model. The locally proven choice on 2026-08-03 was Pi `0.83.0` with `9router-free / ollama/minimax-m3`, but live model availability remains authoritative. Do not present full model catalogs unless requested or troubleshooting.
-
-`--effort` in `/direct-cli` is lane-aware. Pass it through natively to `agy --effort` only when that selected model supports the requested effort; otherwise stop rather than accepting Agy's silent fallback to its default model. Translate it to Codex `-c model_reasoning_effort=<level>`; for Cursor, choose an exact effort-bearing model ID or supported parameterized model expression. If effort is omitted for an explicit Codex GPT-5.6 model, default to Sol high, Terra medium, or Luna medium; never turn on ultra implicitly.
+`--effort` in `/direct-cli` is lane-aware. Pass it through natively to `agy --effort` only when that selected model supports the requested effort; otherwise stop rather than accepting Agy's silent fallback to its default model. Translate it to Codex `-c model_reasoning_effort=<level>`; for Cursor, choose an exact effort-bearing model ID or supported parameterized model expression. If effort is omitted, use the current role default from `playbook.md` after catalog verification; never turn on ultra implicitly.
 
 ## What this skill is for
 
@@ -34,7 +32,7 @@ Use it when you want AI to:
 - run multi-pane Herdr tabs or tmux sessions with a lane registry, prompt fanout, and clear write policy
 - recover cleanly from approval blocking, session corruption, or unsent prompts
 - launch Cursor with `--yolo --approve-mcps`, Antigravity with `--dangerously-skip-permissions`, and Codex with `--sandbox workspace-write --ask-for-approval never`, then send the task prompt after readiness
-- launch Pi interactively with an explicit tool allowlist and current provider/model, using named Herdr lifecycle only for canonical `pi` on `PATH` and a generic pane for custom wrappers
+- launch Pi interactively with an explicit tool allowlist and current provider/model, using named Herdr lifecycle only when the target pane proves it resolves the same executable/provider environment that passed preflight
 
 ## What this skill is not
 
@@ -45,8 +43,8 @@ Use it when you want AI to:
 ## How to read the docs
 
 - `SKILL.md` is the agent entrypoint and short operating summary
-- `playbook.md` is the preserved long-form operator manual
-- `playbook.md` also contains backend selection, Herdr lane lifecycle, preserved tmux launch examples, and current freshness notes
+- `playbook.md` is the long-form operator manual and the single owner of curated model roles
+- `playbook.md` also contains backend selection, Herdr lane lifecycle, and launch examples
 
 ## Recommended usage
 
@@ -55,12 +53,12 @@ Use it when you want AI to:
 /direct-cli agy "pre-release verification pass"
 /direct-cli codex "OpenAI-native implementation pass"
 /direct-cli pi "bounded Pi implementation pass"
-/direct-cli pi --provider 9router-free --model ollama/minimax-m3 "bounded Pi pass through 9Router"
-/direct-cli cursor --model claude-fable-5-thinking-high "Fable 5 reasoning pass"
-/direct-cli agy --model claude-opus-4-6-thinking "inspect this repo"
-/direct-cli codex --model gpt-5.6-sol --effort high "image-aware coding pass"
-/direct-cli codex --backend herdr --model gpt-5.6-sol --effort high "Herdr-native implementation lane"
-/direct-cli cursor --backend tmux --model composer-2.5-fast "portable tmux lane"
+/direct-cli pi --provider <provider> --model <model> "bounded Pi provider pass"
+/direct-cli cursor --model <model> "reasoning pass"
+/direct-cli agy --model <model> "inspect this repo"
+/direct-cli codex --model <model> --effort <level> "image-aware coding pass"
+/direct-cli codex --backend herdr --model <model> --effort <level> "Herdr-native implementation lane"
+/direct-cli cursor --backend tmux --model <model> "portable tmux lane"
 /direct-cli "run same-prompt fanout across Codex and multiple Agy models"
 /direct-cli recovery "the direct lane looks stuck"
 ```

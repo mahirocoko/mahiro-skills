@@ -11,7 +11,7 @@ Use local video only as bounded reference material. This lane does not generate 
 Example:
 
 ```bash
-python3 skills/sprite-workflow/scripts/extract-motion-reference.py \
+python3 "$SKILL_DIR/scripts/extract-motion-reference.py" \
   --input /absolute/local/reference.mp4 \
   --output-dir .agent-state/sprite-workflow/references/walk-side \
   --start 1.25 --duration 1.5 --fps 8 --json

@@ -7,6 +7,8 @@ description: CLI-first sprite production workflow for prompt libraries, imagegen
 
 Use this skill when sprite or mascot assets need a repeatable workflow rather than a one-off prompt. Pair with `asset-designer` for source strategy, cutout/chroma-key cleanup, QA previews, and production asset manifests; pair with `web-asset-prompts` for per-asset prompt wording.
 
+`$SKILL_DIR` is the installed `sprite-workflow` directory for the current agent. Resolve it before invoking bundled scripts; never assume a repo checkout path or a Letta-only global install root.
+
 ## Skill routing
 
 | User intent | Use |
@@ -68,32 +70,32 @@ Use bundled scripts from this skill directory:
 Production hash/format validation, native-review promotion, GIF generation, native-grid recovery, and atlas assembly require a Python interpreter with Pillow. Use the repo/project interpreter that can `import PIL` (or install Pillow explicitly); do not assume every `python3` on `PATH` resolves to the same environment. Image extraction/QA also requires ImageMagick, and motion intake requires `ffmpeg` plus `ffprobe`.
 
 ```bash
-python3 skills/sprite-workflow/scripts/new-job.py --help
-python3 skills/sprite-workflow/scripts/validate-manifest.py --help
-python3 skills/sprite-workflow/scripts/make-contact-sheet.py --help
-python3 skills/sprite-workflow/scripts/make-preview-gif.py --help
-python3 skills/sprite-workflow/scripts/extract-chroma-sheet.py --help
-python3 skills/sprite-workflow/scripts/make-qa-previews.py --help
-python3 skills/sprite-workflow/scripts/qa-sprite-sheet.py --help
-python3 skills/sprite-workflow/scripts/make-frame-zoom.py --help
-python3 skills/sprite-workflow/scripts/motion-jitter-report.py --help
-python3 skills/sprite-workflow/scripts/center-align-frames.py --help
-python3 skills/sprite-workflow/scripts/smooth-settle-frame.py --help
-python3 skills/sprite-workflow/scripts/compare-dicut-modes.py --help
-python3 skills/sprite-workflow/scripts/score-candidates.py --help
-python3 skills/sprite-workflow/scripts/promote-artifact.py --help
-python3 skills/sprite-workflow/scripts/promote-named-artifact.py --help
-python3 skills/sprite-workflow/scripts/prompt-catalog.py --help
-python3 skills/sprite-workflow/scripts/verify-image-cockpit-catalog.py --help
-python3 skills/sprite-workflow/scripts/make-native-review.py --help
-python3 skills/sprite-workflow/scripts/bottom-align-frames.py --help
-python3 skills/sprite-workflow/scripts/compare-action-scale.py --help
-python3 skills/sprite-workflow/scripts/rollup-sprite-batch.py --help
-python3 skills/sprite-workflow/scripts/extract-motion-reference.py --help
-python3 skills/sprite-workflow/scripts/snap-native-grid.py --help
-python3 skills/sprite-workflow/scripts/validate-snap-report.py --help
-python3 skills/sprite-workflow/scripts/assemble-approved-atlas.py --help
-python3 skills/sprite-workflow/scripts/validate-atlas-manifest.py --help
+python3 "$SKILL_DIR/scripts/new-job.py" --help
+python3 "$SKILL_DIR/scripts/validate-manifest.py" --help
+python3 "$SKILL_DIR/scripts/make-contact-sheet.py" --help
+python3 "$SKILL_DIR/scripts/make-preview-gif.py" --help
+python3 "$SKILL_DIR/scripts/extract-chroma-sheet.py" --help
+python3 "$SKILL_DIR/scripts/make-qa-previews.py" --help
+python3 "$SKILL_DIR/scripts/qa-sprite-sheet.py" --help
+python3 "$SKILL_DIR/scripts/make-frame-zoom.py" --help
+python3 "$SKILL_DIR/scripts/motion-jitter-report.py" --help
+python3 "$SKILL_DIR/scripts/center-align-frames.py" --help
+python3 "$SKILL_DIR/scripts/smooth-settle-frame.py" --help
+python3 "$SKILL_DIR/scripts/compare-dicut-modes.py" --help
+python3 "$SKILL_DIR/scripts/score-candidates.py" --help
+python3 "$SKILL_DIR/scripts/promote-artifact.py" --help
+python3 "$SKILL_DIR/scripts/promote-named-artifact.py" --help
+python3 "$SKILL_DIR/scripts/prompt-catalog.py" --help
+python3 "$SKILL_DIR/scripts/verify-image-cockpit-catalog.py" --help
+python3 "$SKILL_DIR/scripts/make-native-review.py" --help
+python3 "$SKILL_DIR/scripts/bottom-align-frames.py" --help
+python3 "$SKILL_DIR/scripts/compare-action-scale.py" --help
+python3 "$SKILL_DIR/scripts/rollup-sprite-batch.py" --help
+python3 "$SKILL_DIR/scripts/extract-motion-reference.py" --help
+python3 "$SKILL_DIR/scripts/snap-native-grid.py" --help
+python3 "$SKILL_DIR/scripts/validate-snap-report.py" --help
+python3 "$SKILL_DIR/scripts/assemble-approved-atlas.py" --help
+python3 "$SKILL_DIR/scripts/validate-atlas-manifest.py" --help
 ```
 
 Key scripts:

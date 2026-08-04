@@ -95,6 +95,8 @@ For the current Cursor and Gemini rollout history plus the remaining follow-on p
 | letta-code | Yes | No | Partial | Partial | Yes |
 | pi | Yes | No | Partial | No | Yes |
 
+The Pi adapter manages only skill files and receipts. Installing the adapter does not install a Pi executable, add `pi` to `PATH`, or create provider configuration.
+
 Interpretation rules:
 
 - `Yes` means the adapter may install that asset type directly.

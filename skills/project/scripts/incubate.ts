@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const input = args[0];
 
 if (!input) {
-  console.log("Usage: bun skills/project/scripts/incubate.ts <owner/repo|name> [--org org]");
+  console.log(`Usage: bun "${import.meta.path}" <owner/repo|name> [--org org]`);
   process.exit(1);
 }
 

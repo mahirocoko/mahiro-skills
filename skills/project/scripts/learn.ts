@@ -15,7 +15,7 @@ import {
 const input = process.argv[2];
 
 if (!input) {
-  console.log("Usage: bun skills/project/scripts/learn.ts <owner/repo|url|repo>");
+  console.log(`Usage: bun "${import.meta.path}" <owner/repo|url|repo>`);
   process.exit(1);
 }
 

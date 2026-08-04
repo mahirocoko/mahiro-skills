@@ -1,23 +1,33 @@
 #!/usr/bin/env bun
 // save-learning.ts - Save YouTube transcript to learning file
-// Usage: bun save-learning.ts <title> <url> <video_id> <transcript> [cc_text]
+// Usage: [ROOT=/repo/root] bun save-learning.ts <title> <url> <video_id> <transcript> [cc_text]
 //
 // Creates markdown file in .agent-state/memory/learnings/
 
 import { existsSync, mkdirSync, appendFileSync } from "fs";
+import { execFileSync } from "child_process";
 import { dirname, join } from "path";
 
 const title = process.argv[2];
 if (!title) {
-  console.log("Usage: ROOT=/path bun save-learning.ts <title> <url> <video_id> <transcript> [cc]");
+  console.log("Usage: [ROOT=/path] bun save-learning.ts <title> <url> <video_id> <transcript> [cc]");
   process.exit(1);
 }
 
-const ROOT = process.env.ROOT;
-if (!ROOT) {
-  console.error("Error: ROOT environment variable required");
-  process.exit(1);
+function resolveRepoRoot(): string {
+  if (process.env.ROOT) return process.env.ROOT;
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return process.cwd();
+  }
 }
+
+const ROOT = resolveRepoRoot();
 const agentStateDir = process.env.AGENT_STATE_DIR || join(ROOT, ".agent-state");
 const slugsFile = join(agentStateDir, "memory/slugs.yaml");
 

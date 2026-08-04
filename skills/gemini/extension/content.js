@@ -1,4 +1,4 @@
-console.log('[Oracle Proxy] Content script loaded on Gemini');
+console.log('[Local Gemini Proxy] Content script loaded on Gemini');
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'ping') {

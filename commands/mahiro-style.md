@@ -17,4 +17,4 @@ Execute the `mahiro-style` skill with args: `$ARGUMENTS`
 
 **If you have a Skill tool available**: Use it directly with `skill: "mahiro-style"` instead of reading the file manually.
 
-**Otherwise**: Read the skill file at `skills/mahiro-style/SKILL.md` and follow ALL instructions in it.
+**Otherwise**: Resolve the installed `mahiro-style/SKILL.md` under the current agent's configured skills root, then follow ALL instructions in it. Do not assume a source-checkout-relative `skills/...` path.

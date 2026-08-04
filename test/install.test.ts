@@ -268,7 +268,7 @@ describe("install", () => {
     }
   });
 
-  test("copies direct-cli skill, preserved playbook, and paired command", () => {
+  test("copies direct-cli skill, current playbook, and paired command", () => {
     const temp = makeTempEnv();
     try {
       const sourceSkillPath = join(import.meta.dir, "..", "skills", "direct-cli", "SKILL.md");

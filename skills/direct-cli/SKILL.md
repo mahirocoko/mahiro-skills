@@ -45,7 +45,7 @@ Backend mapping:
 
 For Herdr, use the caller's `HERDR_WORKSPACE_ID` by default or parse an explicit direct-cli `--workspace ID` into `DIRECT_HERDR_WORKSPACE_ID`; do not guess a workspace from a label. Fail clearly if neither value exists. Create and focus the job tab before launching agents so the lane is genuinely pane-first and Herdr can observe readiness; do not hide a new job in an unseen background tab. Parse returned IDs from JSON and never predict pane IDs. Prefer `herdr agent start <name> --kind cursor|agy|codex|pi --pane <id> -- <args...>` when the canonical executable is on `PATH`, because it names the lane and waits for interactive readiness. Use `herdr pane run` plus `pane read` when a shell-shaped launch is required, including Agy's exact multiline `--prompt-interactive` path and Pi through a custom provider wrapper.
 
-Do not call `agent start` immediately after `tab create` or `pane split`. Herdr 0.7.5 can return `agent_pane_busy` while the login shell is still running startup hooks. First submit a unique shell-ready marker with `pane run`, wait for its exact output, then poll `pane process-info` until the shell PID is the only foreground process. Close the new tab and report the blocker if readiness does not settle within the bounded wait.
+Do not call `agent start` immediately after `tab create` or `pane split`. Herdr can return `agent_pane_busy` while the login shell is still running startup hooks. First submit a unique shell-ready marker with `pane run`, wait for its exact output, then poll `pane process-info` until the shell PID is the only foreground process. Close the new tab and report the blocker if readiness does not settle within the bounded wait.
 
 Herdr agent names must be unique across the live session and match `[a-z][a-z0-9_-]{0,31}`. Derive a short job-specific name instead of reusing a global `codex-review` label across simultaneous jobs.
 
@@ -60,17 +60,10 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 - For asset/imagegen jobs, use `codex-asset-production` for the asset contract; in this skill, record source-vs-dicut role, lane output folder, expected `$CODEX_HOME/generated-images/...` collection path, and fanout type.
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
-- Model catalogs can change independently of CLI binaries. Use `agent models`, `agy models`, `codex debug models`, and `pi --list-models` as the current catalog checks when a freshness note is old, the user asks about models, or a preferred model fails. Use each CLI's help/doctor surface for current flag, feature, and health checks.
-- Default models: Cursor quick implementation / cleanup `composer-2.5-fast`; Cursor balanced `composer-2.5`; Cursor Fable 5 reasoning `claude-fable-5-thinking-high`; Cursor heavy Opus review `claude-opus-4-8-thinking-high`; Codex flagship `gpt-5.6-sol` with high reasoning
-- Cursor's current catalog also exposes `claude-opus-5-thinking-high`, `cursor-grok-4.5-high`, `claude-sonnet-5-thinking-high`, and `kimi-k3-high`; keep all four as explicit newer candidates rather than silently replacing the proven Fable/Opus defaults until a fresh direct lane verifies launch and the visible model. Kimi through Cursor tests the raw model, not Kimi product's hidden `webapp-building` skill or template runtime.
-- Antigravity (`agy`) curated choices are `claude-opus-4-6-thinking` for heavy review/reasoning, `claude-sonnet-4-6` for a balanced lane, and `gemini-3.6-flash-high` for a faster lane. Fall back to `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only if High fails.
-- Codex (`codex`) curated choices are `gpt-5.6-sol` high for flagship work, `gpt-5.6-terra` medium for balanced everyday work, `gpt-5.6-luna` medium for fast/cost-efficient work, and `gpt-5.6-sol` ultra for large parallelizable jobs. Keep model slug and effort separate: launch with `--model <slug> -c 'model_reasoning_effort="<effort>"'`.
+- Model catalogs change independently of CLI binaries. `playbook.md` is the single owner of the curated role-to-model list; do not duplicate that list in this entrypoint, README, or command wrappers. Before launch, check `agent models`, `agy models`, `codex debug models`, or `pi --list-models` plus the CLI's help/doctor surface. A curated role is preference, not availability proof.
 - Treat `/direct-cli pi`, "use Pi", and `ใช้ Pi` as the same Pi-lane selection. If provider/model are omitted, run the selected Pi command's read-only `--list-models` preflight before creating a pane. When exactly one configured model is available, announce and use it; when several are available, ask which provider/model to use.
-- If the user invokes `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` without an explicit model, stop and ask which skill-defined model to use before launching the lane; do not show the full CLI model list unless requested or troubleshooting
-- For Cursor, ask among `composer-2.5-fast`, `composer-2.5`, `claude-fable-5-thinking-high`, `claude-fable-5-thinking-xhigh`, `claude-opus-4-8-thinking-high`, and the opt-in catalog candidates `claude-opus-5-thinking-high`, `cursor-grok-4.5-high`, `claude-sonnet-5-thinking-high`, and `kimi-k3-high`; when the user says “Fable 5”, use the exact model ID `claude-fable-5-thinking-high` unless they explicitly ask for another Fable variant. Mention `composer-2-fast` only as a fallback if the current preferred models fail.
-- For Antigravity, ask among `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, and `gemini-3.6-flash-high`. Launch with the exact stable slug from `agy models` and verify the visible model in the pane. Agy exposes native `--effort`, but pass it only when the selected model supports that effort; `claude-opus-4-6-thinking --effort high` is invalid and silently falls back to the default model. Treat any fallback warning or visible model mismatch as launch failure, not success. Fall back to `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only if High fails.
-- For Codex, ask among `gpt-5.6-sol` high, `gpt-5.6-terra` medium, `gpt-5.6-luna` medium, `gpt-5.6-sol` ultra, and specialized fast `gpt-5.3-codex-spark` high; launch `codex` interactively before sending the task prompt. Sol and Terra support ultra; Luna currently stops at max. Keep `gpt-5.5` as a fallback rather than a default picker choice.
-- Treat `/direct-cli ... --effort <level>` as a skill-level routing argument. For Antigravity, pass native `agy --effort <level>` only after the selected model is known to support it; otherwise stop instead of accepting Agy's silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex itself does not expose a `--effort` flag; for Cursor, use an exact effort-bearing model ID or supported parameterized model expression rather than passing `--effort`. If a recognized GPT-5.6 Codex model is explicit but effort is omitted, use Sol `high`, Terra `medium`, or Luna `medium`. Never infer `ultra` unless the user asks for it or explicitly delegates model/effort choice for a genuinely large parallelizable job.
+- If the user invokes `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` without an explicit model, read the current curated choices from `playbook.md`, run the matching catalog preflight, then ask which available role/model pair to use. Do not show the full CLI catalog unless requested or troubleshooting.
+- Treat `/direct-cli ... --effort <level>` as a skill-level routing argument. For Antigravity, pass native `agy --effort <level>` only after the selected model is known to support it; otherwise stop instead of accepting Agy's silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex itself does not expose a `--effort` flag; for Cursor, use an exact effort-bearing model ID or supported parameterized model expression rather than passing `--effort`. If a model is explicit but effort is omitted, read the current role default from `playbook.md` after catalog verification. Never infer `ultra` unless the user asks for it or explicitly delegates model/effort choice for a genuinely large parallelizable job.
 - Launch Cursor, Antigravity, Codex, and Pi interactively in the selected backend, not with the task prompt inline
 - Confirm readiness from `herdr agent start` plus `agent read`/`pane read`, or from `tmux capture-pane`, before sending the real task prompt
 - If the direct lane shows a workspace trust prompt for the intended repo, accept it in the pane or let the user accept it directly before sending the task prompt
@@ -85,14 +78,14 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 ## Pi Lane Contract
 
 - Resolve the Pi command in this order: explicit `DIRECT_PI_COMMAND`, `pi` on `PATH`, then Mahiro's proven executable `~/.9router-free/pi-pilot/run-pi.sh`. Fail before creating pane state when none is executable; never install Pi or rewrite global Pi/provider configuration implicitly.
+- The mahiro-skills `pi` adapter installs Agent Skills only. It does not install the Pi executable, create a PATH launcher, or configure a provider. For direct shell use, verify `command -v pi`, `pi --version`, and `pi --list-models`; a configured wrapper is a separate prerequisite.
 - Parse optional direct-cli `--provider`, `--model`, and `--tools` as Pi lane arguments. Never put a literal API key in a command, pane log, receipt, or process argument; use an existing provider profile/environment wrapper.
-- Preflight with `"$PI_COMMAND" --version`, `"$PI_COMMAND" --help`, and `"$PI_COMMAND" --list-models`. A stale 9Router model ID is not launch evidence.
-- Pi `0.83.0` lacks per-tool approval popups, so every Pi launch must pass an explicit `--tools` allowlist. Use `read,grep,find,ls` for review; use `read,edit,write,grep,find,ls` for ordinary edits. Add `bash` only when Mahiro explicitly requested command execution or the bounded task requires tests/builds, and announce that broader capability before launch.
-- Launch fresh Pi lanes with `--no-session --no-extensions --no-prompt-templates --approve`. `--approve` trusts project-local context for that run only; use it only for the intended current worktree. Keep AGENTS/CLAUDE context and skills enabled unless Mahiro asks for a raw-model experiment.
-- Current Herdr exposes `--kind pi`. Use named `agent start` only when the canonical `pi` executable on `PATH` owns the selected provider configuration. A custom executable such as the isolated 9Router wrapper must use the generic shell-ready `pane run` path and `pane read`/`pane send-text`/`pane send-keys` controls.
+- Preflight with `"$PI_COMMAND" --version`, `"$PI_COMMAND" --help`, and `"$PI_COMMAND" --list-models`. Before mutation, require the current help output to expose every launch flag the lane will use: `--tools`, `--no-session`, `--no-extensions`, `--no-prompt-templates`, and `--approve`. Fail closed when a required flag or its security meaning is unavailable; never send an older/different Pi an unverified flag set.
+- Until a fresh preflight proves a stronger per-tool approval contract, every Pi launch must pass an explicit `--tools` allowlist. Use `read,grep,find,ls` for review; use `read,edit,write,grep,find,ls` for ordinary edits. Add `bash` only when Mahiro explicitly requested command execution or the bounded task requires tests/builds, and announce that broader capability before launch.
+- Launch fresh Pi lanes with the verified `--no-session --no-extensions --no-prompt-templates --approve` contract. `--approve` trusts project-local context for that run only; use it only for the intended current worktree. Keep AGENTS/CLAUDE context and skills enabled unless Mahiro asks for a raw-model experiment.
+- Use named Herdr `agent start --kind pi` only after the shell-ready target pane proves it will resolve the same executable and provider environment that passed preflight. PATH presence or the basename `pi` is not enough—a PATH launcher may itself be a custom wrapper. Otherwise use the generic `pane run` path plus `pane read`/`pane send-text`/`pane send-keys` controls.
 - Do not use `prompt-fanout.py`, `herdr-jobs.py`, or `--detach` for a generic-pane Pi lane. Those helpers require named Herdr-agent lifecycle. Pi fanout/detach remains unsupported in this initial contract rather than silently degrading lifecycle evidence.
 - When waiting on a generic Pi pane, require model/tool activity after prompt dispatch. Do not treat the prompt's echoed completion-marker text as completion.
-- The locally proven choice on 2026-08-03 was Pi `0.83.0` through `9router-free / ollama/minimax-m3`; re-run `--list-models` because 9Router availability can drift.
 
 ## Detached Herdr Jobs
 
@@ -201,22 +194,6 @@ This proves byte-identical input at the Herdr CLI argument boundary, not model r
 - For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in Codex's generated-images area for the main agent to collect. Do not let parallel lanes overwrite canonical runtime paths.
 - Main agent owns final merge/synthesis into the real worktree: capture panes, compare outputs, choose candidates, assign cleanup, and promote accepted files.
 
-### Sandbox verification
-
-Verified locally on 2026-06-23 with a tmux sandbox: one prompt was loaded into a tmux buffer, pasted into three panes, and captured to three pane files. SHA-256 hashes matched the shared prompt for all panes, proving same-prompt fanout is practical with `tmux load-buffer` / `paste-buffer`.
-
-Verified locally on 2026-07-24: Herdr `0.7.5` exposed a compatible running server plus `HERDR_ENV`, `HERDR_PANE_ID`, `HERDR_WORKSPACE_ID`, and `HERDR_TAB_ID` markers in a managed pane. Its stable CLI includes the load-bearing `status`, `tab create/close`, `pane get/split/read/run/send-text/send-keys/wait-output/process-info`, and `agent list/start/prompt/read/wait/send-keys` surfaces used by this workflow for `cursor`, `agy`, and `codex`. Treat this as the initial compatibility floor, not a promise for older versions; always preflight the installed runtime.
-
-Antigravity exception verified historically on 2026-06-29: Agy `1.0.13` with the then-current display label `--model "Claude Opus 4.6 (Thinking)"` worked, but multiline `tmux paste-buffer` split the prompt into multiple messages. A single-line `tmux send-keys -l ... Enter` worked, and `agy --prompt-interactive "$(cat prompt.txt)"` preserved a multiline initial prompt while keeping the session interactive. Keep the prompt-delivery caveat until it is re-tested, but use current stable model slugs for new launches.
-
-## Current Freshness Notes
-
-Use these notes as a check, not as timeless truth:
-
-- Verified 2026-07-31: local Cursor `agent` remains `2026.07.23-e383d2b`; `agent update` reports `Already up to date`, and `agent about` reports the active session as `Fable 5 300K High`. The command surface still includes `--endpoint` / `CURSOR_API_ENDPOINT` and `--trust`. The live catalog now exposes Kimi K3 (`kimi-k3-low`, `kimi-k3-high`, `kimi-k3-max`), `kimi-k2.7-code`, GLM 5.2 (`glm-5.2-high`, `glm-5.2-max`), and a full Opus 4.7 family including `claude-opus-4-7-thinking-high`, alongside the previously tracked Composer 2.5, Fable 5, Sonnet 5, Opus 4.8/5, Cursor Grok 4.5, and GPT-5.6 families. Treat these as server-side catalog evidence only until a fresh pane verifies the requested exact ID and visible model. Kimi through Cursor does not include proof of Kimi product's hidden `webapp-building` skill or template runtime. Catalog labels advertise 1M for several families while the active session still reports 300K, so effective context remains session-dependent. Use exact model IDs, not display shorthand.
-- Verified 2026-07-24: Antigravity is `agy 1.1.6`. Its live catalog includes Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, Opus 4.6 Thinking, Sonnet 4.6, and GPT-OSS 120B. Earlier tmux lanes proved `gemini-3.6-flash-high` and `gemini-3.6-flash-medium`; a Herdr-native turn now also proved explicit `gemini-3.5-flash-high`, visible as Gemini 3.5 Flash High, with `agent start` readiness, `agent prompt --wait`, Done lifecycle, and exact response. Mahiro selected 3.6 High as the curated fast default; keep 3.6 Medium and then `gemini-3.5-flash-medium` as ordered automatic fallbacks, while accepting explicit 3.5 High requests. Earlier foreground proof for Opus and Sonnet remains valid. `claude-opus-4-6-thinking --effort high` still has a known silent-fallback risk, and catalog-listed Gemini Pro previously failed at launch, so the picker excludes Gemini Pro and Opus launches omit `--effort`. Preserve the safe one-line/`--prompt-interactive` delivery path until multiline paste is re-tested on 1.1.6.
-- Verified 2026-07-22: Codex CLI and npm stable updated from `0.144.6` to `0.145.0`. The release adds paginated thread history, broader Cursor/Claude import, audio/realtime support, and stable-but-opt-in multi-agent V2; it also improves long-conversation rendering, MCP startup/auth reliability, and approval safety. The direct-lane launch contract remains valid. `codex debug models` still lists Sol/Terra/Luna/GPT-5.5/Spark with 272,000-token context for Sol/Terra/Luna/GPT-5.5 and 128,000 for Spark; Sol/Terra expose low through ultra, Luna low through max, and Spark low through xhigh. `image_generation`, `multi_agent`, and `fast_mode` remain stable/enabled, while `multi_agent_v2` is stable and disabled by default. Generated PNGs remain under `$CODEX_HOME/generated-images/<session>/<call_id>.png`.
-
 ## Quick Commands
 
 ```text
@@ -225,19 +202,19 @@ Use these notes as a check, not as timeless truth:
 /direct-cli agy
 /direct-cli codex
 /direct-cli pi
-/direct-cli pi --provider 9router-free --model ollama/minimax-m3
-/direct-cli cursor --model claude-fable-5-thinking-high
-/direct-cli agy --model claude-opus-4-6-thinking
-/direct-cli codex --model gpt-5.6-sol --effort high
-/direct-cli codex --backend herdr --model gpt-5.6-sol --effort high
-/direct-cli cursor --backend tmux --model composer-2.5-fast
+/direct-cli pi --provider <provider> --model <model>
+/direct-cli cursor --model <model>
+/direct-cli agy --model <model>
+/direct-cli codex --model <model> --effort <level>
+/direct-cli codex --backend herdr --model <model> --effort <level>
+/direct-cli cursor --backend tmux --model <model>
 /direct-cli recovery
 ```
 
 ## Document Map
 
 - `README.md` - human overview and entry guidance
-- `playbook.md` - the full preserved direct CLI playbook
+- `playbook.md` - the full direct CLI operator playbook and current routing-policy owner
 - `scripts/select-backend.sh` - deterministic backend preflight
 - `scripts/prompt-fanout.py` - synchronous Herdr fanout with activity gating
 - `scripts/herdr-jobs.py` - detached Herdr job registry, watcher, and collection CLI

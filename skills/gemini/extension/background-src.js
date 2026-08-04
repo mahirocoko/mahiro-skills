@@ -14,6 +14,8 @@ import {
   validateGemStartRequest,
   validateGemSubmitRequest,
 } from './custom-gem-browser-command.js';
+import { toolLabelsEqual } from './tool-label.js';
+import { buildGeminiTabUrl } from './gemini-tab-url.js';
 
 const MQTT_URL = 'ws://localhost:9001';
 const TOPIC_CMD = 'claude/browser/command';
@@ -89,7 +91,7 @@ function notifyPopupStatus() {
     online: connected
   }).catch((err) => {
     if (!String(err).includes('Receiving end does not exist')) {
-      console.error('[Oracle Proxy] Failed to notify popup:', err);
+      console.error('[Local Gemini Proxy] Failed to notify popup:', err);
     }
   });
 }
@@ -189,7 +191,7 @@ function connectMQTT() {
   }
   
   client = mqtt.connect(MQTT_URL, {
-    clientId: 'oracle-gemini-proxy-' + Date.now(),
+    clientId: 'local-gemini-proxy-' + Date.now(),
     clean: true,
     connectTimeout: 5000,
     reconnectPeriod: 5000
@@ -197,13 +199,13 @@ function connectMQTT() {
   
   client.on('connect', () => {
     connected = true;
-    console.log('[Oracle Proxy] Connected to MQTT broker');
+    console.log('[Local Gemini Proxy] Connected to MQTT broker');
     
     client.subscribe(TOPIC_CMD, (err) => {
       if (err) {
-        console.error('[Oracle Proxy] Subscribe failed:', err);
+        console.error('[Local Gemini Proxy] Subscribe failed:', err);
       } else {
-        console.log('[Oracle Proxy] Subscribed to', TOPIC_CMD);
+        console.log('[Local Gemini Proxy] Subscribed to', TOPIC_CMD);
       }
     });
     
@@ -218,13 +220,13 @@ function connectMQTT() {
         const cmd = JSON.parse(message.toString());
         handleCommand(cmd);
       } catch (e) {
-        console.error('[Oracle Proxy] Parse error:', e);
+        console.error('[Local Gemini Proxy] Parse error:', e);
       }
     }
   });
   
   client.on('error', (err) => {
-    console.error('[Oracle Proxy] MQTT error:', err);
+    console.error('[Local Gemini Proxy] MQTT error:', err);
     connected = false;
     notifyPopupStatus();
     injectStatusBadgeToAllGeminiTabs().catch(() => null);
@@ -232,13 +234,13 @@ function connectMQTT() {
   
   client.on('close', () => {
     connected = false;
-    console.log('[Oracle Proxy] Disconnected from MQTT broker');
+    console.log('[Local Gemini Proxy] Disconnected from MQTT broker');
     notifyPopupStatus();
     injectStatusBadgeToAllGeminiTabs().catch(() => null);
   });
   
   client.on('reconnect', () => {
-    console.log('[Oracle Proxy] Reconnecting...');
+    console.log('[Local Gemini Proxy] Reconnecting...');
   });
 }
 
@@ -272,7 +274,7 @@ async function handleCommand(cmd) {
     return;
   }
   
-  console.log('[Oracle Proxy] Command:', cmd.action);
+  console.log('[Local Gemini Proxy] Command:', cmd.action);
 
   if (cmd.action === 'reload_extension_v1') {
     await chrome.tabs.create({
@@ -2236,17 +2238,7 @@ async function listAllTabs() {
 }
 
 async function createGeminiTab(url, mode, accountIndex) {
-  let targetUrl = geminiAppUrl(accountIndex);
-  
-  if (mode === 'research') {
-    targetUrl += '/explore?mode=research';
-  } else if (mode === 'canvas') {
-    targetUrl += '/explore?mode=canvas';
-  }
-  
-  if (url && url.startsWith('http')) {
-    targetUrl = url;
-  }
+  const targetUrl = buildGeminiTabUrl(geminiAppUrl(accountIndex), url, mode);
   
   const tab = await chrome.tabs.create({ url: targetUrl });
   
@@ -6778,7 +6770,7 @@ async function sendChat(tabId, text) {
 
 async function injectBadge(tabId, text) {
   const resolvedTabId = await resolveTabId(tabId);
-  const badgeText = text || 'ORACLE';
+  const badgeText = text || 'GEMINI';
 
   await chrome.scripting.executeScript({
     target: { tabId: resolvedTabId },
@@ -6849,7 +6841,7 @@ async function injectStatusBadge(tabId) {
         border,
         'box-shadow:0 6px 22px rgba(0,0,0,0.25)'
       ].join(';');
-      badge.textContent = `ORACLE ${status} | tab ${tid}`;
+      badge.textContent = `GEMINI ${status} | tab ${tid}`;
       document.body.appendChild(badge);
       return { success: true };
     },
@@ -7284,8 +7276,7 @@ async function selectTool(tabId, tool, accountIndex) {
 
       const items = Array.from(menu.querySelectorAll('[role="menuitemcheckbox"], [role="menuitem"], [role="menuitemradio"]'));
       const match = items.find((el) => {
-        const label = normalize(el.textContent);
-        return label.includes(target);
+        return toolLabelsEqual(el.textContent, target);
       });
 
       if (!match) {
@@ -7415,9 +7406,10 @@ async function getTabState(tabId) {
       const responseCount =
         document.querySelectorAll('message-content, model-response, [data-test-id="response"], [data-response-index]').length;
 
+      const requestedMode = new URL(url).searchParams.get('mode');
       let mode = 'chat';
-      if (url.includes('mode=research') || /deep\s+research/i.test(document.body?.innerText || '')) mode = 'research';
-      else if (url.includes('mode=canvas') || /\bcanvas\b/i.test(document.body?.innerText || '')) mode = 'canvas';
+      if (requestedMode === 'research') mode = 'research';
+      else if (requestedMode === 'canvas') mode = 'canvas';
 
       return {
         success: true,
@@ -7443,7 +7435,7 @@ function setupSidePanelBehavior() {
   }
 
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
-    console.error('[Oracle Proxy] Failed to set side panel behavior:', err);
+    console.error('[Local Gemini Proxy] Failed to set side panel behavior:', err);
   });
 }
 
@@ -7710,13 +7702,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Oracle Proxy] Extension installed');
+  console.log('[Local Gemini Proxy] Extension installed');
   setupSidePanelBehavior();
   connectMQTT();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  console.log('[Oracle Proxy] Browser started');
+  console.log('[Local Gemini Proxy] Browser started');
   setupSidePanelBehavior();
   connectMQTT();
 });
