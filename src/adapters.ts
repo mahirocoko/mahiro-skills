@@ -16,6 +16,18 @@ export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent 
   return supportedAgents.includes(agent);
 }
 
+function resolvePiAgentDir(configuredRoot: string, home: string | undefined): string {
+  if (configuredRoot === "~" || configuredRoot.startsWith("~/")) {
+    if (!home) {
+      throw new Error("Unable to expand PI_CODING_AGENT_DIR without HOME.");
+    }
+
+    return configuredRoot === "~" ? home : join(home, configuredRoot.slice(2));
+  }
+
+  return configuredRoot;
+}
+
 export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = process.env): string {
   const cwd = env.MAHIRO_SKILLS_CWD || process.cwd();
   const home = env.MAHIRO_SKILLS_HOME || env.HOME;
@@ -45,7 +57,15 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
       return join(cwd, ".agents");
     }
 
+    if (agent === "pi") {
+      return join(cwd, ".pi");
+    }
+
     return join(cwd, ".gemini");
+  }
+
+  if (agent === "pi" && env.PI_CODING_AGENT_DIR) {
+    return resolvePiAgentDir(env.PI_CODING_AGENT_DIR, home);
   }
 
   if (!home) {
@@ -72,11 +92,15 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
     return join(home, ".letta");
   }
 
+  if (agent === "pi") {
+    return join(home, ".pi", "agent");
+  }
+
   return join(home, ".gemini");
 }
 
 export function supportsCommands(agent: ScopedAgent): boolean {
-  return isImplementedAgent(agent) && agent !== "letta-code";
+  return isImplementedAgent(agent) && agent !== "letta-code" && agent !== "pi";
 }
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {

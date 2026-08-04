@@ -74,7 +74,8 @@ Use the same rule in skill docs, templates, and examples so the convention stays
 
 - `MAHIRO_SKILLS_REPO_ROOT` selects the checkout used as the package source
 - `MAHIRO_SKILLS_CWD` lets tests and root-resolving commands override cwd safely
-- local adapter roots resolve from `MAHIRO_SKILLS_CWD` or `process.cwd()`, into project-local directories like `.opencode`, `.claude`, `.cursor`, and `.gemini`
+- local adapter roots resolve from `MAHIRO_SKILLS_CWD` or `process.cwd()`, into project-local directories like `.opencode`, `.claude`, `.cursor`, `.gemini`, and `.pi`
+- Pi global roots honor `PI_CODING_AGENT_DIR` exactly (with `~` expanded against the installer home) before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; do not append another `.pi/agent` segment to an explicit override
 
 If you change path behavior, check `install.sh`, `src/repo.ts`, `src/adapters.ts`, `src/plan.ts`, and the related tests together.
 

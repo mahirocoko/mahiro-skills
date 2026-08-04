@@ -85,7 +85,8 @@ describe("cli", () => {
 
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
-      expect(payload.length).toBe(6);
+      const skillsOnlyAgents = new Set(["letta-code", "pi"]);
+      expect(payload.length).toBe(7);
       expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
@@ -96,10 +97,11 @@ describe("cli", () => {
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("vfx-workflow");
-      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
-      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
-      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
-      expect(payload.filter((entry) => entry.agent !== "letta-code").every((entry) => entry.installedCommands.includes("vfx-workflow"))).toBe(true);
+      expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toEqual([]);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("vfx-workflow"))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -109,18 +111,19 @@ describe("cli", () => {
     const temp = makeTempEnv();
 
     try {
-      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,letta-code", "--scope", "local"], temp.env);
+      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,letta-code,pi", "--scope", "local"], temp.env);
       expect(installResult.exitCode).toBe(0);
 
       const uninstallResult = runCli(["uninstall", "project", "--agent", "all", "--scope", "local"], temp.env);
       expect(uninstallResult.exitCode).toBe(0);
 
       const payload = parseJson(uninstallResult.stdout) as Array<{ agent: string; status: string; uninstalled: string[] }>;
-      expect(payload).toHaveLength(6);
-      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code"]);
+      expect(payload).toHaveLength(7);
+      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code", "pi"]);
       expect(payload.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "letta-code")?.uninstalled).toEqual(["project"]);
+      expect(payload.find((entry) => entry.agent === "pi")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "opencode")?.status).toBe("skipped");
     } finally {
       temp.cleanup();
@@ -156,6 +159,23 @@ describe("cli", () => {
       expect(payload.root.endsWith(".codex")).toBe(true);
       expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
       expect(payload.commands.map((entry) => entry.name)).toEqual(["project"]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("supports Pi as a skills-only direct CLI install target", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["plan", "project", "--agent", "pi", "--scope", "local"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { agent: string; root: string; skills: Array<{ name: string }>; commands: Array<{ name: string }> };
+      expect(payload.agent).toBe("pi");
+      expect(payload.root.endsWith(".pi")).toBe(true);
+      expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
+      expect(payload.commands).toEqual([]);
     } finally {
       temp.cleanup();
     }

@@ -177,12 +177,12 @@ describe("guided", () => {
     try {
       const result = await runGuided(makeOptions(), temp.env, prompt.io) as UninstallResult[];
 
-      expect(result).toHaveLength(6);
+      expect(result).toHaveLength(7);
       expect(result.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
       expect(result.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["gemini"]);
       expect(result.find((entry) => entry.agent === "cursor")?.receiptRemoved).toBe(true);
       expect(result.find((entry) => entry.agent === "gemini")?.receiptRemoved).toBe(true);
-      expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with uninstall"))).toEqual(["Proceed with uninstall for 6 agents (local)?"]);
+      expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with uninstall"))).toEqual(["Proceed with uninstall for 7 agents (local)?"]);
       expect(prompt.writes.some((entry) => entry.includes("[note:Batch uninstall summary]"))).toBe(true);
     } finally {
       temp.cleanup();

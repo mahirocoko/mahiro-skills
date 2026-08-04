@@ -219,6 +219,35 @@ describe("doctor", () => {
     }
   });
 
+  test("reports receipt and installed skill path after Pi install", () => {
+    const temp = makeTempEnv();
+    try {
+      const isolatedRoot = join(temp.root, "pi-isolated", ".pi", "agent");
+      const env = { ...temp.env, PI_CODING_AGENT_DIR: isolatedRoot };
+      install("pi", "global", ["recap"], false, env);
+      const [result] = doctor("pi", "global", env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: isolatedRoot,
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(isolatedRoot, ".mahiro-skills", "receipts", "global-pi.json"),
+        },
+        {
+          label: "skill:recap",
+          ok: true,
+          detail: join(isolatedRoot, "skills", "recap"),
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("reports receipt and installed paths after codex install", () => {
     const temp = makeTempEnv();
     try {

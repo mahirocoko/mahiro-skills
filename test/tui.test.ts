@@ -259,6 +259,26 @@ describe("step-first skill manager TUI", () => {
     }
   });
 
+  test("shows Pi as a skills-only inspect target without entering Review", async () => {
+    const temp = makeTempEnv();
+    try {
+      install("pi", "local", ["project"], false, temp.env);
+      const terminal = new FakeTerminal();
+      const controller = createTuiController({ terminal, env: temp.env, initialAgents: ["pi"], initialScope: "local" });
+      await enterAction(controller, 3);
+      const project = controller.getState().inventory.find((item) => item.name === "project");
+      expect(project?.agents[0].commandSupport).toBe("skills-only");
+      await focusSkill(controller, "project");
+      await controller.handleInput("\r");
+      expect(controller.getState().step).toBe("skills");
+      expect(controller.getState().inspectDetail).toBe(true);
+      expect(terminal.writes.join("\n")).toContain("skills-only commands");
+      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project", "SKILL.md"), "utf8")).toContain("name: project");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("blocks an unreadable receipt in Review instead of guessing", async () => {
     const temp = makeTempEnv();
     try {

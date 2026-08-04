@@ -16,6 +16,7 @@ export function makeTempEnv() {
       ...process.env,
       MAHIRO_SKILLS_HOME: home,
       MAHIRO_SKILLS_CWD: cwd,
+      PI_CODING_AGENT_DIR: "",
     },
     cleanup() {
       rmSync(root, { recursive: true, force: true });

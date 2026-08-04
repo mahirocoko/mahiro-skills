@@ -1,6 +1,6 @@
 # mahiro-skills
 
-Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.
+Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, Letta Code, and Pi, plus slash-command wrappers where the target agent supports them.
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.79 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.79 -- project --agent opencode --scope local
 ```
 
 ### Interactive TUI
@@ -73,6 +73,7 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 - If `MAHIRO_SKILLS_REPO_ROOT` is set, `install.sh` installs from that checkout directly.
 - Otherwise `install.sh` clones the requested repo ref into a temp directory, runs `bun ./src/cli.ts install ...`, then removes the temp clone.
 - Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.
+- Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; local Pi installs always target the selected project's `.pi` root.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
 - Installed Gemini TOML command descriptions are also prefixed at install time, while source TOML in the repo stays unchanged.
 
@@ -80,7 +81,7 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 
 Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.
 
-Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.
+Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, and `pi`.
 
 Current workflow highlights:
 
@@ -104,7 +105,7 @@ bun ./src/cli.ts plan --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope local
 
 # Install selected skills for multiple agents
-bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local
+bun ./src/cli.ts install project --agent cursor,gemini,letta-code,pi --scope local
 
 # Uninstall selected skills from one agent, or from all agents in a scope
 bun ./src/cli.ts uninstall project --agent cursor --scope local
@@ -126,6 +127,13 @@ bun ./src/cli.ts new my-skill --copy-template --json
 
 # Install Agent Skills for Letta Code
 bun ./src/cli.ts install project --agent letta-code --scope local
+
+# Install Agent Skills for Pi; Pi exposes them as /skill:<name>
+bun ./src/cli.ts install project --agent pi --scope local
+
+# Target an isolated/global Pi configuration explicitly
+PI_CODING_AGENT_DIR="$HOME/.9router-free/pi-pilot/home/.pi/agent" \
+  bun ./src/cli.ts install --agent pi --scope global
 ```
 
 More detail lives in:
@@ -181,7 +189,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
 | Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, and sprite handoff/QA |
 | Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, performance/device QA, and release gates |
-| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code --scope local` | Install one skill across adapters |
+| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,letta-code,pi --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites
 
@@ -202,6 +210,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
 - `commands-gemini/mh-<name>.toml` — native Gemini custom commands
 - Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`
+- Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`. Pi discovers the skill and exposes `/skill:<name>` without a copied command wrapper.
 - `examples/` — runnable or copyable workflow examples for the CLI/TUI surface
 - `template/SKILL.md` — starter template for new skills
 - `.claude-plugin/marketplace.json` — default bundle metadata
@@ -236,6 +245,6 @@ Packaging facts to preserve:
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` are compatibility wrappers for non-Gemini slash-command entrypoints.
 - `commands-gemini/` is the native Gemini custom-command source, installed as namespaced `.toml` files like `mh-watch.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
-- CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code` for packaged skill installs; Letta Code is skills-only in v0 because its documented Agent Skills surface does not define a command-wrapper directory.
+- CLI v0 targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, and `pi` for packaged skill installs. Letta Code and Pi are skills-only adapters: neither needs a copied command-wrapper artifact, and Pi creates `/skill:<name>` from discovered Agent Skills.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 - Prefer the source files in this repository and tagged releases over installed copies. Installed copies are useful evidence when debugging drift, but they are not the canonical authoring surface.

@@ -5,7 +5,7 @@ These examples are copyable walkthroughs for the CLI/TUI surface. They are docum
 ## Examples
 
 - [`install-local.md`](./install-local.md) — install the default bundle or selected skills into a project-local agent root.
-- [`multi-agent-install.md`](./multi-agent-install.md) — plan and install the same skills across Cursor, Gemini, and Letta Code.
+- [`multi-agent-install.md`](./multi-agent-install.md) — plan and install the same skills across Cursor, Gemini, Letta Code, and Pi.
 - [`tui-session.md`](./tui-session.md) — use the full-screen catalog manager, truthful receipt statuses, staged actions, and guided compatibility flow.
 
 ## Validation

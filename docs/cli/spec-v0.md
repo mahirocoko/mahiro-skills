@@ -57,7 +57,7 @@ The CLI must not reinterpret internal skill files beyond path planning and colli
 
 ## Terminology
 
-- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, or `letta-code`
+- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, or `pi`
 - **scope**: `global` or `local`
 - **adapter**: target-specific planner and installer for one agent
 - **bundle**: named install group defined by manifest or default repo bundle
@@ -76,6 +76,7 @@ Currently implemented runtime targets are:
 4. `gemini`
 5. `codex`
 6. `letta-code`
+7. `pi`
 
 For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
 
@@ -92,6 +93,7 @@ For the current Cursor and Gemini rollout history plus the remaining follow-on p
 | gemini | Yes | Yes | Partial | Partial | Yes |
 | codex | Yes | Partial | Yes | Yes | Yes |
 | letta-code | Yes | No | Partial | Partial | Yes |
+| pi | Yes | No | Partial | No | Yes |
 
 Interpretation rules:
 
@@ -111,6 +113,7 @@ Interpretation rules:
 | gemini | `~/.gemini` | `.gemini` |
 | codex | `~/.codex` | `.codex` |
 | letta-code | `~/.letta` | `.agents` |
+| pi | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` | `.pi` |
 
 If an agent has multiple valid roots, the adapter must resolve one canonical root and report it in the plan.
 
@@ -154,7 +157,7 @@ Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `
 - **Review:** a full scrollable step, not an overlay. It shows every selected agent, root, action, skip, warning, collision, overwrite/remove path, and the sequential/no-rollback rule. Paths are hard-wrapped rather than shortened. Enter is the first point that may execute; collision and modified/legacy acknowledgements are required, and any unreadable selected-agent receipt blocks the batch until Target is corrected.
 - **Result:** agents execute sequentially. The first thrown failure stops the batch and later agents are Not attempted. The screen preserves per-agent success, skips, errors, and receipt evidence plus Completed, Completed with skips, Partially completed, Failed, or No changes aggregation.
 - Primary controls are visible `↑/↓`, `Space`, `Enter`, `Esc`, and `Ctrl+C`; the flow does not require mnemonic action keys. Search remains optional and Esc clears its query before backing out.
-- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Letta Code command omission remains adapter-derived and is shown as skills-only.
+- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Letta Code and Pi command omission remains adapter-derived and is shown as skills-only.
 - `guided` remains the prompt-by-prompt compatibility workflow: Home offers Install, Uninstall, Update installed, List installed, Receipt detail, and Exit; nested prompts retain Back-to-Home and explicit confirmation behavior.
 - Explicit `tui --mode ...`, small terminals, and `TERM=dumb` route to the guided compatibility path. Non-interactive `tui`/`guided` also use that path and retain their established required-flag rules.
 - Guided item/agent selection, direct repeated/comma-separated `--agent` flags, `--agent all`, and receipt detail remain unchanged and continue to use the shared core APIs.
@@ -322,6 +325,13 @@ Rules:
 - Do not install command wrappers in v0 because Letta Code's documented Agent Skills surface defines skill directories, not a slash-command artifact directory
 - Preserve skill directories as opaque Agent Skills-compatible trees with each `SKILL.md` and bundled resources intact
 
+### Pi
+
+- Install packaged skills into `<root>/skills/`, which resolves to `.pi/skills/` locally and `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/` globally
+- Honor `PI_CODING_AGENT_DIR` before the default global root so isolated Pi configurations can be targeted without rewriting `HOME`
+- Do not install command wrappers because Pi discovers Agent Skills and exposes them as `/skill:<name>` commands itself
+- Preserve skill directories as opaque Agent Skills-compatible trees; project-local `.pi` resources still require Pi project trust, or an explicit one-run `--approve`
+
 ## Result model
 
 The installer must distinguish:
@@ -371,7 +381,7 @@ mahiro-skills plan gemini watch --agent gemini --scope local
 - Automatic extension/plugin compilation
 - Full MCP manifest generation
 
-Follow-on adapter rollout planning for `cursor` and `gemini` lives in [`adapter-implementation-plan-v0.md`](./adapter-implementation-plan-v0.md).
+Follow-on adapter rollout history and current Pi support live in [`adapter-implementation-plan-v0.md`](./adapter-implementation-plan-v0.md).
 
 ## Acceptance criteria for implementation
 

@@ -100,6 +100,35 @@ describe("skill manager", () => {
     }
   });
 
+  test("updates a modified Pi skill through the skills-only receipt path", () => {
+    const temp = makeTempEnv();
+    try {
+      install("pi", "local", ["project"], false, temp.env);
+      const projectPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project", "SKILL.md");
+      writeFileSync(projectPath, "locally modified Pi skill");
+
+      const before = getSkillManagerSnapshot("pi", "local", temp.env);
+      const inventory = deriveSkillManagerInventory("update", [before]);
+      const project = inventory.find((item) => item.name === "project");
+      const plan = getSkillManagerAgentPlan("update", before, ["project"], temp.env);
+
+      expect(project?.agents[0].commandSupport).toBe("skills-only");
+      expect(project?.selectable).toBe(true);
+      expect(plan.active).toEqual(["project"]);
+      expect(plan.installPlan?.commands).toEqual([]);
+      expect(plan.acknowledgementIds).toContain("modified:pi:project");
+
+      installSkillManagerItems("pi", "local", ["project"], true, temp.env);
+
+      const after = getSkillManagerSnapshot("pi", "local", temp.env);
+      expect(after.skills.find((skill) => skill.name === "project")?.status).toBe("current");
+      expect(after.receipt?.installedCommands).toEqual([]);
+      expect(readFileSync(projectPath, "utf8")).toContain("name: project");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("derives mixed action inventories and updates only selected applicable names", () => {
     const temp = makeTempEnv();
     try {

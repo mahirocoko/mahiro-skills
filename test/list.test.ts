@@ -109,6 +109,28 @@ describe("list", () => {
     }
   });
 
+  test("returns full receipt after Pi install", () => {
+    const temp = makeTempEnv();
+    try {
+      const isolatedRoot = `${temp.root}/pi-isolated/.pi/agent`;
+      const env = { ...temp.env, PI_CODING_AGENT_DIR: isolatedRoot };
+      install("pi", "global", ["project"], false, env);
+
+      const receipt = listInstalled("pi", "global", env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("pi");
+      expect(receipt?.scope).toBe("global");
+      expect(receipt?.root).toBe(isolatedRoot);
+      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
+      expect(receipt?.installedSkills).toEqual(["project"]);
+      expect(receipt?.installedCommands).toEqual([]);
+      expect(receipt?.installedAt.length).toBeGreaterThan(0);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("returns full receipt after codex install", () => {
     const temp = makeTempEnv();
     try {
@@ -136,6 +158,7 @@ describe("list", () => {
       install("gemini", "global", ["gemini"], false, temp.env);
       install("codex", "local", ["recap"], false, temp.env);
       install("letta-code", "global", ["project"], false, temp.env);
+      install("pi", "local", ["mahiro-style"], false, temp.env);
 
       expect(listInstalledSummaries(temp.env)).toEqual([
         {
@@ -165,6 +188,13 @@ describe("list", () => {
           installedSkills: ["project"],
           installedCommands: [],
           installed: ["project"],
+        },
+        {
+          agent: "pi",
+          scope: "local",
+          installedSkills: ["mahiro-style"],
+          installedCommands: [],
+          installed: ["mahiro-style"],
         },
       ]);
     } finally {

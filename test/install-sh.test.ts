@@ -38,7 +38,7 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.78");
+    expect(decode(result.stdout)).toContain("v0.1.79");
   });
 
   test("installs one skill and paired command from a provided repo root", () => {
@@ -280,6 +280,33 @@ exit 1
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project", "SKILL.md"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands", "project.md"))).toBe(false);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-letta-code.json"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs one skill for an isolated Pi config root", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+      const piAgentDir = join(temp.root, "pi-isolated", ".pi", "agent");
+
+      const result = Bun.spawnSync(["bash", installScript, "project", "--agent", "pi", "--scope", "global"], {
+        cwd: repoRoot,
+        env: {
+          ...temp.env,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+          PI_CODING_AGENT_DIR: piAgentDir,
+        },
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(decode(result.stdout)).toContain('"status": "installed"');
+      expect(existsSync(join(piAgentDir, "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(piAgentDir, "commands", "project.md"))).toBe(false);
+      expect(existsSync(join(piAgentDir, ".mahiro-skills", "receipts", "global-pi.json"))).toBe(true);
     } finally {
       temp.cleanup();
     }

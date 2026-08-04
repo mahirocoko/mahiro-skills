@@ -31,6 +31,15 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+function adaptDescriptionForAgent(description: string | undefined, agent: ScopedAgent): string | undefined {
+  if (!description || supportsCommands(agent)) {
+    return description;
+  }
+
+  const skillsDescription = description.replace(" plus agent-native command entrypoints", "").replace(/\.$/, "");
+  return `${skillsDescription}; '${agent}' installs Agent Skills only and does not copy command wrappers.`;
+}
+
 function resolveRequestedItems(inventory: RepoInventory, items: string[], agent: ScopedAgent): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[]; description?: string } {
   const warnings: string[] = [];
   const skipped: SkippedItem[] = [];
@@ -122,7 +131,7 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
     scope,
     root,
     requested: items,
-    description: resolved.description,
+    description: adaptDescriptionForAgent(resolved.description, agent),
     skills,
     commands,
     skipped: resolved.skipped,

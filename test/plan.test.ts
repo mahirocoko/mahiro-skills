@@ -139,6 +139,54 @@ describe("plan", () => {
     }
   });
 
+  test("resolves Pi roots as skills-only Agent Skills output", () => {
+    const temp = makeTempEnv();
+    try {
+      const localPlan = createPlan("pi", "local", ["project"], temp.env);
+      const globalPlan = createPlan("pi", "global", ["recap"], temp.env);
+      const defaultGlobalPlan = createPlan("pi", "global", [], temp.env);
+      const isolatedRoot = join(temp.root, "pi-isolated", ".pi", "agent");
+      const isolatedPlan = createPlan("pi", "global", ["mahiro-style"], {
+        ...temp.env,
+        PI_CODING_AGENT_DIR: isolatedRoot,
+      });
+      const isolatedPlanWithoutHome = createPlan("pi", "global", ["project"], {
+        ...temp.env,
+        HOME: "",
+        MAHIRO_SKILLS_HOME: "",
+        PI_CODING_AGENT_DIR: isolatedRoot,
+      });
+      const localPlanWithGlobalOverride = createPlan("pi", "local", ["project"], {
+        ...temp.env,
+        PI_CODING_AGENT_DIR: isolatedRoot,
+      });
+      const tildePlan = createPlan("pi", "global", ["project"], {
+        ...temp.env,
+        PI_CODING_AGENT_DIR: "~/.pi-custom/agent",
+      });
+
+      expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project"),
+      ]);
+      expect(localPlan.commands).toEqual([]);
+      expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent"));
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent", "skills", "recap"),
+      ]);
+      expect(globalPlan.commands).toEqual([]);
+      expect(defaultGlobalPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'pi' installs Agent Skills only and does not copy command wrappers.");
+      expect(isolatedPlan.root).toBe(isolatedRoot);
+      expect(isolatedPlan.skills[0]?.target).toBe(join(isolatedRoot, "skills", "mahiro-style"));
+      expect(isolatedPlan.commands).toEqual([]);
+      expect(isolatedPlanWithoutHome.root).toBe(isolatedRoot);
+      expect(localPlanWithGlobalOverride.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
+      expect(tildePlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi-custom", "agent"));
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("resolves codex roots and markdown command compatibility output", () => {
     const temp = makeTempEnv();
     try {

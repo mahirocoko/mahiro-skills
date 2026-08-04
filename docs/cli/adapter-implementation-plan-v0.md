@@ -6,7 +6,7 @@ The design constraint is simple: do not fork the product into per-agent installe
 
 ## Goal
 
-Finish the follow-on adapter rollout for `cursor`, `gemini`, and skills-only Letta Code support without weakening the current guarantees around `plan`, install receipts, collision handling, and opaque skill-tree copying.
+Keep the shared adapter core extensible across `cursor`, `gemini`, skills-only Letta Code, and skills-only Pi support without weakening guarantees around `plan`, install receipts, collision handling, and opaque skill-tree copying.
 
 ## Current starting point
 
@@ -14,6 +14,7 @@ Finish the follow-on adapter rollout for `cursor`, `gemini`, and skills-only Let
 - `src/adapters.ts` is still the hard gate for implemented agents and command support
 - `src/plan.ts`, `src/install.ts`, `src/list.ts`, and `src/doctor.ts` already share a single adapter-dependent flow
 - `cursor` and `gemini` are now implemented in the runtime for the currently modeled packaged install outputs
+- `letta-code` and `pi` use the same skills-only capability seam while retaining different local/global roots
 
 ## Phase 1: Cursor implementation
 
@@ -102,12 +103,35 @@ Letta Code implements the open Agent Skills directory contract, so the existing 
 
 Status: implemented in the current repo pass for packaged Agent Skills trees and receipts.
 
+## Phase 5: Pi Agent Skills support
+
+### Why now
+
+Pi 0.83 implements the Agent Skills standard, discovers global `~/.pi/agent/skills/` and project `.pi/skills/`, supports an explicit `PI_CODING_AGENT_DIR`, and creates `/skill:<name>` commands from discovered skills. That maps directly onto the existing copy-and-receipt core without inventing Pi command wrappers.
+
+### Scope
+
+- implement `pi` as the seventh, skills-only adapter target
+- resolve local installs through `.pi/skills/<name>/`
+- resolve global installs through `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`
+- preserve explicit isolated config roots and skip copied command wrappers
+- expose Pi through direct CLI, guided, full-screen TUI, list/update/uninstall/doctor, docs, and tests
+
+### Exit criteria
+
+- deterministic plans cover local, default-global, and explicit isolated Pi roots
+- install/update/list/uninstall/doctor preserve Pi receipts and skills-only behavior
+- full-screen and guided `All agents` include Pi without hard-coded count drift
+- a real Pi startup discovers an installed skill from the selected adapter root
+
+Status: implemented and natively exercised on 2026-08-04. A temporary global install targeted an explicit isolated `PI_CODING_AGENT_DIR`; offline Pi 0.83 startup then displayed `[Skills] mahiro-style` from that adapter root without a command wrapper or available model. The receipt-backed isolated Pi pilot was subsequently updated with all 25 default skills, passed all 27 doctor checks, and displayed the full skill roster at startup. This proves discovery/startup wiring only—the skills' task behavior still depends on the selected model and tools.
+
 ## Deferred items
 
 - full Gemini extension install modeling
 - automated settings orchestration for confirmation-heavy tool flows
 - any target-specific plugin build pipeline that goes beyond file planning and copied assets
-- expansion to future spec-only targets before Cursor, Gemini, Codex, and Letta Code are stable
+- expansion to future targets before Cursor, Gemini, Codex, Letta Code, and Pi are stable
 
 ## File and module focus for the first implementation pass
 

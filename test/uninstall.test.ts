@@ -80,6 +80,27 @@ describe("uninstall", () => {
     }
   });
 
+  test("removes Pi skills without guessing command targets", () => {
+    const temp = makeTempEnv();
+
+    try {
+      install("pi", "local", ["project", "recap"], false, temp.env);
+
+      const result = uninstall("pi", "local", ["project"], temp.env);
+      const receipt = listInstalled("pi", "local", temp.env);
+
+      expect(result.status).toBe("uninstalled");
+      expect(result.uninstalled).toEqual(["project"]);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project"))).toBe(false);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "recap"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "commands", "project.md"))).toBe(false);
+      expect(receipt?.installedSkills).toEqual(["recap"]);
+      expect(receipt?.installedCommands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("skips safely when no receipt exists", () => {
     const temp = makeTempEnv();
 

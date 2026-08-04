@@ -206,6 +206,36 @@ describe("install", () => {
       expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
       expect(receipt.installedSkills).toEqual(["project"]);
       expect(receipt.installedCommands).toEqual([]);
+      expect(result.description).toBeUndefined();
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("installs one skill for Pi without command output", () => {
+    const temp = makeTempEnv();
+    try {
+      const isolatedRoot = join(temp.root, "pi-isolated", ".pi", "agent");
+      const env = { ...temp.env, PI_CODING_AGENT_DIR: isolatedRoot };
+      const result = install("pi", "global", ["project"], false, env);
+      const receiptPath = join(isolatedRoot, ".mahiro-skills", "receipts", "global-pi.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        scope: string;
+        root: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.status).toBe("installed");
+      expect(existsSync(join(isolatedRoot, "skills", "project", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(isolatedRoot, "commands", "project.md"))).toBe(false);
+      expect(existsSync(receiptPath)).toBe(true);
+      expect(receipt.agent).toBe("pi");
+      expect(receipt.scope).toBe("global");
+      expect(receipt.root).toBe(isolatedRoot);
+      expect(receipt.installedSkills).toEqual(["project"]);
+      expect(receipt.installedCommands).toEqual([]);
     } finally {
       temp.cleanup();
     }

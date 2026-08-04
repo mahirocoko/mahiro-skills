@@ -36,15 +36,16 @@ describe("README", () => {
   test("documents install and usage truthfully without public-page noise", () => {
     const content = readFileSync(readmePath, "utf8");
 
-    expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, and Letta Code, plus slash-command wrappers where the target agent supports them.");
+    expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini, Codex, Letta Code, and Pi, plus slash-command wrappers where the target agent supports them.");
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.78 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.79 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
     expect(content).toContain("Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.");
+    expect(content).toContain("Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root");
     expect(content).toContain("## Runtime prerequisites");
     expect(content).toContain("`skills/llms.txt` — compact skill discovery index for agents and humans");
     expect(content).toContain("`examples/` — runnable or copyable workflow examples for the CLI/TUI surface");
@@ -54,7 +55,7 @@ describe("README", () => {
     expect(content).toContain("Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
     expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
-    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code`.");
+    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, and `pi`.");
     expect(content).toContain("Current workflow highlights:");
     expect(content).toContain("The canonical catalog is default-or-absent");
     expect(content).toContain("Step-first full-screen Skill Manager plus guided compatibility flow");
@@ -79,9 +80,12 @@ describe("README", () => {
     expect(content).toContain("bun ./src/cli.ts new my-skill --copy-template --json");
     expect(content).toContain("bun ./src/cli.ts install project --agent letta-code --scope local");
     expect(content).toContain("Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`");
+    expect(content).toContain("bun ./src/cli.ts install project --agent pi --scope local");
+    expect(content).toContain('PI_CODING_AGENT_DIR="$HOME/.9router-free/pi-pilot/home/.pi/agent"');
+    expect(content).toContain("Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`");
     expect(content).toContain("including multi-pane fanout or detached Herdr result collection");
     expect(content).toContain("sprite-workflow --agent opencode --scope local");
-    expect(content).toContain("CLI v0 currently targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, and `letta-code` for packaged skill installs; Letta Code is skills-only in v0 because its documented Agent Skills surface does not define a command-wrapper directory.");
+    expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, and `pi` for packaged skill installs. Letta Code and Pi are skills-only adapters");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("Prefer the source files in this repository and tagged releases over installed copies.");
     expect(content).not.toContain("Home → Plan (dry run)");

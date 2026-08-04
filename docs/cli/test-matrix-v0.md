@@ -30,6 +30,7 @@ Use current repo assets as fixtures.
 | gemini | Yes | Yes | Yes |
 | codex | Yes | Yes | Yes |
 | letta-code | Yes | Yes | Yes |
+| pi | Yes | Yes | Yes |
 
 ### Install unit x expected behavior
 
@@ -100,6 +101,22 @@ Expected:
 - `skills/project/` is planned for `.agents/skills/project`
 - no command artifact is planned because Letta Code support is skills-only in v0
 
+### Case 2d — Pi local and isolated global Agent Skills output
+
+Inputs:
+
+```text
+mahiro-skills plan project --agent pi --scope local
+PI_CODING_AGENT_DIR=/isolated/.pi/agent mahiro-skills plan project --agent pi --scope global
+```
+
+Expected:
+
+- local root resolves to `.pi` and plans `.pi/skills/project/`
+- default global root resolves to `~/.pi/agent`; explicit `PI_CODING_AGENT_DIR` wins for isolated configurations
+- no command artifact is planned because Pi discovers Agent Skills and exposes `/skill:<name>` itself
+- install receipts live under the selected Pi adapter root and remain usable by list/update/uninstall/doctor
+
 ### Case 3 — Gemini local opaque subtree
 
 Input:
@@ -132,7 +149,7 @@ For successful install:
 - the full-screen renderer stays within reported terminal display width for ASCII, Thai, combining characters, emoji, color, and no-color output; safety paths hard-wrap without ellipses
 - the shared stepper is `Target › Action › Skills › Review › Result`; Target covers All/custom exclusivity, every supported agent, one scope radio, empty-selection blocking, and CLI multi-agent preselection
 - Action lists Install, Update, Uninstall, and Inspect with plain descriptions and arrow/Enter navigation
-- Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Letta Code skills-only detail
+- Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Letta Code/Pi skills-only detail
 - `Space` toggles enabled rows; Enter reaches Review for writes or read-only Inspect detail; Esc clears a query first and then backs out
 - Review is full-screen and scrollable, shows per-agent plans/roots/actions/skips/warnings plus exact collision/overwrite/remove paths, explains sequential execution without whole-batch rollback, and requires overwrite plus modified/legacy acknowledgements before Enter can run
 - Review replans immediately before execution and stays in Review with an error if the safety shape changed; entering Review itself never writes
@@ -141,7 +158,7 @@ For successful install:
 - v2 receipts distinguish current/outdated/modified/missing; legacy receipts remain explicitly unverified, and malformed receipts surface an actionable error without crashing catalog browsing
 - guided install still confirms before writing unless `--yes` is provided, and collision handling still uses the same overwrite rules as direct `install`
 - guided item/agent multiselect, Home soft-cancel, list filtering, receipt detail, and multi-agent batch summaries remain covered independently from the full-screen manager
-- direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code`; direct uninstall also accepts `--agent all`
+- direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `letta-code` and `pi`; direct uninstall also accepts `--agent all`
 - `audit` reads only explicit Letta `Skill` tool-call records, supports agent/date filters, never returns transcript text, and reports unobserved packaged skills separately from names outside the current repo catalog
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete
