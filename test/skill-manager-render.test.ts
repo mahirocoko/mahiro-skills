@@ -122,10 +122,12 @@ describe("step-first skill manager renderer", () => {
           acknowledgements: [{ id: "overwrite:opencode", label: "Allow overwrite", checked: false }],
           focusIndex: 0,
           scrollOffset: 0,
+          showDetails: true,
         },
       }, { columns: 72, rows: 40 }, { color: false });
       expect(frame.replaceAll("\n", "")).toContain(collisionPath);
       expect(frame).toContain("[collision / overwrite]");
+      expect(frame).toContain("Allow overwrite");
       expect(frame).not.toContain("...");
       for (const line of frame.split("\n")) {
         expect(Bun.stringWidth(stripAnsi(line))).toBeLessThanOrEqual(72);

@@ -60,9 +60,9 @@ Optional search starts with `/`; it is not required for navigation.
 
 ### Review
 
-Review is a full scrollable screen, not a modal. It shows selected agents, scope, item names, each adapter root, exact source/target or remove paths, actions, skips, warnings, unreadable-receipt blocks, and the sequential execution/no whole-batch rollback rule. Any unreadable selected-agent receipt blocks the whole batch until Target is corrected. Paths are hard-wrapped, never shortened.
+Review is a full scrollable screen, not a modal. Its default view keeps the confirmation at the top and shows one compact effect summary per agent. Press `D` only when exact adapter roots, source/target or remove paths, skips, and warnings are needed; safety paths are hard-wrapped and never shortened. Any unreadable selected-agent receipt blocks the whole batch until Target is corrected.
 
-Entering Review does not write. Use `Space` to check every required overwrite or modified/legacy replacement/removal acknowledgement. Enter runs only when all acknowledgements are checked. The manager replans immediately before execution and stays in Review if the safety shape changed.
+Entering Review does not write. One `Space` explicitly checks or clears every required overwrite or modified/legacy replacement/removal acknowledgement for the selected batch. Enter runs only after the batch confirmation is checked. The manager replans immediately before execution and stays in Review if the safety shape changed.
 
 ### Result
 

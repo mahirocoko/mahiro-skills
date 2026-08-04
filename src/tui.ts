@@ -79,6 +79,7 @@ export interface TuiReviewState {
   acknowledgements: TuiReviewAcknowledgement[];
   focusIndex: number;
   scrollOffset: number;
+  showDetails: boolean;
   safetyShape: string;
   error?: string;
 }
@@ -530,6 +531,7 @@ class SkillManagerTuiController implements TuiController {
         acknowledgements: this.review.acknowledgements,
         focusIndex: this.review.focusIndex,
         scrollOffset: this.review.scrollOffset,
+        showDetails: this.review.showDetails,
         error: this.review.error,
       } : undefined,
       result: this.result ? {
@@ -1074,6 +1076,7 @@ class SkillManagerTuiController implements TuiController {
       acknowledgements,
       focusIndex: 0,
       scrollOffset: 0,
+      showDetails: false,
       safetyShape: safetyShape(plans, action, agents, this.scope, names),
     };
   }
@@ -1081,6 +1084,16 @@ class SkillManagerTuiController implements TuiController {
   private async handleReviewKey(key: TuiKey): Promise<void> {
     if (!this.review) {
       this.step = "skills";
+      this.render();
+      return;
+    }
+    if (key.type === "text" && key.value.toLowerCase() === "d") {
+      this.review.showDetails = !this.review.showDetails;
+      this.review.scrollOffset = 0;
+      this.message = {
+        kind: "info",
+        text: this.review.showDetails ? "Showing exact paths and per-agent details." : "Showing compact review summary.",
+      };
       this.render();
       return;
     }
@@ -1102,10 +1115,7 @@ class SkillManagerTuiController implements TuiController {
         this.render();
         return;
       case "end":
-        this.review.scrollOffset += 3;
-        if (this.review.acknowledgements.length > 0) {
-          this.review.focusIndex = this.review.acknowledgements.length - 1;
-        }
+        this.review.scrollOffset = Number.MAX_SAFE_INTEGER;
         this.render();
         return;
       case "space":
@@ -1129,9 +1139,6 @@ class SkillManagerTuiController implements TuiController {
     if (!this.review) {
       return;
     }
-    if (this.review.acknowledgements.length > 0) {
-      this.review.focusIndex = Math.max(0, Math.min(this.review.acknowledgements.length - 1, this.review.focusIndex + delta));
-    }
     this.review.scrollOffset = Math.max(0, this.review.scrollOffset + delta);
     this.render();
   }
@@ -1142,12 +1149,15 @@ class SkillManagerTuiController implements TuiController {
       this.render();
       return;
     }
-    const acknowledgement = this.review.acknowledgements[this.review.focusIndex];
-    if (!acknowledgement) {
-      return;
+    const allChecked = this.review.acknowledgements.every((entry) => entry.checked);
+    for (const acknowledgement of this.review.acknowledgements) {
+      acknowledgement.checked = !allChecked;
     }
-    acknowledgement.checked = !acknowledgement.checked;
     this.review.error = undefined;
+    this.message = {
+      kind: "info",
+      text: allChecked ? "Cleared all required acknowledgements." : `Confirmed all ${this.review.acknowledgements.length} required acknowledgements.`,
+    };
     this.render();
   }
 
@@ -1185,7 +1195,7 @@ class SkillManagerTuiController implements TuiController {
     }
 
     const approvedAcks = this.review.acknowledgements.map((entry) => ({ ...entry }));
-    this.review = { ...current, acknowledgements: approvedAcks };
+    this.review = { ...current, acknowledgements: approvedAcks, showDetails: this.review.showDetails };
     this.busy = true;
     this.message = undefined;
     this.render();

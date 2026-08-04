@@ -69,6 +69,7 @@ export interface SkillManagerReviewRenderState {
   acknowledgements: readonly SkillManagerAcknowledgement[];
   focusIndex?: number;
   scrollOffset?: number;
+  showDetails?: boolean;
   error?: string;
 }
 
@@ -586,8 +587,67 @@ function reviewLines(state: SkillManagerReviewRenderState, width: number, color:
     `${state.items.length} item${state.items.length === 1 ? "" : "s"} · ${state.agents.length} target${state.agents.length === 1 ? "" : "s"} · ${state.scope}`,
     ...wrapText("! Runs sequentially. A failure stops later agents; completed agents are not rolled back.", width),
     readiness,
-    "",
   ];
+
+  if (state.error) {
+    lines.push(paint(`✕ ${sanitize(state.error)}`, colors.red, color));
+  }
+
+  lines.push("");
+  if (state.acknowledgements.length > 0) {
+    const allChecked = state.acknowledgements.every((entry) => entry.checked);
+    const counts = {
+      overwrite: state.acknowledgements.filter((entry) => entry.id.startsWith("overwrite:")).length,
+      modified: state.acknowledgements.filter((entry) => entry.id.startsWith("modified:")).length,
+      legacy: state.acknowledgements.filter((entry) => entry.id.startsWith("legacy:")).length,
+      removeModified: state.acknowledgements.filter((entry) => entry.id.startsWith("remove-modified:")).length,
+      removeLegacy: state.acknowledgements.filter((entry) => entry.id.startsWith("remove-legacy:")).length,
+    };
+    const confirmationKinds = [
+      counts.overwrite > 0 ? `${counts.overwrite} overwrite group${counts.overwrite === 1 ? "" : "s"}` : "",
+      counts.modified > 0 ? `${counts.modified} modified replacement${counts.modified === 1 ? "" : "s"}` : "",
+      counts.legacy > 0 ? `${counts.legacy} legacy replacement${counts.legacy === 1 ? "" : "s"}` : "",
+      counts.removeModified > 0 ? `${counts.removeModified} modified removal${counts.removeModified === 1 ? "" : "s"}` : "",
+      counts.removeLegacy > 0 ? `${counts.removeLegacy} legacy removal${counts.removeLegacy === 1 ? "" : "s"}` : "",
+    ].filter(Boolean);
+    lines.push(paint("CONFIRM", colors.bold, color));
+    lines.push(`> [${allChecked ? "x" : " "}] Confirm all ${state.acknowledgements.length} required acknowledgement${state.acknowledgements.length === 1 ? "" : "s"}`);
+    lines.push(...wrapText(confirmationKinds.join(" · "), width).map((line) => `  ${line}`));
+  } else {
+    lines.push(paint("✓ No additional confirmation required", colors.green, color));
+  }
+
+  lines.push("", paint("PLAN", colors.bold, color));
+  for (const plan of state.plans) {
+    const targets = [...(plan.installPlan?.skills ?? []), ...(plan.installPlan?.commands ?? [])];
+    const collisions = targets.filter((target) => target.collision).length;
+    const effects = [
+      plan.active.length > 0 ? `${plan.active.length} item${plan.active.length === 1 ? "" : "s"}` : "no changes",
+      targets.length > 0 ? `${targets.length} write${targets.length === 1 ? "" : "s"}` : "",
+      collisions > 0 ? `${collisions} overwrite${collisions === 1 ? "" : "s"}` : "",
+      plan.uninstallTargets.length > 0 ? `${plan.uninstallTargets.length} removal${plan.uninstallTargets.length === 1 ? "" : "s"}` : "",
+      plan.skipped.length > 0 ? `${plan.skipped.length} skipped` : "",
+    ].filter(Boolean);
+    const marker = plan.blocked ? paint("✕", colors.red, color) : paint("✓", colors.green, color);
+    lines.push(`${marker} ${plan.agent} · ${effects.join(" · ")}`);
+    if (plan.blocked) {
+      lines.push(...wrapText(`  ${sanitize(plan.blocked)}`, width));
+    }
+  }
+
+  if (!state.showDetails) {
+    lines.push("", paint("D", colors.cyan, color) + " Show exact paths, skips, and adapter warnings");
+    return lines;
+  }
+
+  lines.push("", paint("EXACT DETAILS", colors.bold, color), "D Collapse details", "");
+  if (state.acknowledgements.length > 0) {
+    lines.push(paint("Required acknowledgements", colors.bold, color));
+    for (const acknowledgement of state.acknowledgements) {
+      appendWrapped(lines, acknowledgement.label, width, `  [${acknowledgement.checked ? "x" : " "}] `);
+    }
+    lines.push("");
+  }
 
   for (const plan of state.plans) {
     lines.push(`${paint(`Agent ${plan.agent}`, colors.cyan, color)} · root`);
@@ -620,19 +680,6 @@ function reviewLines(state: SkillManagerReviewRenderState, width: number, color:
       lines.push(`  Warning: ${sanitize(warning)}`);
     }
     lines.push("");
-  }
-
-  if (state.acknowledgements.length > 0) {
-    lines.push(paint("Required acknowledgements", colors.bold, color));
-    state.acknowledgements.forEach((acknowledgement, index) => {
-      const marker = index === (state.focusIndex ?? 0) ? ">" : " ";
-      appendWrapped(lines, acknowledgement.label, width, `${marker} [${acknowledgement.checked ? "*" : " "}] `);
-    });
-  } else {
-    lines.push("No destructive acknowledgement is required for this plan.");
-  }
-  if (state.error) {
-    lines.push("", paint(`Error: ${sanitize(state.error)}`, colors.red, color));
   }
   return lines;
 }
@@ -686,7 +733,7 @@ function footer(step: TuiStep, state: SkillManagerRenderState): string {
           ? "↑↓ Move · Space Mark · / Filter · Enter Detail · Esc Back · Ctrl+C Exit"
           : "↑↓ Move · Space Mark · / Filter · Enter Review · Esc Back · Ctrl+C Exit";
     case "review":
-      return "↑↓ Scroll · Space Check · Enter Run · Esc Back · Ctrl+C Exit";
+      return "↑↓ Scroll · Space Confirm all · D Details · Enter Run · Esc Back · Ctrl+C Exit";
     case "result":
       return "↑↓ Scroll · Enter Actions · Esc Targets · Ctrl+C Exit";
   }

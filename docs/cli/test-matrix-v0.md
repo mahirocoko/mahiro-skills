@@ -151,7 +151,7 @@ For successful install:
 - Action lists Install, Update, Uninstall, and Inspect with plain descriptions and arrow/Enter navigation
 - Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Letta Code/Pi skills-only detail
 - `Space` toggles enabled rows; Enter reaches Review for writes or read-only Inspect detail; Esc clears a query first and then backs out
-- Review is full-screen and scrollable, shows per-agent plans/roots/actions/skips/warnings plus exact collision/overwrite/remove paths, explains sequential execution without whole-batch rollback, and requires overwrite plus modified/legacy acknowledgements before Enter can run
+- Review is full-screen and scrollable, puts one all-required acknowledgement toggle before compact per-agent effect summaries, keeps exact roots/actions/skips/warnings and collision/overwrite/remove paths behind `D` details, explains sequential execution without whole-batch rollback, and blocks Enter until every required acknowledgement is checked
 - Review replans immediately before execution and stays in Review with an error if the safety shape changed; entering Review itself never writes
 - manager install skips receipt-installed names, Update runs only selected applicable names per agent, and Uninstall delegates receipt-recorded filtering to the existing core APIs
 - Result preserves per-agent success/skips/errors/receipt evidence, stops at the first thrown failure, marks later agents Not attempted, and aggregates Completed, Completed with skips, Partially completed, Failed, or No changes

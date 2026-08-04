@@ -224,13 +224,7 @@ describe("step-first skill manager TUI", () => {
       expect(controller.getState().review?.plans[0].active).toEqual(["project"]);
       expect(controller.getState().review?.plans[0].skipped.map((entry) => entry.item)).toEqual([]);
 
-      const acknowledgementCount = controller.getState().review?.acknowledgements.length ?? 0;
-      for (let index = 0; index < acknowledgementCount; index += 1) {
-        await controller.handleInput(" ");
-        if (index < acknowledgementCount - 1) {
-          await controller.handleInput("\x1b[B");
-        }
-      }
+      await controller.handleInput(" ");
       await controller.handleInput("\r");
       expect(calls).toEqual([["project"]]);
       expect(controller.getState().result?.aggregateStatus).toBe("Completed");
@@ -315,11 +309,49 @@ describe("step-first skill manager TUI", () => {
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("review");
       expect(controller.getState().review?.acknowledgements.map((entry) => entry.id)).toContain("overwrite:opencode");
+      expect(terminal.writes.at(-1)).not.toContain(collisionPath);
+      await controller.handleInput("d");
+      await controller.handleInput("\x1b[F");
       expect(terminal.writes.join("\n").replaceAll("\n", "")).toContain(collisionPath);
 
       await controller.handleInput("\r");
       expect(controller.getState().review?.error).toContain("acknowledgement");
       await controller.handleInput(" ");
+      await controller.handleInput("\r");
+      expect(controller.getState().step).toBe("result");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("compact Review confirms all agent acknowledgements with one Space", async () => {
+    const temp = makeTempEnv();
+    try {
+      for (const root of [".opencode", ".cursor"]) {
+        const collisionPath = join(temp.env.MAHIRO_SKILLS_CWD!, root, "skills", "project");
+        mkdirSync(collisionPath, { recursive: true });
+        writeFileSync(join(collisionPath, "existing.txt"), "collision");
+      }
+      const terminal = new FakeTerminal();
+      const controller = createTuiController({
+        terminal,
+        env: temp.env,
+        initialAgents: ["opencode", "cursor"],
+        initialItems: ["project"],
+        initialScope: "local",
+      });
+
+      await enterAction(controller);
+      await controller.handleInput("\r");
+      expect(controller.getState().review?.acknowledgements).toHaveLength(2);
+      const compactFrame = terminal.writes.at(-1) ?? "";
+      expect(compactFrame).toContain("Confirm all 2 required acknowledgements");
+      expect(compactFrame).toContain("D Show exact paths");
+      expect(compactFrame).not.toContain("existing.txt");
+
+      await controller.handleInput(" ");
+      expect(controller.getState().review?.acknowledgements.every((entry) => entry.checked)).toBe(true);
+      expect(terminal.writes.at(-1)).toContain("✓ Ready to run");
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("result");
     } finally {
