@@ -27,13 +27,15 @@ Use this path when you want:
 - Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
 - Do not default to Codex non-interactive mode such as `codex exec`; use it only when the user explicitly asks for script/headless output.
 - Do not default to Pi print mode (`pi -p` / `pi --print`); keep Pi interactive in the selected pane.
-- Do not default to Codex `--dangerously-bypass-approvals-and-sandbox`; use workspace-write sandboxing by default.
+- Default intended current-worktree lanes to uninterrupted execution: Cursor `--yolo --approve-mcps --trust`, Antigravity `--dangerously-skip-permissions`, Codex `--dangerously-bypass-approvals-and-sandbox`, and Pi `--approve` with `read,bash,edit,write,grep,find,ls`.
+- Treat autonomy as approval policy, not expanded scope. Destructive operations, secret handling, commits, pushes, releases, installs, and work outside the assigned worktree keep their normal explicit-authorization boundaries.
+- Opt down to safe/read-only/sandboxed behavior only when Mahiro explicitly requests it. For a safe Codex lane, use `--sandbox workspace-write --ask-for-approval never`.
 - Treat `/direct-cli pi`, `use Pi`, and `ใช้ Pi` as equivalent Pi-lane requests. If Pi provider/model are omitted, run `--list-models` before creating backend state; announce and use the only configured model, or ask when several choices exist.
 - If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
 - Launch Cursor, Antigravity, Codex, and Pi in the selected backend without the task prompt inline.
 - Confirm readiness through Herdr's `agent start` plus pane/agent reads, or through `tmux capture-pane`, before sending the real task prompt.
-- Remember that yolo approvals do not bypass workspace trust prompts. If the pane shows a trust prompt for the intended repo, accept it in the pane or hand it to the user to accept before sending the task prompt.
+- Cursor's default `--trust` should bypass its separate workspace trust prompt for the intended repo. If another CLI still presents a trust gate, accept it only for that intended worktree before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
 - Tell the executor to **continue from the current worktree only**.
 - Tell it to **not restart from scratch**.
@@ -177,11 +179,16 @@ fi
 Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Use `--kind pi` only when current Herdr help exposes it and the target pane proves it resolves the same Pi executable/provider environment that passed preflight:
 
 ```bash
+herdr agent start "$CURSOR_AGENT" --kind cursor --pane "$CURSOR_PANE" -- \
+  --model claude-fable-5-thinking-high \
+  --yolo \
+  --approve-mcps \
+  --trust
+
 herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
   --model gpt-5.6-sol \
   -c model_reasoning_effort=high \
-  --sandbox workspace-write \
-  --ask-for-approval never
+  --dangerously-bypass-approvals-and-sandbox
 
 herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
   --model claude-opus-4-6-thinking \
@@ -513,12 +520,11 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Codex automatic-delegation model/effort: `gpt-5.6-sol` + `ultra` for large parallelizable jobs
 - Codex specialized ultra-fast model/effort: `gpt-5.3-codex-spark` + `high`
 - Codex fallback choice: `gpt-5.5`
-- Pi review tool allowlist: `read,grep,find,ls`
-- Pi ordinary-edit tool allowlist: `read,edit,write,grep,find,ls`
-- Pi Bash policy: add `bash` only for an explicitly authorized bounded command/test/build need and announce it before launch
-- Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps`, then send the prompt after readiness
+- Pi default autonomous implementation allowlist: `read,bash,edit,write,grep,find,ls`
+- Pi safe/read-only review allowlist: `read,grep,find,ls`, only when Mahiro explicitly requests the opt-down
+- Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps --trust`, then send the prompt after readiness
 - Antigravity launch style: interactive selected-backend lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
-- Codex launch style: interactive selected-backend lane with `--sandbox workspace-write --ask-for-approval never`, then send the prompt after readiness
+- Codex launch style: interactive selected-backend lane with `--dangerously-bypass-approvals-and-sandbox`, then send the prompt after readiness
 
 ### Model selection rule
 
@@ -546,7 +552,7 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
 - If `/direct-cli pi ...` omits provider/model, resolve the Pi command and run its read-only `--list-models` check before backend mutation. Use the single configured provider/model after announcing it; ask when the command exposes multiple choices. Do not silently use a stale 9Router model slug.
 - Resolve Pi command in order: executable `DIRECT_PI_COMMAND`, `pi` on `PATH`, executable `~/.9router-free/pi-pilot/run-pi.sh`. The skills adapter does not install that executable or a PATH launcher. Fail before creating backend state when none exists; never install Pi or rewrite provider configuration implicitly.
-- Require current help output to expose every selected launch flag before mutation. Until a fresh capability check proves stronger per-tool approval semantics, pass explicit `--tools`: review defaults to `read,grep,find,ls`; ordinary editing defaults to `read,edit,write,grep,find,ls`; `bash` is opt-in for a bounded need.
+- Require current help output to expose every selected launch flag before mutation. Until a fresh capability check proves stronger per-tool approval semantics, the default Pi implementation lane passes `--tools read,bash,edit,write,grep,find,ls`; use `read,grep,find,ls` only for an explicitly requested safe/read-only review lane.
 - Do not place `--api-key <literal>` in the launch command. Use a configured provider or environment-backed wrapper so pane output and process arguments never expose the key.
 - Antigravity effort support is model-specific. Prefer an exact slug from the current `agy models` output, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
@@ -560,7 +566,7 @@ These examples instantiate the current routing policy. Model availability change
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CURSOR_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
@@ -570,7 +576,7 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t "codex-task" -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CODEX_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "codex-task" -S -120
@@ -606,7 +612,7 @@ done
 # ask Mahiro before creating the session.
 PI_PROVIDER="${PI_PROVIDER:?Select PI_PROVIDER from the live Pi model list}"
 PI_MODEL="${PI_MODEL:?Select PI_MODEL from the live Pi model list}"
-PI_TOOLS="read,edit,write,grep,find,ls"
+PI_TOOLS="read,bash,edit,write,grep,find,ls"
 
 tmux new-session -d -s "pi-task" -c "$(pwd)"
 tmux send-keys -t pi-task "\"$PI_COMMAND\" --provider \"$PI_PROVIDER\" --model \"$PI_MODEL\" --tools \"$PI_TOOLS\" --no-session --no-extensions --no-prompt-templates --approve" Enter
@@ -615,7 +621,7 @@ tmux send-keys -t pi-task 'Continue from the current worktree only. Do not resta
 tmux capture-pane -p -t pi-task -S -120
 ```
 
-Use the live preflight result; never revive a model/provider pair from an older document. Add `bash` to `PI_TOOLS` only after announcing and justifying that capability.
+Use the live preflight result; never revive a model/provider pair from an older document. If Mahiro explicitly requests a safe/read-only review lane, opt down `PI_TOOLS` to `read,grep,find,ls`.
 
 ### Safe discovery examples
 
@@ -652,7 +658,7 @@ Use the known-good Cursor defaults first. If the model or flags are in doubt on 
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "composer-2.5-fast" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "composer-2.5-fast" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -660,7 +666,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a balanced Composer pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -668,7 +674,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a Fable 5 reasoning pass (use this when Mahiro says “Fable 5”):
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -676,7 +682,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a heavier Fable 5 pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-xhigh" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-xhigh" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -684,7 +690,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For an Opus heavy review / deep reasoning pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-opus-4-8-thinking-high" --yolo --approve-mcps' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-opus-4-8-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -803,7 +809,7 @@ Use Codex interactively by default. Do not launch `codex exec` unless the user e
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -811,7 +817,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a balanced everyday pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-terra" -c model_reasoning_effort=medium --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-terra" -c model_reasoning_effort=medium --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -819,7 +825,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a fast/cost-efficient pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-luna" -c model_reasoning_effort=medium --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-luna" -c model_reasoning_effort=medium --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -827,7 +833,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a large parallelizable job with automatic task delegation:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra --sandbox workspace-write --ask-for-approval never' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Split independent workstreams when useful, then synthesize and verify the result. <YOUR TASK HERE>' Enter
 ```
@@ -841,8 +847,8 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 
 ### Safety defaults
 
-- Use `--sandbox workspace-write --ask-for-approval never` for direct-lane momentum without full sandbox bypass.
-- Do not use `--dangerously-bypass-approvals-and-sandbox` by default.
+- Use `--dangerously-bypass-approvals-and-sandbox` for the default trusted current-worktree lane.
+- Use `--sandbox workspace-write --ask-for-approval never` only when Mahiro explicitly requests the safer sandboxed variant.
 - Do not use `codex exec` by default.
 - Use `--search` only when the task needs live web search.
 
@@ -889,9 +895,8 @@ Use `--approve` only for the intended current worktree. Keep `--no-extensions --
 
 ### Tool boundary
 
-- review: `--tools read,grep,find,ls`
-- edit: `--tools read,edit,write,grep,find,ls`
-- command/test/build: append `bash` only after explicit bounded authorization
+- default autonomous implementation: `--tools read,bash,edit,write,grep,find,ls`
+- explicitly requested safe/read-only review: `--tools read,grep,find,ls`
 
 Until the current Pi runtime proves a stronger per-tool approval contract, never omit `--tools` or rely on the unrestricted built-in default. Never pass literal credentials on the command line.
 
@@ -977,8 +982,10 @@ Symptoms:
 
 Mitigation:
 
-- prefer `--yolo --approve-mcps` for Cursor direct runs
-- prefer `--sandbox workspace-write --ask-for-approval never` for Codex direct runs
+- require `--yolo --approve-mcps --trust` for default Cursor direct runs
+- require `--dangerously-skip-permissions` for default Antigravity direct runs
+- require `--dangerously-bypass-approvals-and-sandbox` for default Codex direct runs
+- require `--approve --tools read,bash,edit,write,grep,find,ls` for default Pi direct runs
 - inspect pane output directly before assuming the executor is still progressing normally
 
 ### Workspace trust prompt
@@ -998,7 +1005,7 @@ Mitigation:
 
 - inspect the pane and treat the trust prompt as the next action, not as a broken launch
 - if the workspace is the intended repo, approve trust in the pane and continue immediately, or let the user approve it directly
-- remember that yolo approval flags do not auto-accept workspace trust prompts
+- Cursor should launch with `--trust`; a Cursor trust prompt means the default launch contract was not applied or the current CLI changed
 
 ### Session corruption
 
@@ -1093,8 +1100,8 @@ Before launching Codex:
 
 1. Did the packaged selector choose and report a usable Herdr or tmux backend?
 2. Am I launching `codex`, not `codex exec`?
-3. Am I avoiding `--dangerously-bypass-approvals-and-sandbox`?
-4. Is `--sandbox workspace-write --ask-for-approval never` present unless the task needs stricter approvals?
+3. Is `--dangerously-bypass-approvals-and-sandbox` present unless Mahiro explicitly requested a safer sandboxed lane?
+4. If this is an explicit safe lane, is `--sandbox workspace-write --ask-for-approval never` present instead?
 5. Will I verify readiness with `herdr agent start` plus `agent read`, or with `tmux capture-pane`, before prompting?
 
 If any answer is no, do not launch Codex yet.

@@ -142,6 +142,18 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("model_reasoning_effort");
     expect(skill).toContain("Codex itself does not expose a `--effort` flag");
     expect(skill).toContain("Never infer `ultra`");
+    expect(skill).toContain("Cursor uses `--yolo --approve-mcps --trust`");
+    expect(skill).toContain("Antigravity uses `--dangerously-skip-permissions`");
+    expect(skill).toContain("Codex uses `--dangerously-bypass-approvals-and-sandbox`");
+    expect(skill).toContain("Pi uses `--approve` with the full implementation allowlist `read,bash,edit,write,grep,find,ls`");
+    expect(skill).toContain("Treat those autonomy flags as approval policy, not expanded scope");
+    for (const wrapper of [command, geminiCommand]) {
+      expect(wrapper).toContain("Cursor `--yolo --approve-mcps --trust`");
+      expect(wrapper).toContain("Antigravity `--dangerously-skip-permissions`");
+      expect(wrapper).toContain("Codex `--dangerously-bypass-approvals-and-sandbox`");
+      expect(wrapper).toContain("Pi `--approve` with `read,bash,edit,write,grep,find,ls`");
+      expect(wrapper).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
+    }
     expect(skill).not.toContain("Current Freshness Notes");
     expect(skill).not.toContain("2026.07.23-e383d2b");
     expect(skill).not.toContain("`kimi-k3-high`");
@@ -149,7 +161,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("`/direct-cli pi`, \"use Pi\", and `ใช้ Pi`");
     expect(skill).toContain("`pi --list-models`");
     expect(skill).toContain("`~/.9router-free/pi-pilot/run-pi.sh`");
-    expect(skill).toContain("`read,edit,write,grep,find,ls`");
+    expect(skill).toContain("`read,bash,edit,write,grep,find,ls`");
     expect(skill).toContain("The mahiro-skills `pi` adapter installs Agent Skills only");
     expect(skill).toContain("require the current help output to expose every launch flag");
     expect(skill).toContain("PATH presence or the basename `pi` is not enough");
@@ -198,7 +210,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("## Curated routing policy");
     expect(playbook).toContain("single owner of direct-cli's role-to-model choices");
-    expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps");
+    expect(playbook).toContain("agent --model \"claude-fable-5-thinking-high\" --yolo --approve-mcps --trust");
+    expect(playbook).toContain('herdr agent start "$CURSOR_AGENT" --kind cursor');
+    expect(playbook).toContain("--dangerously-bypass-approvals-and-sandbox");
+    expect(playbook).toContain('PI_TOOLS="read,bash,edit,write,grep,find,ls"');
+    expect(playbook).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
     expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
     expect(playbook).toContain("Verify supported effort levels from the current Codex catalog");
