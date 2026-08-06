@@ -11597,7 +11597,11 @@ var CUSTOM_GEM_UPLOAD_RESULT_VERSION = "custom-gem-source-upload-result-v1";
 var CUSTOM_GEM_RESULT_VERSION = "custom-gem-browser-result-v1";
 var CUSTOM_GEM_ID = "d6f1958dff66";
 var CUSTOM_GEM_URL = `https://gemini.google.com/gem/${CUSTOM_GEM_ID}`;
-var CUSTOM_GEM_IMAGE_ROLES = ["product_gallery", "creator_image"];
+var CUSTOM_GEM_PRODUCT_ROLE = "product_gallery";
+var CUSTOM_GEM_CREATOR_ROLE = "creator_image";
+var CUSTOM_GEM_MIN_PRODUCT_IMAGES = 1;
+var CUSTOM_GEM_MAX_PRODUCT_IMAGES = 5;
+var CUSTOM_GEM_MAX_SOURCE_COUNT = CUSTOM_GEM_MAX_PRODUCT_IMAGES + 1;
 var CUSTOM_GEM_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 var CUSTOM_GEM_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 var CUSTOM_GEM_MAX_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -11612,6 +11616,36 @@ var MAX_BASE64_CHARS = Math.ceil(CUSTOM_GEM_MAX_IMAGE_BYTES / 3) * 4;
 var SAFE_ID_RE = /^[a-zA-Z0-9._:-]{1,240}$/;
 function invalid(stage, code, message) {
   return { ok: false, error: { stage, code, message } };
+}
+function validateOrderedSourceRole(role, index, state, itemLabel) {
+  if (role === CUSTOM_GEM_PRODUCT_ROLE) {
+    if (state.creatorSeen) {
+      return invalid("validation", `invalid_image_role_${index}`, `${itemLabel} ${index} product_gallery cannot appear after creator_image`);
+    }
+    if (state.productCount >= CUSTOM_GEM_MAX_PRODUCT_IMAGES) {
+      return invalid("validation", `invalid_image_role_${index}`, `${itemLabel} ${index} exceeds the maximum of 5 product_gallery items`);
+    }
+    state.productCount += 1;
+    return null;
+  }
+  if (role === CUSTOM_GEM_CREATOR_ROLE) {
+    if (state.productCount === 0) {
+      return invalid("validation", `invalid_image_role_${index}`, `${itemLabel} ${index} creator_image must follow at least one product_gallery item`);
+    }
+    if (state.creatorSeen) {
+      return invalid("validation", `invalid_image_role_${index}`, `${itemLabel} ${index} may contain at most one creator_image`);
+    }
+    state.creatorSeen = true;
+    return null;
+  }
+  return invalid("validation", `invalid_image_role_${index}`, `${itemLabel} ${index} role must be product_gallery or creator_image`);
+}
+function invalidSourceCount(collectionLabel) {
+  return invalid(
+    "validation",
+    "invalid_image_count",
+    `${collectionLabel} must contain 1 to 5 ordered product_gallery items followed by an optional creator_image (maximum 6 items)`
+  );
 }
 function utf8ByteLength(value) {
   return new TextEncoder().encode(String(value)).byteLength;
@@ -11681,20 +11715,19 @@ async function validateGemStartRequest(input) {
   if (input?.tabId !== void 0 && input?.tabId !== null && (!Number.isSafeInteger(input.tabId) || input.tabId < 0)) {
     return invalid("validation", "invalid_tab_id", "tabId must be an exact non-negative integer when supplied");
   }
-  if (!Array.isArray(input?.images) || input.images.length !== CUSTOM_GEM_IMAGE_ROLES.length) {
-    return invalid("validation", "invalid_image_count", "images must contain exactly two ordered items");
+  if (!Array.isArray(input?.images) || input.images.length < CUSTOM_GEM_MIN_PRODUCT_IMAGES || input.images.length > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    return invalidSourceCount("images");
   }
   const sources = [];
+  const roleState = { productCount: 0, creatorSeen: false };
   let totalBytes = 0;
   for (let index = 0; index < input.images.length; index += 1) {
     const image = input.images[index];
-    const expectedRole = CUSTOM_GEM_IMAGE_ROLES[index];
     if (!image || typeof image !== "object") {
       return invalid("validation", `invalid_image_${index}`, "each image must be an object");
     }
-    if (image.role !== expectedRole) {
-      return invalid("validation", `invalid_image_role_${index}`, `image ${index} must have role ${expectedRole}`);
-    }
+    const roleError = validateOrderedSourceRole(image.role, index, roleState, "image");
+    if (roleError) return roleError;
     if (typeof image.filename !== "string" || image.filename.length === 0 || utf8ByteLength(image.filename) > MAX_FILENAME_BYTES || /[\\/\u0000-\u001f\u007f]/.test(image.filename)) {
       return invalid("validation", `invalid_filename_${index}`, "image filename must be a bounded basename");
     }
@@ -11731,7 +11764,7 @@ async function validateGemStartRequest(input) {
       return invalid("validation", "total_image_bytes_exceeded", "total decoded image bytes exceed 4 MiB");
     }
     sources.push({
-      role: expectedRole,
+      role: image.role,
       filename: image.filename,
       mimeType: image.mimeType,
       bytes: decoded.byteLength,
@@ -11800,21 +11833,20 @@ async function validateGemSubmitRequest(input) {
   if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
     return invalid("validation", "invalid_tab_id", "tabId must be an exact non-negative integer");
   }
-  if (!Array.isArray(input.sources) || input.sources.length !== CUSTOM_GEM_IMAGE_ROLES.length) {
-    return invalid("validation", "invalid_image_count", "sources must contain exactly two ordered metadata items");
+  if (!Array.isArray(input.sources) || input.sources.length < CUSTOM_GEM_MIN_PRODUCT_IMAGES || input.sources.length > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    return invalidSourceCount("sources");
   }
   const sources = [];
+  const roleState = { productCount: 0, creatorSeen: false };
   let totalBytes = 0;
   const sourceKeys = ["bytes", "filename", "mimeType", "role", "sha256"];
   for (let index = 0; index < input.sources.length; index += 1) {
     const source = input.sources[index];
-    const expectedRole = CUSTOM_GEM_IMAGE_ROLES[index];
     if (!source || typeof source !== "object" || Array.isArray(source) || Object.keys(source).length !== sourceKeys.length || Object.keys(source).some((key) => !sourceKeys.includes(key))) {
       return invalid("validation", `invalid_image_${index}`, "each source must contain metadata only");
     }
-    if (source.role !== expectedRole) {
-      return invalid("validation", `invalid_image_role_${index}`, `source ${index} must have role ${expectedRole}`);
-    }
+    const roleError = validateOrderedSourceRole(source.role, index, roleState, "source");
+    if (roleError) return roleError;
     if (typeof source.filename !== "string" || source.filename.length === 0 || utf8ByteLength(source.filename) > MAX_FILENAME_BYTES || /[\\/\u0000-\u001f\u007f]/.test(source.filename)) {
       return invalid("validation", `invalid_filename_${index}`, "source filename must be a bounded basename");
     }
@@ -11832,7 +11864,7 @@ async function validateGemSubmitRequest(input) {
       return invalid("validation", "total_image_bytes_exceeded", "total source bytes exceed 4 MiB");
     }
     sources.push({
-      role: expectedRole,
+      role: source.role,
       filename: source.filename,
       mimeType: source.mimeType,
       bytes: source.bytes,
@@ -11875,6 +11907,78 @@ async function validateGemSubmitRequest(input) {
         receiptId: uploadReceipt.receiptId.toLowerCase()
       }
     }
+  };
+}
+var escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+var navigationError = (code, detail) => {
+  const error = new Error(code);
+  error.code = code;
+  error.detail = detail;
+  return error;
+};
+var isExactCustomGemConversationUrl = (gemUrl, value) => new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}(?:[?#].*)?$`, "i").test(String(value || ""));
+async function observeCustomGemConversationNavigation({
+  tabs,
+  tabId,
+  gemUrl,
+  deadlineAt,
+  now = () => Date.now(),
+  setTimer = setTimeout,
+  clearTimer = clearTimeout
+}) {
+  const initial = await tabs.get(tabId);
+  if (initial?.url !== gemUrl) {
+    throw navigationError("gem_url_mismatch", `Custom Gem observer expected the base URL: ${initial?.url || ""}`);
+  }
+  let observedConversationUrl = null;
+  let settled = false;
+  let timer = null;
+  let resolveNavigation;
+  let rejectNavigation;
+  const promise = new Promise((resolve, reject) => {
+    resolveNavigation = resolve;
+    rejectNavigation = reject;
+  });
+  promise.catch(() => void 0);
+  const cleanup = () => {
+    tabs.onUpdated.removeListener(onUpdated);
+    if (timer) clearTimer(timer);
+    timer = null;
+  };
+  const finish = (callback) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    callback();
+  };
+  const onUpdated = (updatedTabId, changeInfo, tab) => {
+    if (updatedTabId !== tabId || settled) return;
+    if (typeof changeInfo?.url === "string") {
+      if (!isExactCustomGemConversationUrl(gemUrl, changeInfo.url)) {
+        finish(() => rejectNavigation(navigationError("gem_url_mismatch", `Unexpected Custom Gem navigation: ${changeInfo.url}`)));
+        return;
+      }
+      observedConversationUrl = changeInfo.url;
+    }
+    if (observedConversationUrl && tab?.url === observedConversationUrl && (changeInfo?.status === "complete" || tab?.status === "complete")) {
+      finish(() => resolveNavigation(observedConversationUrl));
+    }
+  };
+  tabs.onUpdated.addListener(onUpdated);
+  const navigationDeadline = Math.min(deadlineAt, now() + 15e3);
+  timer = setTimer(() => {
+    finish(
+      () => rejectNavigation(
+        navigationError(
+          "page_not_ready",
+          `Custom Gem conversation navigation did not settle: ${observedConversationUrl || gemUrl}`
+        )
+      )
+    );
+  }, Math.max(1, navigationDeadline - now()));
+  return {
+    promise,
+    cancel: () => finish(() => void 0)
   };
 }
 
@@ -12374,7 +12478,7 @@ function customGemErrorMessage(code) {
     upload_surface_missing: "A stable Custom Gem upload surface was not found",
     file_input_missing: "The Custom Gem upload surface did not expose a file input",
     attachment_markers_missing: "Stable visible attachment markers were not found",
-    attachment_count_mismatch: "The Custom Gem did not show exactly two visible attachments",
+    attachment_count_mismatch: "The Custom Gem did not show the expected number of visible attachments",
     attachment_names_unverified: "Visible attachment filenames could not be verified in order",
     upload_attestation_rejected: "Browser Control did not authenticate this one-time upload receipt",
     trusted_send_rejected: "Browser Control did not complete the one-time trusted Send click",
@@ -12435,11 +12539,14 @@ async function writeCustomGemDurableRequests(value) {
   await chrome.storage.local.set({ [CUSTOM_GEM_DURABLE_REQUESTS_KEY]: value });
 }
 async function customGemSubmitFingerprint(request) {
+  const sources = summarizeGemSources(request.sources);
   return sha256Hex(new TextEncoder().encode(JSON.stringify({
     requestId: request.requestId,
     tabId: request.tabId,
     currentUrl: request.currentUrl,
-    sources: summarizeGemSources(request.sources),
+    sourceCount: sources.length,
+    sourceOrder: sources.map(({ role }) => role),
+    sources,
     messageSha256: request.messageSha256,
     uploadReceipt: request.uploadReceipt
   })));
@@ -13391,13 +13498,20 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
   );
   const prepared = preparedResults?.[0]?.result || null;
   if (!prepared || prepared.state !== "prepared") return prepared;
+  const navigation = await observeCustomGemConversationNavigation({
+    tabs: chrome.tabs,
+    tabId,
+    gemUrl: CUSTOM_GEM_URL,
+    deadlineAt
+  });
   try {
     await requestTrustedCustomGemSend(request);
+    const conversationUrl = await navigation.promise;
     const responseResults = await executeCustomGemScript(
       tabId,
       awaitTrustedCustomGemResponsePage,
       [{
-        expectedUrl: CUSTOM_GEM_URL,
+        expectedUrl: conversationUrl,
         message: request.message,
         responseSelector,
         attributionToken,
@@ -13407,6 +13521,7 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
     );
     return responseResults?.[0]?.result || null;
   } finally {
+    navigation.cancel();
     await chrome.scripting.executeScript({
       target: { tabId },
       func: cleanupCustomGemAttributionPage,
@@ -17664,17 +17779,47 @@ async function sendChat(tabId, text) {
         input.dispatchEvent(new Event("change", { bubbles: true }));
       }
       await sleep(180);
-      const getSendButton = () => Array.from(document.querySelectorAll("button")).filter(isVisible).find((btn) => {
-        const label = String(btn.getAttribute("aria-label") || btn.textContent || "").trim().toLowerCase();
-        return /send message|send/.test(label);
-      });
-      let sendBtn = getSendButton();
-      for (let i = 0; i < 8; i += 1) {
-        if (sendBtn && !sendBtn.disabled) break;
-        await sleep(120);
-        sendBtn = getSendButton();
+      let composerRoot = input;
+      for (let depth = 0; depth < 8 && composerRoot; depth += 1) {
+        if (composerRoot.matches?.('form, [role="form"], [data-testid*="composer" i], [data-test-id*="composer" i]')) break;
+        composerRoot = composerRoot.parentElement;
       }
-      if (sendBtn && !sendBtn.disabled) {
+      composerRoot = composerRoot || input.parentElement || document.body;
+      const normalizeControlLabel = (value) => String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+      const isKnownSendLabel = (value) => {
+        const label = normalizeControlLabel(value);
+        return label === "send" || label === "send message" || label === "\u0E2A\u0E48\u0E07" || label === "\u0E2A\u0E48\u0E07\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21";
+      };
+      const getSendCandidates = () => Array.from(composerRoot.querySelectorAll('button, [role="button"]')).filter(isVisible).filter((btn) => {
+        const labels = [
+          btn.getAttribute("aria-label"),
+          btn.getAttribute("title"),
+          btn.textContent
+        ];
+        const hasKnownSendLabel = labels.some(isKnownSendLabel);
+        const iconFont = normalizeControlLabel(btn.querySelector("mat-icon[fonticon]")?.getAttribute("fonticon"));
+        const hasSendIcon = iconFont === "send";
+        const hasSendClass = btn.classList.contains("send-button");
+        return hasKnownSendLabel || hasSendIcon || hasSendClass;
+      });
+      const getSendButton = () => {
+        const candidates = getSendCandidates();
+        return candidates.length === 1 ? candidates[0] : null;
+      };
+      const isEnabledSendButton = (button) => Boolean(
+        button && !button.disabled && String(button.getAttribute("aria-disabled") || "").toLowerCase() !== "true"
+      );
+      let sendBtn = null;
+      for (let i = 0; i < 8; i += 1) {
+        const candidates = getSendCandidates();
+        if (candidates.length > 1) {
+          return { success: false, error: "Ambiguous Send controls in the composer" };
+        }
+        sendBtn = candidates[0] || null;
+        if (isEnabledSendButton(sendBtn)) break;
+        await sleep(120);
+      }
+      if (isEnabledSendButton(sendBtn)) {
         sendBtn.click();
         await sleep(220);
       } else {
@@ -17687,7 +17832,7 @@ async function sendChat(tabId, text) {
       const stillHasMessage = isContentEditable ? String(input.textContent || "").trim().length > 0 : String(input.value || "").trim().length > 0;
       if (stillHasMessage) {
         const retryButton = getSendButton();
-        if (retryButton && !retryButton.disabled) {
+        if (isEnabledSendButton(retryButton)) {
           retryButton.click();
           await sleep(220);
         }
@@ -17696,7 +17841,7 @@ async function sendChat(tabId, text) {
           return { success: false, error: "Message remained in composer after submit attempt" };
         }
       }
-      return { success: true, method: sendBtn && !sendBtn.disabled ? "button" : "enter" };
+      return { success: true, method: isEnabledSendButton(sendBtn) ? "button" : "enter" };
     },
     args: [text]
   });

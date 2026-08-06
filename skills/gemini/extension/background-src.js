@@ -7,6 +7,7 @@ import {
   CUSTOM_GEM_RESULT_VERSION,
   CUSTOM_GEM_SUBMIT_ACTION,
   CUSTOM_GEM_URL,
+  observeCustomGemConversationNavigation,
   isUuid,
   sha256Hex,
   summarizeGemSources,
@@ -598,7 +599,7 @@ function customGemErrorMessage(code) {
     upload_surface_missing: 'A stable Custom Gem upload surface was not found',
     file_input_missing: 'The Custom Gem upload surface did not expose a file input',
     attachment_markers_missing: 'Stable visible attachment markers were not found',
-    attachment_count_mismatch: 'The Custom Gem did not show exactly two visible attachments',
+    attachment_count_mismatch: 'The Custom Gem did not show the expected number of visible attachments',
     attachment_names_unverified: 'Visible attachment filenames could not be verified in order',
     upload_attestation_rejected: 'Browser Control did not authenticate this one-time upload receipt',
     trusted_send_rejected: 'Browser Control did not complete the one-time trusted Send click',
@@ -666,11 +667,14 @@ async function writeCustomGemDurableRequests(value) {
 }
 
 async function customGemSubmitFingerprint(request) {
+  const sources = summarizeGemSources(request.sources);
   return sha256Hex(new TextEncoder().encode(JSON.stringify({
     requestId: request.requestId,
     tabId: request.tabId,
     currentUrl: request.currentUrl,
-    sources: summarizeGemSources(request.sources),
+    sourceCount: sources.length,
+    sourceOrder: sources.map(({ role }) => role),
+    sources,
     messageSha256: request.messageSha256,
     uploadReceipt: request.uploadReceipt,
   })));
@@ -1701,13 +1705,20 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
   );
   const prepared = preparedResults?.[0]?.result || null;
   if (!prepared || prepared.state !== 'prepared') return prepared;
+  const navigation = await observeCustomGemConversationNavigation({
+    tabs: chrome.tabs,
+    tabId,
+    gemUrl: CUSTOM_GEM_URL,
+    deadlineAt,
+  });
   try {
     await requestTrustedCustomGemSend(request);
+    const conversationUrl = await navigation.promise;
     const responseResults = await executeCustomGemScript(
       tabId,
       awaitTrustedCustomGemResponsePage,
       [{
-        expectedUrl: CUSTOM_GEM_URL,
+        expectedUrl: conversationUrl,
         message: request.message,
         responseSelector,
         attributionToken,
@@ -1717,6 +1728,7 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
     );
     return responseResults?.[0]?.result || null;
   } finally {
+    navigation.cancel();
     await chrome.scripting.executeScript({
       target: { tabId },
       func: cleanupCustomGemAttributionPage,
@@ -6710,21 +6722,52 @@ async function sendChat(tabId, text) {
 
       await sleep(180);
 
-      const getSendButton = () => Array.from(document.querySelectorAll('button'))
-        .filter(isVisible)
-        .find((btn) => {
-          const label = String(btn.getAttribute('aria-label') || btn.textContent || '').trim().toLowerCase();
-          return /send message|send/.test(label);
-        });
+      let composerRoot = input;
+      for (let depth = 0; depth < 8 && composerRoot; depth += 1) {
+        if (composerRoot.matches?.('form, [role="form"], [data-testid*="composer" i], [data-test-id*="composer" i]')) break;
+        composerRoot = composerRoot.parentElement;
+      }
+      composerRoot = composerRoot || input.parentElement || document.body;
 
-      let sendBtn = getSendButton();
+      const normalizeControlLabel = (value) => String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const isKnownSendLabel = (value) => {
+        const label = normalizeControlLabel(value);
+        return label === 'send' || label === 'send message' || label === 'ส่ง' || label === 'ส่งข้อความ';
+      };
+      const getSendCandidates = () => Array.from(composerRoot.querySelectorAll('button, [role="button"]'))
+        .filter(isVisible)
+        .filter((btn) => {
+          const labels = [
+            btn.getAttribute('aria-label'),
+            btn.getAttribute('title'),
+            btn.textContent,
+          ];
+          const hasKnownSendLabel = labels.some(isKnownSendLabel);
+          const iconFont = normalizeControlLabel(btn.querySelector('mat-icon[fonticon]')?.getAttribute('fonticon'));
+          const hasSendIcon = iconFont === 'send';
+          const hasSendClass = btn.classList.contains('send-button');
+          return hasKnownSendLabel || hasSendIcon || hasSendClass;
+        });
+      const getSendButton = () => {
+        const candidates = getSendCandidates();
+        return candidates.length === 1 ? candidates[0] : null;
+      };
+      const isEnabledSendButton = (button) => Boolean(
+        button && !button.disabled && String(button.getAttribute('aria-disabled') || '').toLowerCase() !== 'true',
+      );
+
+      let sendBtn = null;
       for (let i = 0; i < 8; i += 1) {
-        if (sendBtn && !sendBtn.disabled) break;
+        const candidates = getSendCandidates();
+        if (candidates.length > 1) {
+          return { success: false, error: 'Ambiguous Send controls in the composer' };
+        }
+        sendBtn = candidates[0] || null;
+        if (isEnabledSendButton(sendBtn)) break;
         await sleep(120);
-        sendBtn = getSendButton();
       }
 
-      if (sendBtn && !sendBtn.disabled) {
+      if (isEnabledSendButton(sendBtn)) {
         sendBtn.click();
         await sleep(220);
       } else {
@@ -6741,7 +6784,7 @@ async function sendChat(tabId, text) {
 
       if (stillHasMessage) {
         const retryButton = getSendButton();
-        if (retryButton && !retryButton.disabled) {
+        if (isEnabledSendButton(retryButton)) {
           retryButton.click();
           await sleep(220);
         }
@@ -6755,7 +6798,7 @@ async function sendChat(tabId, text) {
         }
       }
 
-      return { success: true, method: sendBtn && !sendBtn.disabled ? 'button' : 'enter' };
+      return { success: true, method: isEnabledSendButton(sendBtn) ? 'button' : 'enter' };
     },
     args: [text]
   });

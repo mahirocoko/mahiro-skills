@@ -6,7 +6,13 @@ export const CUSTOM_GEM_UPLOAD_RESULT_VERSION = 'custom-gem-source-upload-result
 export const CUSTOM_GEM_RESULT_VERSION = 'custom-gem-browser-result-v1';
 export const CUSTOM_GEM_ID = 'd6f1958dff66';
 export const CUSTOM_GEM_URL = `https://gemini.google.com/gem/${CUSTOM_GEM_ID}`;
-export const CUSTOM_GEM_IMAGE_ROLES = ['product_gallery', 'creator_image'];
+export const CUSTOM_GEM_PRODUCT_ROLE = 'product_gallery';
+export const CUSTOM_GEM_CREATOR_ROLE = 'creator_image';
+// Kept as the role vocabulary for callers that imported the original constant.
+export const CUSTOM_GEM_IMAGE_ROLES = [CUSTOM_GEM_PRODUCT_ROLE, CUSTOM_GEM_CREATOR_ROLE];
+export const CUSTOM_GEM_MIN_PRODUCT_IMAGES = 1;
+export const CUSTOM_GEM_MAX_PRODUCT_IMAGES = 5;
+export const CUSTOM_GEM_MAX_SOURCE_COUNT = CUSTOM_GEM_MAX_PRODUCT_IMAGES + 1;
 export const CUSTOM_GEM_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const CUSTOM_GEM_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 export const CUSTOM_GEM_MAX_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -23,6 +29,64 @@ const SAFE_ID_RE = /^[a-zA-Z0-9._:-]{1,240}$/;
 
 function invalid(stage, code, message) {
   return { ok: false, error: { stage, code, message } };
+}
+
+function normalizeControlLabel(value) {
+  return String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function isKnownSendLabel(value) {
+  const label = normalizeControlLabel(value);
+  return label === 'send' || label === 'send message' || label === 'ส่ง' || label === 'ส่งข้อความ';
+}
+
+export function isGeminiSendControlDescriptor(control = {}) {
+  const labels = [control.ariaLabel, control.title, control.label, control.textContent];
+  const hasKnownSendLabel = labels.some(isKnownSendLabel);
+  const iconFont = normalizeControlLabel(control.iconFont);
+  const hasSendIcon = iconFont === 'send';
+  const classNames = new Set(normalizeControlLabel(control.className).split(/\s+/).filter(Boolean));
+  return hasKnownSendLabel || hasSendIcon || classNames.has('send-button');
+}
+
+export function selectGeminiSendControlDescriptor(controls) {
+  if (!Array.isArray(controls)) return null;
+  const matches = controls.filter(isGeminiSendControlDescriptor);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function validateOrderedSourceRole(role, index, state, itemLabel) {
+  if (role === CUSTOM_GEM_PRODUCT_ROLE) {
+    if (state.creatorSeen) {
+      return invalid('validation', `invalid_image_role_${index}`, `${itemLabel} ${index} product_gallery cannot appear after creator_image`);
+    }
+    if (state.productCount >= CUSTOM_GEM_MAX_PRODUCT_IMAGES) {
+      return invalid('validation', `invalid_image_role_${index}`, `${itemLabel} ${index} exceeds the maximum of 5 product_gallery items`);
+    }
+    state.productCount += 1;
+    return null;
+  }
+
+  if (role === CUSTOM_GEM_CREATOR_ROLE) {
+    if (state.productCount === 0) {
+      return invalid('validation', `invalid_image_role_${index}`, `${itemLabel} ${index} creator_image must follow at least one product_gallery item`);
+    }
+    if (state.creatorSeen) {
+      return invalid('validation', `invalid_image_role_${index}`, `${itemLabel} ${index} may contain at most one creator_image`);
+    }
+    state.creatorSeen = true;
+    return null;
+  }
+
+  return invalid('validation', `invalid_image_role_${index}`, `${itemLabel} ${index} role must be product_gallery or creator_image`);
+}
+
+function invalidSourceCount(collectionLabel) {
+  return invalid(
+    'validation',
+    'invalid_image_count',
+    `${collectionLabel} must contain 1 to 5 ordered product_gallery items followed by an optional creator_image (maximum 6 items)`,
+  );
 }
 
 export function utf8ByteLength(value) {
@@ -111,22 +175,21 @@ export async function validateGemStartRequest(input) {
     return invalid('validation', 'invalid_tab_id', 'tabId must be an exact non-negative integer when supplied');
   }
 
-  if (!Array.isArray(input?.images) || input.images.length !== CUSTOM_GEM_IMAGE_ROLES.length) {
-    return invalid('validation', 'invalid_image_count', 'images must contain exactly two ordered items');
+  if (!Array.isArray(input?.images) || input.images.length < CUSTOM_GEM_MIN_PRODUCT_IMAGES || input.images.length > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    return invalidSourceCount('images');
   }
 
   const sources = [];
+  const roleState = { productCount: 0, creatorSeen: false };
   let totalBytes = 0;
 
   for (let index = 0; index < input.images.length; index += 1) {
     const image = input.images[index];
-    const expectedRole = CUSTOM_GEM_IMAGE_ROLES[index];
     if (!image || typeof image !== 'object') {
       return invalid('validation', `invalid_image_${index}`, 'each image must be an object');
     }
-    if (image.role !== expectedRole) {
-      return invalid('validation', `invalid_image_role_${index}`, `image ${index} must have role ${expectedRole}`);
-    }
+    const roleError = validateOrderedSourceRole(image.role, index, roleState, 'image');
+    if (roleError) return roleError;
     if (typeof image.filename !== 'string' || image.filename.length === 0 ||
         utf8ByteLength(image.filename) > MAX_FILENAME_BYTES ||
         /[\\/\u0000-\u001f\u007f]/.test(image.filename)) {
@@ -169,7 +232,7 @@ export async function validateGemStartRequest(input) {
     }
 
     sources.push({
-      role: expectedRole,
+      role: image.role,
       filename: image.filename,
       mimeType: image.mimeType,
       bytes: decoded.byteLength,
@@ -245,24 +308,23 @@ export async function validateGemSubmitRequest(input) {
   if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
     return invalid('validation', 'invalid_tab_id', 'tabId must be an exact non-negative integer');
   }
-  if (!Array.isArray(input.sources) || input.sources.length !== CUSTOM_GEM_IMAGE_ROLES.length) {
-    return invalid('validation', 'invalid_image_count', 'sources must contain exactly two ordered metadata items');
+  if (!Array.isArray(input.sources) || input.sources.length < CUSTOM_GEM_MIN_PRODUCT_IMAGES || input.sources.length > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    return invalidSourceCount('sources');
   }
 
   const sources = [];
+  const roleState = { productCount: 0, creatorSeen: false };
   let totalBytes = 0;
   const sourceKeys = ['bytes', 'filename', 'mimeType', 'role', 'sha256'];
   for (let index = 0; index < input.sources.length; index += 1) {
     const source = input.sources[index];
-    const expectedRole = CUSTOM_GEM_IMAGE_ROLES[index];
     if (!source || typeof source !== 'object' || Array.isArray(source) ||
         Object.keys(source).length !== sourceKeys.length ||
         Object.keys(source).some((key) => !sourceKeys.includes(key))) {
       return invalid('validation', `invalid_image_${index}`, 'each source must contain metadata only');
     }
-    if (source.role !== expectedRole) {
-      return invalid('validation', `invalid_image_role_${index}`, `source ${index} must have role ${expectedRole}`);
-    }
+    const roleError = validateOrderedSourceRole(source.role, index, roleState, 'source');
+    if (roleError) return roleError;
     if (typeof source.filename !== 'string' || source.filename.length === 0 ||
         utf8ByteLength(source.filename) > MAX_FILENAME_BYTES ||
         /[\\/\u0000-\u001f\u007f]/.test(source.filename)) {
@@ -282,7 +344,7 @@ export async function validateGemSubmitRequest(input) {
       return invalid('validation', 'total_image_bytes_exceeded', 'total source bytes exceed 4 MiB');
     }
     sources.push({
-      role: expectedRole,
+      role: source.role,
       filename: source.filename,
       mimeType: source.mimeType,
       bytes: source.bytes,
@@ -335,5 +397,89 @@ export async function validateGemSubmitRequest(input) {
         receiptId: uploadReceipt.receiptId.toLowerCase(),
       },
     },
+  };
+}
+
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const navigationError = (code, detail) => {
+  const error = new Error(code);
+  error.code = code;
+  error.detail = detail;
+  return error;
+};
+
+export const isExactCustomGemConversationUrl = (gemUrl, value) =>
+  new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}(?:[?#].*)?$`, 'i').test(String(value || ''));
+
+export async function observeCustomGemConversationNavigation({
+  tabs,
+  tabId,
+  gemUrl,
+  deadlineAt,
+  now = () => Date.now(),
+  setTimer = setTimeout,
+  clearTimer = clearTimeout,
+}) {
+  const initial = await tabs.get(tabId);
+  if (initial?.url !== gemUrl) {
+    throw navigationError('gem_url_mismatch', `Custom Gem observer expected the base URL: ${initial?.url || ''}`);
+  }
+
+  let observedConversationUrl = null;
+  let settled = false;
+  let timer = null;
+  let resolveNavigation;
+  let rejectNavigation;
+  const promise = new Promise((resolve, reject) => {
+    resolveNavigation = resolve;
+    rejectNavigation = reject;
+  });
+  promise.catch(() => undefined);
+  const cleanup = () => {
+    tabs.onUpdated.removeListener(onUpdated);
+    if (timer) clearTimer(timer);
+    timer = null;
+  };
+  const finish = (callback) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    callback();
+  };
+  const onUpdated = (updatedTabId, changeInfo, tab) => {
+    if (updatedTabId !== tabId || settled) return;
+    if (typeof changeInfo?.url === 'string') {
+      if (!isExactCustomGemConversationUrl(gemUrl, changeInfo.url)) {
+        finish(() => rejectNavigation(navigationError('gem_url_mismatch', `Unexpected Custom Gem navigation: ${changeInfo.url}`)));
+        return;
+      }
+      observedConversationUrl = changeInfo.url;
+    }
+    if (
+      observedConversationUrl &&
+      tab?.url === observedConversationUrl &&
+      (changeInfo?.status === 'complete' || tab?.status === 'complete')
+    ) {
+      finish(() => resolveNavigation(observedConversationUrl));
+    }
+  };
+
+  tabs.onUpdated.addListener(onUpdated);
+  const navigationDeadline = Math.min(deadlineAt, now() + 15_000);
+  timer = setTimer(() => {
+    finish(() =>
+      rejectNavigation(
+        navigationError(
+          'page_not_ready',
+          `Custom Gem conversation navigation did not settle: ${observedConversationUrl || gemUrl}`,
+        ),
+      ),
+    );
+  }, Math.max(1, navigationDeadline - now()));
+
+  return {
+    promise,
+    cancel: () => finish(() => undefined),
   };
 }
