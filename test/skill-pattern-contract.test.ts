@@ -92,13 +92,39 @@ describe("skill pattern adaptation phase a", () => {
     const skill = readRepoFile("skills", "mahiro-docs-rules-init", "SKILL.md");
     const generationRules = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "generation-rules.md");
     const agentsTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "AGENTS.md");
+    const readme = readRepoFile("skills", "mahiro-docs-rules-init", "README.md");
+    const executionFlow = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "execution-flow.md");
+    const checklist = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "checklist.md");
+    const inputManifest = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "input-manifest.md");
 
     expect(skill).toContain("Do not import mechanics from another Mahiro repo as current fact.");
     expect(skill).toContain("Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available");
+    expect(skill).toContain("Never chain `ccc init && ccc index`");
+    expect(skill).toContain("without opening suspected secret contents");
     expect(generationRules).toContain("Never transplant mechanics from another Mahiro repo into `Current Reality`");
     expect(generationRules).toContain("If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`");
+    expect(generationRules).toContain("filename-only secret/exclusion preflight");
     expect(agentsTemplate).toContain("## Codebase Search");
+    expect(agentsTemplate).toContain("A local embedding backend does not make unintended secret reads acceptable");
     expect(agentsTemplate).toContain("Do not copy package manager, i18n, primitive, service, state, or test-command conventions from another Mahiro repo");
+    for (const contract of [skill, readme, generationRules, executionFlow, checklist, inputManifest]) {
+      expect(contract).toContain("ccc init && ccc index");
+      expect(contract).toContain("without opening suspected secret contents");
+      expect(contract).toContain("local embedding");
+      expect(contract).toContain("stale index");
+    }
+  });
+
+  test("cocoindex rules fail closed before broad indexing", () => {
+    const skill = readRepoFile("skills", "cocoindex-rules-init", "SKILL.md");
+    const agents = readRepoFile("AGENTS.md");
+
+    for (const contract of [skill, agents]) {
+      expect(contract).toContain("Never chain `ccc init && ccc index`");
+      expect(contract).toContain("without opening suspected secret contents");
+      expect(contract).toContain("A local embedding backend does not make unintended secret reads acceptable");
+      expect(contract).toContain("stale indexes");
+    }
   });
 
   test("direct-cli documents multi-pane fanout and write policy", () => {

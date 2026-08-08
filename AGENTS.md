@@ -39,10 +39,13 @@
 
 - Prefer `cocoindex-code` MCP `search` when available for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar-module investigation.
 - If the MCP tool is unavailable but the CLI exists, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
+- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that preflight.
+- If service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
 - Use `rg` for exact text, regex, symbol, filename, and string-presence checks.
 - Use AST-aware tools for syntax-shaped or structure-aware searches.
 - Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, `หาโค้ดส่วนนี้`, and `สรุปไฟล์นี้` as CocoIndex-first triggers when available.
 - After meaningful code changes, refresh or re-index before relying on semantic results that may be stale.
+- After changing exclusion policy, reset or safely rebuild stale indexes before trusting search results that may retain previously indexed content.
 
 ## Release Checklist
 

@@ -17,7 +17,7 @@ These rules control how the skill writes each page.
 - Keep docs-init repo-reality-first even when the target repo is young. For data ownership, prefer service-forward wording in REST/API repos and hook-owned wording in Supabase-direct repos.
 - Do not force a shared service layer into repos whose real pattern is route-local or hook-owned direct SDK access.
 - Do not default to folder paths the target repo does not prove.
-- If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`, include a short code-search rule in generated `AGENTS.md`: semantic search for broad/fuzzy repo exploration and `rg` for exact strings. If not present, omit or label it as future-facing instead of pretending the tool exists.
+- If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`, include a short code-search rule in generated `AGENTS.md`: semantic search for broad/fuzzy repo exploration, `rg` for exact strings, and a filename-only secret/exclusion preflight before index or refresh. Never generate `ccc init && ccc index` as one unchecked step. State that local embeddings do not authorize secret reads and require stale indexes to be reset or safely rebuilt after exclusion-policy changes. If CocoIndex is not present, omit or label it as future-facing instead of pretending the tool exists.
 
 ## Template Posture Rules
 
@@ -113,4 +113,5 @@ Use `Current Reality` only for claims proven by the target repo. Use the other l
 - do not state that a repo uses Mahiro-style service, store, i18n, or route boundaries unless local evidence proves it
 - do not state that a repo uses another Mahiro repo's package manager, primitive style, translation source language, service pattern, or test command unless local evidence proves it
 - do not add CocoIndex/`ccc` as a current command unless the target repo or environment proves it is available for that repo
+- do not describe local embeddings as permission to read secrets or claim an index is safe until effective exclusions are verified without opening suspected secret contents
 - do not treat section comments or section dividers as mandatory everywhere; they are a pattern, not a law

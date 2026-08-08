@@ -8,6 +8,9 @@ Use this flow for `init` mode.
 - find `AGENTS.md`, `README.md`, `docs/`, and toolchain files
 - detect framework, package manager, state, data, styling, and i18n signals
 - do this with local target-repo tools only
+- before any CocoIndex index or refresh, inventory filenames and effective ignore/filter rules without opening suspected secret contents
+- never chain `ccc init && ccc index`; fail closed until service-account, credential, dotenv, key, token-store, and unexplained structured-data files are conclusively excluded
+- treat local embeddings as a transport boundary, not authorization to read secrets; after exclusion-policy changes, reset or safely rebuild stale indexes before semantic search
 
 ## 2. Read Local Truth
 
@@ -71,6 +74,7 @@ When the repo is Next App Router plus REST/API, let the generated docs lean serv
 - verify the tone feels like one docs family
 - verify no external-research assumptions leaked into the docs
 - verify no unsupported folder-path example snuck in
+- if CocoIndex guidance was generated, verify the filename-only preflight, unchecked-init/index prohibition, local-embedding boundary, and stale-index handling all remain explicit
 
 ## 10. Report Outcome
 

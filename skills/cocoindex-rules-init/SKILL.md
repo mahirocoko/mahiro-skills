@@ -1,12 +1,12 @@
 ---
 name: cocoindex-rules-init
-description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance that makes agents prefer cocoindex-code / ccc for semantic codebase search, repo exploration, and index maintenance.
+description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance for semantic codebase search, secret-safe index preflight, repo exploration, and ccc index maintenance.
 user-invocable: true
 ---
 
 # /cocoindex-rules-init - Bootstrap CocoIndex Rules
 
-Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoIndex Code for broad codebase search and repo exploration. This skill is for instruction bootstrapping, not MCP installation. It teaches the target repo when to use `cocoindex-code` MCP `search`, when to fall back to `ccc`, and when exact-match tools like `rg` still win. The desired behavior is token-saving: use semantic search to avoid broad blind reads, then read only the specific files or ranges needed for verification or edits.
+Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoIndex Code for broad codebase search and repo exploration without indexing secret-bearing files by accident. This skill is for instruction bootstrapping, not MCP installation. It teaches the target repo when to use `cocoindex-code` MCP `search`, when to fall back to `ccc`, when exact-match tools like `rg` still win, and how to fail closed before broad indexing. The desired behavior is token-saving and secret-safe: semantic search narrows the repo, then agents read only the specific files or ranges needed for verification or edits.
 
 ## When to Use
 
@@ -23,6 +23,7 @@ Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoInde
 - Create or surgically update repo-local `AGENTS.md`.
 - Add a high-signal rule block that explains when to use `cocoindex-code` MCP `search`, when to use `ccc search` / `ccc index`, and when to keep using `rg` or AST tools.
 - Add a high-signal rule block that explains the normal token-saving workflow: semantic search narrows the search space, then agents read only the matched files or ranges needed for full context before editing or making strong claims.
+- Add a fail-closed preflight rule for `ccc init`, `ccc index`, `ccc search --refresh`, and equivalent MCP indexing: inspect filenames and effective ignore/filter rules without opening suspected secret contents, then index only after exclusions are verified.
 - Preserve existing local doctrine and merge the CocoIndex rules into it.
 
 ### Out of scope
@@ -46,6 +47,7 @@ Before writing anything, inspect these local inputs in the target repo:
 - `opencode.json` or `.opencode/opencode.json` if present
 - `README.md` and existing `docs/` only when they affect instruction shape
 - evidence that CocoIndex is already in use, such as `ccc`, `cocoindex-code`, or MCP config
+- filenames and existing ignore/filter configuration that can prove whether service-account JSON, credentials, dotenv files, private keys, token stores, or other suspected secret-bearing artifacts are excluded; inspect names and rules only, not suspected secret contents
 
 Do not write from template assumptions alone.
 
@@ -79,6 +81,11 @@ When you write or patch `AGENTS.md`, ensure the final repo-local rules encode al
    - `หาโค้ดส่วนนี้`
    - `สรุปไฟล์นี้`
 10. Include an index-freshness rule: after meaningful code changes, prefer refreshing or re-indexing before relying on stale semantic results.
+11. Require a filename-only and ignore/filter preflight before any broad repository index or refresh. Never open suspected secret files merely to decide whether they are safe to index.
+12. Never chain `ccc init && ccc index`: initialization may create broad default include patterns, so inspect the generated settings and effective matcher before the first index.
+13. Fail closed when service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded. Add and verify explicit exclusions before indexing.
+14. State that a local embedding backend does not make unintended secret reads acceptable. Local transport changes exposure, not read authorization.
+15. After exclusion policy changes, reset or safely rebuild stale indexes before relying on search results that may still contain previously indexed content.
 
 ## Write Strategy
 
@@ -107,6 +114,9 @@ Use a compact block close to this shape, adapted to the target repo's wording:
 
 - Prefer `cocoindex-code` MCP `search` for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar modules.
 - If the MCP tool is unavailable, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
+- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that check.
+- If credential, service-account, dotenv, private-key, token-store, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
+- After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results that may retain previously indexed content.
 - Use CocoIndex/ccc as a token-saving first pass: avoid broad blind reads by letting semantic search narrow the repo to candidate files and line ranges.
 - Run semantic search from the repo root, or pass `--path`, because `ccc search` defaults to the current working directory scope.
 - Treat semantic results as candidate locations: read only the returned file/ranges needed for verification with the available file-read tool or `sed -n` before editing or making strong claims.
@@ -124,12 +134,14 @@ Do not copy this block blindly when the target repo already has stronger equival
 - Do not use web search or external docs to write repo-local rules.
 - Do not install packages, modify user-global config, or add MCP servers unless the human explicitly asks.
 - Do not claim CocoIndex is installed unless local evidence proves it.
+- Do not run an index or refresh merely to test whether secret-bearing files are excluded. Prove the path rules first using filename-only inventory, config inspection, and a matcher/doctor preview that does not open candidate contents.
 - If CocoIndex availability is unclear, write conditional language such as `when available` rather than inventing certainty.
 
 ## Stop Gates
 
 - Stop and ask if the target repo has multiple conflicting instruction systems and the winner is unclear.
 - Stop and ask if the repo already has explicit semantic-search rules and the human has not said whether to replace or merge them.
+- Stop before indexing when suspected secret-bearing files are present, when generated default settings remain broad, or when effective exclusions cannot be verified without reading candidate contents.
 - Soften or label assumptions instead of inventing setup facts.
 
 ## Output Contract
@@ -150,6 +162,8 @@ Before declaring done:
 - Confirm the final wording frames CocoIndex/ccc as a token-saving first pass, not extra ceremony before every source read.
 - Confirm the final wording makes the targeted search → targeted read/verify loop explicit.
 - Confirm scope behavior is covered if the rule mentions `ccc search` directly: repo root or `--path` for intended search scope.
+- Confirm the final rules prohibit `ccc init && ccc index` before a filename-only secret/exclusion preflight.
+- Confirm local embeddings are not presented as permission to index secrets and stale indexes are handled after policy changes.
 - Confirm no claim assumes CocoIndex is installed unless a local file proves it.
 - Confirm the new rules are concise and not a generic tutorial dump.
 - Confirm existing repo-local doctrine was preserved unless the human asked for replacement.

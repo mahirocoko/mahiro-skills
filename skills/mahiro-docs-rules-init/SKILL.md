@@ -82,7 +82,9 @@ Do not generate files from template assumptions alone.
 This skill is a local boilerplate generator, not a research task.
 
 - Stay inside the target repo only.
-- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available, and `rg` for exact strings.
+- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available and its effective matcher has passed a filename-only secret/exclusion preflight; use `rg` for exact strings.
+- Never chain `ccc init && ccc index`. Before broad indexing, inspect filenames and ignore/filter rules without opening suspected secret contents; fail closed until service-account, credential, dotenv, key, token-store, and unexplained structured-data files are conclusively excluded.
+- A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results.
 - Do not use web search, GitHub search, Context7, subagents, or any external documentation lookup.
 - Do not use unsupported local commands such as `sg`.
 - Do not run the dev server, preview server, or long-running app processes.

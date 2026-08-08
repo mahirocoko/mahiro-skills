@@ -23,7 +23,7 @@ Goal:
 - create `AGENTS.md`
 - create the first docs family
 - give the repo a usable baseline rules layer
-- include CocoIndex/`ccc` code-search guidance only when the target repo or local environment proves that workflow is available
+- include CocoIndex/`ccc` code-search guidance only when the target repo or local environment proves that workflow is available, and require filename-only secret/exclusion preflight before any index or refresh
 
 Recommended flow:
 
