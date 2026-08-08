@@ -1,6 +1,6 @@
 ---
 name: cocoindex-rules-init
-description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance for semantic codebase search, secret-safe index preflight, repo exploration, and ccc index maintenance.
+description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance for semantic codebase search, secret-safe index preflight, visible project exclusion materialization, repo exploration, and ccc index maintenance.
 user-invocable: true
 ---
 
@@ -24,6 +24,7 @@ Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoInde
 - Add a high-signal rule block that explains when to use `cocoindex-code` MCP `search`, when to use `ccc search` / `ccc index`, and when to keep using `rg` or AST tools.
 - Add a high-signal rule block that explains the normal token-saving workflow: semantic search narrows the search space, then agents read only the matched files or ranges needed for full context before editing or making strong claims.
 - Add a fail-closed preflight rule for `ccc init`, `ccc index`, `ccc search --refresh`, and equivalent MCP indexing: inspect filenames and effective ignore/filter rules without opening suspected secret contents, then index only after exclusions are verified.
+- Require the effective deny policy to be materialized into project `.cocoindex_code/settings.yml` after initialization and policy changes, while retaining the global matcher as the non-bypassable boundary.
 - Preserve existing local doctrine and merge the CocoIndex rules into it.
 
 ### Out of scope
@@ -83,9 +84,10 @@ When you write or patch `AGENTS.md`, ensure the final repo-local rules encode al
 10. Include an index-freshness rule: after meaningful code changes, prefer refreshing or re-indexing before relying on stale semantic results.
 11. Require a filename-only and ignore/filter preflight before any broad repository index or refresh. Never open suspected secret files merely to decide whether they are safe to index.
 12. Never chain `ccc init && ccc index`: initialization may create broad default include patterns, so inspect the generated settings and effective matcher before the first index.
-13. Fail closed when service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded. Add and verify explicit exclusions before indexing.
-14. State that a local embedding backend does not make unintended secret reads acceptable. Local transport changes exposure, not read authorization.
-15. After exclusion policy changes, reset or safely rebuild stale indexes before relying on search results that may still contain previously indexed content.
+13. After initialization and every global-policy change, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. A passing hidden matcher alone is not a complete or transparent project configuration.
+14. Fail closed when service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded. Add and verify explicit exclusions before indexing.
+15. State that a local embedding backend does not make unintended secret reads acceptable. Local transport changes exposure, not read authorization.
+16. After exclusion policy changes, reset or safely rebuild stale indexes before relying on search results that may still contain previously indexed content.
 
 ## Write Strategy
 
@@ -115,6 +117,7 @@ Use a compact block close to this shape, adapted to the target repo's wording:
 - Prefer `cocoindex-code` MCP `search` for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar modules.
 - If the MCP tool is unavailable, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
 - Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that check.
+- After initialization or a global-policy change, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. Keep the global matcher as the hard boundary rather than trusting the project mirror alone.
 - If credential, service-account, dotenv, private-key, token-store, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
 - After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results that may retain previously indexed content.
 - Use CocoIndex/ccc as a token-saving first pass: avoid broad blind reads by letting semantic search narrow the repo to candidate files and line ranges.
@@ -135,6 +138,7 @@ Do not copy this block blindly when the target repo already has stronger equival
 - Do not install packages, modify user-global config, or add MCP servers unless the human explicitly asks.
 - Do not claim CocoIndex is installed unless local evidence proves it.
 - Do not run an index or refresh merely to test whether secret-bearing files are excluded. Prove the path rules first using filename-only inventory, config inspection, and a matcher/doctor preview that does not open candidate contents.
+- Do not call the project safe merely because an invisible matcher passes. Require the effective deny patterns to be visible in project `settings.yml` before indexing.
 - If CocoIndex availability is unclear, write conditional language such as `when available` rather than inventing certainty.
 
 ## Stop Gates
@@ -163,6 +167,7 @@ Before declaring done:
 - Confirm the final wording makes the targeted search → targeted read/verify loop explicit.
 - Confirm scope behavior is covered if the rule mentions `ccc search` directly: repo root or `--path` for intended search scope.
 - Confirm the final rules prohibit `ccc init && ccc index` before a filename-only secret/exclusion preflight.
+- Confirm the final rules materialize effective deny patterns into project `.cocoindex_code/settings.yml` while preserving the global matcher as the hard boundary.
 - Confirm local embeddings are not presented as permission to index secrets and stale indexes are handled after policy changes.
 - Confirm no claim assumes CocoIndex is installed unless a local file proves it.
 - Confirm the new rules are concise and not a generic tutorial dump.

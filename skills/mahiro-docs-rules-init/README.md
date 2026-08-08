@@ -32,7 +32,7 @@ When sources conflict, use this order:
 
 The skill is strongest when it gives a repo an honest first structure without pretending the architecture is more mature than it is.
 
-When CocoIndex/`ccc` is available or already initialized in the target repo, generated `AGENTS.md` should include search guidance that prefers semantic search for broad/fuzzy codebase exploration and `rg` for exact search. It must also require filename-only secret/exclusion preflight without opening suspected secret contents, forbid unchecked `ccc init && ccc index`, reject local embeddings as authorization to read secrets, and require stale indexes to be reset or safely rebuilt after exclusion-policy changes. If no such tooling exists, do not invent it as current reality.
+When CocoIndex/`ccc` is available or already initialized in the target repo, generated `AGENTS.md` should include search guidance that prefers semantic search for broad/fuzzy codebase exploration and `rg` for exact search. It must also require filename-only secret/exclusion preflight without opening suspected secret contents, forbid unchecked `ccc init && ccc index`, materialize effective denies into project `.cocoindex_code/settings.yml`, reject local embeddings as authorization to read secrets, and require stale indexes to be reset or safely rebuilt after exclusion-policy changes. The global matcher remains the hard boundary. If no such tooling exists, do not invent it as current reality.
 
 It is not a pure extractor, though. Some pages are intentionally allowed to carry blueprint energy so a new repo can inherit house style and preferred working shapes from day one. The key rule is not "remove all blueprint"; it is "never confuse blueprint with current fact."
 

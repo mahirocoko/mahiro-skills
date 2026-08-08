@@ -40,9 +40,14 @@
 - Prefer `cocoindex-code` MCP `search` when available for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar-module investigation.
 - If the MCP tool is unavailable but the CLI exists, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
 - Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that preflight.
+- After `ccc init` and whenever the global deny policy changes, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. The visible project mirror is defense in depth; the global matcher remains the hard boundary.
 - If service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
+- Use semantic search as a token-saving first pass: narrow broad or unfamiliar questions to candidate files and line ranges instead of reading large parts of the repo blindly.
+- Run `ccc search` from the repo root, or pass `--path` when the intended scope is broader or narrower, because it defaults to the current working directory.
+- Treat semantic matches as candidate locations, not final proof. Read only the relevant returned files or ranges with the available file-read tool or `sed -n` before editing or making strong claims.
 - Use `rg` for exact text, regex, symbol, filename, and string-presence checks.
 - Use AST-aware tools for syntax-shaped or structure-aware searches.
+- Go directly to the available file-read tool, `rg`, or AST-aware tools for a known file, exact symbol, or tiny lookup; do not force CocoIndex into every source read.
 - Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, `หาโค้ดส่วนนี้`, and `สรุปไฟล์นี้` as CocoIndex-first triggers when available.
 - After meaningful code changes, refresh or re-index before relying on semantic results that may be stale.
 - After changing exclusion policy, reset or safely rebuild stale indexes before trusting search results that may retain previously indexed content.

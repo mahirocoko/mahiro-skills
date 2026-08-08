@@ -110,6 +110,9 @@ describe("skill pattern adaptation phase a", () => {
     for (const contract of [skill, readme, generationRules, executionFlow, checklist, inputManifest]) {
       expect(contract).toContain("ccc init && ccc index");
       expect(contract).toContain("without opening suspected secret contents");
+      expect(contract).toContain("materialize");
+      expect(contract).toContain("settings.yml");
+      expect(contract).toContain("global matcher");
       expect(contract).toContain("local embedding");
       expect(contract).toContain("stale index");
     }
@@ -122,6 +125,8 @@ describe("skill pattern adaptation phase a", () => {
     for (const contract of [skill, agents]) {
       expect(contract).toContain("Never chain `ccc init && ccc index`");
       expect(contract).toContain("without opening suspected secret contents");
+      expect(contract).toContain("materialize");
+      expect(contract).toContain("settings.yml");
       expect(contract).toContain("A local embedding backend does not make unintended secret reads acceptable");
       expect(contract).toContain("stale indexes");
     }

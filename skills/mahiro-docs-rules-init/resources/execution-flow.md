@@ -10,6 +10,7 @@ Use this flow for `init` mode.
 - do this with local target-repo tools only
 - before any CocoIndex index or refresh, inventory filenames and effective ignore/filter rules without opening suspected secret contents
 - never chain `ccc init && ccc index`; fail closed until service-account, credential, dotenv, key, token-store, and unexplained structured-data files are conclusively excluded
+- materialize the effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index while retaining the global matcher as the hard boundary
 - treat local embeddings as a transport boundary, not authorization to read secrets; after exclusion-policy changes, reset or safely rebuild stale indexes before semantic search
 
 ## 2. Read Local Truth
@@ -75,6 +76,7 @@ When the repo is Next App Router plus REST/API, let the generated docs lean serv
 - verify no external-research assumptions leaked into the docs
 - verify no unsupported folder-path example snuck in
 - if CocoIndex guidance was generated, verify the filename-only preflight, unchecked-init/index prohibition, local-embedding boundary, and stale-index handling all remain explicit
+- verify generated CocoIndex guidance requires visible project `settings.yml` denies and does not replace the global matcher boundary with project-only trust
 
 ## 10. Report Outcome
 

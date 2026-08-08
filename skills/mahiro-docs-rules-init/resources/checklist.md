@@ -13,6 +13,7 @@ Use this before declaring the init pass complete.
 - If generated docs mention CocoIndex/`ccc`, did the target repo or local environment prove that guidance is valid here?
 - Before any index or refresh, did a filename-only preflight verify effective ignore/filter rules without opening suspected secret contents?
 - Do the generated rules forbid unchecked `ccc init && ccc index` and fail closed until credential-like and unexplained structured-data files are conclusively excluded?
+- Do the generated rules materialize effective deny patterns into project `.cocoindex_code/settings.yml` while preserving the global matcher as the hard boundary?
 - Do the generated rules state that local embeddings are not authorization to read secrets and require stale indexes to be reset or safely rebuilt after exclusion-policy changes?
 
 ## Family Check

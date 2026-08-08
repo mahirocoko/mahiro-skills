@@ -120,6 +120,7 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Prefer semantic search for questions like "where is this implemented?", "how does this flow work?", or "find related code" when the repo has a maintained index.
 - Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain initialization and indexing before that check; fail closed until credentials and unexplained structured-data files are conclusively excluded.
+- After initialization or a global-policy change, materialize the effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. Keep the global matcher as the hard boundary rather than trusting the visible project mirror alone.
 - A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before trusting search results.
 - Prefer `rg` for exact symbols, file names, strings, and verification that a literal pattern is absent.
 
