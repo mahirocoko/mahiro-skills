@@ -1,5 +1,5 @@
 ---
-description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance for semantic search, secret-safe preflight, visible project exclusions, and ccc index maintenance.
+description: Project-local CocoIndex Code rule bootstrapper with a portable settings boundary, filename-only preflight, and explicit strict-scan guidance.
 allowed-tools:
   - Bash
   - Read

@@ -1,8 +1,12 @@
 node_modules/
+__pycache__/
+*.pyc
 .DS_Store
 .agent-state/
 .sisyphus/
-# CocoIndex Code (ccc)
-/.cocoindex_code/
+# CocoIndex Code (ccc): keep the portable project boundary; ignore local index state.
+/.cocoindex_code/*
+!/.cocoindex_code/
+!/.cocoindex_code/settings.yml
 .letta
 .antigravitycli/

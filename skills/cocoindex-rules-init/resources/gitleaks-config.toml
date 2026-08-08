@@ -1,0 +1,16 @@
+title = "Mahiro CCC V2 reviewed Gitleaks policy"
+minVersion = "v8.30.1"
+
+# Use the default rules from the pinned release. Project-specific findings are
+# governed separately by the metadata-only allowlist, never by secret values.
+[extend]
+useDefault = true
+
+# No secret-valued allowlist is permitted here. The helper applies only a
+# separate path+rule+fingerprint governance file after metadata sanitization.
+[[allowlists]]
+description = "Keep scanner metadata and policy files out of findings"
+paths = [
+  '''(^|/)\.cocoindex_code/''',
+  '''(^|/)\.git/''',
+]

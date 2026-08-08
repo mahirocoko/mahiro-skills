@@ -408,7 +408,7 @@ test('trusted Custom Gem navigation rejects historic or unrelated destinations',
 });
 
 test('the extension logs only the action name, never the full MQTT command', async () => {
-  const source = await Bun.file('skills/gemini/extension/background-src.js').text();
+  const source = await Bun.file(new URL('../skills/gemini/extension/background-src.js', import.meta.url)).text();
   expect(source).toContain("console.log('[Local Gemini Proxy] Command:', cmd.action);");
   expect(source).not.toContain("console.log('[Local Gemini Proxy] Command:', cmd.action, cmd);");
   expect(source).toContain("case 'gem_start_v1':");

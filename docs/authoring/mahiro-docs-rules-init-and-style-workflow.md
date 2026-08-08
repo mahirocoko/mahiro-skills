@@ -23,7 +23,7 @@ Goal:
 - create `AGENTS.md`
 - create the first docs family
 - give the repo a usable baseline rules layer
-- include CocoIndex/`ccc` code-search guidance only when the target repo or local environment proves that workflow is available; require filename-only secret/exclusion preflight and visible project `settings.yml` deny materialization before index/refresh while preserving the global matcher boundary
+- include CocoIndex/`ccc` code-search guidance only when the target repo or local environment proves that workflow is available; require filename-only preflight, visible portable project `settings.yml` deny materialization, and fresh strict-scan evidence before index/refresh when Mahiro's local guard is configured
 
 Recommended flow:
 

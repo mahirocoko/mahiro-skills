@@ -37,20 +37,22 @@
 
 ## Codebase Search
 
-- Prefer `cocoindex-code` MCP `search` when available for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar-module investigation.
-- If the MCP tool is unavailable but the CLI exists, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
-- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that preflight.
-- After `ccc init` and whenever the global deny policy changes, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. The visible project mirror is defense in depth; the global matcher remains the hard boundary.
-- If service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
-- Use semantic search as a token-saving first pass: narrow broad or unfamiliar questions to candidate files and line ranges instead of reading large parts of the repo blindly.
-- Run `ccc search` from the repo root, or pass `--path` when the intended scope is broader or narrower, because it defaults to the current working directory.
-- Treat semantic matches as candidate locations, not final proof. Read only the relevant returned files or ranges with the available file-read tool or `sed -n` before editing or making strong claims.
-- Use `rg` for exact text, regex, symbol, filename, and string-presence checks.
-- Use AST-aware tools for syntax-shaped or structure-aware searches.
-- Go directly to the available file-read tool, `rg`, or AST-aware tools for a known file, exact symbol, or tiny lookup; do not force CocoIndex into every source read.
-- Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, `หาโค้ดส่วนนี้`, and `สรุปไฟล์นี้` as CocoIndex-first triggers when available.
-- After meaningful code changes, refresh or re-index before relying on semantic results that may be stale.
-- After changing exclusion policy, reset or safely rebuild stale indexes before trusting search results that may retain previously indexed content.
+- Prefer `cocoindex-code` MCP `search` for broad semantic exploration when it is locally available; use `ccc search` when the MCP tool is unavailable.
+- The portable enforcement boundary is the current project's `.cocoindex_code/settings.yml`. Do not assume any project-external matcher, wrapper, installed patch, or Mahiro hook.
+- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect candidate filenames and project settings without opening suspected secret contents. Never chain `ccc init && ccc index` before this preflight.
+- Resolve the packaged skill directory and run `python3 <skill-dir>/scripts/sync-project-excludes.py --project-root "$PWD" --check`; run it without `--check` to materialize a changed managed block atomically.
+- Run `python3 <skill-dir>/scripts/preflight.py --project-root "$PWD"` before broad indexing. It is filename-only and never replaces strict content scanning.
+- Stop if settings are missing, malformed, symlinked, drifted, or if an unsafe candidate path cannot be classified. Structured JSON/YAML/YML/TOML/XML/TXT remains eligible; `.env.example` is filename-allowed and content-scanned unless an unrelated project exclude explicitly blocks it.
+- A local embedding backend does not make unintended secret reads acceptable; treat local embeddings as transport, not read authorization. After a policy change, discard or safely rebuild stale indexes before trusting results.
+- Semantic search is a token-saving first pass; read only returned files or ranges for final source verification. Use `rg` for exact strings/symbols/filenames and AST tools for syntax-shaped search.
+- `ccc search` defaults to the current working directory; run it from the project root or pass `--path` for a different scope.
+- After meaningful code changes, refresh or re-index only after the current settings and filename-only preflight pass.
+
+## Strict Security Scan
+
+- Strict mode is explicit and requires Gitleaks `v8.30.1` plus an approved executable SHA-256; it never silently downgrades to filename-only mode.
+- The packaged helper starts from tracked and untracked nonignored regular Git candidates, then applies the synchronized project `exclude_patterns` with a bounded Git `check-ignore --no-index` pass before staging the post-settings/index-candidate regular files; it never scans history or follows external symlinks and emits metadata-only reports/receipts.
+- Findings, scanner errors, missing scanner, stale receipt, and rule/policy/settings/source mismatch fail closed. Filename-only output is labeled non-equivalent.
 
 ## Release Checklist
 

@@ -1,184 +1,247 @@
 ---
 name: cocoindex-rules-init
-description: Project-local CocoIndex Code rule bootstrapper. Use when a repo needs AGENTS.md guidance for semantic codebase search, secret-safe index preflight, visible project exclusion materialization, repo exploration, and ccc index maintenance.
+description: Project-local CocoIndex Code rule bootstrapper with a portable settings boundary, filename-only credential preflight, and an explicit pinned Gitleaks strict-scan contract.
 user-invocable: true
 ---
 
 # /cocoindex-rules-init - Bootstrap CocoIndex Rules
 
-Create or refine a repo-local `AGENTS.md` so agents consistently prefer CocoIndex Code for broad codebase search and repo exploration without indexing secret-bearing files by accident. This skill is for instruction bootstrapping, not MCP installation. It teaches the target repo when to use `cocoindex-code` MCP `search`, when to fall back to `ccc`, when exact-match tools like `rg` still win, and how to fail closed before broad indexing. The desired behavior is token-saving and secret-safe: semantic search narrows the repo, then agents read only the specific files or ranges needed for verification or edits.
+Create or refine repo-local `AGENTS.md` guidance for semantic search without
+turning source inspection into an implicit secret-read permission. The V2
+package also supplies portable project settings policy, a filename-only
+preflight, settings synchronization, and an explicit strict scanner contract.
+The project settings file is the enforcement boundary for this package.
+
+This skill does not install CocoIndex or Gitleaks, patch upstream or installed
+packages, add a wrapper around the target search tool, assume a Mahiro hook, or
+make claims about external repository behavior.
 
 ## When to Use
 
-- A repo already has CocoIndex Code available, but agents do not reliably choose it.
 - A repo needs `AGENTS.md` guidance for semantic code search and index freshness.
-- You want reusable repo-local rules that survive across sessions and agents.
-- You want a lighter-weight initializer than `/mahiro-docs-rules-init`, focused only on code-search behavior.
+- A repo has `.cocoindex_code/settings.yml` and needs a visible portable deny/noise policy.
+- A filename-only preflight is needed before broad search or refresh.
+- A strict local Gitleaks V8.30.1 scan is required and the scanner is already available.
+- A repo needs a conservative, repo-local search workflow that survives new agents.
 
 ## Scope and Boundaries
 
 ### In scope
 
-- Inspect the target repo's current instruction surface.
-- Create or surgically update repo-local `AGENTS.md`.
-- Add a high-signal rule block that explains when to use `cocoindex-code` MCP `search`, when to use `ccc search` / `ccc index`, and when to keep using `rg` or AST tools.
-- Add a high-signal rule block that explains the normal token-saving workflow: semantic search narrows the search space, then agents read only the matched files or ranges needed for full context before editing or making strong claims.
-- Add a fail-closed preflight rule for `ccc init`, `ccc index`, `ccc search --refresh`, and equivalent MCP indexing: inspect filenames and effective ignore/filter rules without opening suspected secret contents, then index only after exclusions are verified.
-- Require the effective deny policy to be materialized into project `.cocoindex_code/settings.yml` after initialization and policy changes, while retaining the global matcher as the non-bypassable boundary.
-- Preserve existing local doctrine and merge the CocoIndex rules into it.
+- Inspect and surgically update repo-local `AGENTS.md`.
+- Keep semantic search, exact search, and AST search responsibilities distinct.
+- Materialize the V2 portable policy into the target project's `.cocoindex_code/settings.yml`.
+- Derive exact sensitive paths from filenames and Git metadata without opening candidate contents.
+- Run an explicit filename-only preflight or an explicit strict Gitleaks scan.
+- Preserve unrelated settings and fail closed on missing, malformed, symlinked, or unsafe inputs.
 
 ### Out of scope
 
-- Installing `ccc`, CocoIndex Code, or an MCP server.
-- Rewriting the repo's whole docs family.
-- Broad style or architecture doctrine unrelated to code-search behavior.
-- Global user rules such as `~/.config/opencode/AGENTS.md` unless the human explicitly asks.
+- Installing or downloading `ccc`, CocoIndex Code, Gitleaks, or an MCP server.
+- Editing global agent settings, installed CocoIndex code, upstream/site-packages code, hooks, or another checkout.
+- Reading suspected credential contents during filename-only preflight.
+- Rewriting a repo's whole docs family.
+- History scans, external symlink traversal, external repository comparisons, or release work.
 
-## V1 Scope
+## V2 Resource Map
 
-This version supports `init` behavior only.
+- `resources/portable-credential-deny-baseline.txt` - security-owned portable path denies.
+- `resources/portable-noise-performance-baseline.txt` - separate noise/performance excludes.
+- `resources/gitleaks-config.toml` - reviewed explicit Gitleaks configuration.
+- `resources/gitleaks-metadata-report.tmpl` - metadata-only scanner report template.
+- `scripts/security_policy.py` - stdlib policy, filename, settings, and metadata helpers.
+- `scripts/preflight.py` - explicit filename-only preflight.
+- `scripts/sync-project-excludes.py` - atomic/idempotent settings materialization and `--check`.
+- `scripts/strict-gitleaks-scan.py` - strict scan, filename-only mode, and receipt validation.
 
-The skill should default to a repo-local `AGENTS.md` update. Do not create extra docs pages unless the target repo already uses an instruction-file pattern that clearly calls for one.
+## Project Settings Boundary
 
-## What This Skill Must Inspect First
+Use `sync-project-excludes.py` to materialize the current security and noise
+policy into the target project before search or refresh. The target project's
+`.cocoindex_code/settings.yml` is the portable enforcement
+boundary. The managed block has separate security and noise ownership:
 
-Before writing anything, inspect these local inputs in the target repo:
+- Credential/path denies come from the security baseline, derived exact
+  filename-only paths, and optional local deny-only policy.
+- Noise/performance excludes come only from the noise baseline.
+- Local policy can add denies; it cannot remove, allow, or weaken a baseline.
+- Unrelated settings and unrelated exclude entries are preserved.
+- The managed block is written atomically and repeated synchronization is
+  idempotent.
 
-- `AGENTS.md`, `CLAUDE.md`, and any existing repo-local instruction files
-- `opencode.json` or `.opencode/opencode.json` if present
-- `README.md` and existing `docs/` only when they affect instruction shape
-- evidence that CocoIndex is already in use, such as `ccc`, `cocoindex-code`, or MCP config
-- filenames and existing ignore/filter configuration that can prove whether service-account JSON, credentials, dotenv files, private keys, token stores, or other suspected secret-bearing artifacts are excluded; inspect names and rules only, not suspected secret contents
+The policy never blanket-denies `.json`, `.yaml`, `.yml`, `.toml`, `.xml`, or
+`.txt`. The exact filename `.env.example` is not a filename deny and is routed to
+content scanning unless an unrelated project `exclude_patterns` entry
+explicitly matches it. `.env.sample`, `.env.template`, real `.env` variants,
+and credential/key/provider paths are not auto-allowed. A filename such as
+`token-guide.md` is not denied merely because it contains a security word.
 
-Do not write from template assumptions alone.
+Synchronize before indexing or refresh:
 
-## Priority Order
-
-When sources conflict, use this order:
-
-1. Local repo reality
-2. Existing local `AGENTS.md` or equivalent instruction files
-3. This skill's CocoIndex rule template
-
-Do not overwrite repo-local rules that already establish a code-search workflow unless the human explicitly asks to replace them.
-
-## Required Rule Content
-
-When you write or patch `AGENTS.md`, ensure the final repo-local rules encode all of the following:
-
-1. Prefer `cocoindex-code` MCP `search` for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar-module investigation.
-2. Fall back to `ccc search` and `ccc index` when the MCP tool is unavailable but the CLI exists.
-3. Keep `rg` for exact text, symbol, filename, and regex search.
-4. Keep AST tools for syntax-shaped or structure-aware search.
-5. State that semantic search is the token-saving first pass: it should prevent broad, blind source reads by narrowing the search space to candidate files and line ranges.
-6. State that semantic search does **not** replace final source verification: after `ccc search` returns paths and line ranges, read only the relevant file/range with the available file-read tool or `sed -n` before editing or making strong claims.
-7. State that exact known paths/symbols can go directly to `Read`, `rg`, or AST-aware tools; do not force CocoIndex for tiny known-file lookups.
-8. Mention that `ccc search` scopes to the current working directory by default; run from repo root or pass `--path` when the intended scope is broader or narrower.
-9. Mention both English and Thai trigger examples where helpful, such as:
-   - `search the codebase`
-   - `find where X is implemented`
-   - `how does this repo work`
-   - `ดู repo หน่อย`
-   - `หาโค้ดส่วนนี้`
-   - `สรุปไฟล์นี้`
-10. Include an index-freshness rule: after meaningful code changes, prefer refreshing or re-indexing before relying on stale semantic results.
-11. Require a filename-only and ignore/filter preflight before any broad repository index or refresh. Never open suspected secret files merely to decide whether they are safe to index.
-12. Never chain `ccc init && ccc index`: initialization may create broad default include patterns, so inspect the generated settings and effective matcher before the first index.
-13. After initialization and every global-policy change, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. A passing hidden matcher alone is not a complete or transparent project configuration.
-14. Fail closed when service-account JSON, credential files, dotenv files, private keys, token stores, or unexplained structured-data files are present or not conclusively excluded. Add and verify explicit exclusions before indexing.
-15. State that a local embedding backend does not make unintended secret reads acceptable. Local transport changes exposure, not read authorization.
-16. After exclusion policy changes, reset or safely rebuild stale indexes before relying on search results that may still contain previously indexed content.
-
-## Write Strategy
-
-### If `AGENTS.md` does not exist
-
-Create a concise file with:
-
-- the repo's existing top-level rules if they can be inferred safely from local evidence
-- a dedicated `Codebase Search` section for CocoIndex usage
-
-### If `AGENTS.md` already exists
-
-Patch it surgically.
-
-- Preserve local headings and tone.
-- Add a new `Codebase Search` section or merge into the closest existing section.
-- Do not duplicate the same rule in multiple sections.
-- Do not bloat the file with long CocoIndex tutorials.
-
-## Suggested Rule Shape
-
-Use a compact block close to this shape, adapted to the target repo's wording:
-
-```md
-## Codebase Search
-
-- Prefer `cocoindex-code` MCP `search` for semantic codebase search, broad repo exploration, fuzzy implementation lookup, and unfamiliar modules.
-- If the MCP tool is unavailable, use `ccc search` for semantic search and `ccc index` or `ccc search --refresh` when the index may be stale.
-- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and effective ignore/filter rules without opening suspected secret contents. Never chain `ccc init && ccc index` before that check.
-- After initialization or a global-policy change, materialize the current effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index. Keep the global matcher as the hard boundary rather than trusting the project mirror alone.
-- If credential, service-account, dotenv, private-key, token-store, or unexplained structured-data files are present or not conclusively excluded, stop and configure verified exclusions first. A local embedding backend does not make unintended secret reads acceptable.
-- After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results that may retain previously indexed content.
-- Use CocoIndex/ccc as a token-saving first pass: avoid broad blind reads by letting semantic search narrow the repo to candidate files and line ranges.
-- Run semantic search from the repo root, or pass `--path`, because `ccc search` defaults to the current working directory scope.
-- Treat semantic results as candidate locations: read only the returned file/ranges needed for verification with the available file-read tool or `sed -n` before editing or making strong claims.
-- Use `rg` for exact text, regex, symbol, and filename search.
-- Use AST-aware search for syntax-shaped queries.
-- Go directly to `Read`/`rg`/AST tools for known files, exact symbols, or tiny lookups; CocoIndex is a locator, not a replacement for source reads.
-- Treat requests like `search the codebase`, `find where X is implemented`, `how does this repo work`, `ดู repo หน่อย`, and `หาโค้ดส่วนนี้` as CocoIndex-first triggers when available.
+```bash
+python3 <skill-dir>/scripts/sync-project-excludes.py --project-root "$PWD"
+python3 <skill-dir>/scripts/sync-project-excludes.py --project-root "$PWD" --check
+python3 <skill-dir>/scripts/preflight.py --project-root "$PWD"
 ```
 
-Do not copy this block blindly when the target repo already has stronger equivalent rules.
+`--check` never writes. A missing or malformed settings file, a symlinked input,
+an unsafe candidate path, or an unsafe local policy is a blocking error.
+
+Strict candidate derivation is separate from filename-only classification. The
+helper first obtains tracked plus untracked nonignored regular Git candidates,
+then feeds the synchronized `exclude_patterns` to a bounded Git
+`check-ignore --no-index` pass in an isolated temporary Git context. It does
+not approximate patterns with `pathlib` or `fnmatch`; unsupported settings
+syntax (including negating exclude entries) or a Git/check-ignore failure
+fails closed rather than widening the scan.
+
+## Search Workflow
+
+1. Read repo-local instructions and inspect filenames plus effective project
+   settings before broad search or refresh. Do not open suspected credential,
+   service-account, dotenv, key, provider, or token-store contents for this
+   decision. Never chain `ccc init && ccc index` before this preflight.
+2. Run the settings sync and filename-only preflight. Stop if it cannot prove
+   the path boundary from names and metadata alone.
+3. Prefer `cocoindex-code` MCP `search` for broad semantic exploration when it
+   is locally available and the project boundary is current.
+4. If the MCP tool is unavailable, use `ccc search`; refresh only after the
+   filename-only preflight and settings `--check` pass.
+5. Use `rg` for exact text, symbols, filenames, and literal-presence checks;
+   use AST tools for syntax-shaped questions.
+6. Treat semantic results as candidate locations. Read only the returned file
+   or range needed for source verification.
+7. After a policy change, discard or safely rebuild stale indexes before relying
+   on semantic results.
+
+Semantic search is a token-saving locator, not permission to read secrets. A local embedding backend does not make unintended secret reads acceptable; a transport choice does not change source-read authorization.
+Known files and tiny lookups may go directly to the file-read or exact-search
+tool. `ccc search` uses the current working directory by default; run it from
+the project root or pass `--path` for a different scope.
+
+Useful triggers include `search the codebase`, `find where X is implemented`,
+`how does this repo work`, `ดู repo หน่อย`, `หาโค้ดส่วนนี้`, and `สรุปไฟล์นี้`.
+
+## Filename-Only Preflight
+
+`preflight.py` may inspect only Git filename metadata, directory entries, policy
+resources, and project settings when `--check-settings` is requested. It must
+not hash, open, parse, or emit candidate source bytes. It reports the
+pre-settings Git candidate count/classification counts, derived sensitive paths,
+and the `.env.example` content-scan route, and always labels itself
+`filename-only` and `equivalent_to_strict: false`.
+
+The preflight scope is conservative: regular files only, no directory symlink
+following, no parent traversal, and no guessed substring rule for ordinary
+document names. If a candidate is symlinked or unsafe, it fails closed.
+
+## Strict Scanner Contract
+
+Strict mode is deliberate content scanning and is never a silent fallback from
+filename-only mode. It requires an already available Gitleaks `v8.30.1` binary:
+
+- License: MIT.
+- Official darwin-arm64 archive SHA-256:
+  `b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5`.
+- Signed provenance is not established by this package.
+- The binary is not bundled, installed, downloaded, or trusted by name alone;
+  the helper version-checks the executable before scanning.
+
+The strict helper uses the reviewed config (`minVersion = "v8.30.1"`, pinned
+`useDefault = true` rules, and current `[[allowlists]]` syntax) and a
+metadata-only template. It invokes `gitleaks dir` with the scan root as the
+final positional target (the V8.30.1 `dir --help` contract has no source flag),
+`--exit-code 3`, `--redact=100`, `--log-level error`, `--no-banner`, a
+wrapper-enforced timeout, `--max-target-megabytes 10`,
+`--max-decode-depth 0`, `--max-archive-depth 0`, a controlled empty ignore
+path, and `--ignore-gitleaks-allow`. It accepts only exit `0` with an empty
+metadata report or exit `3` with a nonempty report; exit `1` and every other or
+mismatched result is a scanner error. It does not pass verbose output.
+Scanner stdout/stderr is discarded; sanitized reports never contain `Match`,
+`Secret`, raw lines, or scanner diagnostics.
+
+The strict scope starts with tracked and untracked nonignored regular Git
+candidates, then applies the actual synchronized project `exclude_patterns`
+with Git-compatible ignore semantics. Only the resulting post-settings/
+index-candidate regular files are staged. Managed security/noise patterns,
+derived exact paths, optional add-only local policy, and unrelated preserved
+project excludes all participate in this boundary; excluded paths are not
+opened to prove they are excluded. The project
+`.cocoindex_code/settings.yml` is itself bound by hash even when its directory
+is excluded, while `.cocoindex_code/ccc-security/**` runtime outputs stay out
+of source scope. `.env.example` remains eligible for strict content scanning
+unless an unrelated project exclude explicitly matches it. The helper does
+not scan history or follow external symlinks; final source-file symlinks are
+skipped while intermediate path and control-file symlinks fail closed. A
+mode-0700 temporary root contains mode-0600 copied snapshots, never hardlinks;
+the staged snapshot and source scope are compared before a receipt is written.
+
+The raw scanner template emits only path, line, and rule ID. The helper
+canonicalizes the relative path and derives a stable SHA-256 fingerprint from
+`relative_path + NUL + rule_id + NUL + line`. Reports and clean receipts expose
+only path, line, rule ID, fingerprint, and nonsecret scan metadata. Receipt
+freshness is bound to the project root, scanner version, approved scanner binary
+SHA-256, reviewed config/template, policy, settings, allowlist, and current
+source scope/content hashes. Strict scan/check requires
+`--expected-binary-sha256`; every receipt records and enforces that approved
+digest. Filename-only mode does not require a scanner hash.
+Every scan attempt invalidates the previous receipt before work starts, so
+scanner errors, timeout, missing scanner, malformed metadata, findings, stale
+receipts, or rule/policy mismatch cannot leave an old clean receipt usable.
+
+Governed allowlists are JSON entries with exactly `path`, `rule_id`, and
+`fingerprint`. They contain no secret values. Target `.gitleaksignore` files
+and `gitleaks:allow` comments are not an allowlist surface.
+
+Examples:
+
+```bash
+python3 <skill-dir>/scripts/strict-gitleaks-scan.py scan \
+  --project-root "$PWD" --gitleaks /path/to/gitleaks \
+  --expected-binary-sha256 <64-hex-digest>
+python3 <skill-dir>/scripts/strict-gitleaks-scan.py check \
+  --project-root "$PWD" --gitleaks /path/to/gitleaks \
+  --expected-binary-sha256 <64-hex-digest>
+python3 <skill-dir>/scripts/strict-gitleaks-scan.py filename-only \
+  --project-root "$PWD"
+```
+
+The `filename-only` action is explicit, labeled non-equivalent, and does not
+produce a strict clean receipt.
 
 ## Hard Execution Limits
 
-- Stay inside the target repo only.
-- Do not use web search or external docs to write repo-local rules.
-- Do not install packages, modify user-global config, or add MCP servers unless the human explicitly asks.
-- Do not claim CocoIndex is installed unless local evidence proves it.
-- Do not run an index or refresh merely to test whether secret-bearing files are excluded. Prove the path rules first using filename-only inventory, config inspection, and a matcher/doctor preview that does not open candidate contents.
-- Do not call the project safe merely because an invisible matcher passes. Require the effective deny patterns to be visible in project `settings.yml` before indexing.
-- If CocoIndex availability is unclear, write conditional language such as `when available` rather than inventing certainty.
-
-## Stop Gates
-
-- Stop and ask if the target repo has multiple conflicting instruction systems and the winner is unclear.
-- Stop and ask if the repo already has explicit semantic-search rules and the human has not said whether to replace or merge them.
-- Stop before indexing when suspected secret-bearing files are present, when generated default settings remain broad, or when effective exclusions cannot be verified without reading candidate contents.
-- Soften or label assumptions instead of inventing setup facts.
+- Stay inside the target project and this packaged skill source.
+- Use the repository's existing package-manager workflow; this repo uses Bun.
+- Do not install dependencies or global tools.
+- Do not stage, commit, push, tag, or release.
+- Do not read suspected secret contents during filename-only work.
+- Do not run indexing merely to test whether exclusions are safe.
+- Do not claim a scanner is present unless version-check evidence exists.
+- Stop when policy/settings or scanner provenance cannot be established.
 
 ## Output Contract
 
-Before finishing, provide:
+Before finishing, report:
 
-1. What file(s) were changed
-2. Which local evidence was used
-3. The final CocoIndex behavior encoded into the repo rules
-4. Any unresolved limitation, such as missing `ccc` / MCP setup
+1. Changed files and intent.
+2. Local evidence used without opening suspected secret contents.
+3. The final project-settings and scanner behavior.
+4. Focused checks and exact outcomes.
+5. Any unresolved scanner/runtime limitation.
 
 ## Validation / Self-check
 
-Before declaring done:
-
-- Confirm the repo-local instruction file exists at the intended path.
-- Confirm the final wording distinguishes semantic search from exact-match search.
-- Confirm the final wording frames CocoIndex/ccc as a token-saving first pass, not extra ceremony before every source read.
-- Confirm the final wording makes the targeted search → targeted read/verify loop explicit.
-- Confirm scope behavior is covered if the rule mentions `ccc search` directly: repo root or `--path` for intended search scope.
-- Confirm the final rules prohibit `ccc init && ccc index` before a filename-only secret/exclusion preflight.
-- Confirm the final rules materialize effective deny patterns into project `.cocoindex_code/settings.yml` while preserving the global matcher as the hard boundary.
-- Confirm local embeddings are not presented as permission to index secrets and stale indexes are handled after policy changes.
-- Confirm no claim assumes CocoIndex is installed unless a local file proves it.
-- Confirm the new rules are concise and not a generic tutorial dump.
-- Confirm existing repo-local doctrine was preserved unless the human asked for replacement.
-
-## Example Invocation
-
-```text
-/cocoindex-rules-init
-/cocoindex-rules-init "add repo-local rules so agents prefer ccc / cocoindex-code for codebase search"
-/cocoindex-rules-init "patch AGENTS.md with CocoIndex-first search guidance for this repo"
-```
-
-ARGUMENTS: $ARGUMENTS
+- Confirm `.cocoindex_code/settings.yml` contains the current managed V2 block.
+- Confirm structured extensions remain eligible and `.env.example` is not a deny pattern.
+- Confirm `.env.sample` and `.env.template` are not auto-allowed.
+- Confirm security and noise resources remain separate.
+- Confirm sync preserves unrelated settings, is atomic/idempotent, and honors `--check`.
+- Confirm malformed, missing, symlinked, and unsafe inputs fail closed.
+- Confirm filename-only output is explicitly non-equivalent.
+- Confirm strict invocation pins/version-checks Gitleaks and uses the reviewed
+  metadata-only report contract without raw secret output.
+- Confirm fresh receipts reject changed roots, rules, policy, settings, scope,
+  content, or scanner version.
+- Confirm no active wording relies on a project-external matcher, wrapper, hook,
+  installed patch, or external comparison claim.

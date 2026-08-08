@@ -67,9 +67,9 @@ Every item below refers to the target repo being initialized, not the repo that 
 - whether the repo has `.cocoindex_code/` or other CocoIndex/`ccc` setup
 - whether existing `AGENTS.md` or docs already require semantic search first
 - exact search commands that work locally, such as `ccc search --refresh <query>` or `rg <pattern>`
-- whether a filename-only preflight proves service-account, credential, dotenv, private-key, token-store, and unexplained structured-data files are excluded from CocoIndex without opening suspected secret contents
-- whether generated guidance forbids unchecked `ccc init && ccc index` and states that local embeddings do not authorize secret reads
-- whether current effective deny patterns are materialized into project `.cocoindex_code/settings.yml` and the global matcher remains the hard boundary
+- whether a filename-only preflight derives targeted service-account, credential, dotenv, private-key, provider, and token-store paths without opening suspected secret contents, while the strict scan covers eligible structured files
+- whether generated guidance forbids unchecked `ccc init && ccc index`, keeps filename-only explicit/non-equivalent, and states that local embeddings do not authorize secret reads
+- whether the portable security and noise policy is materialized into project `.cocoindex_code/settings.yml` while unrelated settings remain intact
 - whether stale indexes need reset or safe rebuild after an exclusion-policy change
 - whether generated guidance should mention CocoIndex as `Current Reality`, `Preferred Direction`, or omit it entirely
 

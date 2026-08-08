@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.85 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.86 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
@@ -109,7 +109,7 @@ describe("README", () => {
     expect(index).toContain("`vfx-workflow` — Production runtime VFX workflow.");
     expect(index).toContain("chroma-key extraction, dicut cleanup");
     expect(index).toContain("motion-jitter reports");
-    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with secret-safe preflight and visible project exclusion materialization.");
+    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with a portable project settings boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");

@@ -82,9 +82,9 @@ Do not generate files from template assumptions alone.
 This skill is a local boilerplate generator, not a research task.
 
 - Stay inside the target repo only.
-- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available and its effective matcher has passed a filename-only secret/exclusion preflight; use `rg` for exact strings.
-- Never chain `ccc init && ccc index`. Before broad indexing, inspect filenames and ignore/filter rules without opening suspected secret contents; fail closed until service-account, credential, dotenv, key, token-store, and unexplained structured-data files are conclusively excluded.
-- After initialization or a global-policy change, materialize the effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index; keep the global matcher as the hard boundary.
+- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available and the project's `.cocoindex_code/settings.yml` boundary has passed filename-only preflight; use `rg` for exact strings.
+- Never chain `ccc init && ccc index`. Before broad indexing, inspect filenames and project settings without opening suspected secret contents; fail closed until targeted credential/provider paths are excluded and the required strict content scan is current.
+- The target project's `.cocoindex_code/settings.yml` is the portable enforcement boundary. Use `cocoindex-rules-init/scripts/sync-project-excludes.py` to materialize security and noise policy atomically; preserve unrelated settings and do not assume a wrapper, hook, installed patch, or external parity.
 - A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results.
 - Do not use web search, GitHub search, Context7, subagents, or any external documentation lookup.
 - Do not use unsupported local commands such as `sg`.

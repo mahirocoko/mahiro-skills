@@ -1,0 +1,6 @@
+[
+{{- range $index, $finding := . -}}
+{{- if $index}},{{end}}
+{"path":{{printf "%q" $finding.File}},"line":{{$finding.StartLine}},"rule_id":{{printf "%q" $finding.RuleID}}}
+{{- end}}
+]

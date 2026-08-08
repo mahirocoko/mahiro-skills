@@ -8,10 +8,11 @@ Use this flow for `init` mode.
 - find `AGENTS.md`, `README.md`, `docs/`, and toolchain files
 - detect framework, package manager, state, data, styling, and i18n signals
 - do this with local target-repo tools only
-- before any CocoIndex index or refresh, inventory filenames and effective ignore/filter rules without opening suspected secret contents
-- never chain `ccc init && ccc index`; fail closed until service-account, credential, dotenv, key, token-store, and unexplained structured-data files are conclusively excluded
-- materialize the effective deny patterns into project `.cocoindex_code/settings.yml` before doctor/index while retaining the global matcher as the hard boundary
+- before any CocoIndex index or refresh, inventory filenames and project `.cocoindex_code/settings.yml` without opening suspected secret contents
+- never chain `ccc init && ccc index`; fail closed until targeted credential/provider paths are handled by filename-only policy and the required strict content scan is current
+- materialize the portable security and noise policy into project `.cocoindex_code/settings.yml` before doctor/index while preserving unrelated settings
 - treat local embeddings as a transport boundary, not authorization to read secrets; after exclusion-policy changes, reset or safely rebuild stale indexes before semantic search
+- keep filename-only preflight explicit and non-equivalent to the pinned strict scanner contract
 
 ## 2. Read Local Truth
 
@@ -76,7 +77,7 @@ When the repo is Next App Router plus REST/API, let the generated docs lean serv
 - verify no external-research assumptions leaked into the docs
 - verify no unsupported folder-path example snuck in
 - if CocoIndex guidance was generated, verify the filename-only preflight, unchecked-init/index prohibition, local-embedding boundary, and stale-index handling all remain explicit
-- verify generated CocoIndex guidance requires visible project `settings.yml` denies and does not replace the global matcher boundary with project-only trust
+- verify generated CocoIndex guidance requires the portable project `settings.yml` security/noise boundary and preserves unrelated settings
 
 ## 10. Report Outcome
 

@@ -88,7 +88,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(constantsI18n).toContain("Preserve the repo's source-locale reality before changing copy");
   });
 
-  test("mahiro-docs-rules-init reinforces repo-local search and cross-repo guards", () => {
+  test("mahiro-docs-rules-init reinforces the current portable project policy", () => {
     const skill = readRepoFile("skills", "mahiro-docs-rules-init", "SKILL.md");
     const generationRules = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "generation-rules.md");
     const agentsTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "AGENTS.md");
@@ -96,25 +96,30 @@ describe("skill pattern adaptation phase a", () => {
     const executionFlow = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "execution-flow.md");
     const checklist = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "checklist.md");
     const inputManifest = readRepoFile("skills", "mahiro-docs-rules-init", "resources", "input-manifest.md");
+    const authoringWorkflow = readRepoFile("docs", "authoring", "mahiro-docs-rules-init-and-style-workflow.md");
 
     expect(skill).toContain("Do not import mechanics from another Mahiro repo as current fact.");
     expect(skill).toContain("Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available");
     expect(skill).toContain("Never chain `ccc init && ccc index`");
     expect(skill).toContain("without opening suspected secret contents");
     expect(generationRules).toContain("Never transplant mechanics from another Mahiro repo into `Current Reality`");
-    expect(generationRules).toContain("If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`");
-    expect(generationRules).toContain("filename-only secret/exclusion preflight");
+    expect(generationRules).toContain("If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/");
+    expect(generationRules).toContain("filename-only preflight");
     expect(agentsTemplate).toContain("## Codebase Search");
     expect(agentsTemplate).toContain("A local embedding backend does not make unintended secret reads acceptable");
     expect(agentsTemplate).toContain("Do not copy package manager, i18n, primitive, service, state, or test-command conventions from another Mahiro repo");
+    expect(authoringWorkflow).toContain("portable project `settings.yml`");
+    expect(authoringWorkflow).toContain("fresh strict-scan evidence");
+    expect(authoringWorkflow).not.toContain("global matcher");
     for (const contract of [skill, readme, generationRules, executionFlow, checklist, inputManifest]) {
       expect(contract).toContain("ccc init && ccc index");
       expect(contract).toContain("without opening suspected secret contents");
       expect(contract).toContain("materialize");
       expect(contract).toContain("settings.yml");
-      expect(contract).toContain("global matcher");
+      expect(contract).toContain("portable");
       expect(contract).toContain("local embedding");
       expect(contract).toContain("stale index");
+      expect(contract).not.toContain("global matcher");
     }
   });
 
@@ -129,6 +134,17 @@ describe("skill pattern adaptation phase a", () => {
       expect(contract).toContain("settings.yml");
       expect(contract).toContain("A local embedding backend does not make unintended secret reads acceptable");
       expect(contract).toContain("stale indexes");
+      expect(contract).toContain("filename-only");
+      expect(contract).not.toContain("global matcher");
+    }
+
+    for (const contract of [skill, agents]) {
+      expect(contract).toContain("post-settings/");
+      expect(contract).toContain("index-candidate regular files");
+      expect(contract).toContain("check-ignore --no-index");
+      expect(contract).toContain(".env.example");
+      expect(contract).toContain("unrelated project exclude");
+      expect(contract).not.toContain("current Git worktree's tracked and untracked nonignored\nregular files");
     }
   });
 

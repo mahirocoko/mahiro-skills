@@ -1,0 +1,22 @@
+# Portable noise/performance baseline for the project settings boundary.
+# One git-style path glob per line. This file is noise-owned, not security policy.
+# Structured data extensions remain eligible for indexing.
+
+**/.git
+**/.cocoindex_code
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.agent-state
+**/.cache
+**/.next
+**/.turbo
+**/target
+**/build
+**/dist
+**/coverage
+**/vendor
+**/*.min.js
+**/*.map
