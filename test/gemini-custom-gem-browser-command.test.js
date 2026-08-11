@@ -4,10 +4,13 @@ import {
   CUSTOM_GEM_COMMAND_VERSION,
   CUSTOM_GEM_SUBMIT_ACTION,
   CUSTOM_GEM_SUBMIT_COMMAND_VERSION,
+  CUSTOM_GEM_TARGETS,
   CUSTOM_GEM_UPLOAD_RESULT_VERSION,
   CUSTOM_GEM_URL,
+  getCustomGemSendReadiness,
   isGeminiSendControlDescriptor,
   isExactCustomGemConversationUrl,
+  normalizeCustomGemTarget,
   observeCustomGemConversationNavigation,
   selectGeminiSendControlDescriptor,
   sha256Hex,
@@ -17,6 +20,38 @@ import {
 } from '../skills/gemini/extension/custom-gem-browser-command.js';
 
 const requestId = '123e4567-e89b-12d3-a456-426614174000';
+const [PRIMARY_TARGET, SECOND_TARGET] = CUSTOM_GEM_TARGETS;
+
+test('the exact Custom Gem allowlist normalizes only the two approved base URLs', () => {
+  expect(CUSTOM_GEM_TARGETS).toEqual([
+    { gemId: 'd6f1958dff66', gemUrl: 'https://gemini.google.com/gem/d6f1958dff66' },
+    { gemId: 'a217413102ab', gemUrl: 'https://gemini.google.com/gem/a217413102ab' },
+  ]);
+  for (const target of CUSTOM_GEM_TARGETS) {
+    expect(normalizeCustomGemTarget(target.gemUrl)).toEqual({ ...target, currentUrl: target.gemUrl });
+  }
+  for (const invalidUrl of [
+    'https://gemini.google.com/gem/unknown123456',
+    'https://gemini.google.com/gem/d6f1958dff66/',
+    'https://gemini.google.com/gem/d6f1958dff66/extra',
+    'https://gemini.google.com/gem/d6f1958dff66?x=1',
+    'https://gemini.google.com/gem/d6f1958dff66#fragment',
+    'https://user:pass@gemini.google.com/gem/d6f1958dff66',
+    'https://gemini.google.com:443/gem/d6f1958dff66',
+    'http://gemini.google.com/gem/d6f1958dff66',
+  ]) {
+    expect(normalizeCustomGemTarget(invalidUrl)).toBeNull();
+  }
+});
+
+test('scales trusted Send stability only when the source package grows beyond two images', () => {
+  expect(getCustomGemSendReadiness(1)).toEqual({ stableMs: 2_000, readyWindowMs: 12_000 });
+  expect(getCustomGemSendReadiness(2)).toEqual({ stableMs: 2_000, readyWindowMs: 12_000 });
+  expect(getCustomGemSendReadiness(5)).toEqual({ stableMs: 6_500, readyWindowMs: 16_500 });
+  expect(getCustomGemSendReadiness(6)).toEqual({ stableMs: 8_000, readyWindowMs: 18_000 });
+  expect(() => getCustomGemSendReadiness(0)).toThrow('between 1 and 6');
+  expect(() => getCustomGemSendReadiness(7)).toThrow('between 1 and 6');
+});
 
 function toBase64(bytes) {
   let binary = '';
@@ -65,7 +100,7 @@ function metadataOnly(images) {
   }));
 }
 
-async function makeRequest(overrides = {}) {
+async function makeRequest(overrides = {}, target = PRIMARY_TARGET) {
   const product = await makeImage(
     'product_gallery',
     'product.jpg',
@@ -82,7 +117,7 @@ async function makeRequest(overrides = {}) {
     action: CUSTOM_GEM_ACTION,
     version: CUSTOM_GEM_COMMAND_VERSION,
     requestId,
-    gemUrl: CUSTOM_GEM_URL,
+    gemUrl: target.gemUrl,
     images: [product, creator],
     message: 'Use the supplied images.',
     timeoutMs: 30_000,
@@ -91,23 +126,28 @@ async function makeRequest(overrides = {}) {
 }
 
 describe('transactional Custom Gem request validation', () => {
-  test('accepts the exact ordered image contract and strips binary data from summaries', async () => {
-    const result = await validateGemStartRequest(await makeRequest());
+  test('accepts both exact targets and strips binary data from summaries', async () => {
+    for (const target of CUSTOM_GEM_TARGETS) {
+      const result = await validateGemStartRequest(await makeRequest({}, target));
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.request.sources.map(({ role, filename, mimeType, bytes }) => ({ role, filename, mimeType, bytes }))).toEqual([
-      { role: 'product_gallery', filename: 'product.jpg', mimeType: 'image/jpeg', bytes: 4 },
-      { role: 'creator_image', filename: 'creator.png', mimeType: 'image/png', bytes: 8 },
-    ]);
-    expect(result.request.messageSha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(result.request.sources[0].base64).toBe(toBase64(new Uint8Array([0xff, 0xd8, 0xff, 0xd9])));
-    expect(summarizeGemSources(result.request.sources)).toEqual([
-      { role: 'product_gallery', filename: 'product.jpg', mimeType: 'image/jpeg', bytes: 4, sha256: result.request.sources[0].sha256 },
-      { role: 'creator_image', filename: 'creator.png', mimeType: 'image/png', bytes: 8, sha256: result.request.sources[1].sha256 },
-    ]);
-    expect(summarizeGemSources(result.request.sources)[0]).not.toHaveProperty('data');
-    expect(summarizeGemSources(result.request.sources)[0]).not.toHaveProperty('base64');
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.request.gemId).toBe(target.gemId);
+      expect(result.request.gemUrl).toBe(target.gemUrl);
+      expect(result.request.currentUrl).toBe(target.gemUrl);
+      expect(result.request.sources.map(({ role, filename, mimeType, bytes }) => ({ role, filename, mimeType, bytes }))).toEqual([
+        { role: 'product_gallery', filename: 'product.jpg', mimeType: 'image/jpeg', bytes: 4 },
+        { role: 'creator_image', filename: 'creator.png', mimeType: 'image/png', bytes: 8 },
+      ]);
+      expect(result.request.messageSha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(result.request.sources[0].base64).toBe(toBase64(new Uint8Array([0xff, 0xd8, 0xff, 0xd9])));
+      expect(summarizeGemSources(result.request.sources)).toEqual([
+        { role: 'product_gallery', filename: 'product.jpg', mimeType: 'image/jpeg', bytes: 4, sha256: result.request.sources[0].sha256 },
+        { role: 'creator_image', filename: 'creator.png', mimeType: 'image/png', bytes: 8, sha256: result.request.sources[1].sha256 },
+      ]);
+      expect(summarizeGemSources(result.request.sources)[0]).not.toHaveProperty('data');
+      expect(summarizeGemSources(result.request.sources)[0]).not.toHaveProperty('base64');
+    }
   });
 
   test('accepts one product_gallery image without a creator_image', async () => {
@@ -180,6 +220,12 @@ describe('transactional Custom Gem request validation', () => {
       [{ action: 'chat' }, 'invalid_action'],
       [{ version: 'wrong' }, 'invalid_version'],
       [{ gemUrl: 'https://gemini.google.com/app' }, 'invalid_gem_url'],
+      [{ gemUrl: 'https://gemini.google.com/gem/unknown123456' }, 'invalid_gem_url'],
+      [{ gemUrl: `${PRIMARY_TARGET.gemUrl}/` }, 'invalid_gem_url'],
+      [{ gemUrl: `${PRIMARY_TARGET.gemUrl}?query=1` }, 'invalid_gem_url'],
+      [{ gemUrl: `${PRIMARY_TARGET.gemUrl}#hash` }, 'invalid_gem_url'],
+      [{ gemUrl: `https://user:pass@${PRIMARY_TARGET.gemUrl.slice('https://'.length)}` }, 'invalid_gem_url'],
+      [{ gemUrl: PRIMARY_TARGET.gemUrl.replace('gemini.google.com', 'gemini.google.com:443') }, 'invalid_gem_url'],
       [{ images: [valid.images[1], valid.images[0]] }, 'invalid_image_role_0'],
       [{ images: [{ ...valid.images[0], bytes: 5 }, valid.images[1]] }, 'byte_count_mismatch_0'],
       [{ images: [{ ...valid.images[0], mimeType: 'image/png' }, valid.images[1]] }, 'invalid_signature_0'],
@@ -223,17 +269,17 @@ describe('transactional Custom Gem request validation', () => {
   });
 });
 
-async function makeSubmitRequest(overrides = {}) {
-  const start = await makeRequest();
+async function makeSubmitRequest(overrides = {}, target = PRIMARY_TARGET) {
+  const start = await makeRequest({}, target);
   const messageSha256 = await sha256Hex(new TextEncoder().encode(start.message));
   return {
     id: requestId,
     action: CUSTOM_GEM_SUBMIT_ACTION,
     version: CUSTOM_GEM_SUBMIT_COMMAND_VERSION,
     requestId,
-    gemUrl: CUSTOM_GEM_URL,
+    gemUrl: target.gemUrl,
     tabId: 42,
-    currentUrl: CUSTOM_GEM_URL,
+    currentUrl: target.gemUrl,
     sources: metadataOnly(start.images),
     message: start.message,
     messageSha256,
@@ -249,22 +295,26 @@ async function makeSubmitRequest(overrides = {}) {
 }
 
 describe('metadata-only Custom Gem submit validation', () => {
-  test('accepts one exact trusted upload receipt without binary data or paths', async () => {
-    const result = await validateGemSubmitRequest(await makeSubmitRequest());
+  test('accepts both exact targets and retains the trusted metadata-only contract', async () => {
+    for (const target of CUSTOM_GEM_TARGETS) {
+      const result = await validateGemSubmitRequest(await makeSubmitRequest({}, target));
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.request.tabId).toBe(42);
-    expect(result.request.currentUrl).toBe(CUSTOM_GEM_URL);
-    expect(result.request.sources).toHaveLength(2);
-    expect(result.request.sources[0]).not.toHaveProperty('base64');
-    expect(result.request.sources[0]).not.toHaveProperty('data');
-    expect(result.request.sources[0]).not.toHaveProperty('localPath');
-    expect(result.request.uploadReceipt).toEqual({
-      version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
-      commandId: 'bridge-command-1',
-      receiptId: 'a'.repeat(64),
-    });
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.request.tabId).toBe(42);
+      expect(result.request.gemId).toBe(target.gemId);
+      expect(result.request.gemUrl).toBe(target.gemUrl);
+      expect(result.request.currentUrl).toBe(target.gemUrl);
+      expect(result.request.sources).toHaveLength(2);
+      expect(result.request.sources[0]).not.toHaveProperty('base64');
+      expect(result.request.sources[0]).not.toHaveProperty('data');
+      expect(result.request.sources[0]).not.toHaveProperty('localPath');
+      expect(result.request.uploadReceipt).toEqual({
+        version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
+        commandId: 'bridge-command-1',
+        receiptId: 'a'.repeat(64),
+      });
+    }
   });
 
   test('accepts one product source and five products followed by a creator source', async () => {
@@ -323,6 +373,11 @@ describe('metadata-only Custom Gem submit validation', () => {
     const cases = [
       [{ extra: true }, 'invalid_command_shape'],
       [{ currentUrl: `${CUSTOM_GEM_URL}/conversation` }, 'invalid_gem_url'],
+      [{ gemUrl: SECOND_TARGET.gemUrl }, 'invalid_gem_url'],
+      [{ currentUrl: SECOND_TARGET.gemUrl }, 'invalid_gem_url'],
+      [{ gemUrl: 'https://gemini.google.com/gem/unknown123456' }, 'invalid_gem_url'],
+      [{ gemUrl: `${CUSTOM_GEM_URL}?query=1` }, 'invalid_gem_url'],
+      [{ currentUrl: `${CUSTOM_GEM_URL}/` }, 'invalid_gem_url'],
       [{ sources: [valid.sources[1], valid.sources[0]] }, 'invalid_image_role_0'],
       [{ sources: [{ ...valid.sources[0], localPath: '/tmp/product.jpg' }, valid.sources[1]] }, 'invalid_image_0'],
       [{ messageUtf8Bytes: valid.messageUtf8Bytes + 1 }, 'message_byte_count_mismatch'],
@@ -367,44 +422,51 @@ const navigationTabs = (initial) => {
   };
 };
 
-test('trusted Custom Gem navigation requires a post-arm exact conversation transition', async () => {
-  const tabs = navigationTabs({ url: CUSTOM_GEM_URL, status: 'complete' });
-  const observer = await observeCustomGemConversationNavigation({
-    tabs,
-    tabId: 77,
-    gemUrl: CUSTOM_GEM_URL,
-    deadlineAt: Date.now() + 5_000,
-  });
-  const conversationUrl = `${CUSTOM_GEM_URL}/87dc48f315422485`;
-  tabs.emit(77, { url: conversationUrl }, { url: conversationUrl, status: 'loading' });
-  tabs.emit(77, { status: 'complete' }, { url: conversationUrl, status: 'complete' });
-  expect(await observer.promise).toBe(conversationUrl);
-  expect(tabs.listenerCount()).toBe(0);
+test('trusted Custom Gem navigation requires a post-arm exact conversation transition for either target', async () => {
+  for (const target of CUSTOM_GEM_TARGETS) {
+    const tabs = navigationTabs({ url: target.gemUrl, status: 'complete' });
+    const observer = await observeCustomGemConversationNavigation({
+      tabs,
+      tabId: 77,
+      gemUrl: target.gemUrl,
+      deadlineAt: Date.now() + 5_000,
+    });
+    const conversationUrl = `${target.gemUrl}/87dc48f315422485`;
+    tabs.emit(77, { url: conversationUrl }, { url: conversationUrl, status: 'loading' });
+    tabs.emit(77, { status: 'complete' }, { url: conversationUrl, status: 'complete' });
+    expect(await observer.promise).toBe(conversationUrl);
+    expect(tabs.listenerCount()).toBe(0);
+  }
 });
 
-test('trusted Custom Gem navigation rejects historic or unrelated destinations', async () => {
-  expect(isExactCustomGemConversationUrl(CUSTOM_GEM_URL, `${CUSTOM_GEM_URL}/abc12345`)).toBe(true);
-  expect(isExactCustomGemConversationUrl(CUSTOM_GEM_URL, `${CUSTOM_GEM_URL}/settings`)).toBe(false);
-  expect(isExactCustomGemConversationUrl(CUSTOM_GEM_URL, `${CUSTOM_GEM_URL}/abc-123`)).toBe(false);
-  await expect(
-    observeCustomGemConversationNavigation({
-      tabs: navigationTabs({ url: `${CUSTOM_GEM_URL}/historic`, status: 'complete' }),
-      tabId: 77,
-      gemUrl: CUSTOM_GEM_URL,
-      deadlineAt: Date.now() + 5_000,
-    }),
-  ).rejects.toMatchObject({ code: 'gem_url_mismatch' });
+test('trusted Custom Gem navigation rejects historic, cross-target, query, or unrelated destinations', async () => {
+  for (const target of CUSTOM_GEM_TARGETS) {
+    expect(isExactCustomGemConversationUrl(target.gemUrl, `${target.gemUrl}/abc12345`)).toBe(true);
+    expect(isExactCustomGemConversationUrl(target.gemUrl, `${target.gemUrl}/settings`)).toBe(false);
+    expect(isExactCustomGemConversationUrl(target.gemUrl, `${target.gemUrl}/abc-123`)).toBe(false);
+    expect(isExactCustomGemConversationUrl(target.gemUrl, `${target.gemUrl}/abc12345?query=1`)).toBe(false);
+    expect(isExactCustomGemConversationUrl(target.gemUrl, `${SECOND_TARGET.gemUrl}/abc12345`)).toBe(target === SECOND_TARGET);
+    await expect(
+      observeCustomGemConversationNavigation({
+        tabs: navigationTabs({ url: `${target.gemUrl}/historic`, status: 'complete' }),
+        tabId: 77,
+        gemUrl: target.gemUrl,
+        deadlineAt: Date.now() + 5_000,
+      }),
+    ).rejects.toMatchObject({ code: 'gem_url_mismatch' });
 
-  const tabs = navigationTabs({ url: CUSTOM_GEM_URL, status: 'complete' });
-  const observer = await observeCustomGemConversationNavigation({
-    tabs,
-    tabId: 77,
-    gemUrl: CUSTOM_GEM_URL,
-    deadlineAt: Date.now() + 5_000,
-  });
-  tabs.emit(77, { url: 'https://gemini.google.com/app' }, { url: 'https://gemini.google.com/app', status: 'loading' });
-  await expect(observer.promise).rejects.toMatchObject({ code: 'gem_url_mismatch' });
-  expect(tabs.listenerCount()).toBe(0);
+    const tabs = navigationTabs({ url: target.gemUrl, status: 'complete' });
+    const observer = await observeCustomGemConversationNavigation({
+      tabs,
+      tabId: 77,
+      gemUrl: target.gemUrl,
+      deadlineAt: Date.now() + 5_000,
+    });
+    const unrelatedUrl = target === PRIMARY_TARGET ? SECOND_TARGET.gemUrl : PRIMARY_TARGET.gemUrl;
+    tabs.emit(77, { url: unrelatedUrl }, { url: unrelatedUrl, status: 'loading' });
+    await expect(observer.promise).rejects.toMatchObject({ code: 'gem_url_mismatch' });
+    expect(tabs.listenerCount()).toBe(0);
+  }
 });
 
 test('the extension logs only the action name, never the full MQTT command', async () => {
@@ -430,6 +492,10 @@ test('the extension logs only the action name, never the full MQTT command', asy
   )
   expect(trustedSendBlock).toContain('message: request.message')
   expect(source).toContain('await requestTrustedCustomGemSend(request)')
+  expect(source).toContain('gemId: request.gemId')
+  expect(source).toContain('gemUrl: request.gemUrl')
+  expect(source).toContain('currentUrl: request.currentUrl')
+  expect(source).toContain('response.result.gemId !== request.gemId')
   expect(source).toContain('const navigation = await observeCustomGemConversationNavigation({')
   expect(source).toContain('const conversationUrl = await navigation.promise')
   expect(source).toContain('expectedUrl: conversationUrl')
@@ -443,12 +509,19 @@ test('the extension logs only the action name, never the full MQTT command', asy
   expect(source).toContain('func: cleanupCustomGemAttributionPage')
   expect(source).toContain("node.querySelectorAll('.query-text-line')")
   expect(source).toContain('const tabReadyDeadline = Math.min(deadlineAt, Date.now() + 5_000)')
-  expect(source).toContain('const sendReadyDeadline = Math.min(deadlineAt, Date.now() + 10_000)')
-  expect(source).toContain('Date.now() - readySince >= 2_000')
+  expect(source).toContain('const sendReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs)')
+  expect(source).toContain('Date.now() - readySince >= sendStableMs')
+  expect(source).toContain('sendReadyWindowMs: readiness.readyWindowMs')
+  expect(source).toContain("errorCode: 'attachment_media_not_ready'")
+  expect(source).toContain("attachment_media_not_ready: 'The Custom Gem attachments did not finish rendering before Send'")
+  expect(source).toContain('image.complete && image.naturalWidth > 0')
+  expect(source).toContain("customGemSendReadiness: CUSTOM_GEM_SEND_READINESS_CAPABILITY")
   expect(source).toContain("node.querySelector('.markdown-main-panel, .markdown, message-content")
   expect(source).toContain("lines.push(`${'#'.repeat(Number(tag[1]))} ${text}`)")
   expect(source).toContain("chrome.runtime.lastError?.message || response?.error")
-  expect(source).toContain('await reserveCustomGemDurableRequest(validation.request, fingerprint)')
+  expect(source).toContain('await reserveCustomGemDurableRequest(request, fingerprint)')
+  expect(source).toContain('if (cached.fingerprint !== fingerprint)')
+  expect(source).toContain('if (inFlight.fingerprint !== fingerprint)')
   expect(source).toContain('await completeCustomGemDurableRequest(requestId, reservation.fingerprint, result)')
   expect(source).toContain("CUSTOM_GEM_DURABLE_REQUESTS_KEY = 'customGemDurableSubmitRequestsV1'")
   expect(source).toContain('const customGemSubmitInFlight = new Map()')

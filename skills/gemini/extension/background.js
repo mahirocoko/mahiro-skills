@@ -11595,8 +11595,24 @@ var CUSTOM_GEM_SUBMIT_ACTION = "gem_submit_v1";
 var CUSTOM_GEM_SUBMIT_COMMAND_VERSION = "custom-gem-browser-submit-command-v1";
 var CUSTOM_GEM_UPLOAD_RESULT_VERSION = "custom-gem-source-upload-result-v1";
 var CUSTOM_GEM_RESULT_VERSION = "custom-gem-browser-result-v1";
-var CUSTOM_GEM_ID = "d6f1958dff66";
-var CUSTOM_GEM_URL = `https://gemini.google.com/gem/${CUSTOM_GEM_ID}`;
+var CUSTOM_GEM_TARGETS = Object.freeze([
+  Object.freeze({
+    gemId: "d6f1958dff66",
+    gemUrl: "https://gemini.google.com/gem/d6f1958dff66"
+  }),
+  Object.freeze({
+    gemId: "a217413102ab",
+    gemUrl: "https://gemini.google.com/gem/a217413102ab"
+  })
+]);
+var CUSTOM_GEM_ID = CUSTOM_GEM_TARGETS[0].gemId;
+var CUSTOM_GEM_URL = CUSTOM_GEM_TARGETS[0].gemUrl;
+var CUSTOM_GEM_TARGET_BY_URL = new Map(CUSTOM_GEM_TARGETS.map((target) => [target.gemUrl, target]));
+function normalizeCustomGemTarget(gemUrl) {
+  if (typeof gemUrl !== "string") return null;
+  const target = CUSTOM_GEM_TARGET_BY_URL.get(gemUrl);
+  return target ? { ...target, currentUrl: target.gemUrl } : null;
+}
 var CUSTOM_GEM_PRODUCT_ROLE = "product_gallery";
 var CUSTOM_GEM_CREATOR_ROLE = "creator_image";
 var CUSTOM_GEM_MIN_PRODUCT_IMAGES = 1;
@@ -11609,6 +11625,9 @@ var CUSTOM_GEM_MAX_MESSAGE_BYTES = 8 * 1024;
 var CUSTOM_GEM_MIN_TIMEOUT_MS = 3e4;
 var CUSTOM_GEM_MAX_TIMEOUT_MS = 36e4;
 var CUSTOM_GEM_MAX_RESPONSE_BYTES = 64 * 1024;
+var CUSTOM_GEM_BASE_SEND_STABLE_MS = 2e3;
+var CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS = 1500;
+var CUSTOM_GEM_SEND_READY_GRACE_MS = 1e4;
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var SHA256_RE = /^[0-9a-f]{64}$/i;
 var MAX_FILENAME_BYTES = 255;
@@ -11616,6 +11635,16 @@ var MAX_BASE64_CHARS = Math.ceil(CUSTOM_GEM_MAX_IMAGE_BYTES / 3) * 4;
 var SAFE_ID_RE = /^[a-zA-Z0-9._:-]{1,240}$/;
 function invalid(stage, code, message) {
   return { ok: false, error: { stage, code, message } };
+}
+function getCustomGemSendReadiness(sourceCount) {
+  if (!Number.isInteger(sourceCount) || sourceCount < 1 || sourceCount > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    throw new Error("Custom Gem Send readiness source count must be between 1 and 6.");
+  }
+  const stableMs = CUSTOM_GEM_BASE_SEND_STABLE_MS + Math.max(0, sourceCount - 2) * CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS;
+  return {
+    stableMs,
+    readyWindowMs: stableMs + CUSTOM_GEM_SEND_READY_GRACE_MS
+  };
 }
 function validateOrderedSourceRole(role, index, state, itemLabel) {
   if (role === CUSTOM_GEM_PRODUCT_ROLE) {
@@ -11709,8 +11738,13 @@ async function validateGemStartRequest(input) {
   if (!isUuid(requestId)) {
     return invalid("validation", "invalid_request_id", "requestId must be a canonical UUID");
   }
-  if (input?.gemUrl !== CUSTOM_GEM_URL) {
-    return invalid("validation", "invalid_gem_url", `gemUrl must equal ${CUSTOM_GEM_URL}`);
+  const target = normalizeCustomGemTarget(input?.gemUrl);
+  if (!target) {
+    return invalid(
+      "validation",
+      "invalid_gem_url",
+      `gemUrl must equal one of: ${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(", ")}`
+    );
   }
   if (input?.tabId !== void 0 && input?.tabId !== null && (!Number.isSafeInteger(input.tabId) || input.tabId < 0)) {
     return invalid("validation", "invalid_tab_id", "tabId must be an exact non-negative integer when supplied");
@@ -11790,7 +11824,9 @@ async function validateGemStartRequest(input) {
     request: {
       requestId,
       tabId: input.tabId === void 0 || input.tabId === null ? void 0 : input.tabId,
-      gemUrl: CUSTOM_GEM_URL,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: target.currentUrl,
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256: await sha256Hex(new TextEncoder().encode(input.message)),
@@ -11827,8 +11863,14 @@ async function validateGemSubmitRequest(input) {
   if (!isUuid(requestId) || input.id !== requestId) {
     return invalid("validation", "invalid_request_id", "id and requestId must be the same canonical UUID");
   }
-  if (input.gemUrl !== CUSTOM_GEM_URL || input.currentUrl !== CUSTOM_GEM_URL) {
-    return invalid("validation", "invalid_gem_url", `gemUrl and currentUrl must equal ${CUSTOM_GEM_URL}`);
+  const target = normalizeCustomGemTarget(input.gemUrl);
+  const currentTarget = normalizeCustomGemTarget(input.currentUrl);
+  if (!target || !currentTarget || target.gemUrl !== currentTarget.gemUrl) {
+    return invalid(
+      "validation",
+      "invalid_gem_url",
+      `gemUrl and currentUrl must equal the same approved Custom Gem base URL (${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(", ")})`
+    );
   }
   if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
     return invalid("validation", "invalid_tab_id", "tabId must be an exact non-negative integer");
@@ -11895,8 +11937,9 @@ async function validateGemSubmitRequest(input) {
     request: {
       requestId,
       tabId: input.tabId,
-      gemUrl: CUSTOM_GEM_URL,
-      currentUrl: CUSTOM_GEM_URL,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: target.currentUrl,
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256,
@@ -11916,7 +11959,7 @@ var navigationError = (code, detail) => {
   error.detail = detail;
   return error;
 };
-var isExactCustomGemConversationUrl = (gemUrl, value) => new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}(?:[?#].*)?$`, "i").test(String(value || ""));
+var isExactCustomGemConversationUrl = (gemUrl, value) => normalizeCustomGemTarget(gemUrl)?.gemUrl === gemUrl && new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}$`, "i").test(String(value || ""));
 async function observeCustomGemConversationNavigation({
   tabs,
   tabId,
@@ -12012,6 +12055,7 @@ var CUSTOM_GEM_REPLAY_LIMIT = 64;
 var MAHIRO_BROWSER_CONTROL_EXTENSION_ID = "ebijjoalkbhoackkociadkeaameeimih";
 var CUSTOM_GEM_DURABLE_REQUESTS_KEY = "customGemDurableSubmitRequestsV1";
 var CUSTOM_GEM_DURABLE_REQUEST_LIMIT = 1e4;
+var CUSTOM_GEM_SEND_READINESS_CAPABILITY = "source-count-image-ready-v1";
 var customGemReplayCache = /* @__PURE__ */ new Map();
 var customGemInFlight = /* @__PURE__ */ new Map();
 var customGemSubmitInFlight = /* @__PURE__ */ new Map();
@@ -12230,7 +12274,11 @@ async function handleCommand(cmd) {
   try {
     switch (cmd.action) {
       case "ping":
-        result = { success: true, pong: true };
+        result = {
+          success: true,
+          pong: true,
+          customGemSendReadiness: CUSTOM_GEM_SEND_READINESS_CAPABILITY
+        };
         break;
       case "gem_start_v1":
         result = await handleCustomGemStart(cmd);
@@ -12406,17 +12454,38 @@ async function handleCommand(cmd) {
   sendResponse(cmd.id, result);
 }
 function customGemResultBase(requestId, overrides = {}) {
+  const gemUrl = typeof overrides.gemUrl === "string" ? overrides.gemUrl : null;
+  const currentUrl = typeof overrides.currentUrl === "string" ? overrides.currentUrl : null;
+  const gemId = typeof overrides.gemId === "string" ? overrides.gemId : null;
   return {
     version: CUSTOM_GEM_RESULT_VERSION,
     requestId: isUuid(requestId) ? requestId : null,
     state: "failed",
-    gemId: CUSTOM_GEM_ID,
-    url: CUSTOM_GEM_URL,
     tabId: null,
     conversationUrl: null,
     sources: [],
     messageSha256: null,
-    ...overrides
+    ...overrides,
+    gemId,
+    gemUrl,
+    currentUrl,
+    // Preserve the v1 result field while making the target fields explicit.
+    url: gemUrl
+  };
+}
+function customGemTargetContext(request, tabId = null) {
+  return {
+    gemId: request?.gemId || null,
+    gemUrl: request?.gemUrl || null,
+    currentUrl: request?.currentUrl || request?.gemUrl || null,
+    tabId
+  };
+}
+function rebindCustomGemResultTarget(result, request) {
+  return {
+    ...result,
+    ...customGemTargetContext(request, result?.tabId ?? request?.tabId ?? null),
+    url: request.gemUrl
   };
 }
 function customGemFailure(requestId, stage, code, message, context = {}) {
@@ -12480,6 +12549,7 @@ function customGemErrorMessage(code) {
     attachment_markers_missing: "Stable visible attachment markers were not found",
     attachment_count_mismatch: "The Custom Gem did not show the expected number of visible attachments",
     attachment_names_unverified: "Visible attachment filenames could not be verified in order",
+    attachment_media_not_ready: "The Custom Gem attachments did not finish rendering before Send",
     upload_attestation_rejected: "Browser Control did not authenticate this one-time upload receipt",
     trusted_send_rejected: "Browser Control did not complete the one-time trusted Send click",
     durable_request_incomplete: "A prior delivery of this request did not reach a durable terminal result",
@@ -12516,10 +12586,10 @@ function customGemBrowserError(code) {
   error.code = code;
   return error;
 }
-function cacheCustomGemResult(requestId, result) {
+function cacheCustomGemResult(requestId, fingerprint, result) {
   if (!isUuid(requestId)) return;
   customGemReplayCache.delete(requestId);
-  customGemReplayCache.set(requestId, result);
+  customGemReplayCache.set(requestId, { fingerprint, result });
   while (customGemReplayCache.size > CUSTOM_GEM_REPLAY_LIMIT) {
     const oldest = customGemReplayCache.keys().next().value;
     customGemReplayCache.delete(oldest);
@@ -12549,6 +12619,19 @@ async function customGemSubmitFingerprint(request) {
     sources,
     messageSha256: request.messageSha256,
     uploadReceipt: request.uploadReceipt
+  })));
+}
+async function customGemStartFingerprint(request) {
+  const sources = summarizeGemSources(request.sources);
+  return sha256Hex(new TextEncoder().encode(JSON.stringify({
+    requestId: request.requestId,
+    tabId: request.tabId,
+    currentUrl: request.currentUrl,
+    sourceCount: sources.length,
+    sourceOrder: sources.map(({ role }) => role),
+    sources,
+    messageSha256: request.messageSha256,
+    timeoutMs: request.timeoutMs
   })));
 }
 function compactCustomGemDurableRequests(current) {
@@ -12608,16 +12691,18 @@ function verifyTrustedCustomGemUploadReceipt(request) {
     commandId: request.uploadReceipt.commandId,
     receiptId: request.uploadReceipt.receiptId,
     requestId: request.requestId,
+    gemId: request.gemId,
+    gemUrl: request.gemUrl,
+    currentUrl: request.currentUrl,
     messageSha256: request.messageSha256,
     tabId: request.tabId,
-    currentUrl: request.currentUrl,
     sources: summarizeGemSources(request.sources)
   };
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(customGemBrowserError("upload_attestation_rejected")), 5e3);
     chrome.runtime.sendMessage(MAHIRO_BROWSER_CONTROL_EXTENSION_ID, payload, (response) => {
       clearTimeout(timer);
-      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.consumed !== true || response.result.receiptId !== request.uploadReceipt.receiptId) {
+      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.consumed !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
         const error = customGemBrowserError("upload_attestation_rejected");
         error.detail = String(
           chrome.runtime.lastError?.message || response?.error || "attestation response was invalid"
@@ -12666,7 +12751,7 @@ async function resolveCustomGemTargetTab(request) {
     return request.tabId;
   }
   try {
-    const tab = await chrome.tabs.create({ url: CUSTOM_GEM_URL, active: false });
+    const tab = await chrome.tabs.create({ url: request.gemUrl, active: false });
     if (!Number.isInteger(tab?.id)) throw customGemBrowserError("tab_create_failed");
     return tab.id;
   } catch (error) {
@@ -12674,16 +12759,16 @@ async function resolveCustomGemTargetTab(request) {
     throw customGemBrowserError("tab_create_failed");
   }
 }
-async function navigateAndVerifyCustomGemTab(tabId, deadlineAt) {
+async function navigateAndVerifyCustomGemTab(tabId, gemUrl, deadlineAt) {
   let tab;
   try {
     tab = await chrome.tabs.get(tabId);
   } catch {
     throw customGemBrowserError("invalid_tab");
   }
-  if (tab?.url !== CUSTOM_GEM_URL) {
+  if (tab?.url !== gemUrl) {
     try {
-      await chrome.tabs.update(tabId, { url: CUSTOM_GEM_URL });
+      await chrome.tabs.update(tabId, { url: gemUrl });
     } catch {
       throw customGemBrowserError("tab_navigation_failed");
     }
@@ -12696,10 +12781,10 @@ async function navigateAndVerifyCustomGemTab(tabId, deadlineAt) {
     } catch {
       throw customGemBrowserError("invalid_tab");
     }
-    if (current?.url === CUSTOM_GEM_URL && current?.status === "complete") {
+    if (current?.url === gemUrl && current?.status === "complete") {
       return current;
     }
-    if (current?.url && current.url !== CUSTOM_GEM_URL && Date.now() - startedAt > 5e3) {
+    if (current?.url && current.url !== gemUrl && Date.now() - startedAt > 5e3) {
       throw customGemBrowserError("gem_url_mismatch");
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -12809,12 +12894,12 @@ function customGemPreflightPage(expectedUrl) {
     messageSelectorSupport: messageSelectors.some((selector) => document.querySelector(selector))
   };
 }
-async function preflightCustomGemPage(tabId, deadlineAt) {
+async function preflightCustomGemPage(tabId, gemUrl, deadlineAt) {
   const retryUntil = Math.min(deadlineAt, Date.now() + 2e4);
   let lastPayload = null;
   while (Date.now() < retryUntil) {
     try {
-      const results = await executeCustomGemScript(tabId, customGemPreflightPage, [CUSTOM_GEM_URL], deadlineAt);
+      const results = await executeCustomGemScript(tabId, customGemPreflightPage, [gemUrl], deadlineAt);
       const payload = results?.[0]?.result;
       if (payload && typeof payload === "object") {
         lastPayload = payload;
@@ -13016,7 +13101,7 @@ async function customGemAttachPage(payload) {
     inputFileCount: fileInput.files?.length || 0
   };
 }
-async function attachCustomGemSources(tabId, sources, deadlineAt) {
+async function attachCustomGemSources(tabId, gemUrl, sources, deadlineAt) {
   const pageSources = sources.map(({ role, filename, mimeType, bytes, base64 }) => ({
     role,
     filename,
@@ -13027,7 +13112,7 @@ async function attachCustomGemSources(tabId, sources, deadlineAt) {
   const results = await executeCustomGemScript(
     tabId,
     customGemAttachPage,
-    [{ expectedUrl: CUSTOM_GEM_URL, sources: pageSources }],
+    [{ expectedUrl: gemUrl, sources: pageSources }],
     deadlineAt,
     "MAIN"
   );
@@ -13039,6 +13124,8 @@ async function customGemSubmitPage(payload) {
   const responseSelector = String(payload?.responseSelector || "");
   const deadlineAt = Number(payload?.deadlineAt || 0);
   const expectedSources = Array.isArray(payload?.sources) ? payload.sources : [];
+  const sendStableMs = Number(payload?.sendStableMs || 0);
+  const sendReadyWindowMs = Number(payload?.sendReadyWindowMs || 0);
   const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
   const isVisible = (element) => {
     if (!element) return false;
@@ -13091,6 +13178,17 @@ async function customGemSubmitPage(payload) {
     const nodes = attachmentNodes();
     if (nodes.length === 0) return { ok: false, errorCode: "attachment_markers_missing", attachmentCount: 0 };
     if (nodes.length !== expectedSources.length) return { ok: false, errorCode: "attachment_count_mismatch", attachmentCount: nodes.length };
+    const mediaReady = nodes.every((node) => {
+      const image = node.querySelector('img.gem-attachment-style-img, img[alt="attachment"], img');
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+    });
+    if (!mediaReady) {
+      return {
+        ok: false,
+        errorCode: "attachment_media_not_ready",
+        attachmentCount: nodes.length
+      };
+    }
     const exactMediaTiles = nodes.every((node) => node.matches?.("gem-media-attachment.gem-attachment-tile"));
     if (exactMediaTiles) {
       return {
@@ -13106,7 +13204,12 @@ async function customGemSubmitPage(payload) {
     }
     return { ok: true, attachmentCount: nodes.length, attachmentVerification: "ordered_filenames" };
   };
-  const attachments = attachmentState();
+  const attachmentReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs);
+  let attachments = attachmentState();
+  while (!attachments.ok && Date.now() < attachmentReadyDeadline) {
+    await sleep(250);
+    attachments = attachmentState();
+  }
   if (!attachments.ok) return { state: "failed", ...attachments, clicked: false };
   const responseNodes = () => unique(Array.from(document.querySelectorAll(responseSelector)).filter(isVisible));
   const messageSelectors = ["user-query", '[data-test-id="user-query"]', '[data-testid="user-query"]'];
@@ -13179,7 +13282,7 @@ ${text}
   const getSendCandidates = () => unique(
     sendSelectors.flatMap((selector) => Array.from(root.querySelectorAll(selector)).filter(isVisible))
   ).filter((element) => /\bsend\b/i.test(labelOf(element)) && !/(feedback|invite|share)/i.test(labelOf(element)));
-  const sendReadyDeadline = Math.min(deadlineAt, Date.now() + 1e4);
+  const sendReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs);
   let sendCandidate = null;
   let readySince = null;
   let lastCandidateCount = 0;
@@ -13194,7 +13297,7 @@ ${text}
     }
     if (enabled) {
       readySince = readySince || Date.now();
-      if (Date.now() - readySince >= 2e3) {
+      if (Date.now() - readySince >= sendStableMs) {
         sendCandidate = candidate;
         break;
       }
@@ -13445,10 +13548,19 @@ function cleanupCustomGemAttributionPage(attributionToken) {
 }
 async function runCustomGemSubmit(tabId, request, responseSelector, deadlineAt) {
   const sources = request.sources.map(({ role, filename, mimeType, bytes }) => ({ role, filename, mimeType, bytes }));
+  const readiness = getCustomGemSendReadiness(sources.length);
   const results = await executeCustomGemScript(
     tabId,
     customGemSubmitPage,
-    [{ expectedUrl: CUSTOM_GEM_URL, message: request.message, responseSelector, deadlineAt, sources }],
+    [{
+      expectedUrl: request.gemUrl,
+      message: request.message,
+      responseSelector,
+      deadlineAt,
+      sources,
+      sendStableMs: readiness.stableMs,
+      sendReadyWindowMs: readiness.readyWindowMs
+    }],
     deadlineAt
   );
   return results?.[0]?.result || null;
@@ -13458,16 +13570,18 @@ function requestTrustedCustomGemSend(request) {
     type: "TRUSTED_CUSTOM_GEM_SEND_V1",
     receiptId: request.uploadReceipt.receiptId,
     requestId: request.requestId,
+    gemId: request.gemId,
+    gemUrl: request.gemUrl,
+    currentUrl: request.currentUrl,
     message: request.message,
     messageSha256: request.messageSha256,
-    tabId: request.tabId,
-    currentUrl: request.currentUrl
+    tabId: request.tabId
   };
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(customGemBrowserError("trusted_send_rejected")), 2e4);
     chrome.runtime.sendMessage(MAHIRO_BROWSER_CONTROL_EXTENSION_ID, payload, (response) => {
       clearTimeout(timer);
-      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.clicked !== true || response.result.receiptId !== request.uploadReceipt.receiptId) {
+      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.clicked !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
         const error = customGemBrowserError("trusted_send_rejected");
         error.detail = String(
           chrome.runtime.lastError?.message || response?.error || "trusted send response was invalid"
@@ -13481,16 +13595,19 @@ function requestTrustedCustomGemSend(request) {
 }
 async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadlineAt) {
   const sources = request.sources.map(({ role, filename, mimeType, bytes }) => ({ role, filename, mimeType, bytes }));
+  const readiness = getCustomGemSendReadiness(sources.length);
   const attributionToken = request.requestId;
   const preparedResults = await executeCustomGemScript(
     tabId,
     customGemSubmitPage,
     [{
-      expectedUrl: CUSTOM_GEM_URL,
+      expectedUrl: request.gemUrl,
       message: request.message,
       responseSelector,
       deadlineAt,
       sources,
+      sendStableMs: readiness.stableMs,
+      sendReadyWindowMs: readiness.readyWindowMs,
       prepareOnly: true,
       attributionToken
     }],
@@ -13501,7 +13618,7 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
   const navigation = await observeCustomGemConversationNavigation({
     tabs: chrome.tabs,
     tabId,
-    gemUrl: CUSTOM_GEM_URL,
+    gemUrl: request.gemUrl,
     deadlineAt
   });
   try {
@@ -13529,13 +13646,17 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
     }).catch(() => void 0);
   }
 }
-async function executeCustomGemStart(cmd) {
+async function executeCustomGemStart(cmd, validatedRequest = null) {
   const requestId = typeof cmd?.requestId === "string" ? cmd.requestId : null;
   let validation;
-  try {
-    validation = await validateGemStartRequest(cmd);
-  } catch {
-    return customGemFailure(requestId, "validation", "validator_error", "The Custom Gem request validator failed safely");
+  if (validatedRequest) {
+    validation = { ok: true, request: validatedRequest };
+  } else {
+    try {
+      validation = await validateGemStartRequest(cmd);
+    } catch {
+      return customGemFailure(requestId, "validation", "validator_error", "The Custom Gem request validator failed safely");
+    }
   }
   if (!validation.ok) {
     return customGemFailure(
@@ -13547,6 +13668,7 @@ async function executeCustomGemStart(cmd) {
   }
   const request = validation.request;
   const context = {
+    ...customGemTargetContext(request),
     sources: summarizeGemSources(request.sources),
     messageSha256: request.messageSha256
   };
@@ -13566,8 +13688,8 @@ async function executeCustomGemStart(cmd) {
     }
     customGemTabLocks.set(tabId, request.requestId);
     lockHeld = true;
-    await navigateAndVerifyCustomGemTab(tabId, deadlineAt);
-    const preflight = await preflightCustomGemPage(tabId, deadlineAt);
+    await navigateAndVerifyCustomGemTab(tabId, request.gemUrl, deadlineAt);
+    const preflight = await preflightCustomGemPage(tabId, request.gemUrl, deadlineAt);
     if (!preflight?.ready) {
       const code = preflight?.errorCode || "page_not_ready";
       return customGemFailure(request.requestId, "preflight", code, customGemErrorMessage(code), {
@@ -13578,7 +13700,7 @@ async function executeCustomGemStart(cmd) {
     if (Date.now() >= deadlineAt) {
       return customGemFailure(request.requestId, "preflight", "deadline_exceeded", customGemErrorMessage("deadline_exceeded"), tabContext);
     }
-    const attachmentResult = await attachCustomGemSources(tabId, request.sources, deadlineAt);
+    const attachmentResult = await attachCustomGemSources(tabId, request.gemUrl, request.sources, deadlineAt);
     if (!attachmentResult?.ok) {
       const code = attachmentResult?.errorCode || "attachment_count_mismatch";
       return customGemFailure(request.requestId, "attachments", code, customGemErrorMessage(code), {
@@ -13683,9 +13805,9 @@ async function executeCustomGemSubmit(cmd) {
   }
   const request = validation.request;
   const context = {
+    ...customGemTargetContext(request, request.tabId),
     sources: summarizeGemSources(request.sources),
-    messageSha256: request.messageSha256,
-    tabId: request.tabId
+    messageSha256: request.messageSha256
   };
   const deadlineAt = Date.now() + request.timeoutMs;
   let lockHeld = false;
@@ -13699,7 +13821,7 @@ async function executeCustomGemSubmit(cmd) {
       } catch {
         return customGemFailure(request.requestId, "preflight", "invalid_tab", customGemErrorMessage("invalid_tab"), context);
       }
-      if (tab?.url !== request.currentUrl || tab?.url !== CUSTOM_GEM_URL) {
+      if (tab?.url !== request.currentUrl || tab?.url !== request.gemUrl) {
         return customGemFailure(request.requestId, "preflight", "gem_url_mismatch", customGemErrorMessage("gem_url_mismatch"), context);
       }
       if (tab.status === "complete") break;
@@ -13717,7 +13839,7 @@ async function executeCustomGemSubmit(cmd) {
     }
     customGemTabLocks.set(request.tabId, request.requestId);
     lockHeld = true;
-    const preflight = await preflightCustomGemPage(request.tabId, deadlineAt);
+    const preflight = await preflightCustomGemPage(request.tabId, request.gemUrl, deadlineAt);
     if (!preflight?.ready) {
       const code = preflight?.errorCode || "page_not_ready";
       return customGemFailure(request.requestId, "preflight", code, customGemErrorMessage(code), {
@@ -13827,22 +13949,58 @@ async function executeCustomGemSubmit(cmd) {
 }
 async function handleCustomGemStart(cmd) {
   const requestId = typeof cmd?.requestId === "string" ? cmd.requestId : null;
-  if (isUuid(requestId) && customGemReplayCache.has(requestId)) {
-    return customGemReplayCache.get(requestId);
+  let validation;
+  try {
+    validation = await validateGemStartRequest(cmd);
+  } catch {
+    return customGemFailure(requestId, "validation", "validator_error", "The Custom Gem request validator failed safely");
   }
-  if (isUuid(requestId) && customGemInFlight.has(requestId)) {
-    return customGemInFlight.get(requestId);
+  if (!validation.ok) {
+    return customGemFailure(
+      requestId,
+      validation.error.stage,
+      validation.error.code,
+      validation.error.message
+    );
+  }
+  const request = validation.request;
+  const fingerprint = await customGemStartFingerprint(request);
+  const cached = isUuid(requestId) ? customGemReplayCache.get(requestId) : null;
+  if (cached) {
+    if (cached.fingerprint !== fingerprint) {
+      return customGemFailure(
+        requestId,
+        "replay",
+        "durable_request_conflict",
+        customGemErrorMessage("durable_request_conflict"),
+        customGemTargetContext(request)
+      );
+    }
+    return rebindCustomGemResultTarget(cached.result, request);
+  }
+  const inFlight = isUuid(requestId) ? customGemInFlight.get(requestId) : null;
+  if (inFlight) {
+    if (inFlight.fingerprint !== fingerprint) {
+      return customGemFailure(
+        requestId,
+        "replay",
+        "durable_request_conflict",
+        customGemErrorMessage("durable_request_conflict"),
+        customGemTargetContext(request)
+      );
+    }
+    return inFlight.task;
   }
   const task = (async () => {
-    const result = await executeCustomGemStart(cmd);
-    cacheCustomGemResult(requestId, result);
+    const result = await executeCustomGemStart(cmd, request);
+    cacheCustomGemResult(requestId, fingerprint, result);
     return result;
   })();
-  if (isUuid(requestId)) customGemInFlight.set(requestId, task);
+  if (isUuid(requestId)) customGemInFlight.set(requestId, { fingerprint, task });
   try {
     return await task;
   } finally {
-    if (isUuid(requestId) && customGemInFlight.get(requestId) === task) {
+    if (isUuid(requestId) && customGemInFlight.get(requestId)?.task === task) {
       customGemInFlight.delete(requestId);
     }
   }
@@ -13863,7 +14021,9 @@ async function handleCustomGemSubmit(cmd) {
       validation.error.message
     );
   }
-  const fingerprint = await customGemSubmitFingerprint(validation.request);
+  const request = validation.request;
+  const targetContext = customGemTargetContext(request, request.tabId);
+  const fingerprint = await customGemSubmitFingerprint(request);
   const inFlight = isUuid(requestId) ? customGemSubmitInFlight.get(requestId) : null;
   if (inFlight) {
     if (inFlight.fingerprint !== fingerprint) {
@@ -13871,7 +14031,8 @@ async function handleCustomGemSubmit(cmd) {
         requestId,
         "durable_state",
         "durable_request_conflict",
-        customGemErrorMessage("durable_request_conflict")
+        customGemErrorMessage("durable_request_conflict"),
+        targetContext
       );
     }
     return inFlight.task;
@@ -13879,22 +14040,24 @@ async function handleCustomGemSubmit(cmd) {
   const task = (async () => {
     let reservation;
     try {
-      reservation = await reserveCustomGemDurableRequest(validation.request, fingerprint);
+      reservation = await reserveCustomGemDurableRequest(request, fingerprint);
     } catch {
       return customGemAmbiguous(
         requestId,
         "durable_state",
         "durable_state_write_failed",
-        customGemErrorMessage("durable_state_write_failed")
+        customGemErrorMessage("durable_state_write_failed"),
+        targetContext
       );
     }
-    if (reservation.state === "completed") return reservation.result;
+    if (reservation.state === "completed") return rebindCustomGemResultTarget(reservation.result, request);
     if (reservation.state === "completed_tombstone") {
       return customGemAmbiguous(
         requestId,
         "durable_state",
         "durable_request_completed",
-        customGemErrorMessage("durable_request_completed")
+        customGemErrorMessage("durable_request_completed"),
+        targetContext
       );
     }
     if (reservation.state === "conflict") {
@@ -13902,7 +14065,8 @@ async function handleCustomGemSubmit(cmd) {
         requestId,
         "durable_state",
         "durable_request_conflict",
-        customGemErrorMessage("durable_request_conflict")
+        customGemErrorMessage("durable_request_conflict"),
+        targetContext
       );
     }
     if (reservation.state === "incomplete") {
@@ -13910,7 +14074,8 @@ async function handleCustomGemSubmit(cmd) {
         requestId,
         "durable_state",
         "durable_request_incomplete",
-        customGemErrorMessage("durable_request_incomplete")
+        customGemErrorMessage("durable_request_incomplete"),
+        targetContext
       );
     }
     const result = await executeCustomGemSubmit(cmd);
@@ -13923,13 +14088,13 @@ async function handleCustomGemSubmit(cmd) {
         "durable_state_write_failed",
         customGemErrorMessage("durable_state_write_failed"),
         {
-          sources: summarizeGemSources(validation.request.sources),
-          messageSha256: validation.request.messageSha256,
-          tabId: validation.request.tabId
+          ...targetContext,
+          sources: summarizeGemSources(request.sources),
+          messageSha256: request.messageSha256
         }
       );
     }
-    cacheCustomGemResult(requestId, result);
+    cacheCustomGemResult(requestId, fingerprint, result);
     return result;
   })();
   if (isUuid(requestId)) customGemSubmitInFlight.set(requestId, { fingerprint, task });

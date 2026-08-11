@@ -4,8 +4,28 @@ export const CUSTOM_GEM_SUBMIT_ACTION = 'gem_submit_v1';
 export const CUSTOM_GEM_SUBMIT_COMMAND_VERSION = 'custom-gem-browser-submit-command-v1';
 export const CUSTOM_GEM_UPLOAD_RESULT_VERSION = 'custom-gem-source-upload-result-v1';
 export const CUSTOM_GEM_RESULT_VERSION = 'custom-gem-browser-result-v1';
-export const CUSTOM_GEM_ID = 'd6f1958dff66';
-export const CUSTOM_GEM_URL = `https://gemini.google.com/gem/${CUSTOM_GEM_ID}`;
+export const CUSTOM_GEM_TARGETS = Object.freeze([
+  Object.freeze({
+    gemId: 'd6f1958dff66',
+    gemUrl: 'https://gemini.google.com/gem/d6f1958dff66',
+  }),
+  Object.freeze({
+    gemId: 'a217413102ab',
+    gemUrl: 'https://gemini.google.com/gem/a217413102ab',
+  }),
+]);
+export const CUSTOM_GEM_TARGET_ALLOWLIST = CUSTOM_GEM_TARGETS;
+// Kept as aliases for v1 callers that imported the original single-target constants.
+export const CUSTOM_GEM_ID = CUSTOM_GEM_TARGETS[0].gemId;
+export const CUSTOM_GEM_URL = CUSTOM_GEM_TARGETS[0].gemUrl;
+
+const CUSTOM_GEM_TARGET_BY_URL = new Map(CUSTOM_GEM_TARGETS.map((target) => [target.gemUrl, target]));
+
+export function normalizeCustomGemTarget(gemUrl) {
+  if (typeof gemUrl !== 'string') return null;
+  const target = CUSTOM_GEM_TARGET_BY_URL.get(gemUrl);
+  return target ? { ...target, currentUrl: target.gemUrl } : null;
+}
 export const CUSTOM_GEM_PRODUCT_ROLE = 'product_gallery';
 export const CUSTOM_GEM_CREATOR_ROLE = 'creator_image';
 // Kept as the role vocabulary for callers that imported the original constant.
@@ -20,6 +40,9 @@ export const CUSTOM_GEM_MAX_MESSAGE_BYTES = 8 * 1024;
 export const CUSTOM_GEM_MIN_TIMEOUT_MS = 30_000;
 export const CUSTOM_GEM_MAX_TIMEOUT_MS = 360_000;
 export const CUSTOM_GEM_MAX_RESPONSE_BYTES = 64 * 1024;
+export const CUSTOM_GEM_BASE_SEND_STABLE_MS = 2_000;
+export const CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS = 1_500;
+export const CUSTOM_GEM_SEND_READY_GRACE_MS = 10_000;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHA256_RE = /^[0-9a-f]{64}$/i;
@@ -53,6 +76,18 @@ export function selectGeminiSendControlDescriptor(controls) {
   if (!Array.isArray(controls)) return null;
   const matches = controls.filter(isGeminiSendControlDescriptor);
   return matches.length === 1 ? matches[0] : null;
+}
+
+export function getCustomGemSendReadiness(sourceCount) {
+  if (!Number.isInteger(sourceCount) || sourceCount < 1 || sourceCount > CUSTOM_GEM_MAX_SOURCE_COUNT) {
+    throw new Error('Custom Gem Send readiness source count must be between 1 and 6.');
+  }
+  const stableMs = CUSTOM_GEM_BASE_SEND_STABLE_MS
+    + Math.max(0, sourceCount - 2) * CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS;
+  return {
+    stableMs,
+    readyWindowMs: stableMs + CUSTOM_GEM_SEND_READY_GRACE_MS,
+  };
 }
 
 function validateOrderedSourceRole(role, index, state, itemLabel) {
@@ -167,8 +202,13 @@ export async function validateGemStartRequest(input) {
   if (!isUuid(requestId)) {
     return invalid('validation', 'invalid_request_id', 'requestId must be a canonical UUID');
   }
-  if (input?.gemUrl !== CUSTOM_GEM_URL) {
-    return invalid('validation', 'invalid_gem_url', `gemUrl must equal ${CUSTOM_GEM_URL}`);
+  const target = normalizeCustomGemTarget(input?.gemUrl);
+  if (!target) {
+    return invalid(
+      'validation',
+      'invalid_gem_url',
+      `gemUrl must equal one of: ${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(', ')}`,
+    );
   }
   if (input?.tabId !== undefined && input?.tabId !== null &&
       (!Number.isSafeInteger(input.tabId) || input.tabId < 0)) {
@@ -262,7 +302,9 @@ export async function validateGemStartRequest(input) {
     request: {
       requestId,
       tabId: input.tabId === undefined || input.tabId === null ? undefined : input.tabId,
-      gemUrl: CUSTOM_GEM_URL,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: target.currentUrl,
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256: await sha256Hex(new TextEncoder().encode(input.message)),
@@ -302,8 +344,14 @@ export async function validateGemSubmitRequest(input) {
   if (!isUuid(requestId) || input.id !== requestId) {
     return invalid('validation', 'invalid_request_id', 'id and requestId must be the same canonical UUID');
   }
-  if (input.gemUrl !== CUSTOM_GEM_URL || input.currentUrl !== CUSTOM_GEM_URL) {
-    return invalid('validation', 'invalid_gem_url', `gemUrl and currentUrl must equal ${CUSTOM_GEM_URL}`);
+  const target = normalizeCustomGemTarget(input.gemUrl);
+  const currentTarget = normalizeCustomGemTarget(input.currentUrl);
+  if (!target || !currentTarget || target.gemUrl !== currentTarget.gemUrl) {
+    return invalid(
+      'validation',
+      'invalid_gem_url',
+      `gemUrl and currentUrl must equal the same approved Custom Gem base URL (${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(', ')})`,
+    );
   }
   if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
     return invalid('validation', 'invalid_tab_id', 'tabId must be an exact non-negative integer');
@@ -385,8 +433,9 @@ export async function validateGemSubmitRequest(input) {
     request: {
       requestId,
       tabId: input.tabId,
-      gemUrl: CUSTOM_GEM_URL,
-      currentUrl: CUSTOM_GEM_URL,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: target.currentUrl,
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256,
@@ -410,7 +459,8 @@ const navigationError = (code, detail) => {
 };
 
 export const isExactCustomGemConversationUrl = (gemUrl, value) =>
-  new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}(?:[?#].*)?$`, 'i').test(String(value || ''));
+  normalizeCustomGemTarget(gemUrl)?.gemUrl === gemUrl &&
+  new RegExp(`^${escapeRegExp(gemUrl)}/[a-f0-9]{8,64}$`, 'i').test(String(value || ''));
 
 export async function observeCustomGemConversationNavigation({
   tabs,
