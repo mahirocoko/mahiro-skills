@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.88 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.89 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.88 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.89 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -214,7 +214,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached Phase 1 jobs are Herdr-only and persist watcher/results for later `list`/`show`/`collect`; they do not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached jobs are Herdr-only, support same-conversation wake-and-collect through a runtime background monitor, and persist watcher/results for durable `list`/`show`/`collect` fallback; the shell watcher itself does not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

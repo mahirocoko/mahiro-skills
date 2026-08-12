@@ -611,6 +611,50 @@ def command_collect(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_wait(args: argparse.Namespace) -> int:
+    try:
+        job_dir = resolve_job_dir(args.state_dir, args.job_id)
+    except (OSError, ValueError) as error:
+        print(f"direct-cli: {error}", file=sys.stderr)
+        return 1
+
+    deadline = time.monotonic() + args.timeout if args.timeout is not None else None
+    while True:
+        try:
+            payload = reconcile_job(job_dir, load_job(job_dir))
+        except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+            print(f"direct-cli: {error}", file=sys.stderr)
+            return 1
+
+        if payload["status"] in TERMINAL_STATUSES:
+            result = {
+                "job": payload["id"],
+                "status": payload["status"],
+                "job_dir": str(job_dir),
+            }
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+            else:
+                print(
+                    f"job={result['job']}\tstatus={result['status']}\t"
+                    f"job_dir={result['job_dir']}"
+                )
+            return 0
+
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                print(
+                    f"direct-cli: timed out waiting for job {payload['id']} "
+                    f"while status was {payload['status']}",
+                    file=sys.stderr,
+                )
+                return 2
+            time.sleep(min(args.poll_interval, remaining))
+        else:
+            time.sleep(args.poll_interval)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Durable detached Herdr job registry for direct-cli.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -646,6 +690,17 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--no-mark", action="store_true")
     collect.set_defaults(handler=command_collect)
 
+    wait = subparsers.add_parser(
+        "wait",
+        help="Wait for terminal job state and print one completion record.",
+    )
+    wait.add_argument("job_id")
+    wait.add_argument("--state-dir", type=Path)
+    wait.add_argument("--timeout", type=float)
+    wait.add_argument("--poll-interval", type=float, default=0.25)
+    wait.add_argument("--json", action="store_true")
+    wait.set_defaults(handler=command_wait)
+
     watch = subparsers.add_parser("_watch", help="Internal detached watcher process.")
     watch.add_argument("--job-dir", required=True, type=Path)
     watch.set_defaults(handler=command_watch)
@@ -662,6 +717,11 @@ def main() -> int:
             parser.error("--settle-timeout-ms must be between 1000 and 86400000")
         if not 1 <= args.result_lines <= 5_000:
             parser.error("--result-lines must be between 1 and 5000")
+    if args.command == "wait":
+        if args.timeout is not None and not 0 < args.timeout <= 86_400:
+            parser.error("--timeout must be between 0 and 86400 seconds")
+        if not 0.05 <= args.poll_interval <= 60:
+            parser.error("--poll-interval must be between 0.05 and 60 seconds")
     try:
         return int(args.handler(args))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

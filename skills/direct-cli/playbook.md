@@ -374,7 +374,7 @@ This proves byte-identical input at the Herdr CLI argument boundary. It does not
 
 ### Detached Herdr jobs
 
-Detached mode lets the main agent return control after dispatch while a local watcher owns completion capture. It is not a callback into the current Letta conversation and does not make the direct CLI agent headless: Cursor/Agy/Codex remain interactive in visible Herdr panes.
+Detached mode lets the main agent return control after dispatch while a local watcher owns completion capture. Cursor/Agy/Codex remain interactive in visible Herdr panes. The watcher itself is not a callback into the current Letta conversation; same-conversation live return is a separate controller-owned wake-and-collect layer.
 
 Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete:
 
@@ -412,7 +412,19 @@ $XDG_STATE_HOME/mahiro-skills/direct-cli/jobs
 
 Use `DIRECT_CLI_STATE_DIR` or `--state-dir` for an explicit local root. The helper never prunes or deletes jobs automatically.
 
-At the start of the next direct-cli turn, inspect durable state before launching duplicate work:
+### Same-conversation live return
+
+After `start`, use a runtime-native background task/monitor when one is available to run:
+
+```bash
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" wait "$JOB_ID" --json
+```
+
+`wait` polls only the private job record, reconciles a lost watcher, and exits after the job reaches `done`, `attention`, or `error`. It emits one metadata-only JSON line containing `job`, `status`, and `job_dir`; it does not mark the job collected or print prompt/result text. Set the runtime task description to include the job ID so the completion event is attributable.
+
+When that runtime completion event returns to the current conversation, run `collect`, judge/synthesize the captured agent output, and answer Mahiro. Do not implement this by invoking `letta -p --conversation`, typing into the main Letta pane, or treating a desktop notification as a model turn. Those routes can race the active conversation or bypass its controller. If the conversation closes, the runtime lacks a suitable task primitive, or live return fails, preserve the job uncollected and recover it from durable state on the next turn.
+
+At the start of every later direct-cli turn, inspect durable state before launching duplicate work:
 
 ```bash
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" list
@@ -421,9 +433,9 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" show "$JOB_ID"
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 ```
 
-`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. `attention` is intentionally terminal for Phase 1: inspect the named pane for an unsent prompt, provider/account warning, or model fallback. Submit one Enter only when the prompt is visibly unsent; otherwise resolve the provider/model blocker and use a new job ID for a deliberate retry. `error` preserves the failure summary and watcher log. `list`, `show`, and `collect` also verify the recorded watcher PID plus command identity; an interrupted or reboot-lost watcher becomes a terminal collectible error instead of staying `watching` forever. A Herdr restart, unavailable agent, hung bounded call, or failed result capture does not silently retry or switch to tmux.
+`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. `attention` is intentionally terminal: inspect the named pane for an unsent prompt, provider/account warning, or model fallback. Submit one Enter only when the prompt is visibly unsent; otherwise resolve the provider/model blocker and use a new job ID for a deliberate retry. `error` preserves the failure summary and watcher log. `list`, `show`, `wait`, and `collect` also verify the recorded watcher PID plus command identity; an interrupted or reboot-lost watcher becomes a terminal collectible error instead of staying `watching` forever. A Herdr restart, unavailable agent, hung bounded call, or failed result capture does not silently retry or switch to tmux.
 
-Reject detached mode when tmux is selected. Phase 1 has no automatic cross-conversation injection, restart/replay controller, cancellation, pruning, or synthesis. Those require a Letta-aware controller rather than a shell watcher.
+Reject detached mode when tmux is selected. Live return is scoped to the current open controller conversation and has no automatic cross-conversation injection, restart/replay controller, cancellation, pruning, or synthesis. Those remain controller concerns rather than shell-watcher behavior.
 
 ### Write policy for multi-pane work
 

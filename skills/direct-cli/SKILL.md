@@ -92,7 +92,7 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 
 ## Detached Herdr Jobs
 
-Use skill-level `--detach` only for an already-started Herdr job whose result does not need to block the current main-agent turn. Phase 1 is deliberately Herdr-only; reject `--backend tmux --detach` rather than inventing a weaker tmux lifecycle. Detached mode does not inject a new message into the current Letta conversation.
+Use skill-level `--detach` only for an already-started Herdr job whose result does not need to block the current main-agent turn. Detached execution is deliberately Herdr-only; reject `--backend tmux --detach` rather than inventing a weaker tmux lifecycle. The durable watcher does not inject a new message into the current Letta conversation.
 
 Reject Pi `--detach` and Pi same-prompt fanout in this initial contract, including when Herdr can launch `--kind pi`; the packaged watcher/fanout helpers have not yet been proven against Pi lifecycle.
 
@@ -109,7 +109,15 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
 
 The start command records baseline lifecycle sequences, persists a mode-0600 prompt plus job record, performs bounded prompt dispatch, launches a detached watcher, and returns `job=`, `status=running`, and `job_dir=` without waiting for completion. The watcher requires real activity before waiting, captures bounded `recent-unwrapped` output per target, writes terminal status atomically, and sends a generic best-effort macOS notification containing only job ID and terminal status—never prompt, result, or failure-summary text. Default state is `$XDG_STATE_HOME/mahiro-skills/direct-cli/jobs` or `~/.local/state/mahiro-skills/direct-cli/jobs`; override it with `DIRECT_CLI_STATE_DIR` or `--state-dir`.
 
-On the next direct-cli turn, list jobs before starting unrelated work and surface uncollected terminal jobs:
+After `start`, arm same-conversation live return when the main runtime exposes a background task or monitor whose completion posts back into the current conversation. Run the packaged wait command as that background task:
+
+```bash
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" wait "$JOB_ID" --json
+```
+
+The wait command emits exactly one metadata-only JSON line after `done`, `attention`, or `error`; it never prints prompt or result text. When the runtime delivers that completion event, immediately run `collect`, synthesize the captured output, and answer the user. This is controller-owned wake-and-collect, not Herdr or shell-to-conversation injection. Do not launch `letta -p`, type into the main pane, or create a second turn manually. If the live conversation closes or no suitable background primitive exists, durable collection remains the fallback.
+
+On every later direct-cli turn, list jobs before starting unrelated work and surface uncollected terminal jobs:
 
 ```bash
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" list
@@ -117,7 +125,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" show "$JOB_ID"
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 ```
 
-`done` means captured results are ready; `attention` means a prompt never showed an activity transition and the named pane must be inspected for an unsent prompt, provider/account warning, or model fallback; `error` preserves dispatch/watcher failure. Submit one Enter only when the prompt is visibly unsent. `list`, `show`, and `collect` reconcile a missing or mismatched watcher process into a durable collectible error rather than leaving a permanent `watching` row. Job JSON and result files are the durable truth, not notification delivery. Phase 1 intentionally provides no automatic cancel, prune, cross-conversation injection, or result synthesis; the main agent collects and judges outputs on its next wake.
+`done` means captured results are ready; `attention` means a prompt never showed an activity transition and the named pane must be inspected for an unsent prompt, provider/account warning, or model fallback; `error` preserves dispatch/watcher failure. Submit one Enter only when the prompt is visibly unsent. `list`, `show`, `wait`, and `collect` reconcile a missing or mismatched watcher process into a durable collectible error rather than leaving a permanent `watching` row. Job JSON and result files are the durable truth, not live-return or notification delivery. There is no automatic cancel, prune, cross-conversation injection, or result synthesis; the main agent collects and judges output after its current-conversation wake or next normal turn.
 
 ## Multi-pane Job Sessions
 
@@ -220,7 +228,7 @@ This proves byte-identical input at the Herdr CLI argument boundary, not model r
 - `playbook.md` - the full direct CLI operator playbook and current routing-policy owner
 - `scripts/select-backend.sh` - deterministic backend preflight
 - `scripts/prompt-fanout.py` - synchronous Herdr fanout with activity gating
-- `scripts/herdr-jobs.py` - detached Herdr job registry, watcher, and collection CLI
+- `scripts/herdr-jobs.py` - detached Herdr job registry, watcher, live-return wait, and collection CLI
 
 ## Working Rule
 

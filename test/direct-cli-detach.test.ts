@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
+import { chmodSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { findStandalonePython } from "./helpers/python";
@@ -43,7 +43,7 @@ case "$1:$2" in
     printf '{"result":{"type":"agent_prompted"}}\\n'
     ;;
   agent:wait)
-    /bin/sleep 0.1
+    /bin/sleep "\${FAKE_WAIT_SECONDS:-0.1}"
     printf 'done 3\\n' > "$state_file"
     printf '{"result":{"type":"agent_info"}}\\n'
     ;;
@@ -169,6 +169,20 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(statSync(join(jobDir, "prompt.txt")).mode & 0o777).toBe(0o600);
     expect(statSync(harness.jobStateDir).mode & 0o777).toBe(0o755);
 
+    const wait = runHelper(harness, [
+      "wait",
+      "review-job",
+      "--state-dir",
+      harness.jobStateDir,
+      "--json",
+    ]);
+    expect(wait.exitCode).toBe(0);
+    expect(JSON.parse(wait.stdout)).toEqual({
+      job: "review-job",
+      status: "done",
+      job_dir: realpathSync(jobDir),
+    });
+
     const list = runHelper(harness, ["list", "--state-dir", harness.jobStateDir]);
     expect(list.exitCode).toBe(0);
     expect(list.stdout).toContain("review-job\tdone");
@@ -232,6 +246,75 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(payload.summary).toContain("no activity transition for agent-a");
     expect(payload.summary).toContain("provider/account warning");
     expect(payload.summary).toContain("submit one Enter only if the prompt is visibly unsent");
+
+    const waited = runHelper(harness, [
+      "wait",
+      "stalled-job",
+      "--state-dir",
+      harness.jobStateDir,
+      "--json",
+    ]);
+    expect(waited.exitCode).toBe(0);
+    expect(JSON.parse(waited.stdout)).toEqual({
+      job: "stalled-job",
+      status: "attention",
+      job_dir: realpathSync(join(harness.jobStateDir, "stalled-job")),
+    });
+  }, 10_000);
+
+  test("wait blocks for terminal state and bounds an optional caller timeout", async () => {
+    const harness = makeHarness();
+    const promptFile = join(harness.root, "review.prompt.txt");
+    writeFileSync(promptFile, "Review only.\n");
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "idle 1\n");
+
+    const start = runHelper(
+      harness,
+      [
+        "start",
+        "--job-id",
+        "wait-job",
+        "--prompt-file",
+        promptFile,
+        "--cwd",
+        harness.root,
+        "--state-dir",
+        harness.jobStateDir,
+        "--no-notify",
+        "agent-a",
+      ],
+      { FAKE_WAIT_SECONDS: "0.5" },
+    );
+    expect(start.exitCode).toBe(0);
+
+    const timeoutStartedAt = performance.now();
+    const timedOut = runHelper(harness, [
+      "wait",
+      "wait-job",
+      "--state-dir",
+      harness.jobStateDir,
+      "--timeout",
+      "0.05",
+      "--poll-interval",
+      "60",
+    ]);
+    const timeoutElapsedMs = performance.now() - timeoutStartedAt;
+    expect(timedOut.exitCode).toBe(2);
+    expect(timedOut.stderr).toContain("timed out waiting for job wait-job");
+    expect(timeoutElapsedMs).toBeLessThan(1000);
+
+    const waited = runHelper(harness, [
+      "wait",
+      "wait-job",
+      "--state-dir",
+      harness.jobStateDir,
+      "--timeout",
+      "5",
+      "--poll-interval",
+      "0.05",
+    ]);
+    expect(waited.exitCode).toBe(0);
+    expect(waited.stdout).toContain("job=wait-job\tstatus=done\tjob_dir=");
   }, 10_000);
 
   test("reconciles a killed watcher into a collectible durable error", async () => {
@@ -275,6 +358,20 @@ describe("direct-cli detached Herdr jobs", () => {
     const collect = runHelper(harness, ["collect", "killed-job", "--state-dir", harness.jobStateDir]);
     expect(collect.exitCode).toBe(0);
     expect(collect.stdout).toContain("status: error");
+
+    const waited = runHelper(harness, [
+      "wait",
+      "killed-job",
+      "--state-dir",
+      harness.jobStateDir,
+      "--json",
+    ]);
+    expect(waited.exitCode).toBe(0);
+    expect(JSON.parse(waited.stdout)).toEqual({
+      job: "killed-job",
+      status: "error",
+      job_dir: realpathSync(join(harness.jobStateDir, "killed-job")),
+    });
   }, 10_000);
 
   test("keeps prompt text out of dispatch failure summaries", () => {

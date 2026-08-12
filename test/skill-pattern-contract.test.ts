@@ -176,6 +176,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("scripts/herdr-jobs.py");
     expect(skill).toContain("reject `--backend tmux --detach`");
     expect(skill).toContain("does not inject a new message into the current Letta conversation");
+    expect(skill).toContain('herdr-jobs.py" wait "$JOB_ID" --json');
+    expect(skill).toContain("controller-owned wake-and-collect");
+    expect(skill).toContain("Do not launch `letta -p`");
     expect(skill).toContain("never prompt, result, or failure-summary text");
     expect(skill).toContain("reconcile a missing or mismatched watcher process");
     expect(skill).toContain("tmux load-buffer");
@@ -227,6 +230,16 @@ describe("skill pattern adaptation phase a", () => {
     expect(jobs).toContain('f"Job finished with status: {status}"');
     expect(jobs).not.toContain('f"{status}: {summary}"');
     expect(jobs).toContain("reconcile_job");
+    expect(jobs).toContain('"wait"');
+    expect(jobs).toContain('"job_dir": str(job_dir)');
+    expect(playbook).toContain("### Same-conversation live return");
+    expect(playbook).toContain("current conversation");
+    expect(rootReadme).toContain("same-conversation wake-and-collect");
+    expect(rootReadme).not.toContain("Detached Phase 1 jobs");
+    for (const wrapper of [command, geminiCommand]) {
+      expect(wrapper).toContain("herdr-jobs.py wait <job-id> --json");
+      expect(wrapper).toContain("do not emulate return by launching a second `letta -p` turn");
+    }
     expect(playbook).toContain("One job maps to one `direct-<job-slug>` tab");
     expect(playbook).toContain('herdr agent start "$CODEX_AGENT"');
     expect(playbook).toContain('herdr agent wait "$CODEX_AGENT"');
