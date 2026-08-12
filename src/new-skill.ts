@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { cpSync, existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "fs";
 import { join, relative } from "path";
 
 import { getRepoRoot } from "./repo";
@@ -63,7 +63,11 @@ export function createSkillFromTemplate(name: string, repoRoot = getRepoRoot()):
 
   cpSync(templatePath, targetPath, { recursive: true, errorOnExist: true });
 
+  const skillTemplatePath = join(targetPath, "SKILL.md.template");
   const skillFilePath = join(targetPath, "SKILL.md");
+  if (existsSync(skillTemplatePath)) {
+    renameSync(skillTemplatePath, skillFilePath);
+  }
   if (existsSync(skillFilePath)) {
     rewriteSkillTemplate(skillFilePath, name);
   }

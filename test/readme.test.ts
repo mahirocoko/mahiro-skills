@@ -40,9 +40,13 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.87 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.88 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
+    expect(content).toContain("### Standard Agent Skills compatibility");
+    expect(content).toContain("npx skills add mahirocoko/mahiro-skills --skill recap");
+    expect(content).toContain("--agent universal --copy --yes");
+    expect(content).toContain("It does not install this repo's adapter-specific slash-command wrappers, Gemini TOML commands, receipts, status-aware updates, doctor checks, or managed uninstall flow.");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
     expect(content).toContain("Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.");
     expect(content).toContain("Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root");

@@ -12,7 +12,7 @@ Keep it short in practice: update the repo-first source files, keep version and 
 - `commands/<name>.md` is the canonical source for non-Gemini slash-command wrappers.
 - `commands-gemini/mh-<name>.toml` is the canonical source for native Gemini custom commands.
 - `.claude-plugin/marketplace.json` is the bundle manifest used for default bundle discovery.
-- `template/` is an authoring scaffold, not an installable item.
+- `template/SKILL.md.template` is an authoring scaffold, not an installable item. Keep the non-canonical suffix so external Agent Skills discovery does not expose it; `new --copy-template` materializes it as `SKILL.md` in the new skill directory.
 
 If you change packaged behavior, change the repo source first. Do not treat installed copies as the source of truth.
 
@@ -87,4 +87,5 @@ If you change path behavior, check `install.sh`, `src/repo.ts`, `src/adapters.ts
 - Confirm `install.sh` usage examples and defaults still match the intended release story
 - Confirm `.claude-plugin/marketplace.json` still matches the packaged bundle you expect
 - Confirm path-sensitive docs and templates still use repo-root-first `.agent-state` guidance where needed
+- Run `bun run test:skills-cli` to verify the current public `skills` CLI discovers only packaged skills and can copy one representative skill into an isolated project/HOME
 - Confirm the release tag and release object both target the intended commit

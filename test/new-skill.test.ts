@@ -10,7 +10,7 @@ function makeRepoWithTemplate() {
   mkdirSync(join(repoRoot, "template"), { recursive: true });
   mkdirSync(join(repoRoot, "skills"), { recursive: true });
   writeFileSync(
-    join(repoRoot, "template", "SKILL.md"),
+    join(repoRoot, "template", "SKILL.md.template"),
     `---\nname: template\ndescription: Skill template with Bun Shell pattern. Copy this folder to create new skills.\n---\n\n# /template - Skill Template\n\nUse /template with your-skill-name.\n`,
   );
 
@@ -37,6 +37,7 @@ describe("new skill scaffold", () => {
       });
       expect(result.nextSteps.some((step) => step.includes("marketplace.json"))).toBe(true);
       expect(existsSync(skillFile)).toBe(true);
+      expect(existsSync(join(repo.repoRoot, "skills", "sample-skill", "SKILL.md.template"))).toBe(false);
       expect(readFileSync(skillFile, "utf8")).toContain("name: sample-skill");
       expect(readFileSync(skillFile, "utf8")).toContain("# /sample-skill - Skill Template");
       expect(readFileSync(skillFile, "utf8")).not.toContain("/template");

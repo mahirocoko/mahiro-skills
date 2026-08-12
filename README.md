@@ -44,13 +44,30 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.87 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.88 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.87 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.88 -- project --agent opencode --scope local
+```
+
+### Standard Agent Skills compatibility
+
+Install through the open `skills` CLI when you only need portable Agent Skills:
+
+```bash
+npx skills add mahirocoko/mahiro-skills
+npx skills add mahirocoko/mahiro-skills --skill recap
+```
+
+This compatibility path installs each selected `SKILL.md` and its supporting files. It does not install this repo's adapter-specific slash-command wrappers, Gemini TOML commands, receipts, status-aware updates, doctor checks, or managed uninstall flow. Use the Bun CLI or tagged installer above when you need those full integrations.
+
+For a project-local Letta Code-compatible copy under `.agents/skills/` without interactive prompts:
+
+```bash
+npx skills add mahirocoko/mahiro-skills --skill recap --agent universal --copy --yes
 ```
 
 ### Interactive TUI
@@ -213,7 +230,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`
 - Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`. Pi discovers the skill and exposes `/skill:<name>` without a copied command wrapper.
 - `examples/` — runnable or copyable workflow examples for the CLI/TUI surface
-- `template/SKILL.md` — starter template for new skills
+- `template/SKILL.md.template` — authoring-only starter that `new --copy-template` materializes as `SKILL.md`; the non-canonical filename prevents external Agent Skills discovery from treating the scaffold as installable
 - `.claude-plugin/marketplace.json` — default bundle metadata
 - `bun ./src/cli.ts manifest --json` — machine-readable source catalog for skills, command coverage, bundle membership, and inventory gaps
 - `bun ./src/cli.ts audit [--data-dir <local-backend-dir>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>]` — read-only local Letta transcript audit that counts explicit `Skill` tool calls, identifies unobserved packaged skills, and separates names outside this repo's current catalog without exposing transcript text

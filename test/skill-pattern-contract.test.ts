@@ -19,7 +19,7 @@ describe("skill pattern adaptation phase a", () => {
   });
 
   test("updates the skill template with reusable contract sections", () => {
-    const template = readRepoFile("template", "SKILL.md");
+    const template = readRepoFile("template", "SKILL.md.template");
 
     expect(template).toContain("Trigger-Focused Frontmatter");
     expect(template).toContain("Scope and Boundaries");

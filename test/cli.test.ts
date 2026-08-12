@@ -22,7 +22,7 @@ function makeTemplateRepo() {
   mkdirSync(join(repoRoot, "template"), { recursive: true });
   mkdirSync(join(repoRoot, "skills"), { recursive: true });
   writeFileSync(
-    join(repoRoot, "template", "SKILL.md"),
+    join(repoRoot, "template", "SKILL.md.template"),
     `---\nname: template\ndescription: Skill template with Bun Shell pattern.\n---\n\n# /template - Skill Template\n`,
   );
 

@@ -1,7 +1,7 @@
 {
   "name": "mahiro-skills",
   "private": true,
-  "version": "0.1.87",
+  "version": "0.1.88",
   "type": "module",
   "packageManager": "bun@1.2.22",
   "bin": {
@@ -12,6 +12,7 @@
     "gemini:build-extension": "bun x esbuild skills/gemini/extension/background-src.js --bundle --outfile=skills/gemini/extension/background.js --format=esm --platform=browser",
     "gemini:verify": "bun run gemini:build-extension && bun run typecheck && bun test",
     "test": "bun test",
+    "test:skills-cli": "bun ./scripts/skills-cli-smoke.ts",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
