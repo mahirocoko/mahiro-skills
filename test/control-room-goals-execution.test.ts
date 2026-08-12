@@ -52,4 +52,21 @@ describe("control-room-goals execution contract", () => {
     expect(skill).toContain("Add evidence before `claim_criterion`");
     expect(contract).toContain("Required human-owned criteria are verified by Mahiro, not self-verified");
   });
+
+  test("matches Mahiro Goal living mission, rules, plan, and move contracts", () => {
+    const skill = readFileSync(skillPath, "utf8");
+
+    expect(skill).toContain("one human-owned living mission");
+    expect(skill).toContain("`must` or `prefer`");
+    expect(skill).toContain("never count as DoD");
+    expect(skill).toContain("action `revise_mission`");
+    expect(skill).toContain("Omitted `rules` preserve the current rule set");
+    expect(skill).toContain("`rules: []` explicitly clears it");
+    expect(skill).toContain("mutable plan");
+    expect(skill).toContain("action `move_goal`");
+    expect(skill).toContain("stable `goal_id`");
+    expect(skill).toContain("destination is always the invoking conversation and must be\nempty");
+    expect(skill).toContain("it is not a copy");
+    expect(skill).toContain("Completion preserves the living mission");
+  });
 });

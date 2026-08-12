@@ -5,13 +5,17 @@ description: Drafts, applies, or refines Goal Mode objectives, Definition of Don
 
 # Goal Mode
 
-Use Goal Mode as lightweight conversation-scoped objective management for the current conversation.
+Use Goal Mode as lightweight management of one human-owned living mission. The
+mission normally belongs to the current conversation, but Mahiro may explicitly
+move the same mission to another empty conversation owned by the same agent.
 
 ## Model
 
-- `goal`: one concrete human-owned objective for the current conversation.
+- `goal`: one concrete human-owned living mission with stable identity.
 - `DoD`: evidence-based conditions for done; keep it in the goal draft/body when useful.
 - `next`: the immediate action the agent should take; track execution with `UpdatePlan` or concise status, not hidden loops.
+- `rules`: up to eight temporary mission-scoped `must` or `prefer` operating rules. They never override system, safety, permission, repository, or Mahiro's current instructions and never count as DoD.
+- `plan`: bounded mutable work items for reprioritising the current execution path without replacing the mission.
 - `claimed`: agent has checked evidence and says it is ready.
 - `verified`: Mahiro accepted the result; never treat claimed as verified.
 - `handoff`: work stops with a clear next human or next-session action.
@@ -52,9 +56,15 @@ When applying:
 - Include `non_goals` and `next_action` when they materially prevent drift.
   A long-running task stays active until its evidence, blocker, checkpoint, or
   human handoff changes its state.
+- Include `rules` only when temporary mission-level behavior materially prevents
+  drift. `must` is a mission constraint; `prefer` is a non-blocking default.
+  Do not restate higher-priority repo/user rules or turn rules into criteria.
 - If an existing goal is present, do not replace it unless the user explicitly asked to replace/reset it; draft the replacement first.
-- Objective/DoD replacement uses `mh_create_goal` with `replace: true` and the
-  current `expected_revision`; never silently replace stale state.
+- Normal direction changes use `mh_update_goal` action `revise_mission` so the
+  objective, DoD, non-goals, rules, phase, or next action evolve in place with
+  one short reason. `mh_create_goal` with `replace: true` remains a compatibility
+  path for an explicitly approved full replacement and requires the current
+  `expected_revision`.
 - If Mahiro structured tools are unavailable but official `CreateGoal` /
   `create_goal` exists, the agent should call that tool itself after approval.
 - If no agent-callable goal tool exists, keep the approved packet visible and
@@ -71,6 +81,9 @@ Example structured application:
     { "text": "Docs and focused checks pass", "owner": "agent", "required": true },
     { "text": "Mahiro accepts the foreground behavior", "owner": "human", "required": true }
   ],
+  "rules": [
+    { "text": "Keep one source writer", "level": "must" }
+  ],
   "next_action": "Inspect the current implementation surface"
 }
 ```
@@ -82,9 +95,31 @@ Example structured application:
 - `mh_get_goal` — read current structured state and revision before planning or
   mutation.
 - `mh_create_goal` — agent-created objective, criteria, non-goals, next action,
-  and revision-guarded replacement.
-- `mh_update_goal` — update phase/next action, add evidence, claim agent-owned
-  criteria, manage blockers, or complete after the runtime audit.
+  optional bounded rules, and revision-guarded compatibility replacement.
+- `mh_update_goal` — revise the living mission; manage bounded rules and mutable
+  plan items; update phase/next action; add evidence; claim agent-owned criteria;
+  manage blockers; explicitly move the mission; or complete after the runtime
+  audit.
+
+Omitted `rules` preserve the current rule set. `rules: []` explicitly clears it.
+Rules are never claimed, verified, or counted in completion progress. Use plan
+actions for execution visibility only when those items need durable Goal state;
+ordinary short-step visibility still belongs in `UpdatePlan`.
+
+### Cross-conversation move/resume
+
+Use `mh_update_goal` action `move_goal` only after Mahiro directly asks to move
+or resume that exact mission in the current conversation. First call
+`mh_get_goal`, then pass its stable `goal_id`, latest `expected_revision`, and a
+short summary. The destination is always the invoking conversation and must be
+empty; source and destination must belong to the same agent. A successful move
+transfers mission identity, origin workspace, DoD/evidence, blockers, rules,
+mutable plan, lifecycle, and history atomically; it is not a copy.
+
+Do not infer move approval from a generic “continue”, create a duplicate Goal,
+or ask Mahiro to clear the source manually. If the destination already owns a
+Goal or the revision is stale, reread and report the blocker instead of
+overwriting either conversation.
 
 Add evidence before `claim_criterion`. Never claim or verify a human-owned
 criterion. Mahiro verifies it through `/mh-goal verify <criterion-id> [note]`
@@ -97,8 +132,9 @@ explicit human-control surfaces; they are not the default creation path.
 
 ## Workflow ownership boundaries
 
-- **Goal Mode owns objective truth**: objective, DoD criteria, agent claims,
-  human verification, blockers, next action, and completion audit.
+- **Goal Mode owns mission truth**: stable objective identity, DoD criteria,
+  bounded rules, mutable plan, agent claims, human verification, blockers, next
+  action, ownership movement, and completion audit.
 - **`UpdatePlan` owns immediate execution visibility**. Do not turn every small
   step into a Goal mutation.
 - **Execution Run is optional coordination for complex external lanes**. Use the
@@ -209,11 +245,11 @@ Do not add safety ceremony for pure discussion, small low-risk edits, or simple 
 - Update the plan on phase changes, not every message.
 - After checks pass: report claimed evidence and ask for human verification when acceptance matters.
 - Waiting for Mahiro: provide a handoff with the exact next human action.
-- Done: mark the goal complete only when the objective is actually achieved and no required work remains.
+- Done: mark the current plan complete only when the objective is actually achieved and no required work remains. Completion preserves the living mission, rules, and evidence for inspection or later explicit revision; it is not destructive clear.
 - Blocked: mark blocked only after a repeated blocker leaves the agent at an impasse.
 - Obsolete/stale goal: draft the replacement, obtain approval, reread current
-  state, then use revision-guarded replacement instead of silently overwriting
-  it.
+  state, then normally revise the living mission in place. Use revision-guarded
+  compatibility replacement only for an explicitly approved full replacement.
 
 ## Explain terms
 

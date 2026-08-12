@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.89 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.90 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.89 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.90 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility

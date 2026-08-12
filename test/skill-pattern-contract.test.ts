@@ -366,20 +366,23 @@ describe("skill pattern adaptation phase a", () => {
     const index = readRepoFile("skills", "llms.txt");
 
     expect(skill).toContain("# Goal Mode");
-    expect(skill).toContain("Use Goal Mode as lightweight conversation-scoped objective management");
+    expect(skill).toContain("Use Goal Mode as lightweight management of one human-owned living mission");
     expect(skill).toContain("Proposed Goal Mode:");
     expect(skill).toContain("the agent owns applying the goal");
     expect(skill).toContain("Do not ask Mahiro to\nrun a slash command");
     expect(skill).toContain("mh_get_goal");
     expect(skill).toContain("mh_create_goal");
     expect(skill).toContain("mh_update_goal");
+    expect(skill).toContain("action `revise_mission`");
+    expect(skill).toContain("action `move_goal`");
+    expect(skill).toContain("bounded rules and mutable");
     expect(skill).toContain('"owner": "human"');
     expect(skill).toContain("replace: true");
     expect(skill).toContain("expected_revision");
     expect(skill).toContain("Add evidence before `claim_criterion`");
     expect(skill).toContain("Mahiro verifies it through `/mh-goal verify");
     expect(skill).toContain("the agent should call that tool itself after approval");
-    expect(skill).toContain("Goal Mode owns objective truth");
+    expect(skill).toContain("Goal Mode owns mission truth");
     expect(skill).toContain("Execution Run is optional coordination for complex external lanes");
     expect(skill).toContain("Do not require it\n  for simple edits");
     expect(skill).toContain("A handed-off `code_evidence_intake` is caller metadata, not proof");
