@@ -150,6 +150,12 @@ describe("packaged skill context freshness", () => {
 
     expect(skill).toContain("`playbook.md` is the single owner");
     expect(playbook).toContain("## Curated routing policy");
+    expect(playbook).toContain("Cursor ordinary implementation / cleanup model: `composer-2.5`");
+    expect(playbook).toContain("Cursor long-horizon agentic model: `cursor-grok-4.6-high`");
+    expect(playbook).toContain("Cursor heavy Opus review model: `claude-opus-5-thinking-high`");
+    expect(playbook).toContain("Do not offer a Fast-tier Cursor model in the default picker");
+    expect(playbook).not.toContain("composer-2.5-fast");
+    expect(playbook).not.toContain("claude-opus-4-8-thinking-high");
     expect(activeSurfaces).not.toMatch(/(?:composer-[0-9]|claude-(?:fable|opus|sonnet)-[0-9]|gemini-[0-9]|gpt-[0-9]|kimi-|grok-|glm-)/i);
     expect(activeSurfaces).not.toMatch(/--provider\s+(?!<provider>)\S+\s+--model\s+(?!<model>)\S+/);
     expect(allDirectDocs).not.toMatch(/Current Freshness Notes|Current freshness checkpoints/);

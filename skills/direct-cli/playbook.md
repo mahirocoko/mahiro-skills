@@ -518,11 +518,11 @@ Herdr compatibility is capability-based: require managed-pane markers, a compati
 
 This is the single owner of direct-cli's role-to-model choices. Replace superseded entries here instead of appending catalog snapshots elsewhere. Intersect these choices with the live CLI catalog before every launch; a listed role is preference, not availability proof.
 
-- Cursor quick implementation / cleanup model: `composer-2.5-fast`
-- Cursor balanced implementation model: `composer-2.5`
+- Cursor ordinary implementation / cleanup model: `composer-2.5`
+- Cursor long-horizon agentic model: `cursor-grok-4.6-high`
 - Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
 - Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
-- Cursor heavy Opus review model: `claude-opus-4-8-thinking-high`
+- Cursor heavy Opus review model: `claude-opus-5-thinking-high`
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
 - Antigravity balanced model: `claude-sonnet-4-6`
 - Antigravity fast model: `gemini-3.6-flash-high` (`gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium` fallback)
@@ -541,11 +541,12 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 ### Model selection rule
 
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
-  1. `composer-2.5-fast` — recommended for ordinary Cursor direct-lane work: quick implementation, cleanup, narrow refactors, and follow-up fixes.
-  2. `composer-2.5` — balanced reasoning when the task needs more than fast cleanup but not a full heavy review lane.
+  1. `composer-2.5` — recommended for ordinary Cursor direct-lane work: implementation, cleanup, narrow refactors, and follow-up fixes using the non-Fast model ID.
+  2. `cursor-grok-4.6-high` — long-horizon agentic coding and complex tool-driven work using the non-Fast model ID.
   3. `claude-fable-5-thinking-high` — Fable 5 reasoning lane; use this when Mahiro says “Fable 5” unless he asks for another Fable variant.
   4. `claude-fable-5-thinking-xhigh` — Fable 5 extra-high lane for heavier review.
-  5. `claude-opus-4-8-thinking-high` — Opus heavy review / deep reasoning lane.
+  5. `claude-opus-5-thinking-high` — Opus heavy review / deep reasoning lane.
+- Do not offer a Fast-tier Cursor model in the default picker. Use a live-catalog-verified Fast model only when Mahiro explicitly requests Fast or delegates a speed-over-cost choice.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
@@ -670,15 +671,15 @@ Use the known-good Cursor defaults first. If the model or flags are in doubt on 
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "composer-2.5-fast" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a balanced Composer pass:
+For a long-horizon agentic pass without the Fast variant:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "cursor-grok-4.6-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -702,7 +703,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For an Opus heavy review / deep reasoning pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-opus-4-8-thinking-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-opus-5-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
