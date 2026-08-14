@@ -477,7 +477,7 @@ For several Agy models in one job:
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review, `claude-sonnet-4-6` for balanced work, and `gemini-3.6-flash-high` for a faster lane. Keep `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
+Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review and `claude-sonnet-4-6` for balanced work. The live Agy catalog confirms `gemini-3.7-flash-high` for the faster lane; keep `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
 
 ### Antigravity multiline prompt caveat
 
@@ -525,7 +525,7 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Cursor heavy Opus review model: `claude-opus-5-thinking-high`
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
 - Antigravity balanced model: `claude-sonnet-4-6`
-- Antigravity fast model: `gemini-3.6-flash-high` (`gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium` fallback)
+- Antigravity fast model: `gemini-3.7-flash-high` (`gemini-3.7-flash-medium`, then `gemini-3.7-flash-low` fallback)
 - Codex flagship model/effort: `gpt-5.6-sol` + `high`
 - Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
@@ -551,7 +551,7 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
   2. `claude-sonnet-4-6` — balanced reasoning lane.
-  3. `gemini-3.6-flash-high` — faster scoped lane; fall back to `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only if High fails.
+  3. `gemini-3.7-flash-high` — faster scoped lane; fall back to `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, only if High fails.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
@@ -777,7 +777,7 @@ Then choose the skill-defined model/effort in the TUI:
 
 - `claude-opus-4-6-thinking` — heavy reasoning/review; no separate effort flag.
 - `claude-sonnet-4-6` — balanced reasoning.
-- `gemini-3.6-flash-high` — faster scoped lane; use `gemini-3.6-flash-medium`, then `gemini-3.5-flash-medium`, only as fallbacks.
+- `gemini-3.7-flash-high` — faster scoped lane; use `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, only as fallbacks.
 
 ### Prompt template
 

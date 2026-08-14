@@ -1,11 +1,14 @@
 ---
 name: learn
 description: Explore a codebase with parallel agents — clone, read, and document. Modes — --fast (1 agent), default (3), --deep (5). Use when user says "learn [repo]", "explore codebase", "study this repo", or shares a GitHub URL to study. Do NOT trigger for finding projects (use /project find), session mining, or cloning for active development (use /project incubate).
+disable-slash-command: true
 ---
 
 # /learn - Deep Dive Learning Pattern
 
 Explore a codebase with 3 parallel agents → create organized documentation.
+
+In Gemini/Agy, invoke this workflow through `/mh-learn`. The hidden native skill command prevents a collision with Agy's built-in `/learn`; the skill remains discoverable and model-invocable.
 
 ## Usage
 

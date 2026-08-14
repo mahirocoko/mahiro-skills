@@ -7,6 +7,15 @@ function readRepoFile(...segments: string[]) {
 }
 
 describe("learn and project skill contracts", () => {
+  test("learn keeps the Agy built-in command while exposing the namespaced Gemini wrapper", () => {
+    const skill = readRepoFile("skills", "learn", "SKILL.md");
+    const geminiCommand = readRepoFile("commands-gemini", "mh-learn.toml");
+
+    expect(skill).toContain("disable-slash-command: true");
+    expect(skill).toContain("In Gemini/Agy, invoke this workflow through `/mh-learn`");
+    expect(geminiCommand).toContain("Execute the `learn` skill with args: {{args}}");
+  });
+
   test("learn skill uses repo-root-first .agent-state paths", () => {
     const skill = readRepoFile("skills", "learn", "SKILL.md");
 

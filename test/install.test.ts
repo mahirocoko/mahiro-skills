@@ -184,6 +184,20 @@ describe("install", () => {
     }
   });
 
+  test("installs Gemini learn behind the namespaced command without shadowing Agy built-in learn", () => {
+    const temp = makeTempEnv();
+    try {
+      install("gemini", "local", ["learn"], false, temp.env);
+      const installedSkill = readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "learn", "SKILL.md"), "utf8");
+
+      expect(installedSkill).toContain("disable-slash-command: true");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-learn.toml"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "learn.toml"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("installs one skill for Letta Code without command output", () => {
     const temp = makeTempEnv();
     try {

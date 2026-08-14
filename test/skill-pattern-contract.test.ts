@@ -263,9 +263,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Antigravity multiline prompt caveat");
     expect(playbook).toContain("agy --model claude-opus-4-6-thinking --dangerously-skip-permissions");
     expect(playbook).toContain("`claude-sonnet-4-6`");
-    expect(playbook).toContain("`gemini-3.6-flash-high`");
-    expect(playbook).toContain("`gemini-3.6-flash-medium`");
-    expect(playbook).toContain("`gemini-3.5-flash-medium` fallback");
+    expect(playbook).toContain("`gemini-3.7-flash-high`");
+    expect(playbook).toContain("`gemini-3.7-flash-medium`");
+    expect(playbook).toContain("`gemini-3.7-flash-low` fallback");
     expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5 reasoning model");
     expect(playbook).toContain("## Curated routing policy");
