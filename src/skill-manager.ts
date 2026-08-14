@@ -1,7 +1,7 @@
 import { join } from "path";
 
 import { hashPath } from "./content-hash";
-import { resolveCommandArtifact, supportsCommands } from "./adapters";
+import { resolveCommandArtifact, resolveSkillArtifact, supportsCommands } from "./adapters";
 import { install } from "./install";
 import { listInstalled } from "./list";
 import { createPlan } from "./plan";
@@ -442,7 +442,7 @@ function uninstallTargetsFor(snapshot: SkillManagerSnapshot, name: string): Skil
 
   const targets: SkillManagerUninstallTarget[] = [];
   if (receipt.installedSkills.includes(name)) {
-    targets.push({ name, kind: "skill", target: join(snapshot.root, "skills", name) });
+    targets.push({ name, kind: "skill", target: join(snapshot.root, resolveSkillArtifact(snapshot.agent, name).targetRelativePath) });
   }
   if (receipt.installedCommands.includes(name)) {
     targets.push({ name, kind: "command", target: join(snapshot.root, resolveCommandArtifact(snapshot.agent, name).targetRelativePath) });

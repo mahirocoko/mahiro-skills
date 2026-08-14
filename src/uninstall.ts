@@ -1,7 +1,7 @@
 import { existsSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 
-import { resolveCommandArtifact, resolveRoot } from "./adapters";
+import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
 import { listInstalled, receiptPath } from "./list";
 import type { InstallReceipt, InstallScope, InstallUnitKind, ScopedAgent, SkippedItem, UninstalledTarget, UninstallResult, UninstallStatus } from "./types";
 
@@ -15,7 +15,7 @@ function sortNames(values: string[]): string[] {
 
 function resolveTarget(root: string, agent: ScopedAgent, kind: InstallUnitKind, item: string): string {
   if (kind === "skill") {
-    return join(root, "skills", item);
+    return join(root, resolveSkillArtifact(agent, item).targetRelativePath);
   }
 
   return join(root, resolveCommandArtifact(agent, item).targetRelativePath);

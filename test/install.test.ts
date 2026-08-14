@@ -198,6 +198,42 @@ describe("install", () => {
     }
   });
 
+  test("installs Agy skills as self-contained namespaced slash aliases", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("agy", "local", ["learn", "direct-cli"], false, temp.env);
+      const root = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents");
+      const learnPath = join(root, "skills", "mh-learn", "SKILL.md");
+      const directCliPath = join(root, "skills", "mh-direct-cli", "SKILL.md");
+      const receiptPath = join(root, ".mahiro-skills", "receipts", "local-agy.json");
+      const learn = readFileSync(learnPath, "utf8");
+      const directCli = readFileSync(directCliPath, "utf8");
+      const sourceLearn = readFileSync(join(import.meta.dir, "..", "skills", "learn", "SKILL.md"), "utf8");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        agent: string;
+        installedSkills: string[];
+        installedCommands: string[];
+      };
+
+      expect(result.installed).toEqual(["learn", "direct-cli"]);
+      expect(learn).toContain("name: mh-learn");
+      expect(learn).toContain("disable-model-invocation: true");
+      expect(learn).not.toContain("disable-slash-command:");
+      expect(sourceLearn).toContain("name: learn");
+      expect(sourceLearn).toContain("disable-slash-command: true");
+      expect(directCli).toContain("name: mh-direct-cli");
+      expect(directCli).toContain("disable-model-invocation: true");
+      expect(existsSync(join(root, "skills", "mh-direct-cli", "playbook.md"))).toBe(true);
+      expect(existsSync(join(root, "skills", "learn"))).toBe(false);
+      expect(existsSync(join(root, "commands"))).toBe(false);
+      expect(receipt.agent).toBe("agy");
+      expect(receipt.installedSkills).toEqual(["learn", "direct-cli"]);
+      expect(receipt.installedCommands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("installs one skill for Letta Code without command output", () => {
     const temp = makeTempEnv();
     try {

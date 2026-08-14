@@ -118,6 +118,29 @@ describe("plan", () => {
     }
   });
 
+  test("resolves Agy roots as namespaced slash-only skill output", () => {
+    const temp = makeTempEnv();
+    try {
+      const localPlan = createPlan("agy", "local", ["learn"], temp.env);
+      const globalPlan = createPlan("agy", "global", ["direct-cli"], temp.env);
+      const defaultPlan = createPlan("agy", "global", [], temp.env);
+
+      expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn"),
+      ]);
+      expect(localPlan.commands).toEqual([]);
+      expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config"));
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config", "skills", "mh-direct-cli"),
+      ]);
+      expect(globalPlan.commands).toEqual([]);
+      expect(defaultPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'agy' installs namespaced /mh-* Agent Skill aliases and does not copy Gemini TOML or markdown command wrappers.");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("resolves Letta Code roots as skills-only Agent Skills output", () => {
     const temp = makeTempEnv();
     try {

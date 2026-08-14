@@ -8,7 +8,7 @@ disable-slash-command: true
 
 Explore a codebase with 3 parallel agents → create organized documentation.
 
-In Gemini/Agy, invoke this workflow through `/mh-learn`. The hidden native skill command prevents a collision with Agy's built-in `/learn`; the skill remains discoverable and model-invocable.
+In Gemini CLI, invoke this workflow through the packaged `/mh-learn` TOML command. In Agy, the separate adapter installs a user-only `mh-learn` skill alias; this canonical `learn` skill keeps model discovery while its raw slash command stays hidden to avoid colliding with Agy's built-in `/learn`.
 
 ## Usage
 

@@ -13,6 +13,7 @@
     "gemini:verify": "bun run gemini:build-extension && bun run typecheck && bun test",
     "test": "bun test",
     "test:skills-cli": "bun ./scripts/skills-cli-smoke.ts",
+    "test:agy-runtime": "bun ./scripts/agy-runtime-smoke.ts",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {

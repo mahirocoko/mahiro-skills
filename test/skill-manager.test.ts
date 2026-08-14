@@ -129,6 +129,31 @@ describe("skill manager", () => {
     }
   });
 
+  test("updates an Agy alias through its namespaced target path", () => {
+    const temp = makeTempEnv();
+    try {
+      install("agy", "local", ["learn"], false, temp.env);
+      const skillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn", "SKILL.md");
+      writeFileSync(skillPath, "locally modified Agy alias");
+
+      const before = getSkillManagerSnapshot("agy", "local", temp.env);
+      const plan = getSkillManagerAgentPlan("update", before, ["learn"], temp.env);
+
+      expect(before.skills.find((skill) => skill.name === "learn")?.status).toBe("modified");
+      expect(plan.installPlan?.skills[0]?.target).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn"));
+      expect(plan.installPlan?.commands).toEqual([]);
+      expect(plan.acknowledgementIds).toContain("modified:agy:learn");
+
+      installSkillManagerItems("agy", "local", ["learn"], true, temp.env);
+
+      const after = getSkillManagerSnapshot("agy", "local", temp.env);
+      expect(after.skills.find((skill) => skill.name === "learn")?.status).toBe("current");
+      expect(readFileSync(skillPath, "utf8")).toContain("name: mh-learn");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("derives mixed action inventories and updates only selected applicable names", () => {
     const temp = makeTempEnv();
     try {

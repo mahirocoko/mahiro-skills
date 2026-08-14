@@ -467,7 +467,10 @@ function skillsLines(state: SkillManagerSkillsRenderState, width: number, color:
     for (const agent of selected.agents) {
       const receipt = agent.receiptRecorded ? "recorded" : "not recorded";
       const blocked = agent.blocked ? ` · blocked: ${sanitize(agent.blocked)}` : "";
-      lines.push(`${agent.agent}: ${formatStatus(agent.state, color)} · ${receipt} · ${agent.commandSupport === "skills-only" ? "skills-only commands" : "skills + commands"}${blocked}`);
+      const output = agent.agent === "agy"
+        ? "namespaced /mh-* skills"
+        : agent.commandSupport === "skills-only" ? "skills only" : "skills + commands";
+      lines.push(`${agent.agent}: ${formatStatus(agent.state, color)} · ${receipt} · ${output}${blocked}`);
     }
     if (selected.receiptOnly) {
       lines.push("Receipt-only names have no current source catalog entry.");
@@ -550,9 +553,9 @@ function skillsPaneLines(state: SkillManagerSkillsRenderState, width: number, sl
       const blocked = agent.blocked ? " · blocked" : "";
       if (selected.agents.length === 1) {
         right.push(`${agent.agent}: ${formatStatus(agent.state, color)}${blocked}`);
-        right.push(agent.commandSupport === "skills-only" ? "skills-only commands" : "skills + commands");
+        right.push(agent.agent === "agy" ? "namespaced /mh-* skills" : agent.commandSupport === "skills-only" ? "skills only" : "skills + commands");
       } else {
-        const command = agent.commandSupport === "skills-only" ? "skills-only" : "skill+cmd";
+        const command = agent.agent === "agy" ? "mh-skill" : agent.commandSupport === "skills-only" ? "skills-only" : "skill+cmd";
         right.push(`${agent.agent}: ${formatStatus(agent.state, color)} · ${command}${blocked}`);
       }
     }

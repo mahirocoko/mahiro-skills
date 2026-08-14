@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { rmSync } from "fs";
+import { readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 
 import { doctor } from "../src/doctor";
@@ -187,6 +187,69 @@ describe("doctor", () => {
           detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"),
         },
       ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("reports the namespaced installed skill path after Agy install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("agy", "local", ["learn"], false, temp.env);
+      const [result] = doctor("agy", "local", temp.env);
+      expect(result.checks).toEqual([
+        {
+          label: "root-resolved",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"),
+        },
+        {
+          label: "receipt-readable",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-agy.json"),
+        },
+        {
+          label: "skill:learn",
+          ok: true,
+          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn"),
+        },
+        {
+          label: "skill-alias-name:learn",
+          ok: true,
+          detail: "Expected Agy alias name mh-learn",
+        },
+        {
+          label: "skill-alias-user-only:learn",
+          ok: true,
+          detail: "Expected disable-model-invocation: true",
+        },
+        {
+          label: "skill-alias-slash-enabled:learn",
+          ok: true,
+          detail: "Expected no disable-slash-command field",
+        },
+      ]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("fails Agy alias contract checks when staged frontmatter drifts", () => {
+    const temp = makeTempEnv();
+    try {
+      install("agy", "local", ["learn"], false, temp.env);
+      const skillFile = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn", "SKILL.md");
+      const content = readFileSync(skillFile, "utf8")
+        .replace("name: mh-learn", "name: learn")
+        .replace("disable-model-invocation: true", "disable-model-invocation: false")
+        .replace("\n---\n", "\ndisable-slash-command: true\n---\n");
+      writeFileSync(skillFile, content);
+
+      const [result] = doctor("agy", "local", temp.env);
+
+      expect(result.checks.find((check) => check.label === "skill-alias-name:learn")?.ok).toBe(false);
+      expect(result.checks.find((check) => check.label === "skill-alias-user-only:learn")?.ok).toBe(false);
+      expect(result.checks.find((check) => check.label === "skill-alias-slash-enabled:learn")?.ok).toBe(false);
     } finally {
       temp.cleanup();
     }

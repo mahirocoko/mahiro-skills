@@ -136,11 +136,11 @@ describe("step-first skill manager TUI", () => {
       const controller = createTuiController({
         terminal: new FakeTerminal(),
         env: temp.env,
-        initialAgents: ["cursor", "gemini"],
+        initialAgents: ["cursor", "gemini", "agy"],
         initialScope: "global",
       });
-      expect(controller.getState().targetSelection).toEqual({ mode: "custom", agents: new Set(["cursor", "gemini"]) });
-      expect(controller.getState().selectedAgents).toEqual(["cursor", "gemini"]);
+      expect(controller.getState().targetSelection).toEqual({ mode: "custom", agents: new Set(["cursor", "gemini", "agy"]) });
+      expect(controller.getState().selectedAgents).toEqual(["cursor", "gemini", "agy"]);
       expect(controller.getState().scope).toBe("global");
     } finally {
       temp.cleanup();
@@ -246,7 +246,7 @@ describe("step-first skill manager TUI", () => {
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("skills");
       expect(controller.getState().inspectDetail).toBe(true);
-      expect(terminal.writes.join("\n")).toContain("skills-only commands");
+      expect(terminal.writes.join("\n")).toContain("skills only");
       expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project", "SKILL.md"), "utf8")).toContain("name: project");
     } finally {
       temp.cleanup();
@@ -266,8 +266,28 @@ describe("step-first skill manager TUI", () => {
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("skills");
       expect(controller.getState().inspectDetail).toBe(true);
-      expect(terminal.writes.join("\n")).toContain("skills-only commands");
+      expect(terminal.writes.join("\n")).toContain("skills only");
       expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project", "SKILL.md"), "utf8")).toContain("name: project");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("shows Agy as a namespaced slash-skill inspect target", async () => {
+    const temp = makeTempEnv();
+    try {
+      install("agy", "local", ["learn"], false, temp.env);
+      const terminal = new FakeTerminal();
+      const controller = createTuiController({ terminal, env: temp.env, initialAgents: ["agy"], initialScope: "local" });
+      await enterAction(controller, 3);
+      const learn = controller.getState().inventory.find((item) => item.name === "learn");
+      expect(learn?.agents[0].commandSupport).toBe("skills-only");
+      await focusSkill(controller, "learn");
+      await controller.handleInput("\r");
+      expect(controller.getState().step).toBe("skills");
+      expect(controller.getState().inspectDetail).toBe(true);
+      expect(terminal.writes.join("\n")).toContain("namespaced /mh-* skills");
+      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn", "SKILL.md"), "utf8")).toContain("name: mh-learn");
     } finally {
       temp.cleanup();
     }

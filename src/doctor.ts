@@ -1,11 +1,34 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
-import { resolveCommandArtifact, resolveRoot } from "./adapters";
+import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
 import type { DoctorCheck, DoctorResult, InstallReceipt, InstallScope, ScopedAgent } from "./types";
 
 function receiptPath(root: string, agent: ScopedAgent, scope: InstallScope): string {
   return join(root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
+}
+
+function checkAgyAlias(checks: DoctorCheck[], skill: string, skillPath: string): void {
+  const skillFilePath = join(skillPath, "SKILL.md");
+  const content = existsSync(skillFilePath) ? readFileSync(skillFilePath, "utf8") : "";
+
+  checks.push(
+    {
+      label: `skill-alias-name:${skill}`,
+      ok: new RegExp(`^name: mh-${skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "m").test(content),
+      detail: `Expected Agy alias name mh-${skill}`,
+    },
+    {
+      label: `skill-alias-user-only:${skill}`,
+      ok: /^disable-model-invocation:\s*true\s*$/m.test(content),
+      detail: "Expected disable-model-invocation: true",
+    },
+    {
+      label: `skill-alias-slash-enabled:${skill}`,
+      ok: !/^disable-slash-command\s*:/m.test(content),
+      detail: "Expected no disable-slash-command field",
+    },
+  );
 }
 
 function checkScope(agent: ScopedAgent, scope: InstallScope, env = process.env): DoctorResult {
@@ -30,12 +53,16 @@ function checkScope(agent: ScopedAgent, scope: InstallScope, env = process.env):
     const receipt = JSON.parse(readFileSync(path, "utf8")) as InstallReceipt;
 
     for (const skill of receipt.installedSkills) {
-      const skillPath = join(root, "skills", skill);
+      const skillPath = join(root, resolveSkillArtifact(agent, skill).targetRelativePath);
       checks.push({
         label: `skill:${skill}`,
         ok: existsSync(skillPath),
         detail: skillPath,
       });
+
+      if (agent === "agy" && existsSync(skillPath)) {
+        checkAgyAlias(checks, skill, skillPath);
+      }
     }
 
     for (const command of receipt.installedCommands) {

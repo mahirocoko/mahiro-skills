@@ -85,8 +85,8 @@ describe("cli", () => {
 
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
-      const skillsOnlyAgents = new Set(["letta-code", "pi"]);
-      expect(payload.length).toBe(7);
+      const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
+      expect(payload.length).toBe(8);
       expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
@@ -98,6 +98,7 @@ describe("cli", () => {
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("vfx-workflow");
       expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toEqual([]);
+      expect(payload.find((entry) => entry.agent === "agy")?.installedCommands).toEqual([]);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
@@ -111,17 +112,18 @@ describe("cli", () => {
     const temp = makeTempEnv();
 
     try {
-      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,letta-code,pi", "--scope", "local"], temp.env);
+      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,agy,letta-code,pi", "--scope", "local"], temp.env);
       expect(installResult.exitCode).toBe(0);
 
       const uninstallResult = runCli(["uninstall", "project", "--agent", "all", "--scope", "local"], temp.env);
       expect(uninstallResult.exitCode).toBe(0);
 
       const payload = parseJson(uninstallResult.stdout) as Array<{ agent: string; status: string; uninstalled: string[] }>;
-      expect(payload).toHaveLength(7);
-      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code", "pi"]);
+      expect(payload).toHaveLength(8);
+      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "agy", "codex", "letta-code", "pi"]);
       expect(payload.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["project"]);
+      expect(payload.find((entry) => entry.agent === "agy")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "letta-code")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "pi")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "opencode")?.status).toBe("skipped");
@@ -141,6 +143,28 @@ describe("cli", () => {
       expect(payload.agent).toBe("letta-code");
       expect(payload.root.endsWith(".agents")).toBe(true);
       expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
+      expect(payload.commands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("supports Agy namespaced skills in the direct CLI surface", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["plan", "learn", "--agent", "agy", "--scope", "global"], temp.env);
+
+      expect(result.exitCode).toBe(0);
+      const payload = parseJson(result.stdout) as { agent: string; root: string; skills: Array<{ name: string; target: string }>; commands: unknown[] };
+      expect(payload.agent).toBe("agy");
+      expect(payload.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config"));
+      expect(payload.skills).toEqual([
+        expect.objectContaining({
+          name: "learn",
+          target: join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config", "skills", "mh-learn"),
+        }),
+      ]);
       expect(payload.commands).toEqual([]);
     } finally {
       temp.cleanup();

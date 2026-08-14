@@ -8,6 +8,10 @@ export interface CommandArtifact {
   targetRelativePath: string;
 }
 
+export interface SkillArtifact {
+  targetRelativePath: string;
+}
+
 function formatGeminiCommandFileName(name: string): string {
   return `mh-${name}.toml`;
 }
@@ -57,6 +61,10 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
       return join(cwd, ".agents");
     }
 
+    if (agent === "agy") {
+      return join(cwd, ".agents");
+    }
+
     if (agent === "pi") {
       return join(cwd, ".pi");
     }
@@ -92,6 +100,10 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
     return join(home, ".letta");
   }
 
+  if (agent === "agy") {
+    return join(home, ".gemini", "config");
+  }
+
   if (agent === "pi") {
     return join(home, ".pi", "agent");
   }
@@ -100,7 +112,13 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
 }
 
 export function supportsCommands(agent: ScopedAgent): boolean {
-  return isImplementedAgent(agent) && agent !== "letta-code" && agent !== "pi";
+  return isImplementedAgent(agent) && agent !== "agy" && agent !== "letta-code" && agent !== "pi";
+}
+
+export function resolveSkillArtifact(agent: ScopedAgent, name: string): SkillArtifact {
+  return {
+    targetRelativePath: join("skills", agent === "agy" ? `mh-${name}` : name),
+  };
 }
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {

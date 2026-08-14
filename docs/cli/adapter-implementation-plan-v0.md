@@ -6,7 +6,7 @@ The design constraint is simple: do not fork the product into per-agent installe
 
 ## Goal
 
-Keep the shared adapter core extensible across `cursor`, `gemini`, skills-only Letta Code, and skills-only Pi support without weakening guarantees around `plan`, install receipts, collision handling, and opaque skill-tree copying.
+Keep the shared adapter core extensible across `cursor`, Gemini CLI, Antigravity CLI (`agy`), skills-only Letta Code, and skills-only Pi support without weakening guarantees around `plan`, install receipts, collision handling, and declared adapter transforms.
 
 ## Current starting point
 
@@ -14,7 +14,7 @@ Keep the shared adapter core extensible across `cursor`, `gemini`, skills-only L
 - `src/adapters.ts` is still the hard gate for implemented agents and command support
 - `src/plan.ts`, `src/install.ts`, `src/list.ts`, and `src/doctor.ts` already share a single adapter-dependent flow
 - `cursor` and `gemini` are now implemented in the runtime for the currently modeled packaged install outputs
-- `letta-code` and `pi` use the same skills-only capability seam while retaining different local/global roots
+- `agy`, `letta-code`, and `pi` use the same skills-only capability seam while retaining different roots and slash identities
 
 ## Phase 1: Cursor implementation
 
@@ -126,12 +126,35 @@ Pi 0.83 implements the Agent Skills standard, discovers global `~/.pi/agent/skil
 
 Status: implemented and natively exercised on 2026-08-04. A temporary global install targeted an explicit isolated `PI_CODING_AGENT_DIR`; offline Pi 0.83 startup then displayed `[Skills] mahiro-style` from that adapter root without a command wrapper or available model. The receipt-backed isolated Pi pilot was subsequently updated with all 25 default skills, passed all 27 doctor checks, and displayed the full skill roster at startup. This proves discovery/startup wiring only—the skills' task behavior still depends on the selected model and tools.
 
+## Phase 6: Antigravity CLI namespaced skill support
+
+### Why separate from Gemini
+
+Agy 1.1.13 shares the broader `~/.gemini` namespace but does not discover Gemini CLI's `commands-gemini/mh-*.toml` artifacts. Its supported customization surface derives slash commands from Agent Skill frontmatter.
+
+### Scope
+
+- implement `agy` as the eighth, skills-only adapter target
+- resolve local installs to `.agents/skills/mh-<name>/` and global installs to `~/.gemini/config/skills/mh-<name>/`
+- copy complete skill trees, then rewrite only staged alias frontmatter to `name: mh-<name>` and `disable-model-invocation: true`, removing `disable-slash-command`
+- preserve canonical receipt item names while resolving namespaced targets through plan, status, doctor, update, and uninstall
+- add a bounded real-Agy `/skills` runtime smoke instead of treating file presence as discovery proof
+
+### Exit criteria
+
+- deterministic plans cover local and global Agy roots without copying command wrappers
+- install/update/list/uninstall/doctor and Skill Manager use the same namespaced target resolver
+- all-agent CLI/TUI surfaces include Agy without count drift
+- real Agy 1.1.13 reports `mh-learn` from `~/.gemini/config/skills/mh-learn/SKILL.md` with model invocation disabled
+
+Status: implemented in the current working tree; global runtime discovery is proven, while workspace-local discovery still relies on Agy's documented project customization contract and is not part of the current runtime smoke.
+
 ## Deferred items
 
 - full Gemini extension install modeling
 - automated settings orchestration for confirmation-heavy tool flows
 - any target-specific plugin build pipeline that goes beyond file planning and copied assets
-- expansion to future targets before Cursor, Gemini, Codex, Letta Code, and Pi are stable
+- expansion to future targets before Cursor, Gemini CLI, Agy, Codex, Letta Code, and Pi are stable
 
 ## File and module focus for the first implementation pass
 

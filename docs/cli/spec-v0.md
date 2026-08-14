@@ -53,11 +53,11 @@ Examples:
 - `skills/recap/references/`
 - `skills/gemini/extension/`
 
-The CLI must not reinterpret internal skill files beyond path planning and collision checks.
+The CLI must not reinterpret internal skill files beyond path planning, collision checks, and declared adapter transforms. The Agy adapter is the sole current transform: it copies the complete skill tree to `skills/mh-<name>/`, rewrites only the staged `SKILL.md` frontmatter name to `mh-<name>`, forces `disable-model-invocation: true`, and removes `disable-slash-command` so the alias is user-invocable without duplicating model discovery.
 
 ## Terminology
 
-- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, or `pi`
+- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, or `pi`
 - **scope**: `global` or `local`
 - **adapter**: target-specific planner and installer for one agent
 - **bundle**: named install group defined by manifest or default repo bundle
@@ -74,9 +74,10 @@ Currently implemented runtime targets are:
 2. `claude-code`
 3. `cursor`
 4. `gemini`
-5. `codex`
-6. `letta-code`
-7. `pi`
+5. `agy`
+6. `codex`
+7. `letta-code`
+8. `pi`
 
 For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
 
@@ -91,11 +92,12 @@ For the current Cursor and Gemini rollout history plus the remaining follow-on p
 | claude-code | Yes | Yes | Yes | Yes | Yes |
 | cursor | Yes | Yes | Yes | Yes | Yes |
 | gemini | Yes | Yes | Partial | Partial | Yes |
+| agy | Yes | No | Partial | Partial | Yes |
 | codex | Yes | Partial | Yes | Yes | Yes |
 | letta-code | Yes | No | Partial | Partial | Yes |
 | pi | Yes | No | Partial | No | Yes |
 
-The Pi adapter manages only skill files and receipts. Installing the adapter does not install a Pi executable, add `pi` to `PATH`, or create provider configuration.
+The Agy adapter manages namespaced skill aliases and receipts; Gemini TOML commands remain owned by the distinct `gemini` adapter. The Pi adapter manages only skill files and receipts. Installing either adapter does not install its executable or provider configuration.
 
 Interpretation rules:
 
@@ -113,6 +115,7 @@ Interpretation rules:
 | claude-code | `~/.claude` | `.claude` |
 | cursor | `~/.cursor` | `.cursor` |
 | gemini | `~/.gemini` | `.gemini` |
+| agy | `~/.gemini/config` | `.agents` |
 | codex | `~/.codex` | `.codex` |
 | letta-code | `~/.letta` | `.agents` |
 | pi | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` | `.pi` |
@@ -159,7 +162,7 @@ Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `
 - **Review:** a full scrollable step, not an overlay. The default surface puts one batch confirmation before compact per-agent effect summaries; `Space` checks or clears all required acknowledgements together because partial acknowledgement cannot produce an eligible partial run. `D` toggles exact roots, actions, skips, warnings, and collision/overwrite/remove paths; paths are hard-wrapped rather than shortened. Enter is the first point that may execute, and any unreadable selected-agent receipt blocks the batch until Target is corrected.
 - **Result:** agents execute sequentially. The first thrown failure stops the batch and later agents are Not attempted. The screen preserves per-agent success, skips, errors, and receipt evidence plus Completed, Completed with skips, Partially completed, Failed, or No changes aggregation.
 - Primary controls are visible `↑/↓`, `Space`, `Enter`, `Esc`, and `Ctrl+C`; the flow does not require mnemonic action keys. Search remains optional and Esc clears its query before backing out.
-- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Letta Code and Pi command omission remains adapter-derived and is shown as skills-only.
+- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Agy, Letta Code, and Pi command omission remains adapter-derived and is shown as skills-only.
 - `guided` remains the prompt-by-prompt compatibility workflow: Home offers Install, Uninstall, Update installed, List installed, Receipt detail, and Exit; nested prompts retain Back-to-Home and explicit confirmation behavior.
 - Explicit `tui --mode ...`, small terminals, and `TERM=dumb` route to the guided compatibility path. Non-interactive `tui`/`guided` also use that path and retain their established required-flag rules.
 - Guided item/agent selection, direct repeated/comma-separated `--agent` flags, `--agent all`, and receipt detail remain unchanged and continue to use the shared core APIs.
@@ -314,6 +317,14 @@ Rules:
 - Install packaged Gemini commands from `commands-gemini/mh-*.toml` into namespaced `<root>/commands/mh-*.toml` targets
 - Preserve `skills/gemini/extension/` as an opaque copied subtree when the `gemini` skill is installed
 - Do not describe extension loading or settings setup as full adapter support in v0
+
+### Agy
+
+- Treat Antigravity CLI as a distinct adapter even though it shares the broader `~/.gemini` namespace with Gemini CLI
+- Install complete skill trees under `<root>/skills/mh-<name>/`, where the root resolves to `.agents` locally and `~/.gemini/config` globally
+- Rewrite only staged alias frontmatter: `name: mh-<name>`, `disable-model-invocation: true`, and no `disable-slash-command` field
+- Do not copy `commands-gemini/*.toml`; Agy 1.1.13 does not discover Gemini CLI TOML command artifacts
+- Keep receipt item names canonical so update, doctor, list, skill-manager, and uninstall operations resolve the adapter-specific namespaced target deterministically
 
 ### Codex
 

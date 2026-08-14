@@ -66,6 +66,32 @@ describe("install.sh", () => {
     }
   });
 
+  test("installs an Agy skill as a namespaced alias from a provided repo root", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const repoRoot = join(import.meta.dir, "..");
+      const installScript = join(repoRoot, "install.sh");
+
+      const result = Bun.spawnSync(["bash", installScript, "learn", "--agent", "agy", "--scope", "local"], {
+        cwd: repoRoot,
+        env: {
+          ...temp.env,
+          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
+        },
+      });
+      const skillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn", "SKILL.md");
+
+      expect(result.exitCode).toBe(0);
+      expect(decode(result.stdout)).toContain('"agent": "agy"');
+      expect(readFileSync(skillPath, "utf8")).toContain("name: mh-learn");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-agy.json"))).toBe(true);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("uses the caller working directory for local installs when MAHIRO_SKILLS_CWD is unset", () => {
     const temp = makeTempEnv();
 

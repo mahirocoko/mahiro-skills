@@ -12,7 +12,7 @@ describe("learn and project skill contracts", () => {
     const geminiCommand = readRepoFile("commands-gemini", "mh-learn.toml");
 
     expect(skill).toContain("disable-slash-command: true");
-    expect(skill).toContain("In Gemini/Agy, invoke this workflow through `/mh-learn`");
+    expect(skill).toContain("In Agy, the separate adapter installs a user-only `mh-learn` skill alias");
     expect(geminiCommand).toContain("Execute the `learn` skill with args: {{args}}");
   });
 

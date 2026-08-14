@@ -43,12 +43,52 @@ function prefixTomlDescription(content: string): string {
   });
 }
 
-function rewriteInstalledDescription(stagingPath: string, targetPath: string): void {
+function rewriteAgySkillFrontmatter(content: string, name: string): string {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!frontmatterMatch) {
+    throw new Error(`Agy skill '${name}' is missing YAML frontmatter.`);
+  }
+
+  const lines = frontmatterMatch[1]
+    .split("\n")
+    .filter((line) => !/^disable-slash-command\s*:/.test(line));
+  let hasName = false;
+  let hasModelInvocation = false;
+  const rewritten = lines.map((line) => {
+    if (/^name\s*:/.test(line)) {
+      hasName = true;
+      return `name: mh-${name}`;
+    }
+
+    if (/^disable-model-invocation\s*:/.test(line)) {
+      hasModelInvocation = true;
+      return "disable-model-invocation: true";
+    }
+
+    return line;
+  });
+
+  if (!hasName) {
+    throw new Error(`Agy skill '${name}' frontmatter is missing its name field.`);
+  }
+
+  if (!hasModelInvocation) {
+    rewritten.push("disable-model-invocation: true");
+  }
+
+  const nextFrontmatter = `---\n${rewritten.join("\n")}\n---`;
+  return content.replace(frontmatterMatch[0], nextFrontmatter);
+}
+
+function rewriteInstalledTarget(stagingPath: string, targetPath: string, agent: ScopedAgent, target: InstallTarget): void {
   const stats = statSync(stagingPath);
   if (stats.isDirectory()) {
     const markdownPath = join(stagingPath, "SKILL.md");
     const content = readFileSync(markdownPath, "utf8");
-    const nextContent = prefixFrontmatterDescription(content);
+    const adaptedContent = agent === "agy" && target.kind === "skill"
+      ? rewriteAgySkillFrontmatter(content, target.name)
+      : content;
+    const nextContent = prefixFrontmatterDescription(adaptedContent);
 
     if (nextContent !== content) {
       writeFileSync(markdownPath, nextContent);
@@ -66,7 +106,7 @@ function rewriteInstalledDescription(stagingPath: string, targetPath: string): v
   }
 }
 
-function copyTarget(target: InstallTarget, overwrite: boolean): void {
+function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgent): void {
   if (target.collision && !overwrite) {
     throw new Error(`Collision detected at '${target.target}'. Re-run with --overwrite to replace it.`);
   }
@@ -75,7 +115,7 @@ function copyTarget(target: InstallTarget, overwrite: boolean): void {
   const stagingPath = `${target.target}.tmp-mahiro-skills`;
   rmSync(stagingPath, { recursive: true, force: true });
   cpSync(target.source, stagingPath, { recursive: true });
-  rewriteInstalledDescription(stagingPath, target.target);
+  rewriteInstalledTarget(stagingPath, target.target, agent, target);
 
   if (overwrite && existsSync(target.target)) {
     rmSync(target.target, { recursive: true, force: true });
@@ -155,7 +195,7 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
   }
 
   for (const target of [...plan.skills, ...plan.commands]) {
-    copyTarget(target, overwrite);
+    copyTarget(target, overwrite, agent);
   }
 
   const installedNowSkills = plan.skills.map((entry) => entry.name);

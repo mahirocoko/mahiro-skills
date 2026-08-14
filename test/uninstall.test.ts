@@ -101,6 +101,27 @@ describe("uninstall", () => {
     }
   });
 
+  test("removes Agy namespaced skill targets through canonical receipt names", () => {
+    const temp = makeTempEnv();
+
+    try {
+      install("agy", "local", ["project", "recap"], false, temp.env);
+
+      const result = uninstall("agy", "local", ["project"], temp.env);
+      const receipt = listInstalled("agy", "local", temp.env);
+      const root = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills");
+
+      expect(result.status).toBe("uninstalled");
+      expect(result.uninstalled).toEqual(["project"]);
+      expect(existsSync(join(root, "mh-project"))).toBe(false);
+      expect(existsSync(join(root, "mh-recap"))).toBe(true);
+      expect(receipt?.installedSkills).toEqual(["recap"]);
+      expect(receipt?.installedCommands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("skips safely when no receipt exists", () => {
     const temp = makeTempEnv();
 

@@ -89,6 +89,25 @@ describe("list", () => {
     }
   });
 
+  test("returns the canonical receipt after Agy namespaced install", () => {
+    const temp = makeTempEnv();
+    try {
+      install("agy", "global", ["learn"], false, temp.env);
+
+      const receipt = listInstalled("agy", "global", temp.env);
+
+      expect(receipt).not.toBeNull();
+      expect(receipt?.agent).toBe("agy");
+      expect(receipt?.scope).toBe("global");
+      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_HOME}/.gemini/config`);
+      expect(receipt?.installedSkills).toEqual(["learn"]);
+      expect(receipt?.installedCommands).toEqual([]);
+      expect(receipt?.targetStates).toHaveLength(1);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("returns full receipt after Letta Code install", () => {
     const temp = makeTempEnv();
     try {

@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import { resolveCommandArtifact, resolveRoot, supportsCommands } from "./adapters";
+import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact, supportsCommands } from "./adapters";
 import { getRepoInventory } from "./repo";
 import type { InstallPlan, InstallScope, InstallTarget, RepoInventory, ScopedAgent, SkippedItem } from "./types";
 
@@ -10,7 +10,7 @@ function makeTarget(root: string, name: string, kind: "skill" | "command", sourc
     ? join(sourceRoot, "skills", name)
     : join(sourceRoot, resolveCommandArtifact(agent, name).sourceRelativePath);
   const target = kind === "skill"
-    ? join(root, "skills", name)
+    ? join(root, resolveSkillArtifact(agent, name).targetRelativePath)
     : join(root, resolveCommandArtifact(agent, name).targetRelativePath);
 
   if (!existsSync(source)) {
@@ -37,6 +37,10 @@ function adaptDescriptionForAgent(description: string | undefined, agent: Scoped
   }
 
   const skillsDescription = description.replace(" plus agent-native command entrypoints", "").replace(/\.$/, "");
+  if (agent === "agy") {
+    return `${skillsDescription}; 'agy' installs namespaced /mh-* Agent Skill aliases and does not copy Gemini TOML or markdown command wrappers.`;
+  }
+
   return `${skillsDescription}; '${agent}' installs Agent Skills only and does not copy command wrappers.`;
 }
 

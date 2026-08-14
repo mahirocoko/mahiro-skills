@@ -23,7 +23,7 @@ describe("step-first skill manager renderer", () => {
       const frame = renderSkillManagerFrame({
         step: "skills",
         target: {
-          agents: ["opencode", "claude-code", "cursor", "gemini", "codex", "letta-code", "pi"],
+          agents: ["opencode", "claude-code", "cursor", "gemini", "agy", "codex", "letta-code", "pi"],
           mode: "custom",
           selectedAgents: ["opencode", "cursor"],
           scope: "local",
@@ -90,7 +90,7 @@ describe("step-first skill manager renderer", () => {
         },
       }, { columns: 80, rows: 24 }, { color: false });
       expect(detail).toContain("Inspect is read-only");
-      expect(detail).toContain("skills-only commands");
+      expect(detail).toContain("skills only");
       expect(detail).not.toContain("Confirm");
     } finally {
       temp.cleanup();

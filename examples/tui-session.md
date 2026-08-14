@@ -24,7 +24,7 @@ Target → Action → Skills → Review → Result
 
 ### Target
 
-The first row is **All agents** and is exclusive. Selecting an individual changes the selection to Custom; Custom can contain one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `codex`, `letta-code`, and `pi`. Scope defaults to `global`; choose `local` explicitly when the batch should target the current project.
+The first row is **All agents** and is exclusive. Selecting an individual changes the selection to Custom; Custom can contain one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi`. Scope defaults to `global`; choose `local` explicitly when the batch should target the current project.
 
 ```text
 ↑/↓     focus an agent or scope radio
@@ -45,7 +45,7 @@ Esc     return to Target
 
 ### Skills
 
-Rows are derived across all selected agent snapshots. Coverage and state counts stay visible when agents differ. Install disables names already recorded everywhere and skips receipt-installed agents; Update offers only selected outdated, missing, modified, or legacy catalog names; Uninstall uses the union of receipt-recorded names; Inspect also shows receipt-only names. Letta Code and Pi detail explicitly reports skills-only command behavior.
+Rows are derived across all selected agent snapshots. Coverage and state counts stay visible when agents differ. Install disables names already recorded everywhere and skips receipt-installed agents; Update offers only selected outdated, missing, modified, or legacy catalog names; Uninstall uses the union of receipt-recorded names; Inspect also shows receipt-only names. Agy detail identifies namespaced `/mh-*` skills, while Letta Code and Pi report skills-only behavior.
 
 The first row is **Select all eligible**. `Space` toggles every actionable skill currently visible after filtering; disabled/no-op rows are never selected by the batch toggle.
 
