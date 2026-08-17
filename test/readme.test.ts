@@ -121,7 +121,7 @@ describe("README", () => {
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");
     expect(index).toContain("`auditing-context-contracts` — Repository context-contract audit");
     expect(index).toContain("keyword absence is not semantic proof");
-    expect(index).toContain("**Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`, `philosophy`");
+    expect(index).toContain("**Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
     expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");

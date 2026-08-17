@@ -1,12 +1,13 @@
 ---
 name: watch
-description: Learn from YouTube videos via Gemini transcription. Use when the user wants to study a video or transcript a YouTube link.
-alias: /gemini transcribe
+description: Learn from YouTube videos through Gemini transcription plus local caption and learning-note capture. Use when the user wants to study a video or transcript a YouTube link.
 ---
 
 # /watch - YouTube → Gemini → Local Knowledge
 
-**Alias for `/gemini transcribe`** with local note capture.
+Dedicated YouTube learning entrypoint built on Gemini transcription, with local metadata, caption, and learning-note capture.
+
+Ownership boundary: `gemini` owns the Local Gemini Proxy transport and browser behavior. `watch` owns the YouTube-specific metadata/caption workflow and durable local learning output. Keep the route contract aligned with the bundled Gemini runtime rather than maintaining a separate legacy Gemini URL.
 
 Learn from YouTube videos by sending them to Gemini for transcription, then saving the output locally.
 
@@ -50,7 +51,7 @@ bun "$SKILL_DIR/scripts/transcribe.ts" --mode=canvas <youtube-url>
 | Mode | Use Case |
 |------|----------|
 | `chat` | Quick transcription (default) |
-| `research` | Requests deeper analysis in a research-targeted tab; does not by itself prove Deep Research capability or factual verification |
+| `research` | Requests deeper analysis through the current Gemini research route; does not by itself prove Deep Research capability or factual verification |
 | `canvas` | Structured document output |
 
 **Models:**
@@ -126,6 +127,7 @@ gemini_conversation: https://gemini.google.com/app/[conversation_id]
 ## Notes
 
 - Gemini has YouTube understanding built-in (can process video directly)
+- Research mode uses the current `/app/explore?mode=research` route owned by the bundled Gemini runtime.
 - Long-video completion time is provider/account dependent; do not promise a fixed wait
 - If Gemini can't access video, it will say so — fallback to manual notes
 - Works with: youtube.com, youtu.be, youtube.com/shorts/

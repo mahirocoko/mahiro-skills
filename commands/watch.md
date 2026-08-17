@@ -1,5 +1,5 @@
 ---
-description: Learn from YouTube videos via Gemini transcription. Use when the user wants to study a video or transcript a YouTube link.
+description: Learn from YouTube videos through Gemini transcription plus local caption and learning-note capture. Use when the user wants to study a video or transcript a YouTube link.
 allowed-tools:
   - Bash
   - Read

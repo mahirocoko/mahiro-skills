@@ -44,7 +44,7 @@ if (!url) {
 // Gemini URLs by mode
 const GEMINI_URLS: Record<string, string> = {
   chat: "https://gemini.google.com/app",
-  research: "https://gemini.google.com/app?mode=research",
+  research: "https://gemini.google.com/app/explore?mode=research",
   canvas: "https://gemini.google.com/canvas"
 }
 

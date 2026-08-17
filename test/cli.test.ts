@@ -87,7 +87,7 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(8);
-      expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);

@@ -38,7 +38,7 @@ describe("repo inventory", () => {
   test("keeps the canonical catalog default-or-absent", () => {
     const repoRoot = join(import.meta.dir, "..");
     const manifest = getRepoManifest(repoRoot);
-    const removed = ["deep-research", "frontend-design", "uncodixify"];
+    const removed = ["deep-research", "frontend-design", "philosophy", "uncodixify"];
 
     expect(manifest.gaps).toEqual([]);
     expect(manifest.skills.every((skill) => skill.inDefaultBundle)).toBe(true);

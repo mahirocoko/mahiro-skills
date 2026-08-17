@@ -51,12 +51,12 @@ describe("packaged skill context freshness", () => {
     for (const removed of ["frontend-design", "uncodixify", "building-frontends"]) {
       expect(markdown).not.toContain(removed);
     }
+    expect(markdown).not.toMatch(/(?:^|[\s`])\/philosophy(?=[\s`]|$)/m);
     expect(markdown).not.toMatch(/(?:^|[\s`])\/(?:viral|awaken)(?=[\s`]|$)/m);
 
     for (const file of [
       ["skills", "learn", "SKILL.md"],
       ["skills", "watch", "SKILL.md"],
-      ["skills", "philosophy", "SKILL.md"],
     ]) {
       expect(read(...file)).not.toMatch(/\/trace\b/);
     }
@@ -69,10 +69,6 @@ describe("packaged skill context freshness", () => {
     }
     expect(existsSync(join(repoRoot, "skills", "project", "project-manager.md"))).toBe(false);
 
-    const philosophy = read("skills", "philosophy", "SKILL.md");
-    expect(philosophy).toContain("Preserve Evidence, Not Active Clutter");
-    expect(philosophy).not.toContain("Nothing is Deleted");
-    expect(philosophy).not.toContain("Append only");
   });
 
   test("Gemini docs and research handoff match the bundled runtime", () => {
@@ -83,6 +79,7 @@ describe("packaged skill context freshness", () => {
     const researchCapability = read("skills", "gemini", "scripts", "deep-research-capability.ts");
     const researchContract = `${research}\n${researchCapability}`;
     const watch = read("skills", "watch", "SKILL.md");
+    const watchTranscribe = read("skills", "watch", "scripts", "transcribe.ts");
 
     expect(manifest.name).toBe("Local Gemini Proxy");
     expect(skill).toContain("bundled **Local Gemini Proxy**");
@@ -103,6 +100,9 @@ describe("packaged skill context freshness", () => {
     expect(background).not.toContain("label.includes(target)");
     expect(background).not.toContain("/deep\\s+research/i.test(document.body");
     expect(watch).not.toContain("Deep analysis with fact-checking");
+    expect(watch).toContain("current `/app/explore?mode=research` route");
+    expect(watchTranscribe).toContain('research: "https://gemini.google.com/app/explore?mode=research"');
+    expect(watchTranscribe).not.toContain('research: "https://gemini.google.com/app?mode=research"');
 
     expect(requireDeepResearchToolLabel({
       success: true,
@@ -183,7 +183,7 @@ describe("packaged skill context freshness", () => {
 
   test("all generic command wrappers avoid source-checkout fallback paths", () => {
     const commandFiles = filesUnder(join(repoRoot, "commands"), ".md");
-    expect(commandFiles.length).toBe(25);
+    expect(commandFiles.length).toBe(24);
 
     for (const file of commandFiles) {
       const command = readFileSync(file, "utf8");

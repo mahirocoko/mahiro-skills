@@ -187,7 +187,6 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `mahiro-guidance-refine` | `/mahiro-guidance-refine` | You need to turn session feedback into approved docs, rules, or style guidance updates. |
 | `mahiro-style` | `/mahiro-style` | You need Mahiro's cross-repo code style doctrine. |
 | `motion-design` | `/motion-design` | You explicitly need a UI/product motion brief, motion personality or tokens, timing/easing/spring/stagger decisions, choreography, interaction-state motion, reduced-motion planning, or rendered motion audit—not ordinary frontend work or game VFX. |
-| `philosophy` | `/philosophy` | You need the local philosophy and alignment rules. |
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective and durable lesson notes. |
@@ -195,7 +194,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
 | `vfx-workflow` | `/vfx-workflow` | You need mechanically truthful game VFX cues, sockets, timing, geometry, accessibility, pooling, effect budgets, runtime QA, or promotion gates. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
-| `watch` | `/watch` | You want to learn from a YouTube video via Gemini transcription. |
+| `watch` | `/watch` | You want Gemini transcription plus local captions and learning-note capture for a YouTube video. |
 
 ## Bundles
 
