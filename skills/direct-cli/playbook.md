@@ -109,6 +109,196 @@ REVIEW_PANE="$(printf '%s' "$split_json" | python3 -c 'import json,sys; print(js
 REVIEW_HASH="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16])' "$REVIEW_PANE")"
 AGY_AGENT="d${REVIEW_HASH}a"
 
+verify_herdr_pane_receipt() {
+  pane_id="$1"
+  pane_json="$(herdr pane get "$pane_id")" || return 1
+  printf '%s' "$pane_json" | python3 -c '
+import json
+import sys
+
+pane = json.load(sys.stdin)["result"]["pane"]
+expected_workspace, expected_tab, expected_cwd, expected_pane = sys.argv[1:]
+valid = (
+    pane.get("workspace_id") == expected_workspace
+    and pane.get("tab_id") == expected_tab
+    and pane.get("cwd") == expected_cwd
+    and pane.get("pane_id") == expected_pane
+)
+raise SystemExit(0 if valid else 1)
+' "$TARGET_WORKSPACE_ID" "$TAB_ID" "$TARGET_CWD" "$pane_id" || return 1
+
+  process_json="$(herdr pane process-info --pane "$pane_id")" || return 1
+  printf '%s' "$process_json" | python3 -c '
+import json
+import sys
+
+info = json.load(sys.stdin)["result"]["process_info"]
+raise SystemExit(0 if info.get("pane_id") == sys.argv[1] else 1)
+' "$pane_id"
+}
+
+verify_herdr_agent_receipt() {
+  pane_id="$1"
+  expected_agent_kind="$2"
+  expected_agent_target="$3"
+  expected_session="$4"
+  [ -n "$expected_agent_target" ] && [ -n "$expected_session" ] || return 1
+  verify_herdr_pane_receipt "$pane_id" || return 1
+
+  pane_json="$(herdr pane get "$pane_id")" || return 1
+  printf '%s' "$pane_json" | python3 -c '
+import json
+import sys
+
+pane = json.load(sys.stdin)["result"]["pane"]
+expected_agent_kind, expected_session = sys.argv[1:]
+session = pane.get("agent_session") or {}
+valid = pane.get("agent") == expected_agent_kind and session.get("value") == expected_session
+raise SystemExit(0 if valid else 1)
+' "$expected_agent_kind" "$expected_session" || return 1
+
+  agent_json="$(herdr agent get "$expected_agent_target")" || return 1
+  printf '%s' "$agent_json" | python3 -c '
+import json
+import sys
+
+agent = json.load(sys.stdin)["result"]["agent"]
+expected_workspace, expected_tab, expected_cwd, expected_pane, expected_kind, expected_session = sys.argv[1:]
+session = agent.get("agent_session") or {}
+valid = (
+    agent.get("workspace_id") == expected_workspace
+    and agent.get("tab_id") == expected_tab
+    and agent.get("cwd") == expected_cwd
+    and agent.get("pane_id") == expected_pane
+    and agent.get("agent") == expected_kind
+    and session.get("value") == expected_session
+)
+raise SystemExit(0 if valid else 1)
+' "$TARGET_WORKSPACE_ID" "$TAB_ID" "$TARGET_CWD" "$pane_id" "$expected_agent_kind" "$expected_session"
+}
+
+verify_herdr_unclaimed_pane_receipt() {
+  pane_id="$1"
+  verify_herdr_pane_receipt "$pane_id" || return 1
+
+  pane_json="$(herdr pane get "$pane_id")" || return 1
+  printf '%s' "$pane_json" | python3 -c '
+import json
+
+pane = json.load(__import__("sys").stdin)["result"]["pane"]
+session = pane.get("agent_session") or {}
+raise SystemExit(0 if not pane.get("agent") and not session.get("value") else 1)
+'
+}
+
+capture_herdr_generic_process_receipt() {
+  pane_id="$1"
+  verify_herdr_unclaimed_pane_receipt "$pane_id" || return 1
+
+  attempt=0
+  while [ "$attempt" -lt 50 ]; do
+    attempt=$((attempt + 1))
+    process_json="$(herdr pane process-info --pane "$pane_id")" || return 1
+    receipt="$(printf '%s' "$process_json" | python3 -c '
+import json
+
+info = json.load(__import__("sys").stdin)["result"]["process_info"]
+process_group = info.get("foreground_process_group_id")
+shell_pid = info.get("shell_pid")
+processes = info.get("foreground_processes") or []
+if not process_group or process_group == shell_pid or not processes:
+    raise SystemExit(1)
+print(process_group)
+' 2>/dev/null)" && {
+      printf '%s\n' "$receipt"
+      return 0
+    }
+    sleep 0.1
+  done
+  return 1
+}
+
+verify_herdr_generic_process_receipt() {
+  pane_id="$1"
+  expected_process_group="$2"
+  [ -n "$expected_process_group" ] || return 1
+  verify_herdr_unclaimed_pane_receipt "$pane_id" || return 1
+
+  process_json="$(herdr pane process-info --pane "$pane_id")" || return 1
+  printf '%s' "$process_json" | python3 -c '
+import json
+import sys
+
+info = json.load(sys.stdin)["result"]["process_info"]
+processes = info.get("foreground_processes") or []
+valid = (
+    info.get("pane_id") == sys.argv[1]
+    and str(info.get("foreground_process_group_id") or "") == sys.argv[2]
+    and bool(processes)
+)
+raise SystemExit(0 if valid else 1)
+' "$pane_id" "$expected_process_group"
+}
+
+capture_herdr_agent_session() {
+  pane_id="$1"
+  expected_agent_kind="$2"
+  expected_agent_target="$3"
+  verify_herdr_pane_receipt "$pane_id" || return 1
+
+  pane_json="$(herdr pane get "$pane_id")" || return 1
+  value="$(printf '%s' "$pane_json" | python3 -c '
+import json
+import sys
+
+pane = json.load(sys.stdin)["result"]["pane"]
+session = pane.get("agent_session") or {}
+value = session.get("value")
+if pane.get("agent") != sys.argv[1] or not value:
+    raise SystemExit(1)
+print(value)
+' "$expected_agent_kind")" || return 1
+
+  verify_herdr_agent_receipt "$pane_id" "$expected_agent_kind" "$expected_agent_target" "$value" || return 1
+  printf '%s\n' "$value"
+}
+
+verify_herdr_tab_receipt() {
+  tab_json="$(herdr tab get "$TAB_ID")" || return 1
+  printf '%s' "$tab_json" | python3 -c '
+import json
+import sys
+
+tab = json.load(sys.stdin)["result"]["tab"]
+expected_workspace, expected_tab = sys.argv[1:]
+raise SystemExit(0 if tab.get("workspace_id") == expected_workspace and tab.get("tab_id") == expected_tab else 1)
+' "$TARGET_WORKSPACE_ID" "$TAB_ID"
+}
+
+close_herdr_job_tab_if_owned() {
+  verify_herdr_tab_receipt || return 1
+  [ $(( $# % 4 )) -eq 0 ] || return 1
+  while [ "$#" -gt 0 ]; do
+    pane_id="$1"
+    expected_agent_kind="$2"
+    expected_agent_target="$3"
+    expected_identity="$4"
+    shift 4
+
+    if [ -z "$expected_agent_kind" ]; then
+      verify_herdr_unclaimed_pane_receipt "$pane_id" || return 1
+    elif [ "$expected_agent_kind" = generic ]; then
+      [ -z "$expected_agent_target" ] || return 1
+      verify_herdr_generic_process_receipt "$pane_id" "$expected_identity" || return 1
+    else
+      verify_herdr_agent_receipt \
+        "$pane_id" "$expected_agent_kind" "$expected_agent_target" "$expected_identity" || return 1
+    fi
+  done
+  verify_herdr_tab_receipt || return 1
+  herdr tab close "$TAB_ID"
+}
+
 wait_for_herdr_shell() {
   pane_id="$1"
   marker="DIRECT_CLI_SHELL_READY_$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:12])' "$pane_id")"
@@ -140,13 +330,15 @@ raise SystemExit(0 if shell_pid and processes and all(item.get("pid") == shell_p
 }
 
 if ! wait_for_herdr_shell "$ROOT_PANE" || ! wait_for_herdr_shell "$REVIEW_PANE"; then
-  herdr tab close "$TAB_ID" >/dev/null
+  close_herdr_job_tab_if_owned "$ROOT_PANE" "" "" "" "$REVIEW_PANE" "" "" "" >/dev/null ||
+    echo "direct-cli: cleanup receipt mismatch; left the job tab untouched" >&2
   echo "direct-cli: new Herdr pane shell did not become available" >&2
   exit 1
 fi
 
 if ! agent_list_json="$(herdr agent list)"; then
-  herdr tab close "$TAB_ID" >/dev/null
+  close_herdr_job_tab_if_owned "$ROOT_PANE" "" "" "" "$REVIEW_PANE" "" "" "" >/dev/null ||
+    echo "direct-cli: cleanup receipt mismatch; left the job tab untouched" >&2
   echo "direct-cli: failed to list active Herdr agents" >&2
   exit 1
 fi
@@ -166,36 +358,42 @@ raise SystemExit(0 if requested.isdisjoint(active) else 1)
 ' "$CODEX_AGENT" "$AGY_AGENT" || collision_status=$?
 
 if [ "$collision_status" -eq 1 ]; then
-  herdr tab close "$TAB_ID" >/dev/null
+  close_herdr_job_tab_if_owned "$ROOT_PANE" "" "" "" "$REVIEW_PANE" "" "" "" >/dev/null ||
+    echo "direct-cli: cleanup receipt mismatch; left the job tab untouched" >&2
   echo "direct-cli: derived Herdr agent name is already active; create a fresh job tab and derive new names" >&2
   exit 1
 elif [ "$collision_status" -ne 0 ]; then
-  herdr tab close "$TAB_ID" >/dev/null
+  close_herdr_job_tab_if_owned "$ROOT_PANE" "" "" "" "$REVIEW_PANE" "" "" "" >/dev/null ||
+    echo "direct-cli: cleanup receipt mismatch; left the job tab untouched" >&2
   echo "direct-cli: Herdr agent list returned an invalid response" >&2
   exit 1
 fi
 ```
 
-Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Use `--kind pi` only when current Herdr help exposes it and the target pane proves it resolves the same Pi executable/provider environment that passed preflight:
+Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Immediately before each start, prove the receipt-bound pane is still unclaimed. Use `--kind pi` only when current Herdr help exposes it and the target pane proves it resolves the same Pi executable/provider environment that passed preflight:
 
 ```bash
+verify_herdr_unclaimed_pane_receipt "$CURSOR_PANE" || exit 1
 herdr agent start "$CURSOR_AGENT" --kind cursor --pane "$CURSOR_PANE" -- \
   --model claude-fable-5-thinking-high \
   --yolo \
   --approve-mcps \
   --trust
 
+verify_herdr_unclaimed_pane_receipt "$ROOT_PANE" || exit 1
 herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
   --model gpt-5.6-sol \
   -c model_reasoning_effort=high \
   --dangerously-bypass-approvals-and-sandbox
 
+verify_herdr_unclaimed_pane_receipt "$REVIEW_PANE" || exit 1
 herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
   --model claude-opus-4-6-thinking \
   --dangerously-skip-permissions
 
 # PI_PANE must be a separately created shell-ready pane and PI_AGENT must be
 # a unique pane-derived name following the same collision checks above.
+verify_herdr_unclaimed_pane_receipt "$PI_PANE" || exit 1
 herdr agent start "$PI_AGENT" --kind pi --pane "$PI_PANE" -- \
   --provider "$PI_PROVIDER" \
   --model "$PI_MODEL" \
@@ -204,6 +402,10 @@ herdr agent start "$PI_AGENT" --kind pi --pane "$PI_PANE" -- \
   --no-extensions \
   --no-prompt-templates \
   --approve
+
+CODEX_SESSION_ID="$(capture_herdr_agent_session "$ROOT_PANE" codex "$CODEX_AGENT")" || exit 1
+AGY_SESSION_ID="$(capture_herdr_agent_session "$REVIEW_PANE" agy "$AGY_AGENT")" || exit 1
+PI_SESSION_ID="$(capture_herdr_agent_session "$PI_PANE" pi "$PI_AGENT")" || exit 1
 ```
 
 Then use agent names as stable lane targets:
@@ -212,6 +414,10 @@ Then use agent names as stable lane targets:
 herdr agent read "$CODEX_AGENT" --source recent-unwrapped --lines 120
 herdr agent prompt "$CODEX_AGENT" 'Continue from the current worktree only. <TASK>'
 herdr agent wait "$CODEX_AGENT" --until idle --until done --until blocked --timeout 120000
+verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" || {
+  echo "direct-cli: Codex cleanup receipt mismatch; refusing to interrupt" >&2
+  exit 1
+}
 herdr agent send-keys "$CODEX_AGENT" ctrl+c
 ```
 
@@ -219,7 +425,7 @@ The shell-readiness gate above is required even though `tab create` and `pane sp
 
 `agent wait` is lifecycle evidence, while `agent read` remains execution evidence. If agent detection cannot become ready, report that concrete blocker; do not silently migrate the job to tmux after the tab exists. Use `herdr pane run` and `pane read` only when a shell-shaped launch is required.
 
-If `agent start` still reports `agent_name_taken` because another process won the race after the preflight, close the new job tab and retry with fresh pane-derived names in Herdr. Do not switch backends.
+If `agent start` still reports `agent_name_taken` because another process won the race after the preflight, run `close_herdr_job_tab_if_owned` for every receipt-bound pane, then retry with fresh pane-derived names in Herdr. Do not switch backends or close an unverified tab.
 
 For a fresh exact multiline Agy prompt, preserve the existing `agy --prompt-interactive "$(cat prompt.txt)"` path through `herdr pane run`; Herdr multiline prompt behavior is not yet foreground-proven. Ordinary Agy follow-ups should remain one line.
 
@@ -237,6 +443,7 @@ herdr pane run "$PI_PANE" "$PI_COMMAND" \
   --no-prompt-templates \
   --approve
 
+PI_PROCESS_GROUP_ID="$(capture_herdr_generic_process_receipt "$PI_PANE")" || exit 1
 herdr pane read "$PI_PANE" --source recent-unwrapped --lines 120
 herdr pane send-text "$PI_PANE" 'Continue from the current worktree only. Do not restart from scratch. <TASK>'
 herdr pane send-keys "$PI_PANE" enter
@@ -247,15 +454,33 @@ Confirm a real model/tool activity transition after dispatch. A requested comple
 Cleanup is explicit and destructive to the executor process:
 
 ```bash
+verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" || exit 1
 herdr agent send-keys "$CODEX_AGENT" ctrl+c
+verify_herdr_agent_receipt "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" || exit 1
 herdr agent send-keys "$AGY_AGENT" ctrl+c
-# Named Pi: herdr agent send-keys "$PI_AGENT" ctrl+c
-# Generic Pi: herdr pane send-keys "$PI_PANE" ctrl+c
-# When generic Pi is idle, ctrl+d exits the interactive session.
-herdr tab close "$TAB_ID"
+
+if [ -n "${PI_SESSION_ID:-}" ]; then
+  verify_herdr_agent_receipt "$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID" || exit 1
+  herdr agent send-keys "$PI_AGENT" ctrl+c
+  close_herdr_job_tab_if_owned \
+    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
+    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" \
+    "$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID"
+elif [ -n "${PI_PROCESS_GROUP_ID:-}" ]; then
+  verify_herdr_generic_process_receipt "$PI_PANE" "$PI_PROCESS_GROUP_ID" || exit 1
+  herdr pane send-keys "$PI_PANE" ctrl+c
+  close_herdr_job_tab_if_owned \
+    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
+    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" \
+    "$PI_PANE" generic "" "$PI_PROCESS_GROUP_ID"
+else
+  close_herdr_job_tab_if_owned \
+    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
+    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID"
+fi
 ```
 
-Do not close a job tab merely because one lane finishes; inspect every registered lane first.
+Capture each available `*_SESSION_ID` from the matching receipt-bound `herdr pane get` result immediately after `agent start`. Do not close a job tab merely because one lane finishes; inspect every registered lane first. Include every created pane in `close_herdr_job_tab_if_owned`, including a Pi pane when the job has one.
 
 ### tmux fallback lifecycle
 
@@ -927,7 +1152,7 @@ herdr pane read <pi-pane> --source recent-unwrapped --lines 120
 tmux capture-pane -p -t "pi-task" -S -120
 ```
 
-Exit an idle Pi session with `ctrl+d`; interrupt active work with `ctrl+c`, inspect the pane, then close the owning tab/session explicitly.
+For Herdr, revalidate the receipt-bound Pi pane plus its agent session when available before `ctrl+d` or `ctrl+c`, inspect the pane, then close only through `close_herdr_job_tab_if_owned`. For tmux, interrupt the exact session target and close that session explicitly.
 
 ---
 
@@ -1048,6 +1273,39 @@ Mitigation:
 - if needed, send `Enter` again explicitly
 - if the prompt was not submitted, resend the real task prompt only after the pane is ready
 
+### Herdr cleanup identity gate
+
+Herdr workspaces are the operator-visible spaces. Process names and repository paths are not space
+identity: another workspace can run the same CLI or even point at a related checkout. Preserve a
+cleanup receipt as soon as the job is created:
+
+- the selected `DIRECT_HERDR_WORKSPACE_ID`;
+- the parsed job tab ID;
+- every parsed lane pane ID;
+- the expected cwd and agent kind;
+- the reported agent-session identity when Herdr exposes one.
+
+Before every interrupt, pane close, tab close, or PID fallback:
+
+1. Read the exact receipt-bound pane as JSON with `herdr pane get <pane-id>`.
+2. Read its foreground process as JSON with `herdr pane process-info --pane <pane-id>`.
+3. Require `workspace_id` to match the selected workspace and `tab_id` to match the created job tab.
+4. Require cwd, agent kind, and available agent-session identity to remain consistent with the lane.
+5. Stop if any identity differs. A controller report that a remaining process is unrelated is also a
+   stop condition, not permission to investigate it with global signals.
+
+Use `herdr agent send-keys <owned-target> ctrl+c` or the matching receipt-bound pane control first,
+then close only the exact created tab ID. Never use global `pgrep`, `pkill`, or executable-name PID
+searches to decide what Herdr process to stop. Those commands can observe another space but cannot
+prove ownership. If unexpected process evidence must be diagnosed, enumerate `herdr pane list
+--json` and query `pane process-info` for the candidate panes; leave every process outside the
+receipt-bound workspace/tab/pane untouched.
+
+A raw PID signal is a last-resort recovery only when normal Herdr interruption and exact tab close
+failed *and* `pane process-info` on the owned pane proves that exact PID belongs to the receipt.
+Revalidate the receipt immediately before signaling. If ownership cannot be proven, report the
+orphan candidate and do nothing.
+
 ---
 
 ## Minimal backend command cheatsheet
@@ -1055,10 +1313,11 @@ Mitigation:
 Herdr jobs:
 
 ```bash
-herdr agent read <target> --source recent-unwrapped --lines 120
-herdr agent send-keys <target> ctrl+c
-herdr agent wait <target> --until idle --until done --until blocked --timeout 120000
-herdr tab close <tab-id>
+herdr agent read "$AGENT_TARGET" --source recent-unwrapped --lines 120
+verify_herdr_agent_receipt "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID" || exit 1
+herdr agent send-keys "$AGENT_TARGET" ctrl+c
+herdr agent wait "$AGENT_TARGET" --until idle --until done --until blocked --timeout 120000
+close_herdr_job_tab_if_owned "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID"
 ```
 
 Tmux fallback:

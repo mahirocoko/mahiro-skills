@@ -162,6 +162,26 @@ describe("packaged skill context freshness", () => {
     expect(allDirectDocs).not.toMatch(/2026\.07\.23-e383d2b|agy 1\.1\.6|0\.144\.6|0\.145\.0|Pi `0\.83\.0`|global `pi` was not on `PATH`/);
     expect(skill).toContain("require the current help output to expose every launch flag");
     expect(skill).toContain("PATH presence or the basename `pi` is not enough");
+    expect(skill).toContain("lane's cleanup receipt");
+    expect(skill).toContain("Never use global `pgrep`, `pkill`");
+    expect(playbook).toContain("verify_herdr_pane_receipt");
+    expect(playbook).toContain("verify_herdr_agent_receipt");
+    expect(playbook).toContain("verify_herdr_generic_process_receipt");
+    expect(playbook).toContain("close_herdr_job_tab_if_owned");
+    const closeHelper = playbook.match(/close_herdr_job_tab_if_owned\(\) \{[\s\S]*?\n\}/)?.[0];
+    expect(closeHelper).toContain("verify_herdr_agent_receipt");
+    expect(closeHelper).toContain("verify_herdr_unclaimed_pane_receipt");
+    expect(closeHelper).toContain("verify_herdr_generic_process_receipt");
+    expect(playbook).toContain('herdr agent get "$expected_agent_target"');
+    expect(playbook).toContain(
+      'verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID"',
+    );
+    expect(playbook).toContain('verify_herdr_unclaimed_pane_receipt "$ROOT_PANE" || exit 1');
+    expect(playbook).toContain(
+      'verify_herdr_agent_receipt "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID" || exit 1',
+    );
+    expect(playbook).toContain('"$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID"');
+    expect(playbook.match(/herdr tab close \"\$TAB_ID\"/g)).toHaveLength(1);
     expect(read("README.md")).toContain("does not install the `pi` executable");
   });
 

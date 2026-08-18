@@ -41,11 +41,15 @@ Backend mapping:
 | One lane | One named Herdr pane | One titled tmux pane |
 | Launch/read | `herdr agent start`, then `agent read`/`pane read`; custom Pi wrappers use `pane run`/`pane read` | CLI launch with `tmux send-keys`, then `capture-pane` |
 | Prompt/wait | `herdr agent prompt` / `agent wait`; custom Pi wrappers use `pane send-text` + `pane send-keys enter` + `pane read` | `tmux send-keys` / `capture-pane` |
-| Stop/cleanup | `agent send-keys ctrl+c` or Pi pane `ctrl+c`/`ctrl+d`, then close pane/tab explicitly | `tmux send-keys C-c`, then kill pane/session explicitly |
+| Stop/cleanup | Revalidate the receipt-bound workspace/tab/pane/agent session, then send `ctrl+c` to that exact target and close only the verified job tab | `tmux send-keys C-c`, then kill pane/session explicitly |
 
 For Herdr, use the caller's `HERDR_WORKSPACE_ID` by default or parse an explicit direct-cli `--workspace ID` into `DIRECT_HERDR_WORKSPACE_ID`; do not guess a workspace from a label. Fail clearly if neither value exists. Create and focus the job tab before launching agents so the lane is genuinely pane-first and Herdr can observe readiness; do not hide a new job in an unseen background tab. Parse returned IDs from JSON and never predict pane IDs. Prefer `herdr agent start <name> --kind cursor|agy|codex|pi --pane <id> -- <args...>` when the canonical executable is on `PATH`, because it names the lane and waits for interactive readiness. Use `herdr pane run` plus `pane read` when a shell-shaped launch is required, including Agy's exact multiline `--prompt-interactive` path and Pi through a custom provider wrapper.
 
 Do not call `agent start` immediately after `tab create` or `pane split`. Herdr can return `agent_pane_busy` while the login shell is still running startup hooks. First submit a unique shell-ready marker with `pane run`, wait for its exact output, then poll `pane process-info` until the shell PID is the only foreground process. Close the new tab and report the blocker if readiness does not settle within the bounded wait.
+
+Treat the selected workspace ID plus every parsed job tab ID, pane ID, and available agent-session identity as the lane's cleanup receipt. Before interrupting or closing anything, re-read the target with `herdr pane get` and `herdr pane process-info`; require its `workspace_id` to equal the selected workspace, its `tab_id` to equal the created job tab, and its cwd/agent identity to match the lane you launched. A lane reported as unrelated or resolving to another Herdr workspace/space is a hard stop: leave it untouched and report it.
+
+Never use global `pgrep`, `pkill`, or executable-name PID searches as ownership evidence for Herdr cleanup. They can return Cursor, Agy, Codex, or Pi processes from another visible workspace. Stop an owned lane through its exact Herdr pane/agent target and close only its receipt-bound tab. Send a signal to a raw PID only as a last resort after `herdr pane process-info` on that exact owned pane proves the PID belongs to the receipt and normal Herdr interruption/close failed; revalidate identity immediately before the signal.
 
 Herdr agent names must be unique across the live session and match `[a-z][a-z0-9_-]{0,31}`. Derive a short job-specific name instead of reusing a global `codex-review` label across simultaneous jobs.
 
