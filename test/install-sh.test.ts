@@ -134,7 +134,7 @@ set -euo pipefail
 log_path="$MAHIRO_TEST_LOG"
 dest="${'$'}{@: -1}"
 printf 'git:%s\n' "$dest" >> "$log_path"
-mkdir -p "$dest/src" "$dest/skills" "$dest/commands" "$dest/commands-gemini"
+mkdir -p "$dest/src" "$dest/skills" "$dest/commands"
 printf '{"name":"mahiro-skills"}\n' > "$dest/package.json"
 printf '// fake cli\n' > "$dest/src/cli.ts"
 printf '# fake lock\n' > "$dest/bun.lock"
@@ -338,29 +338,4 @@ exit 1
     }
   });
 
-  test("installs gemini from a provided repo root into the gemini local root", () => {
-    const temp = makeTempEnv();
-
-    try {
-      const repoRoot = join(import.meta.dir, "..");
-      const installScript = join(repoRoot, "install.sh");
-
-      const result = Bun.spawnSync(["bash", installScript, "gemini", "--agent", "gemini", "--scope", "local"], {
-        cwd: repoRoot,
-        env: {
-          ...temp.env,
-          MAHIRO_SKILLS_REPO_ROOT: repoRoot,
-        },
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(decode(result.stdout)).toContain('"status": "installed"');
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json"))).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
 });

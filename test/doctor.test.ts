@@ -160,38 +160,6 @@ describe("doctor", () => {
     }
   });
 
-  test("reports receipt and installed paths after gemini install", () => {
-    const temp = makeTempEnv();
-    try {
-      install("gemini", "local", ["gemini"], false, temp.env);
-      const [result] = doctor("gemini", "local", temp.env);
-      expect(result.checks).toEqual([
-        {
-          label: "root-resolved",
-          ok: true,
-          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"),
-        },
-        {
-          label: "receipt-readable",
-          ok: true,
-          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json"),
-        },
-        {
-          label: "skill:gemini",
-          ok: true,
-          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini"),
-        },
-        {
-          label: "command:gemini",
-          ok: true,
-          detail: join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"),
-        },
-      ]);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
   test("reports the namespaced installed skill path after Agy install", () => {
     const temp = makeTempEnv();
     try {

@@ -6,10 +6,9 @@ const root = join(import.meta.dir, "..");
 const read = (...parts: string[]) => readFileSync(join(root, ...parts), "utf8");
 
 describe("fable skill", () => {
-  test("ships a bounded hard-task orchestrator and paired wrappers", () => {
+  test("ships a bounded hard-task orchestrator and command wrapper", () => {
     const skill = read("skills", "fable", "SKILL.md");
     const command = read("commands", "fable.md");
-    const gemini = read("commands-gemini", "mh-fable.toml");
 
     expect(skill).toContain("name: fable");
     expect(skill).toContain("same causal hypothesis or repair direction has been refuted twice");
@@ -22,7 +21,6 @@ describe("fable skill", () => {
     expect(skill).toContain("VERIFIED WITH CAVEATS");
     expect(skill).toContain("Cursor's `claude-fable-*` model belongs to `direct-cli`");
     expect(command).toContain('skill: "fable"');
-    expect(gemini).toContain('skill: \\"fable\\"');
   });
 
   test("keeps the real reload lesson behind a repo-neutral golden example", () => {

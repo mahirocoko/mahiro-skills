@@ -44,7 +44,6 @@ describe("sprite-workflow skill", () => {
     expect(existsSync(join(scriptsRoot, "score-candidates.py"))).toBe(true);
     expect(existsSync(join(scriptsRoot, "promote-named-artifact.py"))).toBe(true);
     expect(existsSync(join(repoRoot, "commands", "sprite-workflow.md"))).toBe(true);
-    expect(existsSync(join(repoRoot, "commands-gemini", "mh-sprite-workflow.toml"))).toBe(true);
     expect(readFileSync(join(skillRoot, "references", "runner-contracts.md"), "utf8")).toContain("source-ready-normalization-required");
     expect(readFileSync(join(skillRoot, "references", "subagent-prompts.md"), "utf8")).toContain("main orchestrator owns canonical extraction");
     expect(readFileSync(join(skillRoot, "references", "tournament-scoring.md"), "utf8")).toContain("Mechanical score is advisory only");

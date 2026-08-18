@@ -1,8 +1,0 @@
-description = "Repo-reality-first AGENTS.md and docs-family bootstrapper. Uses reference grammar for shape and layers Mahiro-style only as preferred direction or fallback when the target repo is silent, partial, or ambiguous."
-prompt = """
-Execute the `mahiro-docs-rules-init` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"mahiro-docs-rules-init\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mahiro-docs-rules-init/SKILL.md` for local installs or `~/.gemini/skills/mahiro-docs-rules-init/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

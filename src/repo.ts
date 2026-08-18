@@ -34,42 +34,6 @@ function readCommandNames(path: string): string[] {
     .sort();
 }
 
-function readGeminiCommandFileNames(path: string): string[] {
-  if (!existsSync(path)) {
-    return [];
-  }
-
-  return readdirSync(path, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".toml"))
-    .map((entry) => entry.name.replace(/\.toml$/, ""))
-    .sort();
-}
-
-function readGeminiCommandFiles(path: string, knownCommandNames: Set<string>): Map<string, string> {
-  const commandFiles = new Map<string, string>();
-  if (!existsSync(path)) {
-    return commandFiles;
-  }
-
-  for (const entry of readdirSync(path, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith(".toml")) {
-      continue;
-    }
-
-    const rawName = entry.name.replace(/\.toml$/, "");
-    const strippedName = rawName.replace(/^mh-/, "");
-    const normalizedName = knownCommandNames.has(rawName)
-      ? rawName
-      : knownCommandNames.has(strippedName)
-        ? strippedName
-        : strippedName;
-
-    commandFiles.set(normalizedName, join(path, entry.name));
-  }
-
-  return commandFiles;
-}
-
 function readBundles(repoRoot: string): RepoBundle[] {
   const manifestPath = join(repoRoot, ".claude-plugin", "marketplace.json");
   if (!existsSync(manifestPath)) {
@@ -95,16 +59,7 @@ export function getRepoInventory(repoRoot = getRepoRoot()): RepoInventory {
   const skills = readDirNames(join(repoRoot, "skills"));
   const markdownCommands = readCommandNames(join(repoRoot, "commands"));
   const bundles = readBundles(repoRoot);
-  const knownCommandNames = new Set([...skills, ...markdownCommands, ...bundles.flatMap((bundle) => bundle.commands)]);
-  const geminiCommands = readGeminiCommandFileNames(join(repoRoot, "commands-gemini")).map((name) => {
-    if (knownCommandNames.has(name)) {
-      return name;
-    }
-
-    const strippedName = name.replace(/^mh-/, "");
-    return knownCommandNames.has(strippedName) ? strippedName : name;
-  });
-  const commands = [...new Set([...markdownCommands, ...geminiCommands])].sort();
+  const commands = [...new Set(markdownCommands)].sort();
   const defaultBundle = bundles[0] ?? {
     name: "fallback-all",
     description: "Fallback bundle generated from repo contents",
@@ -151,12 +106,6 @@ function parseSkillFrontmatter(content: string): { name?: string; description?: 
 export function getSkillCatalog(repoRoot = getRepoRoot()): SkillCatalogEntry[] {
   const inventory = getRepoInventory(repoRoot);
   const markdownCommandNames = new Set(readCommandNames(join(repoRoot, "commands")));
-  const knownCommandNames = new Set([
-    ...inventory.skills,
-    ...markdownCommandNames,
-    ...inventory.bundles.flatMap((bundle) => bundle.commands),
-  ]);
-  const geminiCommandFiles = readGeminiCommandFiles(join(repoRoot, "commands-gemini"), knownCommandNames);
   const defaultBundleSkills = new Set(inventory.defaultBundle?.skills ?? []);
 
   return inventory.skills.map((skillName) => {
@@ -165,7 +114,6 @@ export function getSkillCatalog(repoRoot = getRepoRoot()): SkillCatalogEntry[] {
     const hasSkillFile = existsSync(skillFilePath);
     const frontmatter = hasSkillFile ? parseSkillFrontmatter(readFileSync(skillFilePath, "utf8")) : {};
     const markdownCommandPath = join(repoRoot, "commands", `${skillName}.md`);
-    const geminiCommandPath = geminiCommandFiles.get(skillName);
 
     return {
       name: skillName,
@@ -177,8 +125,6 @@ export function getSkillCatalog(repoRoot = getRepoRoot()): SkillCatalogEntry[] {
       hasSkillFile,
       hasMarkdownCommand: markdownCommandNames.has(skillName),
       markdownCommandPath: markdownCommandNames.has(skillName) ? markdownCommandPath : undefined,
-      hasGeminiCommand: geminiCommandPath !== undefined,
-      geminiCommandPath,
       inDefaultBundle: defaultBundleSkills.has(skillName),
     };
   });
@@ -190,13 +136,7 @@ export function getInventoryGaps(repoRoot = getRepoRoot()): InventoryGap[] {
   const gaps: InventoryGap[] = [];
   const skillNames = new Set(inventory.skills);
   const markdownCommandNames = new Set(readCommandNames(join(repoRoot, "commands")));
-  const knownCommandNames = new Set([
-    ...inventory.skills,
-    ...markdownCommandNames,
-    ...inventory.bundles.flatMap((bundle) => bundle.commands),
-  ]);
-  const geminiCommandNames = new Set(readGeminiCommandFiles(join(repoRoot, "commands-gemini"), knownCommandNames).keys());
-  const commandNames = new Set([...markdownCommandNames, ...geminiCommandNames]);
+  const commandNames = new Set(markdownCommandNames);
   const defaultBundleSkillNames = new Set(inventory.defaultBundle?.skills ?? []);
   const defaultBundleCommandNames = new Set(inventory.defaultBundle?.commands ?? []);
 
@@ -245,17 +185,6 @@ export function getInventoryGaps(repoRoot = getRepoRoot()): InventoryGap[] {
         severity: "warning",
         item: commandName,
         detail: `commands/${commandName}.md has no matching skill directory.`,
-      });
-    }
-  }
-
-  for (const commandName of geminiCommandNames) {
-    if (!skillNames.has(commandName)) {
-      gaps.push({
-        code: "gemini-command-without-skill",
-        severity: "warning",
-        item: commandName,
-        detail: `commands-gemini command '${commandName}' has no matching skill directory.`,
       });
     }
   }
@@ -335,7 +264,6 @@ function scoreCatalogEntry(entry: SkillCatalogEntry, query: string): SkillSearch
     score,
     matched,
     hasMarkdownCommand: entry.hasMarkdownCommand,
-    hasGeminiCommand: entry.hasGeminiCommand,
     inDefaultBundle: entry.inDefaultBundle,
   };
 }

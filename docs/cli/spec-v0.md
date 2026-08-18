@@ -30,7 +30,6 @@ The repo is the canonical package source.
 
 - `skills/<name>/...`
 - `commands/<name>.md`
-- `commands-gemini/mh-<name>.toml`
 - `.claude-plugin/marketplace.json`
 - `template/SKILL.md.template`
 
@@ -57,7 +56,7 @@ The CLI must not reinterpret internal skill files beyond path planning, collisio
 
 ## Terminology
 
-- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, or `pi`
+- **agent**: install target such as `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, or `pi`
 - **scope**: `global` or `local`
 - **adapter**: target-specific planner and installer for one agent
 - **bundle**: named install group defined by manifest or default repo bundle
@@ -73,15 +72,14 @@ Currently implemented runtime targets are:
 1. `opencode`
 2. `claude-code`
 3. `cursor`
-4. `gemini`
-5. `agy`
-6. `codex`
-7. `letta-code`
-8. `pi`
+4. `agy`
+5. `codex`
+6. `letta-code`
+7. `pi`
 
-For the current Cursor and Gemini rollout history plus the remaining follow-on planning, see:
+For the current adapter matrix and remaining follow-on planning, see:
 
-- [`cursor-gemini-compatibility-matrix-v0.md`](./cursor-gemini-compatibility-matrix-v0.md)
+- [`adapter-compatibility-matrix-v0.md`](./adapter-compatibility-matrix-v0.md)
 - [`adapter-implementation-plan-v0.md`](./adapter-implementation-plan-v0.md)
 
 ## Capability matrix
@@ -91,13 +89,12 @@ For the current Cursor and Gemini rollout history plus the remaining follow-on p
 | opencode | Yes | Yes | Partial | Yes | Yes |
 | claude-code | Yes | Yes | Yes | Yes | Yes |
 | cursor | Yes | Yes | Yes | Yes | Yes |
-| gemini | Yes | Yes | Partial | Partial | Yes |
 | agy | Yes | No | Partial | Partial | Yes |
 | codex | Yes | Partial | Yes | Yes | Yes |
 | letta-code | Yes | No | Partial | Partial | Yes |
 | pi | Yes | No | Partial | No | Yes |
 
-The Agy adapter manages namespaced skill aliases and receipts; Gemini TOML commands remain owned by the distinct `gemini` adapter. The Pi adapter manages only skill files and receipts. Installing either adapter does not install its executable or provider configuration.
+The Agy adapter manages only namespaced `/mh-*` skill aliases and receipts. The Pi adapter manages only skill files and receipts. Installing either adapter does not install its executable or provider configuration.
 
 Interpretation rules:
 
@@ -114,7 +111,6 @@ Interpretation rules:
 | opencode | `~/.config/opencode` | `.opencode` |
 | claude-code | `~/.claude` | `.claude` |
 | cursor | `~/.cursor` | `.cursor` |
-| gemini | `~/.gemini` | `.gemini` |
 | agy | `~/.gemini/config` | `.agents` |
 | codex | `~/.codex` | `.codex` |
 | letta-code | `~/.letta` | `.agents` |
@@ -151,7 +147,7 @@ The CLI also exposes read-only source-catalog commands for agents and authoring 
 - `new <skill-name> --copy-template` copies the starter `template/` tree into `skills/<skill-name>/`, materializes `SKILL.md.template` as `SKILL.md`, rewrites minimal frontmatter/title placeholders, refuses collisions, and returns manual next steps for marketplace, command wrappers, `skills/llms.txt`, README, and tests. The source template intentionally does not use the canonical `SKILL.md` filename so third-party Agent Skills discovery cannot expose the authoring scaffold.
 - `audit` reads local Letta JSONL transcripts without modifying them. It counts only explicit `Skill` tool calls, compares observed names against this repo's current source catalog, and returns counts/timestamps/conversation totals plus parse warnings. Names outside the catalog may be built-in, separately installed, or retired; the audit does not classify them further. It never infers calls from prose or returns transcript text. By default it reads `~/.letta/lc-local-backend`; `--data-dir` overrides that root for another local backend or fixture.
 
-Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `commands/`, `commands-gemini/`, `.claude-plugin/marketplace.json`, `template/`) only. `audit` reads local transcript evidence only; none of these commands modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
+Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `commands/`, `.claude-plugin/marketplace.json`, `template/`) only. `audit` reads local transcript evidence only; none of these commands modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
 
 ### Guided / TUI command behavior
 
@@ -311,20 +307,14 @@ Rules:
 - Prefer repo-local rules/instructions fallback if a full command surface is not preserved
 - Commands may be skipped with a warning if unsupported by the chosen install mode
 
-### Gemini
-
-- Install packaged skills into `<root>/skills/`
-- Install packaged Gemini commands from `commands-gemini/mh-*.toml` into namespaced `<root>/commands/mh-*.toml` targets
-- Preserve `skills/gemini/extension/` as an opaque copied subtree when the `gemini` skill is installed
-- Do not describe extension loading or settings setup as full adapter support in v0
-
 ### Agy
 
-- Treat Antigravity CLI as a distinct adapter even though it shares the broader `~/.gemini` namespace with Gemini CLI
+- Treat Antigravity CLI as the sole Google CLI-family install adapter
 - Install complete skill trees under `<root>/skills/mh-<name>/`, where the root resolves to `.agents` locally and `~/.gemini/config` globally
 - Rewrite only staged alias frontmatter: `name: mh-<name>`, `disable-model-invocation: true`, and no `disable-slash-command` field
-- Do not copy `commands-gemini/*.toml`; Agy 1.1.13 does not discover Gemini CLI TOML command artifacts
+- Do not install an unprefixed skill copy or any command-wrapper artifact
 - Keep receipt item names canonical so update, doctor, list, skill-manager, and uninstall operations resolve the adapter-specific namespaced target deterministically
+- If a v2 receipt from the retired Gemini CLI adapter exists, remove only unchanged receipt-managed canonical skills and TOML commands; preserve modified, invalid, and unrelated targets with warnings
 
 ### Codex
 
@@ -379,10 +369,10 @@ mahiro-skills install --agent opencode --scope global
 mahiro-skills install project recap rrr --agent claude-code --scope local
 ```
 
-### Dry-run for Gemini
+### Dry-run for Agy
 
 ```text
-mahiro-skills plan gemini watch --agent gemini --scope local
+mahiro-skills plan gemini watch --agent agy --scope local
 ```
 
 ## Deferred after v0

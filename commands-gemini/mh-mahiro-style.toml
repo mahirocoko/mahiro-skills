@@ -1,8 +1,0 @@
-description = "Mahiro's code, review, and implementation doctrine. Use as a fallback lens for naming, structure, i18n, boundaries, state, services, UI restraint, and review heuristics when repo-local reality is silent, partial, or drifting."
-prompt = """
-Execute the `mahiro-style` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"mahiro-style\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/mahiro-style/SKILL.md` for local installs or `~/.gemini/skills/mahiro-style/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

@@ -46,37 +46,32 @@ describe("repo inventory", () => {
     for (const name of removed) {
       expect(existsSync(join(repoRoot, "skills", name))).toBe(false);
       expect(existsSync(join(repoRoot, "commands", `${name}.md`))).toBe(false);
-      expect(existsSync(join(repoRoot, "commands-gemini", `mh-${name}.toml`))).toBe(false);
       expect(manifest.commands).not.toContain(name);
     }
   });
 
-  test("includes normalized Gemini command names from namespaced toml files", () => {
+  test("builds command inventory only from canonical markdown wrappers", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-repo-"));
 
     mkdirSync(join(repoRoot, "skills", "project"), { recursive: true });
     mkdirSync(join(repoRoot, "skills", "watch"), { recursive: true });
     mkdirSync(join(repoRoot, "skills", "mahiro-style"), { recursive: true });
     mkdirSync(join(repoRoot, "commands"), { recursive: true });
-    mkdirSync(join(repoRoot, "commands-gemini"), { recursive: true });
 
     writeFileSync(join(repoRoot, "commands", "project.md"), "# project\n");
-    writeFileSync(join(repoRoot, "commands-gemini", "mh-watch.toml"), 'description = "watch"\n');
-    writeFileSync(join(repoRoot, "commands-gemini", "mh-mahiro-style.toml"), 'description = "style"\n');
+    writeFileSync(join(repoRoot, "commands", "watch.md"), "# watch\n");
 
     const inventory = getRepoInventory(repoRoot);
 
-    expect(inventory.commands).toEqual(["mahiro-style", "project", "watch"]);
+    expect(inventory.commands).toEqual(["project", "watch"]);
   });
 
-  test("builds a skill manifest from skills, commands, gemini commands, and bundle membership", () => {
+  test("builds a skill manifest from skills, commands, and bundle membership", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-repo-"));
 
     writeSkill(repoRoot, "project", "Track and manage repos");
     mkdirSync(join(repoRoot, "commands"), { recursive: true });
-    mkdirSync(join(repoRoot, "commands-gemini"), { recursive: true });
     writeFileSync(join(repoRoot, "commands", "project.md"), "# project\n");
-    writeFileSync(join(repoRoot, "commands-gemini", "mh-project.toml"), 'description = "project"\n');
     writeMarketplace(repoRoot, ["project"]);
 
     const manifest = getRepoManifest(repoRoot);
@@ -89,7 +84,6 @@ describe("repo inventory", () => {
       frontmatterName: "project",
       hasSkillFile: true,
       hasMarkdownCommand: true,
-      hasGeminiCommand: true,
       inDefaultBundle: true,
     });
     expect(manifest.gaps).toEqual([]);
@@ -101,16 +95,13 @@ describe("repo inventory", () => {
     mkdirSync(join(repoRoot, "skills", "broken"), { recursive: true });
     writeSkill(repoRoot, "present");
     mkdirSync(join(repoRoot, "commands"), { recursive: true });
-    mkdirSync(join(repoRoot, "commands-gemini"), { recursive: true });
     writeFileSync(join(repoRoot, "commands", "ghost.md"), "# ghost\n");
-    writeFileSync(join(repoRoot, "commands-gemini", "mh-phantom.toml"), 'description = "phantom"\n');
     writeMarketplace(repoRoot, ["missing"], ["missing-command"]);
 
     const gapCodes = getInventoryGaps(repoRoot).map((gap) => gap.code);
 
     expect(gapCodes).toContain("missing-skill-file");
     expect(gapCodes).toContain("command-without-skill");
-    expect(gapCodes).toContain("gemini-command-without-skill");
     expect(gapCodes).toContain("bundle-skill-missing");
     expect(gapCodes).toContain("bundle-command-missing");
     expect(gapCodes).toContain("skill-missing-default-bundle");
@@ -122,7 +113,6 @@ describe("repo inventory", () => {
     writeSkill(repoRoot, "project", "Track and manage external repositories");
     writeSkill(repoRoot, "recap", "Create session orientation summaries");
     mkdirSync(join(repoRoot, "commands"), { recursive: true });
-    mkdirSync(join(repoRoot, "commands-gemini"), { recursive: true });
     writeMarketplace(repoRoot, ["project", "recap"], ["project", "recap"]);
 
     const result = searchSkillCatalog("repo", repoRoot);

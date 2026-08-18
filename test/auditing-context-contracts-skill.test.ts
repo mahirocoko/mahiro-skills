@@ -16,10 +16,9 @@ function decode(value: Uint8Array): string {
 }
 
 describe("auditing-context-contracts skill", () => {
-  test("ships the bounded audit contract and paired adapter wrappers", () => {
+  test("ships the bounded audit contract and command wrapper", () => {
     const skill = read("skills", "auditing-context-contracts", "SKILL.md");
     const command = read("commands", "auditing-context-contracts.md");
-    const gemini = read("commands-gemini", "mh-auditing-context-contracts.toml");
 
     expect(skill).toContain("name: auditing-context-contracts");
     expect(skill).toContain("## Trigger gate");
@@ -39,7 +38,6 @@ describe("auditing-context-contracts skill", () => {
     expect(skill).toContain("## Validation / self-check");
     expect(existsSync(script)).toBe(true);
     expect(command).toContain('skill: "auditing-context-contracts"');
-    expect(gemini).toContain('skill: \\"auditing-context-contracts\\"');
   });
 
   test("is discoverable in the complete default bundle", () => {

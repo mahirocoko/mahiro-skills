@@ -43,12 +43,12 @@ describe("cli", () => {
     const temp = makeTempEnv();
 
     try {
-      const result = runCli(["plan", "project", "--agent", "cursor", "--agent", "gemini", "--scope", "local"], temp.env);
+      const result = runCli(["plan", "project", "--agent", "cursor", "--agent", "agy", "--scope", "local"], temp.env);
 
       expect(result.exitCode).toBe(0);
       const payload = parseJson(result.stdout) as Array<{ agent: string; requested: string[] }>;
       expect(Array.isArray(payload)).toBe(true);
-      expect(payload.map((entry) => entry.agent)).toEqual(["cursor", "gemini"]);
+      expect(payload.map((entry) => entry.agent)).toEqual(["cursor", "agy"]);
       expect(payload.every((entry) => entry.requested.includes("project"))).toBe(true);
     } finally {
       temp.cleanup();
@@ -59,15 +59,15 @@ describe("cli", () => {
     const temp = makeTempEnv();
 
     try {
-      const installResult = runCli(["install", "project", "--agent", "cursor,gemini", "--scope", "local"], temp.env);
+      const installResult = runCli(["install", "project", "--agent", "cursor,agy", "--scope", "local"], temp.env);
       expect(installResult.exitCode).toBe(0);
 
-      const listResult = runCli(["list", "--agent", "cursor,gemini", "--scope", "local"], temp.env);
+      const listResult = runCli(["list", "--agent", "cursor,agy", "--scope", "local"], temp.env);
       expect(listResult.exitCode).toBe(0);
 
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[] }>;
       expect(Array.isArray(payload)).toBe(true);
-      expect(payload.map((entry) => entry.agent)).toEqual(["cursor", "gemini"]);
+      expect(payload.map((entry) => entry.agent)).toEqual(["cursor", "agy"]);
       expect(payload.every((entry) => entry.installedSkills.includes("project"))).toBe(true);
     } finally {
       temp.cleanup();
@@ -86,7 +86,7 @@ describe("cli", () => {
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
-      expect(payload.length).toBe(8);
+      expect(payload.length).toBe(7);
       expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
@@ -112,21 +112,33 @@ describe("cli", () => {
     const temp = makeTempEnv();
 
     try {
-      const installResult = runCli(["install", "project", "--agent", "cursor,gemini,agy,letta-code,pi", "--scope", "local"], temp.env);
+      const installResult = runCli(["install", "project", "--agent", "cursor,agy,letta-code,pi", "--scope", "local"], temp.env);
       expect(installResult.exitCode).toBe(0);
 
       const uninstallResult = runCli(["uninstall", "project", "--agent", "all", "--scope", "local"], temp.env);
       expect(uninstallResult.exitCode).toBe(0);
 
       const payload = parseJson(uninstallResult.stdout) as Array<{ agent: string; status: string; uninstalled: string[] }>;
-      expect(payload).toHaveLength(8);
-      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "gemini", "agy", "codex", "letta-code", "pi"]);
+      expect(payload).toHaveLength(7);
+      expect(payload.map((entry) => entry.agent)).toEqual(["opencode", "claude-code", "cursor", "agy", "codex", "letta-code", "pi"]);
       expect(payload.find((entry) => entry.agent === "cursor")?.uninstalled).toEqual(["project"]);
-      expect(payload.find((entry) => entry.agent === "gemini")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "agy")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "letta-code")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "pi")?.uninstalled).toEqual(["project"]);
       expect(payload.find((entry) => entry.agent === "opencode")?.status).toBe("skipped");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("rejects the retired Gemini CLI adapter", () => {
+    const temp = makeTempEnv();
+
+    try {
+      const result = runCli(["plan", "project", "--agent", "gemini", "--scope", "local"], temp.env);
+
+      expect(result.exitCode).toBe(1);
+      expect(new TextDecoder().decode(result.stderr)).toContain("Unsupported agent 'gemini'.");
     } finally {
       temp.cleanup();
     }

@@ -9,9 +9,8 @@ Keep it short in practice: update the repo-first source files, keep version and 
 `mahiro-skills` packages directly from the repo tree.
 
 - `skills/<name>/...` is the canonical source for packaged skill behavior.
-- `commands/<name>.md` is the canonical source for non-Gemini slash-command wrappers.
-- `commands-gemini/mh-<name>.toml` is the canonical source for native Gemini custom commands.
-- Agy does not consume `commands-gemini/`. Its adapter copies canonical skill trees into namespaced `mh-<name>` targets and rewrites only staged installed frontmatter; never claim Agy slash support from TOML-file presence.
+- `commands/<name>.md` is the canonical source for adapters that copy command wrappers.
+- Agy copies canonical skill trees into namespaced `mh-<name>` targets and rewrites only staged installed frontmatter. It does not consume or generate a separate command-wrapper artifact.
 - `.claude-plugin/marketplace.json` is the bundle manifest used for default bundle discovery.
 - `template/SKILL.md.template` is an authoring scaffold, not an installable item. Keep the non-canonical suffix so external Agent Skills discovery does not expose it; `new --copy-template` materializes it as `SKILL.md` in the new skill directory.
 
@@ -36,13 +35,13 @@ When you add, rename, or remove packaged assets, update the inventory surfaces i
 ### If you change a skill
 
 - Update `skills/<name>/...`
-- Add or remove the matching command source in `commands/` or `commands-gemini/` if that skill should ship with an agent command entrypoint
+- Add or remove the matching command source in `commands/` if that skill should ship with a command-wrapper artifact
 - Update `.claude-plugin/marketplace.json` if bundle membership changed
 - Update `README.md` lists if the public inventory changed
 
 ### If you change a command source only
 
-- Update `commands/<name>.md` for non-Gemini wrappers or `commands-gemini/mh-<name>.toml` for Gemini native commands
+- Update `commands/<name>.md`
 - Confirm the command is still represented correctly in `.claude-plugin/marketplace.json` when bundle output should include it
 - Update `README.md` if the included command set changed
 
@@ -75,8 +74,8 @@ Use the same rule in skill docs, templates, and examples so the convention stays
 
 - `MAHIRO_SKILLS_REPO_ROOT` selects the checkout used as the package source
 - `MAHIRO_SKILLS_CWD` lets tests and root-resolving commands override cwd safely
-- local adapter roots resolve from `MAHIRO_SKILLS_CWD` or `process.cwd()`, into project-local directories like `.opencode`, `.claude`, `.cursor`, `.gemini`, `.agents` for Agy, and `.pi`
-- Agy global installs resolve to `${MAHIRO_SKILLS_HOME:-$HOME}/.gemini/config` and target `skills/mh-<name>/`; Gemini CLI global installs remain rooted at `${MAHIRO_SKILLS_HOME:-$HOME}/.gemini`
+- local adapter roots resolve from `MAHIRO_SKILLS_CWD` or `process.cwd()`, into project-local directories like `.opencode`, `.claude`, `.cursor`, `.agents` for Agy, and `.pi`
+- Agy global installs resolve to `${MAHIRO_SKILLS_HOME:-$HOME}/.gemini/config` and target only `skills/mh-<name>/`
 - Pi global roots honor `PI_CODING_AGENT_DIR` exactly (with `~` expanded against the installer home) before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; do not append another `.pi/agent` segment to an explicit override
 
 If you change path behavior, check `install.sh`, `src/repo.ts`, `src/adapters.ts`, `src/plan.ts`, and the related tests together.

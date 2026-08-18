@@ -69,26 +69,6 @@ describe("list", () => {
     }
   });
 
-  test("returns full receipt after gemini install", () => {
-    const temp = makeTempEnv();
-    try {
-      install("gemini", "local", ["gemini"], false, temp.env);
-
-      const receipt = listInstalled("gemini", "local", temp.env);
-
-      expect(receipt).not.toBeNull();
-      expect(receipt?.agent).toBe("gemini");
-      expect(receipt?.scope).toBe("local");
-      expect(receipt?.root).toBe(`${temp.env.MAHIRO_SKILLS_CWD}/.gemini`);
-      expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
-      expect(receipt?.installedSkills).toEqual(["gemini"]);
-      expect(receipt?.installedCommands).toEqual(["gemini"]);
-      expect(receipt?.installedAt.length).toBeGreaterThan(0);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
   test("returns the canonical receipt after Agy namespaced install", () => {
     const temp = makeTempEnv();
     try {
@@ -174,7 +154,7 @@ describe("list", () => {
     const temp = makeTempEnv();
     try {
       install("cursor", "local", ["project"], false, temp.env);
-      install("gemini", "global", ["gemini"], false, temp.env);
+      install("agy", "global", ["gemini"], false, temp.env);
       install("codex", "local", ["recap"], false, temp.env);
       install("letta-code", "global", ["project"], false, temp.env);
       install("pi", "local", ["mahiro-style"], false, temp.env);
@@ -188,10 +168,10 @@ describe("list", () => {
           installed: ["project"],
         },
         {
-          agent: "gemini",
+          agent: "agy",
           scope: "global",
           installedSkills: ["gemini"],
-          installedCommands: ["gemini"],
+          installedCommands: [],
           installed: ["gemini"],
         },
         {

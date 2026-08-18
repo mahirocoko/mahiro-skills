@@ -35,22 +35,21 @@ describe("uninstall", () => {
     }
   });
 
-  test("removes all receipt-recorded items and deletes empty receipt", () => {
+  test("removes all Agy receipt-recorded aliases and deletes empty receipt", () => {
     const temp = makeTempEnv();
 
     try {
-      install("gemini", "local", ["gemini"], false, temp.env);
-      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json");
+      install("agy", "local", ["gemini"], false, temp.env);
+      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", ".mahiro-skills", "receipts", "local-agy.json");
 
-      const result = uninstall("gemini", "local", [], temp.env);
+      const result = uninstall("agy", "local", [], temp.env);
 
       expect(result.status).toBe("uninstalled");
       expect(result.uninstalled).toEqual(["gemini"]);
       expect(result.receiptRemoved).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini"))).toBe(false);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"))).toBe(false);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-gemini"))).toBe(false);
       expect(existsSync(receiptPath)).toBe(false);
-      expect(listInstalled("gemini", "local", temp.env)).toBeNull();
+      expect(listInstalled("agy", "local", temp.env)).toBeNull();
     } finally {
       temp.cleanup();
     }

@@ -3,6 +3,7 @@ import { join } from "path";
 
 import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact, supportsCommands } from "./adapters";
 import { getRepoInventory } from "./repo";
+import { hasRetiredGeminiReceipt, retiredGeminiReceiptPath } from "./retired-gemini";
 import type { InstallPlan, InstallScope, InstallTarget, RepoInventory, ScopedAgent, SkippedItem } from "./types";
 
 function makeTarget(root: string, name: string, kind: "skill" | "command", sourceRoot: string, agent: ScopedAgent): InstallTarget {
@@ -38,7 +39,7 @@ function adaptDescriptionForAgent(description: string | undefined, agent: Scoped
 
   const skillsDescription = description.replace(" plus agent-native command entrypoints", "").replace(/\.$/, "");
   if (agent === "agy") {
-    return `${skillsDescription}; 'agy' installs namespaced /mh-* Agent Skill aliases and does not copy Gemini TOML or markdown command wrappers.`;
+    return `${skillsDescription}; 'agy' installs only namespaced /mh-* Agent Skill aliases and does not copy command wrappers.`;
   }
 
   return `${skillsDescription}; '${agent}' installs Agent Skills only and does not copy command wrappers.`;
@@ -126,6 +127,12 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
   const inventory = getRepoInventory(env.MAHIRO_SKILLS_REPO_ROOT);
   const root = resolveRoot(agent, scope, env);
   const resolved = resolveRequestedItems(inventory, items, agent);
+
+  if (agent === "agy" && hasRetiredGeminiReceipt(scope, env)) {
+    resolved.warnings.push(
+      `Retired Gemini CLI receipt detected at '${retiredGeminiReceiptPath(scope, env)}'; install removes only unchanged receipt-managed canonical targets so Agy exposes the /mh-* aliases.`,
+    );
+  }
 
   const skills = resolved.skills.map((name) => makeTarget(root, name, "skill", inventory.repoRoot, agent));
   const commands = resolved.commands.map((name) => makeTarget(root, name, "command", inventory.repoRoot, agent));

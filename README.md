@@ -1,6 +1,6 @@
 # mahiro-skills
 
-Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini CLI, Antigravity CLI (Agy), Codex, Letta Code, and Pi, plus target-native command entrypoints where supported.
+Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Antigravity CLI (Agy), Codex, Letta Code, and Pi, plus target-native command entrypoints where supported.
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
@@ -62,7 +62,7 @@ npx skills add mahirocoko/mahiro-skills
 npx skills add mahirocoko/mahiro-skills --skill recap
 ```
 
-This compatibility path installs each selected `SKILL.md` and its supporting files. It does not install this repo's adapter-specific slash-command wrappers, Gemini TOML commands, receipts, status-aware updates, doctor checks, or managed uninstall flow. Use the Bun CLI or tagged installer above when you need those full integrations.
+This compatibility path installs each selected `SKILL.md` and its supporting files. It does not install this repo's adapter-specific slash-command wrappers, receipts, status-aware updates, doctor checks, or managed uninstall flow. Use the Bun CLI or tagged installer above when you need those full integrations.
 
 For a project-local Letta Code-compatible copy under `.agents/skills/` without interactive prompts:
 
@@ -92,15 +92,15 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 - Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.
 - Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; local Pi installs always target the selected project's `.pi` root.
 - The Pi adapter installs skills only. It does not install the `pi` executable, create a PATH launcher, or configure a provider; direct Pi use requires a separately working `pi` command or explicit wrapper.
-- The `gemini` adapter targets Gemini CLI and installs native `commands-gemini/mh-*.toml` commands. The separate `agy` adapter targets Antigravity CLI, which does not discover those TOML commands; it installs self-contained namespaced skills as `/mh-*` under `~/.gemini/config/skills/` globally or `.agents/skills/` locally.
+- The `agy` adapter is the only Google CLI-family install target. It installs self-contained namespaced skills as `/mh-*` under `~/.gemini/config/skills/` globally or `.agents/skills/` locally and never installs an unprefixed skill copy.
+- When an Agy install finds a v2 receipt from the retired Gemini CLI adapter, it removes only unchanged receipt-managed canonical skills and TOML commands. Modified or invalid targets are preserved with a warning; unrelated `~/.gemini/skills` content is never touched.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
-- Installed Gemini TOML command descriptions are also prefixed at install time, while source TOML in the repo stays unchanged.
 
 ## Use
 
 Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.
 
-Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi`.
+Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi`.
 
 Current workflow highlights:
 
@@ -124,7 +124,7 @@ bun ./src/cli.ts plan --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope local
 
 # Install selected skills for multiple agents
-bun ./src/cli.ts install project --agent cursor,gemini,agy,letta-code,pi --scope local
+bun ./src/cli.ts install project --agent cursor,agy,letta-code,pi --scope local
 
 # Uninstall selected skills from one agent, or from all agents in a scope
 bun ./src/cli.ts uninstall project --agent cursor --scope local
@@ -162,7 +162,7 @@ More detail lives in:
 
 - CLI spec v0: [`docs/cli/spec-v0.md`](./docs/cli/spec-v0.md)
 - CLI test matrix v0: [`docs/cli/test-matrix-v0.md`](./docs/cli/test-matrix-v0.md)
-- Cursor/Gemini/Agy compatibility matrix: [`docs/cli/cursor-gemini-compatibility-matrix-v0.md`](./docs/cli/cursor-gemini-compatibility-matrix-v0.md)
+- Adapter compatibility matrix: [`docs/cli/adapter-compatibility-matrix-v0.md`](./docs/cli/adapter-compatibility-matrix-v0.md)
 - Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)
 
 ## Skills
@@ -210,7 +210,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
 | Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, and sprite handoff/QA |
 | Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, performance/device QA, and release gates |
-| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,gemini,agy,letta-code,pi --scope local` | Install one skill across adapters |
+| Multi-agent install | `bun ./src/cli.ts install project --agent cursor,agy,letta-code,pi --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites
 
@@ -218,7 +218,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
 | `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached jobs are Herdr-only, support same-conversation wake-and-collect through a runtime background monitor, and persist watcher/results for durable `list`/`show`/`collect` fallback; the shell watcher itself does not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
-| `gemini`, `watch` | Gemini CLI/runtime setup; some flows use browser/MQTT extension support |
+| `gemini`, `watch` | Gemini web/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
 | `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |
@@ -229,7 +229,6 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 - `skills/<name>/...` — packaged skills and helper resources
 - `skills/llms.txt` — compact skill discovery index for agents and humans
 - `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
-- `commands-gemini/mh-<name>.toml` — native Gemini custom commands
 - Agy local installs copy transformed, self-contained skills to `.agents/skills/mh-<name>/`; global installs use `~/.gemini/config/skills/mh-<name>/`. The installed frontmatter name is `mh-<name>`, model invocation is disabled on the alias, and any source `disable-slash-command` flag is removed so Agy registers `/mh-<name>`.
 - Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`
 - Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`. Pi discovers the skill and exposes `/skill:<name>` without a copied command wrapper.
@@ -266,7 +265,6 @@ Packaging facts to preserve:
 
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` are compatibility wrappers for non-Gemini slash-command entrypoints.
-- `commands-gemini/` is the native Gemini custom-command source, installed as namespaced `.toml` files like `mh-watch.toml` under `.gemini/commands/` or `~/.gemini/commands/`.
-- CLI v0 targets `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts: Agy registers namespaced skill aliases as `/mh-<name>`, while Pi creates `/skill:<name>` from discovered Agent Skills.
+- CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts: Agy registers only namespaced skill aliases as `/mh-<name>`, while Pi creates `/skill:<name>` from discovered Agent Skills.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 - Prefer the source files in this repository and tagged releases over installed copies. Installed copies are useful evidence when debugging drift, but they are not the canonical authoring surface.

@@ -23,7 +23,7 @@ describe("step-first skill manager renderer", () => {
       const frame = renderSkillManagerFrame({
         step: "skills",
         target: {
-          agents: ["opencode", "claude-code", "cursor", "gemini", "agy", "codex", "letta-code", "pi"],
+          agents: ["opencode", "claude-code", "cursor", "agy", "codex", "letta-code", "pi"],
           mode: "custom",
           selectedAgents: ["opencode", "cursor"],
           scope: "local",

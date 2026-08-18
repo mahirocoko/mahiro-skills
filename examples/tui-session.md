@@ -24,7 +24,7 @@ Target → Action → Skills → Review → Result
 
 ### Target
 
-The first row is **All agents** and is exclusive. Selecting an individual changes the selection to Custom; Custom can contain one or more of `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi`. Scope defaults to `global`; choose `local` explicitly when the batch should target the current project.
+The first row is **All agents** and is exclusive. Selecting an individual changes the selection to Custom; Custom can contain one or more of `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi`. Scope defaults to `global`; choose `local` explicitly when the batch should target the current project.
 
 ```text
 ↑/↓     focus an agent or scope radio

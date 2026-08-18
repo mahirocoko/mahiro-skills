@@ -3,7 +3,7 @@
 ## Source of Truth
 
 - `skills/<name>/...` is the canonical source for packaged skill behavior.
-- `commands/<name>.md` and `commands-gemini/mh-<name>.toml` are command sources.
+- `commands/<name>.md` is the command-wrapper source. Agy does not copy wrappers; it derives `/mh-<name>` from transformed Agent Skill frontmatter.
 - `.claude-plugin/marketplace.json` defines default bundle membership.
 - Installed copies are debugging evidence only. Do not edit or cite them as canonical authoring sources when the repo source exists.
 - `.agent-state/` is local session and memory output. Do not treat it as packaged skill source unless the human explicitly asks.

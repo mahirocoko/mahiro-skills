@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, mkdirSync, statSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
+import { hashPath } from "../src/content-hash";
 import { install } from "../src/install";
 import { makeTempEnv } from "./helpers";
 
@@ -152,52 +153,6 @@ describe("install", () => {
     }
   });
 
-  test("installs gemini under the gemini root and preserves extension subtree", () => {
-    const temp = makeTempEnv();
-    try {
-      const result = install("gemini", "local", ["gemini"], false, temp.env);
-      const receiptPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", ".mahiro-skills", "receipts", "local-gemini.json");
-      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
-        agent: string;
-        scope: string;
-        root: string;
-        installedSkills: string[];
-        installedCommands: string[];
-      };
-
-      expect(result.status).toBe("installed");
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "SKILL.md"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "gemini", "extension", "manifest.json"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "gemini.md"))).toBe(false);
-      expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-gemini.toml"), "utf8")).toContain(
-        'description = "Mahiro Skill | Control Gemini via MQTT WebSocket. Use when Gemini tab automation or message sending is needed."',
-      );
-      expect(existsSync(receiptPath)).toBe(true);
-      expect(receipt.agent).toBe("gemini");
-      expect(receipt.scope).toBe("local");
-      expect(receipt.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
-      expect(receipt.installedSkills).toEqual(["gemini"]);
-      expect(receipt.installedCommands).toEqual(["gemini"]);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("installs Gemini learn behind the namespaced command without shadowing Agy built-in learn", () => {
-    const temp = makeTempEnv();
-    try {
-      install("gemini", "local", ["learn"], false, temp.env);
-      const installedSkill = readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "learn", "SKILL.md"), "utf8");
-
-      expect(installedSkill).toContain("disable-slash-command: true");
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-learn.toml"))).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "learn.toml"))).toBe(false);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
   test("installs Agy skills as self-contained namespaced slash aliases", () => {
     const temp = makeTempEnv();
     try {
@@ -229,6 +184,119 @@ describe("install", () => {
       expect(receipt.agent).toBe("agy");
       expect(receipt.installedSkills).toEqual(["learn", "direct-cli"]);
       expect(receipt.installedCommands).toEqual([]);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("removes only unchanged receipt-managed targets from the retired Gemini adapter during Agy install", () => {
+    const temp = makeTempEnv();
+    try {
+      const legacyRoot = join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini");
+      const skillTarget = join(legacyRoot, "skills", "learn");
+      const commandTarget = join(legacyRoot, "commands", "mh-learn.toml");
+      const unrelatedTarget = join(legacyRoot, "skills", "cloudflare");
+      const legacyReceiptPath = join(legacyRoot, ".mahiro-skills", "receipts", "global-gemini.json");
+      mkdirSync(skillTarget, { recursive: true });
+      mkdirSync(unrelatedTarget, { recursive: true });
+      mkdirSync(dirname(commandTarget), { recursive: true });
+      mkdirSync(dirname(legacyReceiptPath), { recursive: true });
+      writeFileSync(join(skillTarget, "SKILL.md"), "legacy learn\n");
+      writeFileSync(commandTarget, "legacy command\n");
+      writeFileSync(join(unrelatedTarget, "SKILL.md"), "unrelated\n");
+      writeFileSync(legacyReceiptPath, JSON.stringify({
+        schemaVersion: 2,
+        agent: "gemini",
+        scope: "global",
+        root: legacyRoot,
+        installedSkills: ["learn"],
+        installedCommands: ["learn"],
+        targetStates: [
+          {
+            name: "learn",
+            kind: "skill",
+            sourceHash: "0".repeat(64),
+            installedHash: hashPath(skillTarget),
+          },
+          {
+            name: "learn",
+            kind: "command",
+            sourceHash: "0".repeat(64),
+            installedHash: hashPath(commandTarget),
+          },
+        ],
+      }));
+
+      const result = install("agy", "global", ["learn"], false, temp.env);
+
+      expect(existsSync(skillTarget)).toBe(false);
+      expect(existsSync(commandTarget)).toBe(false);
+      expect(existsSync(unrelatedTarget)).toBe(true);
+      expect(existsSync(legacyReceiptPath)).toBe(false);
+      expect(existsSync(join(legacyRoot, "config", "skills", "mh-learn", "SKILL.md"))).toBe(true);
+      expect(result.warnings.some((warning) => warning.includes("Removed 2 unchanged receipt-managed target(s)"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("preserves modified retired Gemini targets during Agy install", () => {
+    const temp = makeTempEnv();
+    try {
+      const legacyRoot = join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini");
+      const skillTarget = join(legacyRoot, "skills", "learn");
+      const legacyReceiptPath = join(legacyRoot, ".mahiro-skills", "receipts", "global-gemini.json");
+      mkdirSync(skillTarget, { recursive: true });
+      mkdirSync(dirname(legacyReceiptPath), { recursive: true });
+      writeFileSync(join(skillTarget, "SKILL.md"), "modified learn\n");
+      writeFileSync(legacyReceiptPath, JSON.stringify({
+        schemaVersion: 2,
+        agent: "gemini",
+        scope: "global",
+        root: legacyRoot,
+        installedSkills: ["learn"],
+        installedCommands: [],
+        targetStates: [{
+          name: "learn",
+          kind: "skill",
+          sourceHash: "0".repeat(64),
+          installedHash: "f".repeat(64),
+        }],
+      }));
+
+      const result = install("agy", "global", ["learn"], false, temp.env);
+
+      expect(existsSync(skillTarget)).toBe(true);
+      expect(existsSync(legacyReceiptPath)).toBe(true);
+      expect(result.warnings.some((warning) => warning.includes("Preserved 1 modified or invalid"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("preserves invalid or legacy retired Gemini receipts during Agy install", () => {
+    const temp = makeTempEnv();
+    try {
+      const legacyRoot = join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini");
+      const skillTarget = join(legacyRoot, "skills", "learn");
+      const legacyReceiptPath = join(legacyRoot, ".mahiro-skills", "receipts", "global-gemini.json");
+      mkdirSync(skillTarget, { recursive: true });
+      mkdirSync(dirname(legacyReceiptPath), { recursive: true });
+      writeFileSync(join(skillTarget, "SKILL.md"), "legacy learn\n");
+      writeFileSync(legacyReceiptPath, JSON.stringify({
+        schemaVersion: 1,
+        agent: "gemini",
+        scope: "global",
+        root: legacyRoot,
+        installedSkills: ["learn"],
+        installedCommands: [],
+      }));
+
+      const result = install("agy", "global", ["learn"], false, temp.env);
+
+      expect(existsSync(skillTarget)).toBe(true);
+      expect(existsSync(legacyReceiptPath)).toBe(true);
+      expect(result.warnings.some((warning) => warning.includes("Preserved invalid or legacy"))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -351,32 +419,6 @@ describe("install", () => {
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Pi direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh backend container, narrow scope, pane-first truth**");
-      expect(result.installed).toEqual(["direct-cli"]);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("installs direct-cli under the gemini root with namespaced command", () => {
-    const temp = makeTempEnv();
-    try {
-      const result = install("gemini", "local", ["direct-cli"], false, temp.env);
-      const installedSkillPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "direct-cli", "SKILL.md");
-      const installedPlaybookPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "skills", "direct-cli", "playbook.md");
-      const installedCommandPath = join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-direct-cli.toml");
-
-      expect(result.status).toBe("installed");
-      expect(existsSync(installedSkillPath)).toBe(true);
-      expect(existsSync(installedPlaybookPath)).toBe(true);
-      expect(existsSync(installedCommandPath)).toBe(true);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "direct-cli.md"))).toBe(false);
-      expect(readFileSync(installedCommandPath, "utf8")).toContain(
-        'description = "Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, Codex CLI, and Pi through Herdr-managed panes with a tmux fallback. Use when you want a pane-first direct CLI lane, ask to use Pi or ใช้ Pi, need narrow current-worktree follow-up, or need fresh-session recovery."',
-      );
-      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
-      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
-      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
-      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Pi direct playbook");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
       temp.cleanup();

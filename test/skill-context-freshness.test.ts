@@ -144,8 +144,7 @@ describe("packaged skill context freshness", () => {
     const readme = read("skills", "direct-cli", "README.md");
     const playbook = read("skills", "direct-cli", "playbook.md");
     const command = read("commands", "direct-cli.md");
-    const geminiCommand = read("commands-gemini", "mh-direct-cli.toml");
-    const activeSurfaces = [skill, readme, command, geminiCommand].join("\n");
+    const activeSurfaces = [skill, readme, command].join("\n");
     const allDirectDocs = [activeSurfaces, playbook].join("\n");
 
     expect(skill).toContain("`playbook.md` is the single owner");

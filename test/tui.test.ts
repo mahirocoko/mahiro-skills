@@ -136,11 +136,11 @@ describe("step-first skill manager TUI", () => {
       const controller = createTuiController({
         terminal: new FakeTerminal(),
         env: temp.env,
-        initialAgents: ["cursor", "gemini", "agy"],
+        initialAgents: ["cursor", "agy", "pi"],
         initialScope: "global",
       });
-      expect(controller.getState().targetSelection).toEqual({ mode: "custom", agents: new Set(["cursor", "gemini", "agy"]) });
-      expect(controller.getState().selectedAgents).toEqual(["cursor", "gemini", "agy"]);
+      expect(controller.getState().targetSelection).toEqual({ mode: "custom", agents: new Set(["cursor", "agy", "pi"]) });
+      expect(controller.getState().selectedAgents).toEqual(["cursor", "agy", "pi"]);
       expect(controller.getState().scope).toBe("global");
     } finally {
       temp.cleanup();

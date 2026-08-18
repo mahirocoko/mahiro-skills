@@ -14,7 +14,6 @@ Use current repo assets as fixtures.
 | `skills/gemini/extension/` | opaque heavy subtree | tests copy-only handling for partial-bundle assets |
 | `commands/project.md` | command wrapper | tests command installation pathing |
 | `commands/recap.md` | command wrapper | tests paired skill + command behavior |
-| `commands-gemini/mh-gemini.toml` | native Gemini command | tests Gemini command installation pathing |
 | `.claude-plugin/marketplace.json` | bundle metadata | tests default bundle discovery |
 | `template/` | authoring-only | tests non-installable asset exclusion |
 
@@ -27,7 +26,6 @@ Use current repo assets as fixtures.
 | opencode | Yes | Yes | Yes |
 | claude-code | Yes | Yes | Yes |
 | cursor | Yes | Yes | Yes |
-| gemini | Yes | Yes | Yes |
 | agy | Yes | Yes | Yes |
 | codex | Yes | Yes | Yes |
 | letta-code | Yes | Yes | Yes |
@@ -118,23 +116,7 @@ Expected:
 - no command artifact is planned because Pi discovers Agent Skills and exposes `/skill:<name>` itself
 - install receipts live under the selected Pi adapter root and remain usable by list/update/uninstall/doctor
 
-### Case 3 — Gemini local opaque subtree
-
-Input:
-
-```text
-mahiro-skills plan gemini --agent gemini --scope local
-```
-
-Expected:
-
-- root resolves to `.gemini`
-- `skills/gemini/` treated as opaque copy tree
-- `commands-gemini/mh-gemini.toml` is also planned because the adapter supports commands
-- no attempt to reinterpret extension internals during planning
-- warnings allowed if extension bundling is partial
-
-### Case 3b — Agy namespaced skill alias
+### Case 3 — Agy namespaced skill alias
 
 Inputs:
 
@@ -149,8 +131,9 @@ Expected:
 - canonical `learn` and `direct-cli` receipt items target `skills/mh-learn/` and `skills/mh-direct-cli/`
 - copied aliases retain complete bundled resources
 - staged alias frontmatter uses `name: mh-<name>` and `disable-model-invocation: true`, while removing `disable-slash-command`
-- no Gemini TOML or markdown command artifact is planned
+- no unprefixed skill copy or command-wrapper artifact is planned
 - doctor, skill-manager, update, and uninstall resolve namespaced targets through the adapter
+- a retired Gemini CLI v2 receipt removes only unchanged receipt-managed canonical targets; modified and unrelated targets are preserved
 - a bounded real-Agy `/skills` check discovers the namespaced global skill before release and preserves any receipt-managed existing installation
 
 ## Install assertions

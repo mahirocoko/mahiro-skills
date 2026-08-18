@@ -1,9 +1,10 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
-import { dirname, extname, join } from "path";
+import { dirname, join } from "path";
 
 import { hashPath } from "./content-hash";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
+import { cleanupRetiredGeminiInstall } from "./retired-gemini";
 import type { InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
 const installedDescriptionPrefix = "Mahiro Skill | ";
@@ -31,16 +32,6 @@ function prefixFrontmatterDescription(content: string): string {
   });
 
   return content.replace(frontmatterMatch[0], nextContent);
-}
-
-function prefixTomlDescription(content: string): string {
-  return content.replace(/^description\s*=\s*"([^"]*)"/m, (_match, description: string) => {
-    if (description.startsWith(installedDescriptionPrefix)) {
-      return `description = "${description}"`;
-    }
-
-    return `description = "${installedDescriptionPrefix}${description}"`;
-  });
 }
 
 function rewriteAgySkillFrontmatter(content: string, name: string): string {
@@ -80,7 +71,7 @@ function rewriteAgySkillFrontmatter(content: string, name: string): string {
   return content.replace(frontmatterMatch[0], nextFrontmatter);
 }
 
-function rewriteInstalledTarget(stagingPath: string, targetPath: string, agent: ScopedAgent, target: InstallTarget): void {
+function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target: InstallTarget): void {
   const stats = statSync(stagingPath);
   if (stats.isDirectory()) {
     const markdownPath = join(stagingPath, "SKILL.md");
@@ -98,8 +89,7 @@ function rewriteInstalledTarget(stagingPath: string, targetPath: string, agent: 
   }
 
   const content = readFileSync(stagingPath, "utf8");
-  const extension = extname(targetPath);
-  const nextContent = extension === ".toml" ? prefixTomlDescription(content) : prefixFrontmatterDescription(content);
+  const nextContent = prefixFrontmatterDescription(content);
 
   if (nextContent !== content) {
     writeFileSync(stagingPath, nextContent);
@@ -115,7 +105,7 @@ function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgen
   const stagingPath = `${target.target}.tmp-mahiro-skills`;
   rmSync(stagingPath, { recursive: true, force: true });
   cpSync(target.source, stagingPath, { recursive: true });
-  rewriteInstalledTarget(stagingPath, target.target, agent, target);
+  rewriteInstalledTarget(stagingPath, agent, target);
 
   if (overwrite && existsSync(target.target)) {
     rmSync(target.target, { recursive: true, force: true });
@@ -198,6 +188,10 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
     copyTarget(target, overwrite, agent);
   }
 
+  const migrationWarnings = agent === "agy"
+    ? cleanupRetiredGeminiInstall(scope, env).warnings
+    : [];
+
   const installedNowSkills = plan.skills.map((entry) => entry.name);
   const installedNowCommands = plan.commands.map((entry) => entry.name);
   const installedSkills = unique([...(existingReceipt?.installedSkills ?? []), ...installedNowSkills]);
@@ -213,7 +207,7 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
     description,
     installed: unique([...installedNowSkills, ...installedNowCommands]),
     skipped: plan.skipped,
-    warnings: plan.warnings,
+    warnings: unique([...plan.warnings, ...migrationWarnings]),
     receiptPath,
   };
 }

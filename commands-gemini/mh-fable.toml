@@ -1,8 +1,0 @@
-description = "Orchestrate hard, ambiguous, long-running, or repeatedly failing work through bounded hypotheses, adaptive specialist lanes, checkpoints, and fresh verification. This is a workflow mode, not Cursor Fable model selection."
-prompt = """
-Execute the `fable` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"fable\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/fable/SKILL.md` for local installs or `~/.gemini/skills/fable/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

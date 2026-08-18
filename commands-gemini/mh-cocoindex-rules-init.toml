@@ -1,8 +1,0 @@
-description = "Project-local CocoIndex Code rule bootstrapper with a portable settings boundary, filename-only preflight, and explicit strict-scan guidance."
-prompt = """
-Execute the `cocoindex-rules-init` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"cocoindex-rules-init\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/cocoindex-rules-init/SKILL.md` for local installs or `~/.gemini/skills/cocoindex-rules-init/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

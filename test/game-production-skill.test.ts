@@ -6,10 +6,9 @@ const root = join(import.meta.dir, "..");
 const read = (...parts: string[]) => readFileSync(join(root, ...parts), "utf8");
 
 describe("game-production skill", () => {
-  test("ships a thin whole-game production director and paired wrappers", () => {
+  test("ships a thin whole-game production director and command wrapper", () => {
     const skill = read("skills", "game-production", "SKILL.md");
     const command = read("commands", "game-production.md");
-    const gemini = read("commands-gemini", "mh-game-production.toml");
 
     expect(skill).toContain("name: game-production");
     expect(skill).toContain("Prototype-ready");
@@ -23,7 +22,6 @@ describe("game-production skill", () => {
     expect(skill).toContain("## Validation / self-check");
     expect(skill).not.toContain("Evarune");
     expect(command).toContain('skill: "game-production"');
-    expect(gemini).toContain('skill: \\\"game-production\\\"');
   });
 
   test("keeps detailed production gates behind direct references", () => {

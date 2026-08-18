@@ -36,7 +36,7 @@ describe("README", () => {
   test("documents install and usage truthfully without public-page noise", () => {
     const content = readFileSync(readmePath, "utf8");
 
-    expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Gemini CLI, Antigravity CLI (Agy), Codex, Letta Code, and Pi, plus target-native command entrypoints where supported.");
+    expect(content).toContain("Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Antigravity CLI (Agy), Codex, Letta Code, and Pi, plus target-native command entrypoints where supported.");
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
@@ -46,20 +46,20 @@ describe("README", () => {
     expect(content).toContain("### Standard Agent Skills compatibility");
     expect(content).toContain("npx skills add mahirocoko/mahiro-skills --skill recap");
     expect(content).toContain("--agent universal --copy --yes");
-    expect(content).toContain("It does not install this repo's adapter-specific slash-command wrappers, Gemini TOML commands, receipts, status-aware updates, doctor checks, or managed uninstall flow.");
+    expect(content).toContain("It does not install this repo's adapter-specific slash-command wrappers, receipts, status-aware updates, doctor checks, or managed uninstall flow.");
     expect(content).toContain("It installs from this repository's contents; it is not an npm-published binary package.");
     expect(content).toContain("Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.");
     expect(content).toContain("Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root");
     expect(content).toContain("## Runtime prerequisites");
     expect(content).toContain("`skills/llms.txt` — compact skill discovery index for agents and humans");
     expect(content).toContain("`examples/` — runnable or copyable workflow examples for the CLI/TUI surface");
-    expect(content).toContain("Cursor/Gemini/Agy compatibility matrix: [`docs/cli/cursor-gemini-compatibility-matrix-v0.md`](./docs/cli/cursor-gemini-compatibility-matrix-v0.md)");
+    expect(content).toContain("Adapter compatibility matrix: [`docs/cli/adapter-compatibility-matrix-v0.md`](./docs/cli/adapter-compatibility-matrix-v0.md)");
     expect(content).toContain("Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)");
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
     expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
-    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi`.");
+    expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi`.");
     expect(content).toContain("Current workflow highlights:");
     expect(content).toContain("The canonical catalog is default-or-absent");
     expect(content).toContain("Step-first full-screen Skill Manager plus guided compatibility flow");
@@ -87,11 +87,12 @@ describe("README", () => {
     expect(content).toContain("bun ./src/cli.ts install project --agent pi --scope local");
     expect(content).toContain("bun ./src/cli.ts install project --agent agy --scope local");
     expect(content).toContain("Agy local installs copy transformed, self-contained skills to `.agents/skills/mh-<name>/`");
+    expect(content).toContain("removes only unchanged receipt-managed canonical skills and TOML commands");
     expect(content).toContain('PI_CODING_AGENT_DIR="$HOME/.9router-free/pi-pilot/home/.pi/agent"');
     expect(content).toContain("Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`");
     expect(content).toContain("including multi-pane fanout or detached Herdr result collection");
     expect(content).toContain("sprite-workflow --agent opencode --scope local");
-    expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `gemini`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts");
+    expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("Prefer the source files in this repository and tagged releases over installed copies.");
     expect(content).not.toContain("Home → Plan (dry run)");

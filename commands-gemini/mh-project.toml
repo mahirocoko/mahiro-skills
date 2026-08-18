@@ -1,8 +1,0 @@
-description = "Clone and track external repos for study or development with ghq plus .agent-state-backed tracking. Use for learn, incubate, search/find, list, and related project lifecycle flows."
-prompt = """
-Execute the `project` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"project\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/project/SKILL.md` for local installs or `~/.gemini/skills/project/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

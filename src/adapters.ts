@@ -12,10 +12,6 @@ export interface SkillArtifact {
   targetRelativePath: string;
 }
 
-function formatGeminiCommandFileName(name: string): string {
-  return `mh-${name}.toml`;
-}
-
 export function isImplementedAgent(agent: ScopedAgent): agent is SupportedAgent {
   return supportedAgents.includes(agent);
 }
@@ -69,7 +65,7 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
       return join(cwd, ".pi");
     }
 
-    return join(cwd, ".gemini");
+    throw new Error(`Unable to resolve local root for agent '${agent}'.`);
   }
 
   if (agent === "pi" && env.PI_CODING_AGENT_DIR) {
@@ -108,7 +104,7 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
     return join(home, ".pi", "agent");
   }
 
-  return join(home, ".gemini");
+  throw new Error(`Unable to resolve global root for agent '${agent}'.`);
 }
 
 export function supportsCommands(agent: ScopedAgent): boolean {
@@ -122,16 +118,6 @@ export function resolveSkillArtifact(agent: ScopedAgent, name: string): SkillArt
 }
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {
-  if (agent === "gemini") {
-    const fileName = formatGeminiCommandFileName(name);
-
-    return {
-      extension: ".toml",
-      sourceRelativePath: join("commands-gemini", fileName),
-      targetRelativePath: join("commands", fileName),
-    };
-  }
-
   return {
     extension: ".md",
     sourceRelativePath: join("commands", `${name}.md`),

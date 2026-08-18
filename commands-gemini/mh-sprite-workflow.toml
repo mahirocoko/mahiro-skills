@@ -1,8 +1,0 @@
-description = "CLI-first sprite production workflow for prompts, imagegen handoffs, motion references, extraction, runtime QA, native-grid recovery, atlases, previews, and promotion gates."
-prompt = """
-Execute the `sprite-workflow` skill with args: {{args}}
-
-If you have a Skill tool available: Use it directly with `skill: \"sprite-workflow\"` instead of reading the file manually.
-
-Otherwise: Read the installed skill file from the Gemini skills root (`.gemini/skills/sprite-workflow/SKILL.md` for local installs or `~/.gemini/skills/sprite-workflow/SKILL.md` for global installs) and follow ALL instructions in it.
-"""

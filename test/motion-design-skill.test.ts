@@ -20,10 +20,9 @@ const readFrontmatter = (source: string) => {
 };
 
 describe("motion-design skill", () => {
-  test("ships an explicit product-motion contract with paired wrappers", () => {
+  test("ships an explicit product-motion contract with a command wrapper", () => {
     const skill = read("skills", "motion-design", "SKILL.md");
     const command = read("commands", "motion-design.md");
-    const geminiCommand = read("commands-gemini", "mh-motion-design.toml");
 
     expect(skill).toContain("## Explicit Trigger Policy");
     expect(skill).toContain("Do not auto-load it for:");
@@ -41,9 +40,6 @@ describe("motion-design skill", () => {
 
     expect(command).toContain('skill: "motion-design"');
     expect(command).toContain("Do not auto-route ordinary frontend implementation or game VFX here");
-    expect(geminiCommand).toContain('skill: \\\"motion-design\\\"');
-    expect(geminiCommand).toContain(".gemini/skills/motion-design/SKILL.md");
-    expect(geminiCommand).toContain("~/.gemini/skills/motion-design/SKILL.md");
   });
 
   test("keeps metadata and progressive-disclosure references valid", () => {

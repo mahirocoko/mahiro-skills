@@ -31,7 +31,6 @@ validate_repo_root() {
   [ -f "$repo_root/src/cli.ts" ] || die "Invalid repo root '$repo_root': missing src/cli.ts"
   [ -d "$repo_root/skills" ] || die "Invalid repo root '$repo_root': missing skills/"
   [ -d "$repo_root/commands" ] || die "Invalid repo root '$repo_root': missing commands/"
-  [ -d "$repo_root/commands-gemini" ] || die "Invalid repo root '$repo_root': missing commands-gemini/"
 }
 
 while [ $# -gt 0 ]; do

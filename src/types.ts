@@ -1,4 +1,4 @@
-export const supportedAgents = ["opencode", "claude-code", "cursor", "gemini", "agy", "codex", "letta-code", "pi"] as const;
+export const supportedAgents = ["opencode", "claude-code", "cursor", "agy", "codex", "letta-code", "pi"] as const;
 
 export type SupportedAgent = (typeof supportedAgents)[number];
 
@@ -37,8 +37,6 @@ export interface SkillCatalogEntry {
   hasSkillFile: boolean;
   hasMarkdownCommand: boolean;
   markdownCommandPath?: string;
-  hasGeminiCommand: boolean;
-  geminiCommandPath?: string;
   inDefaultBundle: boolean;
 }
 
@@ -49,7 +47,6 @@ export interface InventoryGap {
     | "missing-skill-file"
     | "frontmatter-name-mismatch"
     | "command-without-skill"
-    | "gemini-command-without-skill"
     | "bundle-skill-missing"
     | "bundle-command-missing"
     | "skill-missing-default-bundle"
@@ -75,7 +72,6 @@ export interface SkillSearchResult {
   score: number;
   matched: string[];
   hasMarkdownCommand: boolean;
-  hasGeminiCommand: boolean;
   inDefaultBundle: boolean;
 }
 

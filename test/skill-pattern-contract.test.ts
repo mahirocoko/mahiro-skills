@@ -155,7 +155,6 @@ describe("skill pattern adaptation phase a", () => {
     const selector = readRepoFile("skills", "direct-cli", "scripts", "select-backend.sh");
     const jobs = readRepoFile("skills", "direct-cli", "scripts", "herdr-jobs.py");
     const command = readRepoFile("commands", "direct-cli.md");
-    const geminiCommand = readRepoFile("commands-gemini", "mh-direct-cli.toml");
     const rootReadme = readRepoFile("README.md");
 
     expect(skill).toContain("## Multi-pane Job Sessions");
@@ -197,13 +196,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Codex uses `--dangerously-bypass-approvals-and-sandbox`");
     expect(skill).toContain("Pi uses `--approve` with the full implementation allowlist `read,bash,edit,write,grep,find,ls`");
     expect(skill).toContain("Treat those autonomy flags as approval policy, not expanded scope");
-    for (const wrapper of [command, geminiCommand]) {
-      expect(wrapper).toContain("Cursor `--yolo --approve-mcps --trust`");
-      expect(wrapper).toContain("Antigravity `--dangerously-skip-permissions`");
-      expect(wrapper).toContain("Codex `--dangerously-bypass-approvals-and-sandbox`");
-      expect(wrapper).toContain("Pi `--approve` with `read,bash,edit,write,grep,find,ls`");
-      expect(wrapper).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
-    }
+    expect(command).toContain("Cursor `--yolo --approve-mcps --trust`");
+    expect(command).toContain("Antigravity `--dangerously-skip-permissions`");
+    expect(command).toContain("Codex `--dangerously-bypass-approvals-and-sandbox`");
+    expect(command).toContain("Pi `--approve` with `read,bash,edit,write,grep,find,ls`");
+    expect(command).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
     expect(skill).not.toContain("Current Freshness Notes");
     expect(skill).not.toContain("2026.07.23-e383d2b");
     expect(skill).not.toContain("`kimi-k3-high`");
@@ -236,10 +233,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("current conversation");
     expect(rootReadme).toContain("same-conversation wake-and-collect");
     expect(rootReadme).not.toContain("Detached Phase 1 jobs");
-    for (const wrapper of [command, geminiCommand]) {
-      expect(wrapper).toContain("herdr-jobs.py wait <job-id> --json");
-      expect(wrapper).toContain("do not emulate return by launching a second `letta -p` turn");
-    }
+    expect(command).toContain("herdr-jobs.py wait <job-id> --json");
+    expect(command).toContain("do not emulate return by launching a second `letta -p` turn");
     expect(playbook).toContain("One job maps to one `direct-<job-slug>` tab");
     expect(playbook).toContain('herdr agent start "$CODEX_AGENT"');
     expect(playbook).toContain('herdr agent wait "$CODEX_AGENT"');
@@ -314,7 +309,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).not.toContain("Gemini CLI");
     expect(readme).not.toContain("/direct-cli gemini");
 
-    for (const wrapper of [command, geminiCommand]) {
+    for (const wrapper of [command]) {
       expect(wrapper).toContain("`--backend auto|herdr|tmux`");
       expect(wrapper).toContain("`--workspace ID`");
       expect(wrapper).toContain("`--detach`");
@@ -362,7 +357,6 @@ describe("skill pattern adaptation phase a", () => {
   test("goal skill describes Goal Mode without old cockpit references", () => {
     const skill = readRepoFile("skills", "control-room-goals", "SKILL.md");
     const command = readRepoFile("commands", "control-room-goals.md");
-    const geminiCommand = readRepoFile("commands-gemini", "mh-control-room-goals.toml");
     const index = readRepoFile("skills", "llms.txt");
 
     expect(skill).toContain("# Goal Mode");
@@ -408,7 +402,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).not.toContain("/cr");
     expect(skill).not.toContain("control_room_");
     expect(command).toContain("Drafts, applies, or refines Goal Mode objectives");
-    expect(geminiCommand).toContain("Drafts, applies, or refines Goal Mode objectives");
     expect(index).toContain("Goal Mode objective/DoD/next-action drafting and agent-owned application workflow");
     expect(index).toContain("optional Execution Run and explicit Code Evidence attachment boundaries");
     expect(index).not.toContain("legacy skill name");

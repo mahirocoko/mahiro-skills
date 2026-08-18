@@ -6,10 +6,9 @@ const root = join(import.meta.dir, "..");
 const read = (...parts: string[]) => readFileSync(join(root, ...parts), "utf8");
 
 describe("vfx-workflow skill", () => {
-  test("ships runtime VFX truth and paired wrappers", () => {
+  test("ships runtime VFX truth and command wrapper", () => {
     const skill = read("skills", "vfx-workflow", "SKILL.md");
     const command = read("commands", "vfx-workflow.md");
-    const gemini = read("commands-gemini", "mh-vfx-workflow.toml");
 
     expect(skill).toContain("name: vfx-workflow");
     expect(skill).toContain("Telegraph");
@@ -23,7 +22,6 @@ describe("vfx-workflow skill", () => {
     expect(skill).toContain("sprite-workflow");
     expect(skill).toContain("codex-asset-production");
     expect(command).toContain('skill: "vfx-workflow"');
-    expect(gemini).toContain('skill: \\\"vfx-workflow\\\"');
   });
 
   test("ships focused cue rendering and QA references", () => {

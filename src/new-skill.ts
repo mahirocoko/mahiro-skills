@@ -80,7 +80,7 @@ export function createSkillFromTemplate(name: string, repoRoot = getRepoRoot()):
     files: listFiles(targetPath),
     nextSteps: [
       `Edit skills/${name}/SKILL.md description, scope, workflow, and validation gates.`,
-      `Add paired command wrappers if this skill should be slash-invokable: commands/${name}.md and commands-gemini/mh-${name}.toml.`,
+      `Add commands/${name}.md if this skill should ship with a command wrapper; Agy derives /mh-${name} from the installed skill alias.`,
       "Update .claude-plugin/marketplace.json, skills/llms.txt, README.md, and tests in the same feature pass when the skill becomes part of the packaged bundle.",
       "Run bun ./src/cli.ts gaps --json before committing authoring changes.",
     ],

@@ -67,57 +67,6 @@ describe("plan", () => {
     }
   });
 
-  test("resolves default bundle for gemini local", () => {
-    const temp = makeTempEnv();
-    try {
-      const plan = createPlan("gemini", "local", [], temp.env);
-      expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini"));
-      expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
-      expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
-      expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
-      expect(plan.skills.some((entry) => entry.name === "gemini")).toBe(true);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("installs paired command for same-named skill on gemini", () => {
-    const temp = makeTempEnv();
-    try {
-      const plan = createPlan("gemini", "global", ["gemini", "watch"], temp.env);
-      const repoRoot = join(import.meta.dir, "..");
-      expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini"));
-      expect(plan.skills.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
-      expect(plan.commands.map((entry) => entry.name)).toEqual(["gemini", "watch"]);
-      expect(plan.commands.map((entry) => entry.source)).toEqual([
-        join(repoRoot, "commands-gemini", "mh-gemini.toml"),
-        join(repoRoot, "commands-gemini", "mh-watch.toml"),
-      ]);
-      expect(plan.commands.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mh-gemini.toml"),
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "commands", "mh-watch.toml"),
-      ]);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("installs paired gemini command for direct-cli", () => {
-    const temp = makeTempEnv();
-    try {
-      const plan = createPlan("gemini", "local", ["direct-cli"], temp.env);
-      const repoRoot = join(import.meta.dir, "..");
-      expect(plan.skills.map((entry) => entry.name)).toEqual(["direct-cli"]);
-      expect(plan.commands.map((entry) => entry.name)).toEqual(["direct-cli"]);
-      expect(plan.commands.map((entry) => entry.source)).toEqual([join(repoRoot, "commands-gemini", "mh-direct-cli.toml")]);
-      expect(plan.commands.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".gemini", "commands", "mh-direct-cli.toml")]);
-    } finally {
-      temp.cleanup();
-    }
-  });
-
   test("resolves Agy roots as namespaced slash-only skill output", () => {
     const temp = makeTempEnv();
     try {
@@ -135,7 +84,8 @@ describe("plan", () => {
         join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config", "skills", "mh-direct-cli"),
       ]);
       expect(globalPlan.commands).toEqual([]);
-      expect(defaultPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'agy' installs namespaced /mh-* Agent Skill aliases and does not copy Gemini TOML or markdown command wrappers.");
+      expect(defaultPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'agy' installs only namespaced /mh-* Agent Skill aliases and does not copy command wrappers.");
+      expect(defaultPlan.skills.every((entry) => entry.target.includes(`${join("skills", "mh-")}`))).toBe(true);
     } finally {
       temp.cleanup();
     }

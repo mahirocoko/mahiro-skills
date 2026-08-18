@@ -34,10 +34,9 @@ const readFrontmatter = (source: string) => {
 };
 
 describe("studying-codrops skill", () => {
-  test("ships an explicit Codrops-only study contract and paired wrappers", () => {
+  test("ships an explicit Codrops-only study contract and command wrapper", () => {
     const skill = read("skills", "studying-codrops", "SKILL.md");
     const command = read("commands", "studying-codrops.md");
-    const geminiCommand = read("commands-gemini", "mh-studying-codrops.toml");
 
     expect(skill).toContain("## Trigger Policy");
     expect(skill).toContain("Do not auto-load it for ordinary frontend implementation");
@@ -54,9 +53,6 @@ describe("studying-codrops skill", () => {
     expect(skill).not.toContain("--out");
     expect(command).toContain('skill: "studying-codrops"');
     expect(command).toContain("Do not auto-route ordinary frontend work here");
-    expect(geminiCommand).toContain('skill: \\\"studying-codrops\\\"');
-    expect(geminiCommand).toContain(".gemini/skills/studying-codrops/SKILL.md");
-    expect(geminiCommand).toContain("~/.gemini/skills/studying-codrops/SKILL.md");
   });
 
   test("keeps metadata and progressive-disclosure references valid", () => {
