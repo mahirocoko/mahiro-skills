@@ -47,6 +47,7 @@ Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how
 - Flag generic AI-looking UI drift: unexplained metric-card walls, fake-premium gradients, decorative pill overload, gratuitous transitions, verbose helper copy, or styling that ignores the repo's product tone.
 - Flag refactors that preserve logic but noticeably drift from the established product feel of a screen, such as turning a sparse premium surface into a verbose instructional one.
 - Flag spacing overrides on shared primitives when they appear reflexive rather than driven by a clear visual requirement.
+- Do not approve spacing from utility names or isolated elements. Inspect the full rendered surface and separate row cadence, label-to-row gap, section gap, parent-child gap, and viewport density. Compare those roles with the selected source owner, measure geometry when needed, and audit selector scope after wrappers change. Functional checks and source-class fidelity do not prove readable visual rhythm; final spacing acceptance remains human-owned.
 - Flag local one-off error message mappers when the repo already has a shared error resolver or stable error-code path.
 - Flag raw upstream error strings shown directly in UI when the repo already normalizes shared failures.
 
