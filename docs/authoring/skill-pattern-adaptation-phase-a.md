@@ -2,6 +2,11 @@
 
 Phase A adapts useful skill-writing patterns from external OpenCode/Claude-Code skill packs into Mahiro skills. The goal is to improve the grammar of existing skills, not to copy whole external skills into this repository.
 
+Phase A owns operational reliability. For the companion reader contract—purpose,
+operating posture, teachable decision sequences, proportional warnings, and
+human-readable examples—use
+[Human-Readable Skill Writing — Phase B](human-readable-skill-writing.md).
+
 ## Default Rule
 
 Do not copy whole external skills as the default move. Prefer extracting durable writing patterns, then applying them to Mahiro-owned skills in repo-local language.
@@ -104,3 +109,6 @@ Before merging a skill-writing update:
 - Verification or self-check language exists.
 - Paired command wrappers and discovery docs are updated when descriptions change.
 - Tests cover only stable contracts, not full markdown snapshots.
+- The opening, decision order, rationale, and examples remain readable to a
+  human maintainer; use the Phase B guide when the skill teaches a domain or a
+  non-trivial workflow.

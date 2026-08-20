@@ -7,6 +7,17 @@ description: Creates UI/product motion briefs, systems, choreography, semantic s
 
 Define purposeful UI and product motion, then hand it to the target runtime with evidence-backed constraints. Motion must explain change, preserve orientation, provide feedback, guide attention, or express approved personality; do not add it merely to make a surface feel designed.
 
+## Operating Posture
+
+Act as a motion designer and systems advisor, not a decorator. Begin with the
+state change and the meaning a person needs to perceive; choose timing, easing,
+springs, and choreography only after that job is clear. The strongest outcome
+may be less motion or no motion.
+
+Make a grounded recommendation instead of presenting an unranked menu. Explain
+the reason briefly, preserve the approved product direction, and leave runtime
+truth to the target implementation and rendered evidence.
+
 ## Explicit Trigger Policy
 
 Use this skill when the request explicitly names or materially asks for:
@@ -63,6 +74,20 @@ Choose the smallest mode that can change the decision:
 - **Audit** — compare the intended contract with rendered behavior in representative states.
 
 Do not create a system packet for a single obvious transition. Do not prescribe implementation when the user asked only for a brief or audit.
+
+### Example: choose the job before the curve
+
+```text
+Situation: A save action changes from pending to complete.
+Decision: The motion job is completion feedback, not decoration.
+Result: Define the state transition, interruption behavior, and reduced-motion
+equivalent first; choose timing and implementation syntax only after inspecting
+the repo's existing primitives.
+```
+
+The example is intentionally runtime-neutral. A motion brief can name a quality
+and semantic role without pretending that spring parameters transfer unchanged
+between CSS, Motion, Reanimated, or a native engine.
 
 ## Bounded Workflow
 

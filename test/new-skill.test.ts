@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -11,8 +11,21 @@ function makeRepoWithTemplate() {
   mkdirSync(join(repoRoot, "skills"), { recursive: true });
   writeFileSync(
     join(repoRoot, "template", "SKILL.md.template"),
-    `---\nname: template\ndescription: Skill template with Bun Shell pattern. Copy this folder to create new skills.\n---\n\n# /template - Skill Template\n\nUse /template with your-skill-name.\n`,
+    `---\nname: template\ndescription: Human-readable skill scaffold. Copy this folder to create new skills.\n---\n\n# /template - Skill Template\n\nUse /template with your-skill-name.\n`,
   );
+
+  return {
+    repoRoot,
+    cleanup() {
+      rmSync(repoRoot, { recursive: true, force: true });
+    },
+  };
+}
+
+function makeRepoWithCanonicalTemplate() {
+  const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-new-canonical-"));
+  mkdirSync(join(repoRoot, "skills"), { recursive: true });
+  cpSync(join(import.meta.dir, "..", "template"), join(repoRoot, "template"), { recursive: true });
 
   return {
     repoRoot,
@@ -53,6 +66,27 @@ describe("new skill scaffold", () => {
       expect(() => createSkillFromTemplate("Bad_Name", repo.repoRoot)).toThrow("Invalid skill name");
       createSkillFromTemplate("sample-skill", repo.repoRoot);
       expect(() => createSkillFromTemplate("sample-skill", repo.repoRoot)).toThrow("already exists");
+    } finally {
+      repo.cleanup();
+    }
+  });
+
+  test("materializes the canonical human-readable scaffold", () => {
+    const repo = makeRepoWithCanonicalTemplate();
+
+    try {
+      const result = createSkillFromTemplate("readable-skill", repo.repoRoot);
+      const skill = readFileSync(join(repo.repoRoot, "skills", "readable-skill", "SKILL.md"), "utf8");
+
+      expect(skill).toContain("name: readable-skill");
+      expect(skill).toContain("description: TODO: Describe what readable-skill does and when to use it.");
+      expect(skill).toContain("## Operating Posture");
+      expect(skill).toContain("## Scope and Handoffs");
+      expect(skill).toContain("## Decision Sequence");
+      expect(skill).toContain("## Example");
+      expect(skill).toContain("## Validation / Self-check");
+      expect(skill).toContain("docs/authoring/human-readable-skill-writing.md");
+      expect(result.nextSteps).toContain("Remove authoring placeholders and unused resource folders before packaging.");
     } finally {
       repo.cleanup();
     }

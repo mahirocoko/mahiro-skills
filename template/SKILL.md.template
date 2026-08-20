@@ -1,13 +1,17 @@
 ---
 name: template
-description: Skill template with Bun Shell pattern. Copy this folder to create new skills.
+description: Creates a human-readable, executable skill scaffold. Copy this folder when authoring a new skill, then replace the placeholders with the real purpose, trigger, decision sequence, boundaries, and verification contract.
 ---
 
 # /template - Skill Template
 
-Copy this folder to create a new skill.
+Explain the skill's job in one short paragraph. Tell the reader what problem it
+solves, what useful result it produces, and the principle that keeps it from
+doing too much. This opening is for orientation; the frontmatter remains the
+agent's trigger signal.
 
-Use this template as a workflow contract, not just a prompt. Keep the skill short enough to load quickly, but explicit enough that another agent can follow the same gates and output shape.
+Delete all instructional placeholders before packaging the skill. Keep only the
+sections that help this job.
 
 ## Trigger-Focused Frontmatter
 
@@ -18,50 +22,92 @@ description: Action-oriented purpose. Use when the user asks for X, Y, or Z.
 ---
 ```
 
-**Description is the trigger signal.** Include the work type, the user intent, and the situations where the skill should load. Avoid generic descriptions like “helps with tasks.”
+**Description is the trigger signal.** Include the work type, user intent, and
+situations where the skill should load. Avoid generic descriptions such as
+“helps with tasks.”
 
-## Scope and Boundaries
+## Operating Posture
 
-- **In scope**: what this skill owns.
-- **Out of scope**: what this skill must not do.
+Describe the role and quality bar in a few lines:
+
+- Is the skill a builder, advisor, reviewer, archivist, or coordinator?
+- What should it optimize for?
+- Which tempting shortcut produces bad work?
+- Which judgment remains with the human, repo, or another skill?
+
+Omit this section for a mechanical lookup or utility with no meaningful judgment
+call. Do not restate every rule here.
+
+## Scope and Handoffs
+
+- **Owns**: what this skill decides or produces.
+- **Leaves alone**: adjacent work it must not absorb.
+- **Hands off to**: another skill, runtime, human, or repository owner.
 - **Mode boundaries**: flags or arguments that materially change behavior.
 
-If the skill can write files, commit, push, delete, or call remote services, state the approval gate before the workflow.
+If the skill is read-only, explicit-only, recommendation-only, or human-gated,
+say so here. If it can commit, push, delete, spend money, or call remote services,
+state the approval gate before the decision sequence.
 
 ## Usage
 
-```
+```text
 /your-skill [args]
 ```
 
-## Phase Workflow
+Include only real modes and arguments. A skill selected through natural language
+may omit this section.
 
-### Phase 0: Timestamp
+## Decision Sequence
 
-```bash
-date "+🕐 %H:%M %Z (%A %d %B %Y)"
-```
+Order the workflow by the decisions a careful practitioner makes, not by the
+shape of the implementation.
 
-### Phase 1: Understand
+### 1. Frame the job
 
-- Resolve repo-local paths before reading/writing state.
-- Gather only the context needed for this skill.
-- Ask or stop if a missing input would materially change the result.
+- Confirm the skill applies.
+- Bound the target, useful result, and non-goals.
+- Ask only when a missing answer would materially change the path.
 
-### Phase 2: Run Script
+### 2. Ground in current evidence
+
+- Resolve repo-local paths before reading or writing state.
+- Inspect only the evidence needed for the next decision.
+- Separate observed facts, user-approved direction, recommendations, and unknowns.
+
+### 3. Decide before acting
+
+- Apply the domain model before choosing tools or mechanics.
+- Explain the reason when it helps a person predict a new case.
+- Use the smallest mode that can produce the requested result.
+
+### 4. Act
 
 ```bash
 bun scripts/main.ts "$ARGUMENTS"
 ```
 
-Or fallback (if Bun not available):
-```bash
-npx tsx scripts/main.ts "$ARGUMENTS"
+Use a deterministic script only when repeated or fragile mechanics justify one.
+If no script is needed, replace this section with the actual bounded procedure.
+
+### 5. Verify and hand off
+
+- Check the real artifact, behavior, or evidence required by this job.
+- Distinguish mechanical success from human-owned acceptance.
+- Return the result, blocker, or smallest next evidence-producing action.
+
+## Example
+
+Choose one representative example that teaches a decision or boundary:
+
+```text
+Situation: <what the user asked or what the skill observed>
+Decision: <which path applies and why>
+Result: <artifact, command, response shape, or handoff>
 ```
 
-### Phase 3: Process Output
-
-Display results from script.
+Do not add examples that merely repeat syntax. Keep examples repo-neutral unless
+the skill deliberately documents one named system.
 
 ## Stop Gates
 
@@ -76,7 +122,7 @@ Return a stable shape, for example:
 1. **Summary**
 2. **Evidence / files used**
 3. **Result**
-4. **Next steps**
+4. **Next step**
 
 If there is no actionable result, say so directly and include what was checked.
 
@@ -87,49 +133,52 @@ Before finishing:
 - Confirm generated files exist and are outside forbidden paths.
 - Confirm claims are backed by files, command output, or user-provided context.
 - Drop or soften claims that lack evidence.
+- Confirm the result matches the requested mode and did not absorb an adjacent owner's work.
 - If paired command wrappers or discovery indexes need updates, update them in the same change.
 
----
+## References and Resources
 
-## Creating a New Skill
+Keep the core purpose, posture, decision sequence, gates, output, and verification
+in this file. Move branch-specific detail into focused resources:
 
-1. Copy `template/` folder
-2. Rename to your skill name
-3. Update `SKILL.md`:
-   - Change `name:` in frontmatter
-   - Change `description:` in frontmatter
-   - Update usage instructions
-4. Edit `scripts/main.ts` with your logic
-5. Test locally with `bun scripts/main.ts`
+- `references/` — domain guidance, API tables, platform branches, or long examples
+- `scripts/` — repeated or fragile deterministic mechanics
+- `assets/` — files copied or transformed into the final output
 
-If your skill reads or writes local `.agent-state` data, do not anchor it to raw cwd. Resolve repo root first, then default `AGENT_STATE_DIR` from that root:
+Link each resource directly from this file and say when to read or run it. Do not
+duplicate the same rule in both the entry skill and a reference.
+
+## Authoring Notes
+
+Remove this section before packaging unless the skill itself teaches skill
+authoring.
+
+1. Copy `template/` through `bun ./src/cli.ts new <name> --copy-template`.
+2. Rewrite the frontmatter, opening, posture, boundaries, sequence, example,
+   gates, output, and verification around the real job.
+3. Delete unused placeholder sections and resources.
+4. Add a paired command only when the adapter contract needs one.
+5. Update bundle discovery and focused tests when the skill becomes packaged.
+6. Read `docs/authoring/human-readable-skill-writing.md` for the complete reader
+   contract.
+
+If the skill reads or writes local `.agent-state` data, resolve the repo root
+before defaulting the state directory:
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 ```
 
-## File Structure
+Suggested shape:
 
-```
+```text
 your-skill/
-├── SKILL.md          ← Instructions for Codex
-└── scripts/
-    └── main.ts       ← Bun Shell logic
+├── SKILL.md
+├── references/       # only when progressive disclosure helps
+├── scripts/          # only for deterministic repeated mechanics
+└── assets/           # only for output resources
 ```
-
-## Frontmatter Required
-
-If you start from an existing skill instead of the trigger-focused scaffold above, still keep this minimum frontmatter shape:
-
-```yaml
----
-name: your-skill-name
-description: One line description. Use when user says "X", "Y", or "Z".
----
-```
-
-**Note**: Description is the trigger signal. Include action words and use cases.
 
 ---
 

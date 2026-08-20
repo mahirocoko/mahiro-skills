@@ -22,11 +22,48 @@ describe("skill pattern adaptation phase a", () => {
     const template = readRepoFile("template", "SKILL.md.template");
 
     expect(template).toContain("Trigger-Focused Frontmatter");
-    expect(template).toContain("Scope and Boundaries");
-    expect(template).toContain("Phase Workflow");
+    expect(template).toContain("Operating Posture");
+    expect(template).toContain("Scope and Handoffs");
+    expect(template).toContain("Decision Sequence");
+    expect(template).toContain("## Example");
     expect(template).toContain("Stop Gates");
     expect(template).toContain("Output Contract");
     expect(template).toContain("Validation / Self-check");
+    expect(template).toContain("References and Resources");
+    expect(template).toContain("human-readable-skill-writing.md");
+  });
+
+  test("documents the human-readable Phase B reader contract", () => {
+    const guide = readRepoFile("docs", "authoring", "human-readable-skill-writing.md");
+    const phaseA = readRepoFile("docs", "authoring", "skill-pattern-adaptation-phase-a.md");
+
+    expect(guide).toContain("## The Two Readers");
+    expect(guide).toContain("## State the Operating Posture");
+    expect(guide).toContain("## Teach the Decision Sequence");
+    expect(guide).toContain("## Explain the Why Where It Changes Behavior");
+    expect(guide).toContain("## Use Examples as Teaching Tools");
+    expect(guide).toContain("## Human Readability Review");
+    expect(guide).toContain("Do not rewrite the catalog for heading uniformity");
+    expect(phaseA).toContain("Human-Readable Skill Writing — Phase B");
+  });
+
+  test("Phase B pilots teach their operating model without changing ownership", () => {
+    const motion = readRepoFile("skills", "motion-design", "SKILL.md");
+    const learn = readRepoFile("skills", "learn", "SKILL.md");
+
+    for (const skill of [motion, learn]) {
+      expect(skill).toContain("## Operating Posture");
+    }
+
+    expect(motion).toContain("### Example: choose the job before the curve");
+    expect(motion).toContain("## Ownership Boundaries");
+    expect(motion).toContain("## Bounded Workflow");
+    expect(motion).toContain("## Motion Brief / Output Contract");
+    expect(learn).toContain("## Scope and Handoffs");
+    expect(learn).toContain("## Decision Sequence");
+    expect(learn).toContain("## Output Contract");
+    expect(learn).toContain("/project incubate");
+    expect(learn).toContain("### 3. Review the documents and update `repo.md`");
   });
 
   test("pilot orientation skills expose gates and output contracts", () => {

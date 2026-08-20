@@ -39,7 +39,7 @@ function rewriteSkillTemplate(skillFilePath: string, name: string): void {
     .replace(/^name: .*$/m, `name: ${name}`)
     .replace(
       /^description: .*$/m,
-      `description: TODO: Describe when to use the ${name} skill.`,
+      `description: TODO: Describe what ${name} does and when to use it.`,
     )
     .replace(/^# \/template - Skill Template$/m, `# /${name} - Skill Template`)
     .replaceAll("/template", `/${name}`)
@@ -79,9 +79,10 @@ export function createSkillFromTemplate(name: string, repoRoot = getRepoRoot()):
     skillPath: targetPath,
     files: listFiles(targetPath),
     nextSteps: [
-      `Edit skills/${name}/SKILL.md description, scope, workflow, and validation gates.`,
+      `Edit skills/${name}/SKILL.md purpose, operating posture, scope and handoffs, decision sequence, example, and validation gates.`,
       `Add commands/${name}.md if this skill should ship with a command wrapper; Agy derives /mh-${name} from the installed skill alias.`,
       "Update .claude-plugin/marketplace.json, skills/llms.txt, README.md, and tests in the same feature pass when the skill becomes part of the packaged bundle.",
+      "Remove authoring placeholders and unused resource folders before packaging.",
       "Run bun ./src/cli.ts gaps --json before committing authoring changes.",
     ],
   };

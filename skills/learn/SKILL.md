@@ -6,9 +6,37 @@ disable-slash-command: true
 
 # /learn - Deep Dive Learning Pattern
 
-Explore a codebase with 3 parallel agents → create organized documentation.
+Study a codebase without turning it into an active development checkout. Keep
+the source clone replaceable, keep the learning notes durable, and make each run
+traceable to one source path and timestamp.
 
 In Agy, invoke this workflow through the adapter-installed user-only `/mh-learn` skill alias. This canonical `learn` skill keeps model discovery while its raw slash command stays hidden to avoid colliding with Agy's built-in `/learn`.
+
+## Operating Posture
+
+Act as a research lead. Give parallel readers distinct questions, preserve the
+source as read-only evidence, and synthesize their findings instead of treating
+five long documents as five independent truths. Breadth comes from parallelism;
+the main agent still owns factual consistency and the final learning index.
+
+The common failure is an ownership mistake: a reader follows the `origin/`
+symlink and writes generated notes into the learned repository. Prevent that by
+resolving separate literal source and documentation paths before dispatch.
+
+## Scope and Handoffs
+
+This skill owns codebase study and durable learning notes:
+
+- external repositories are cloned through `ghq`, then read through an
+  `origin/` symlink
+- existing local projects may be read directly
+- generated documents live under the current repo's `.agent-state/learn/`
+- the main agent reviews the documents and owns `repo.md`
+
+It does not own project discovery, active development clones, or historical
+session mining. Use `/project find` to locate tracked projects, `/project
+incubate` to start active development, and the relevant recap/history workflow
+for session evidence.
 
 ## Usage
 
@@ -90,27 +118,30 @@ while read repo; do
 done < "$AGENT_STATE_DIR/learn/.origins"
 ```
 
-## Step 0: Detect Input Type + Resolve Path
+## Decision Sequence
+
+### 1. Resolve the source and destination
 
 ```bash
 date "+🕐 %H:%M %Z (%A %d %B %Y)"
 ```
 
-**CRITICAL: Capture ABSOLUTE paths first (before spawning any agents):**
+Capture absolute paths before spawning any agents:
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 AGENT_STATE_DIR="${AGENT_STATE_DIR:-$REPO_ROOT/.agent-state}"
 echo "Learning from: $REPO_ROOT"
 ```
 
-**IMPORTANT FOR SUBAGENTS:**
-When spawning parallel agents, you MUST give them TWO literal paths:
+When spawning parallel agents, give them two literal paths:
 1. **SOURCE_DIR** (where to READ code) - the `origin/` symlink
 2. **DOCS_DIR** (where to WRITE docs) - the parent directory, NOT inside origin/
 
-⚠️ **THE BUG**: If you only give agents `origin/` path, they cd into it and write there → files end up in the wrong repo.
+Why this matters: if a reader receives only the `origin/` path, it may `cd` into
+the symlink and write generated files into the learned repository.
 
-**FIX**: Always give BOTH paths as literal absolute values (no variables in the final prompt):
+Always pass both paths as literal absolute values rather than unresolved shell
+variables:
 
 Example:
 ```
@@ -151,13 +182,11 @@ ls -la "$AGENT_STATE_DIR/learn/$OWNER/$REPO/"
 find "$AGENT_STATE_DIR/learn" -name "origin" -type l | xargs -I{} dirname {} | grep -i "$INPUT" | head -1
 ```
 
-## Scope
+For an external repo, clone and create the symlink before exploration. For a
+local project already inside the current repo, read directly from that path and
+write docs into its matching `.agent-state/learn/...` destination.
 
-**For external repos**: Clone with the script first, then explore via `origin/`.
-
-**For local projects already inside the current repo**: Read directly from the local path and write docs into the matching `.agent-state/learn/...` destination.
-
-## Step 1: Detect Mode & Calculate Paths
+### 2. Choose depth and calculate paths
 
 Check arguments for `--fast` or `--deep`:
 - `--fast` → Single overview agent
@@ -174,9 +203,10 @@ SOURCE_DIR = [AGENT_STATE_DIR]/learn/[OWNER]/[REPO]/origin/
 FILE_PREFIX = [TIME]_
 ```
 
-**⚠️ CRITICAL: Create symlink AND date folder FIRST, then spawn agents!**
+Create the symlink and date folder before spawning agents. This turns path
+ownership into a checked precondition rather than a promise in the prompt.
 
-1. Run the clone + symlink script in Step 0 first
+1. Complete the source and symlink setup in section 1 first
 2. Capture TIME with `date +%H%M`
 3. Create the date folder: `mkdir -p "$DOCS_DIR"`
 4. Capture `DOCS_DIR`, `SOURCE_DIR`, and `TIME` as literal values
@@ -186,9 +216,9 @@ FILE_PREFIX = [TIME]_
 
 ---
 
-## Mode: --fast (1 agent)
+#### Fast mode: `--fast` (1 agent)
 
-### Single Agent: Quick Overview
+##### Quick overview reader
 
 **Prompt the agent with (use literal paths, not variables):**
 ```
@@ -206,11 +236,11 @@ Analyze:
 - Notable patterns or tech
 ```
 
-**Skip to Step 2** after the agent completes.
+Continue to section 3 after the reader completes.
 
 ---
 
-## Mode: Default (3 agents)
+#### Default mode (3 agents)
 
 Launch 3 agents in parallel. Each prompt must include:
 ```
@@ -220,28 +250,28 @@ WRITE your output to:   [DOCS_DIR]/[TIME]_[filename].md
 ⚠️ IMPORTANT: Write to DOCS_DIR (the date folder), NOT inside origin/!
 ```
 
-### Agent 1: Architecture Explorer → `[TIME]_ARCHITECTURE.md`
+##### Reader 1: Architecture Explorer → `[TIME]_ARCHITECTURE.md`
 - Directory structure
 - Entry points
 - Core abstractions
 - Dependencies
 
-### Agent 2: Code Snippets Collector → `[TIME]_CODE-SNIPPETS.md`
+##### Reader 2: Code Snippets Collector → `[TIME]_CODE-SNIPPETS.md`
 - Main entry point code
 - Core implementations
 - Interesting patterns
 
-### Agent 3: Quick Reference Builder → `[TIME]_QUICK-REFERENCE.md`
+##### Reader 3: Quick Reference Builder → `[TIME]_QUICK-REFERENCE.md`
 - What it does
 - Installation
 - Key features
 - Usage patterns
 
-**Skip to Step 2** after all agents complete.
+Continue to section 3 after all readers complete.
 
 ---
 
-## Mode: --deep (5 agents)
+#### Deep mode: `--deep` (5 agents)
 
 Launch 5 agents in parallel. Each prompt must include:
 ```
@@ -251,39 +281,43 @@ WRITE your output to:   [DOCS_DIR]/[TIME]_[filename].md
 ⚠️ IMPORTANT: Write to DOCS_DIR (the date folder), NOT inside origin/!
 ```
 
-### Agent 1: Architecture Explorer → `[TIME]_ARCHITECTURE.md`
+##### Reader 1: Architecture Explorer → `[TIME]_ARCHITECTURE.md`
 - Directory structure & organization philosophy
 - Entry points (all of them)
 - Core abstractions & their relationships
 - Dependencies (direct + transitive patterns)
 
-### Agent 2: Code Snippets Collector → `[TIME]_CODE-SNIPPETS.md`
+##### Reader 2: Code Snippets Collector → `[TIME]_CODE-SNIPPETS.md`
 - Main entry point code
 - Core implementations with context
 - Interesting patterns & idioms
 - Error handling examples
 
-### Agent 3: Quick Reference Builder → `[TIME]_QUICK-REFERENCE.md`
+##### Reader 3: Quick Reference Builder → `[TIME]_QUICK-REFERENCE.md`
 - What it does (comprehensive)
 - Installation (all methods)
 - Key features with examples
 - Configuration options
 
-### Agent 4: Testing & Quality Patterns → `[TIME]_TESTING.md`
+##### Reader 4: Testing & Quality Patterns → `[TIME]_TESTING.md`
 - Test structure and conventions
 - Test utilities and helpers
 - Mocking patterns
 - Coverage approach
 
-### Agent 5: API & Integration Surface → `[TIME]_API-SURFACE.md`
+##### Reader 5: API & Integration Surface → `[TIME]_API-SURFACE.md`
 - Public API documentation
 - Extension points / hooks
 - Integration patterns
 - Plugin/middleware architecture
 
-**Skip to Step 2** after all agents complete.
+Continue to section 3 after all readers complete.
 
-## Step 2: Create/Update Hub File (`repo.md`)
+### 3. Review the documents and update `repo.md`
+
+Do not treat completion from every reader as proof that the combined learning is
+correct. Check contradictory counts, unsupported installation claims, stale
+paths, and source modifications before writing the hub summary.
 
 ```markdown
 # [REPO] Learning Index
@@ -304,7 +338,7 @@ WRITE your output to:   [DOCS_DIR]/[TIME]_[filename].md
 **Key insights**: [2-3 things learned]
 ```
 
-## Output Summary
+## Output Contract
 
 ### --fast mode
 ```markdown

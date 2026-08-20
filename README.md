@@ -251,6 +251,7 @@ Start here when changing the repo rather than installing from it:
 
 - Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)
 - Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)
+- Human-readable skill writing: [`docs/authoring/human-readable-skill-writing.md`](./docs/authoring/human-readable-skill-writing.md)
 - Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)
 - Verification and knowledge freshness: [`docs/authoring/verification-and-knowledge-freshness.md`](./docs/authoring/verification-and-knowledge-freshness.md)
 

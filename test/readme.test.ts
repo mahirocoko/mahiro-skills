@@ -57,6 +57,7 @@ describe("README", () => {
     expect(content).toContain("Adapter implementation plan: [`docs/cli/adapter-implementation-plan-v0.md`](./docs/cli/adapter-implementation-plan-v0.md)");
     expect(content).toContain("Release and path conventions: [`docs/authoring/release-and-path-conventions.md`](./docs/authoring/release-and-path-conventions.md)");
     expect(content).toContain("Skill pattern adaptation: [`docs/authoring/skill-pattern-adaptation-phase-a.md`](./docs/authoring/skill-pattern-adaptation-phase-a.md)");
+    expect(content).toContain("Human-readable skill writing: [`docs/authoring/human-readable-skill-writing.md`](./docs/authoring/human-readable-skill-writing.md)");
     expect(content).toContain("Docs bootstrap and review workflow: [`docs/authoring/mahiro-docs-rules-init-and-style-workflow.md`](./docs/authoring/mahiro-docs-rules-init-and-style-workflow.md)");
     expect(content).toContain("Supported v0 commands: `plan`, `install`, `uninstall`, `list`, `doctor`, `audit`, `manifest`, `search`, `gaps`, `new`, `tui`, and `guided`.");
     expect(content).toContain("Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi`.");
