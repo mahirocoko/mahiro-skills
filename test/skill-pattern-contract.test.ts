@@ -203,6 +203,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Never silently change backends after creating a tab, pane, or tmux session");
     expect(skill).toContain("Never run `herdr integration install` without explicit user approval");
     expect(skill).toContain("Do not hard-code a Herdr protocol number");
+    expect(skill).toContain("default to `--no-focus`");
+    expect(skill).toContain("Treat `--focus` as an explicit opt-in");
+    expect(playbook).toContain('TAB_FOCUS_FLAG="--no-focus"');
+    expect(playbook).toContain('  "$TAB_FOCUS_FLAG")"');
     expect(skill).toContain("`herdr agent start`");
     expect(skill).toContain("`herdr agent prompt`");
     expect(skill).toContain("same-prompt fanout");

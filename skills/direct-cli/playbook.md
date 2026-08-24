@@ -75,13 +75,15 @@ The selector validates both backend availability, Herdr status JSON, and a live 
 
 ### Herdr lane lifecycle
 
-One job maps to one `direct-<job-slug>` tab in the caller workspace by default. Pass direct-cli `--workspace ID` when the job should live in another existing workspace; do not guess from labels. Focus the new job tab before launching agents: this keeps the workflow visibly pane-first and lets Herdr observe interactive readiness instead of hiding the lane in an unseen background tab. Each direct executor maps to one named pane/agent. Parse IDs returned by Herdr; never predict them.
+One job maps to one `direct-<job-slug>` tab in the caller workspace by default. Pass direct-cli `--workspace ID` when the job should live in another existing workspace; do not guess from labels. Create the new job tab with `--no-focus` by default so the user's current tab remains selected; map an explicit direct-cli `--focus` request to Herdr `--focus`. A background job tab remains pane-first because the controller owns its parsed tab/pane IDs, proves interactive readiness through the pane API, and surfaces approval or blocker states without stealing focus. Each direct executor maps to one named pane/agent. Parse IDs returned by Herdr; never predict them.
 
 Agent names are session-wide, must be unique, and match `[a-z][a-z0-9_-]{0,31}`. Derive compact names from the full pane ID, then check the live agent list before launch. Pane titles remain the human-readable role labels.
 
 ```bash
 JOB="direct-<job-slug>"
 TARGET_CWD="$(pwd)"
+# Change this to --focus only when direct-cli received an explicit --focus request.
+TAB_FOCUS_FLAG="--no-focus"
 # Set DIRECT_HERDR_WORKSPACE_ID from a parsed direct-cli --workspace ID.
 TARGET_WORKSPACE_ID="${DIRECT_HERDR_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}"
 [ -n "$TARGET_WORKSPACE_ID" ] || {
@@ -93,7 +95,7 @@ tab_json="$(herdr tab create \
   --workspace "$TARGET_WORKSPACE_ID" \
   --cwd "$TARGET_CWD" \
   --label "$JOB" \
-  --focus)"
+  "$TAB_FOCUS_FLAG")"
 
 TAB_ID="$(printf '%s' "$tab_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["tab"]["tab_id"])')"
 ROOT_PANE="$(printf '%s' "$tab_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')"
