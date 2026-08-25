@@ -25,11 +25,12 @@ describe("control-room-goals execution contract", () => {
 
     expect(contract).toContain("## Local subagent routing policy");
     expect(contract).toContain("Letta `Agent` routing surface, not direct CLI model slugs");
-    expect(contract).toContain("gpt-5.6-luna-plus-pro-max");
-    expect(contract).toContain("gpt-5.6-terra-plus-pro-medium");
-    expect(contract).toContain("gpt-5.6-terra-plus-pro-high");
-    expect(contract).toContain("gpt-5.6-sol-plus-pro-high");
-    expect(contract).toContain("openai-codex/gpt-5.3-codex-spark");
+    expect(contract).toContain("gpt-5.6-luna-max");
+    expect(contract).toContain("gpt-5.6-terra-medium");
+    expect(contract).toContain("gpt-5.6-terra-high");
+    expect(contract).toContain("gpt-5.6-sol-high");
+    expect(contract).toContain("gpt-5.6-luna-low");
+    expect(contract).not.toContain("plus-pro");
     expect(contract).toContain("replace superseded entries here");
   });
 

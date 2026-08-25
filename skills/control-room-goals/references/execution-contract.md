@@ -74,12 +74,12 @@ These IDs belong to the Letta `Agent` routing surface, not direct CLI model slug
 
 | Role | Explicit model | Use |
 | --- | --- | --- |
-| Long implementation / execute-to-DoD | `gpt-5.6-luna-plus-pro-max` | Patient long-task executor |
-| Narrow read-only scout | `gpt-5.6-luna-plus-pro-max` | Bounded repo/history mapping |
-| Routine specialist or review | `gpt-5.6-terra-plus-pro-medium` | Fast bounded specialist work |
-| Interactive fix/controller | `gpt-5.6-terra-plus-pro-high` | Low-latency implementation loop |
-| Architecture/UI/frontier/final judgment | `gpt-5.6-sol-plus-pro-high` | Bounded high-judgment escalation |
-| Explicit commit request | `openai-codex/gpt-5.3-codex-spark` | Existing safe commit lane |
+| Long implementation / execute-to-DoD | `gpt-5.6-luna-max` | Patient long-task executor |
+| Narrow read-only scout | `gpt-5.6-luna-max` | Bounded repo/history mapping |
+| Routine specialist or review | `gpt-5.6-terra-medium` | Fast bounded specialist work |
+| Interactive fix/controller | `gpt-5.6-terra-high` | Low-latency implementation loop |
+| Architecture/UI/frontier/final judgment | `gpt-5.6-sol-high` | Bounded high-judgment escalation |
+| Explicit commit request | `gpt-5.6-luna-low` | Existing safe commit lane |
 
 Do not auto-switch the main model during a task. Use a bounded subagent for a
 different judgment tier. Sol should judge a prepared evidence packet, not crawl
