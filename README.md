@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.100 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.101 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.100 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.101 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -107,7 +107,7 @@ Current workflow highlights:
 - **Step-first full-screen Skill Manager plus guided compatibility flow** — open with `bun ./src/cli.ts` for `Target → Action → Skills → Review → Result`, compact batch review, optional exact safety details, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
-- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, Codex, and Pi pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. `use Pi` / `ใช้ Pi` selects the Pi lane; Pi uses an explicit tool allowlist and provider/model preflight. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs can detach into a private durable watcher registry for later collection.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, Codex, and Pi pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. `use Pi` / `ใช้ Pi` selects the Pi lane; Pi uses an explicit tool allowlist and provider/model preflight. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, with the durable watcher as an explicit/automatic fallback.
 - **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 - **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
@@ -217,7 +217,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached jobs are Herdr-only, support same-conversation wake-and-collect through a runtime background monitor, and persist watcher/results for durable `list`/`show`/`collect` fallback; the shell watcher itself does not inject into Letta conversations. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
+| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached named-agent jobs are callback-primary only after exact parent-pane receipt capture, with mode-0600 bounded messages/results, explicit receive/retry/audit, one-shot silence deadlines, and `recover` for the existing watcher fallback. Named peers wake through `agent.prompt`; the exact parent Letta pane wakes through one atomic metadata-only `pane.run` because it is not a named Herdr agent. Accepted transport is not receipt/proof and there is no tmux fallback. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `watch` | Gemini web/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |

@@ -212,15 +212,25 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("same-prompt fanout");
     expect(skill).toContain("scripts/prompt-fanout.py");
     expect(skill).toContain("do not call `agent wait` against the old idle state");
-    expect(skill).toContain("## Detached Herdr Jobs");
+    expect(skill).toContain("## Callback-Primary Herdr Jobs");
     expect(skill).toContain("scripts/herdr-jobs.py");
+    expect(skill).toContain("`auto` selects callback only after");
+    expect(skill).toContain("Callback mode launches no continuous watcher");
+    expect(skill).toContain("one-shot silence deadline sleeps rather than polls");
+    expect(skill).toContain("one atomic single-line metadata-only `pane.run`");
+    expect(skill).toContain("accepted delivery is not receipt or proof");
+    expect(skill).toContain("report_ready");
     expect(skill).toContain("reject `--backend tmux --detach`");
     expect(skill).toContain("does not inject a new message into the current Letta conversation");
-    expect(skill).toContain('herdr-jobs.py" wait "$JOB_ID" --json');
-    expect(skill).toContain("controller-owned wake-and-collect");
+    expect(skill).toContain("herdr-jobs.py\" receive \"$JOB_ID\"");
+    expect(skill).toContain("herdr-jobs.py\" retry \"$JOB_ID\"");
+    expect(skill).toContain("herdr-jobs.py\" audit \"$JOB_ID\"");
+    expect(skill).toContain("audit \"$JOB_ID\" --include-bodies");
+    expect(skill).toContain("Idempotency keys are scoped to the exact sender");
+    expect(skill).toContain("Use `recover`");
     expect(skill).toContain("Do not launch `letta -p`");
-    expect(skill).toContain("never prompt, result, or failure-summary text");
-    expect(skill).toContain("reconcile a missing or mismatched watcher process");
+    expect(skill).toContain("never prompt, body, result, or failure-summary text");
+    expect(skill).toContain("not reconciled as failed merely because they have no watcher");
     expect(skill).toContain("tmux load-buffer");
     expect(skill).toContain("one writer per file/asset contract");
     expect(skill).toContain("Antigravity newline caveat");
@@ -253,7 +263,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("The mahiro-skills `pi` adapter installs Agent Skills only");
     expect(skill).toContain("require the current help output to expose every launch flag");
     expect(skill).toContain("PATH presence or the basename `pi` is not enough");
-    expect(skill).toContain("Pi `--detach` and Pi same-prompt fanout");
+    expect(skill).toContain("Pi detach and Pi same-prompt fanout");
     expect(skill).not.toContain("gpt-5.3-codex-high");
     expect(skill).not.toContain("gpt-5.3-codex-high-fast");
     expect(skill).not.toContain("Gemini CLI");
@@ -267,12 +277,19 @@ describe("skill pattern adaptation phase a", () => {
     expect(selector).toContain("no usable backend");
     expect(jobs).toContain('f"Job finished with status: {status}"');
     expect(jobs).not.toContain('f"{status}: {summary}"');
+    expect(jobs).toContain("CALLBACK_SCHEMA");
+    expect(jobs).toContain("MAX_MESSAGE_BYTES = 8 * 1024");
+    expect(jobs).toContain("MAX_MESSAGES = 200");
+    expect(jobs).toContain("capture_callback_context");
+    expect(jobs).toContain("revalidate_current_participant");
+    expect(jobs).toContain("command_recover");
     expect(jobs).toContain("reconcile_job");
     expect(jobs).toContain('"wait"');
     expect(jobs).toContain('"job_dir": str(job_dir)');
     expect(playbook).toContain("### Same-conversation live return");
-    expect(playbook).toContain("current conversation");
-    expect(rootReadme).toContain("same-conversation wake-and-collect");
+    expect(playbook).toContain("Callback wakes and `receive` are the durable worker/parent path");
+    expect(rootReadme).toContain("callback-primary routing");
+    expect(rootReadme).toContain("explicit receive/retry/audit");
     expect(rootReadme).not.toContain("Detached Phase 1 jobs");
     expect(command).toContain("herdr-jobs.py wait <job-id> --json");
     expect(command).toContain("do not emulate return by launching a second `letta -p` turn");
@@ -289,7 +306,13 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Running inside Herdr with `--backend tmux` intentionally creates a nested multiplexer");
     expect(playbook).toContain("byte-identical input at the Herdr CLI argument boundary");
     expect(playbook).toContain("A naive `agent prompt` followed immediately by `agent wait` is unsafe");
-    expect(playbook).toContain("### Detached Herdr jobs");
+    expect(playbook).toContain("### Callback-primary detached Herdr jobs");
+    expect(playbook).toContain("--mode auto|callback|watcher");
+    expect(playbook).toContain("Use `recover \"$JOB_ID\"`");
+    expect(playbook).toContain("Accepted `agent.prompt`/`pane.run` delivery is not receipt or proof");
+    expect(playbook).toContain("transport acceptance alone never finalizes");
+    expect(playbook).toContain("ledger is capped at 200");
+    expect(playbook).not.toContain("background task/monitor");
     expect(playbook).toContain("list --json");
     expect(playbook).toContain("collect \"$JOB_ID\"");
     expect(playbook).toContain("Role fanout");
@@ -337,6 +360,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("gemini --help");
 
     expect(readme).toContain("same-prompt fanout");
+    expect(readme).toContain("callback-primary");
+    expect(readme).toContain("Accepted delivery is never receipt/proof");
+    expect(readme).toContain("recover");
     expect(readme).toContain("`--backend auto`");
     expect(readme).toContain("`--backend herdr`");
     expect(readme).toContain("`--backend tmux`");
@@ -370,6 +396,10 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).not.toContain("Antigravity `Claude Opus 4.6 (Thinking)`");
     }
 
+    expect(rootReadme).toContain("callback-primary routing");
+    expect(rootReadme).toContain("exact parent-pane receipt capture");
+    expect(rootReadme).toContain("one atomic metadata-only `pane.run`");
+    expect(rootReadme).toContain("there is no tmux fallback");
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
     expect(rootReadme).toContain("auto-selected Herdr/tmux backends");
     expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane");

@@ -599,11 +599,9 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/prompt-fanout.py" \
 
 This proves byte-identical input at the Herdr CLI argument boundary. It does not prove model receipt or response equality. A naive `agent prompt` followed immediately by `agent wait` is unsafe because `agent wait` can match the old idle state before work starts. If the helper reports no activity transition, inspect the named pane and submit one Enter only when the prompt is visibly unsent. Capture each lane independently before synthesis.
 
-### Detached Herdr jobs
+### Callback-primary detached Herdr jobs
 
-Detached mode lets the main agent return control after dispatch while a local watcher owns completion capture. Cursor/Agy/Codex remain interactive in visible Herdr panes. The watcher itself is not a callback into the current Letta conversation; same-conversation live return is a separate controller-owned wake-and-collect layer.
-
-Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete:
+Detached mode returns control after bounded dispatch while callback messages provide the primary worker-to-parent path. Cursor/Agy/Codex remain interactive in visible Herdr panes. Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete:
 
 ```bash
 JOB_ID="review-$(date +%Y%m%d-%H%M%S)"
@@ -613,6 +611,8 @@ cat > "$PROMPT_FILE" <<'PROMPT'
 PROMPT
 
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
+  --mode auto|callback|watcher \
+  --callback-timeout 1800 \
   --job-id "$JOB_ID" \
   --prompt-file "$PROMPT_FILE" \
   --cwd "$TARGET_CWD" \
@@ -620,15 +620,30 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
   "$AGENT_A" "$AGENT_B"
 ```
 
-The helper performs these controller-owned steps:
+Routing is fail-closed and backward-compatible:
 
-1. Validate the job ID and named agents, then query each baseline `state_change_seq` before creating durable job state.
-2. Create a mode-0700 job directory and mode-0600 `job.json`, `prompt.txt`, watcher log, and result files.
-3. Dispatch the exact prompt to each named Herdr agent with a bounded client-side call; local summaries and notifications never embed prompt text.
-4. Spawn a detached watcher and return immediately with the job ID and directory.
-5. Require a real activity transition, then run settled waits concurrently.
-6. Capture bounded `recent-unwrapped` output and atomically record `done`, `attention`, or `error`.
-7. Send only a generic best-effort macOS notification containing job ID and terminal status; prompt, result, and failure-summary content stays in local files.
+1. `auto` captures the exact parent Letta pane from `HERDR_PANE_ID` through `herdr pane get`, then captures every target receipt. Only that proof selects callback; otherwise auto uses the existing watcher.
+2. Explicit `callback` fails before dispatch when an exact parent or target receipt is unavailable. Callback launches no continuous watcher; its default 30-minute one-shot silence process sleeps rather than polls, records expiry, and wakes the exact parent with a `recover` command. Use `--callback-timeout 0` only for a deliberately unmanaged experiment.
+3. Explicit `watcher` keeps the v1 record and lifecycle. Existing watcher/v1 jobs remain readable and reconcilable.
+4. Callback records separate task and dispatch hashes, appends one byte-identical footer to every target prompt, and persists mode-0600 job/ledger files. Named targets wake through Herdr `agent.prompt`; the exact parent Letta pane wakes through one atomic single-line metadata-only `pane.run`, because it is not an active named Herdr agent.
+
+Callback receipts include pane/workspace/tab/terminal, Herdr session/socket, available non-secret Letta identifiers, and target agent session. Re-read the exact receipt before every send/receive. Infer the sender from the current `HERDR_PANE_ID`; never accept a caller-supplied sender name. The ACL is exactly parent plus the named targets: parent may message targets, and targets may message parent or siblings. Outsider and stale receipts fail. Accepted `agent.prompt`/`pane.run` delivery is not receipt or proof; never use unverified pane input or fall back to tmux.
+
+Callback messages are bounded and durable:
+
+```bash
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" send "$JOB_ID" \
+  --to parent --kind progress|question|blocked|reply|report_ready|report_failed \
+  --body-file "$BODY_FILE" --idempotency-key "$KEY"
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" receive "$JOB_ID" --message-id "$MESSAGE_ID"
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" retry "$JOB_ID" --message-id "$MESSAGE_ID"
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" audit "$JOB_ID"
+python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" audit "$JOB_ID" --include-bodies
+```
+
+Bodies come only from private regular files and are capped at 8 KiB; each message has private files and the ledger is capped at 200. Wakes contain only job/message/from/kind plus the exact receive command—never body, wake summary, notification text, or secrets. Idempotency keys are sender-scoped and immutable: exact duplicates are idempotent and mismatches fail. Delivery failure is durable until explicit `retry`, which revalidates the original sender. Parent audit sees every peer message and may explicitly include bounded bodies; peers see only their own incoming/outgoing metadata and cannot bulk-audit bodies. `report_ready` and `report_failed` persist bounded target results and finalize only after the exact parent receives every target report; transport acceptance alone never finalizes. Progress, question, blocked, and reply do not finalize.
+
+Use `recover "$JOB_ID"` to invoke the existing watcher fallback for a callback job. A callback job with no watcher is not reconciled as failed merely for that absence. Notifications remain generic metadata only.
 
 Default state root:
 
@@ -641,15 +656,13 @@ Use `DIRECT_CLI_STATE_DIR` or `--state-dir` for an explicit local root. The help
 
 ### Same-conversation live return
 
-After `start`, use a runtime-native background task/monitor when one is available to run:
+When the runtime offers a native background task, it may run the metadata-only wait command:
 
 ```bash
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" wait "$JOB_ID" --json
 ```
 
-`wait` polls only the private job record, reconciles a lost watcher, and exits after the job reaches `done`, `attention`, or `error`. It emits one metadata-only JSON line containing `job`, `status`, and `job_dir`; it does not mark the job collected or print prompt/result text. Set the runtime task description to include the job ID so the completion event is attributable.
-
-When that runtime completion event returns to the current conversation, run `collect`, judge/synthesize the captured agent output, and answer Mahiro. Do not implement this by invoking `letta -p --conversation`, typing into the main Letta pane, or treating a desktop notification as a model turn. Those routes can race the active conversation or bypass its controller. If the conversation closes, the runtime lacks a suitable task primitive, or live return fails, preserve the job uncollected and recover it from durable state on the next turn.
+`wait` polls the private job record and emits one JSON line containing only `job`, `status`, and `job_dir` after terminal state. Callback wakes and `receive` are the durable worker/parent path; `wait` is optional controller-side observation, not a receipt or proof. Run `collect` only after the parent judges the durable results. Do not invoke `letta -p --conversation`, type into the main Letta pane, or treat a desktop notification as a model turn.
 
 At the start of every later direct-cli turn, inspect durable state before launching duplicate work:
 
@@ -660,9 +673,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" show "$JOB_ID"
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 ```
 
-`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. `attention` is intentionally terminal: inspect the named pane for an unsent prompt, provider/account warning, or model fallback. Submit one Enter only when the prompt is visibly unsent; otherwise resolve the provider/model blocker and use a new job ID for a deliberate retry. `error` preserves the failure summary and watcher log. `list`, `show`, `wait`, and `collect` also verify the recorded watcher PID plus command identity; an interrupted or reboot-lost watcher becomes a terminal collectible error instead of staying `watching` forever. A Herdr restart, unavailable agent, hung bounded call, or failed result capture does not silently retry or switch to tmux.
-
-Reject detached mode when tmux is selected. Live return is scoped to the current open controller conversation and has no automatic cross-conversation injection, restart/replay controller, cancellation, pruning, or synthesis. Those remain controller concerns rather than shell-watcher behavior.
+`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. Watcher `attention` remains terminal and means a prompt never showed activity; inspect the named pane and submit one Enter only when visibly unsent. Watcher `error` preserves failure evidence. Callback `running` remains live without a watcher until reports arrive or `recover` is requested. Reject detached mode when tmux is selected; do not silently retry or switch backends.
 
 ### Write policy for multi-pane work
 
