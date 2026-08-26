@@ -1,13 +1,19 @@
 import { describe, expect, test } from 'bun:test';
 import {
   CUSTOM_GEM_ACTION,
+  CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS,
   CUSTOM_GEM_COMMAND_VERSION,
+  CUSTOM_GEM_RECOVER_ACTION,
+  CUSTOM_GEM_RECOVER_COMMAND_VERSION,
+  CUSTOM_GEM_RECOVERY_RESULT_VERSION,
+  CUSTOM_GEM_RESPONSE_STABLE_MS,
   CUSTOM_GEM_SUBMIT_ACTION,
   CUSTOM_GEM_SUBMIT_COMMAND_VERSION,
   CUSTOM_GEM_TARGETS,
   CUSTOM_GEM_UPLOAD_RESULT_VERSION,
   CUSTOM_GEM_URL,
   getCustomGemSendReadiness,
+  hasRequiredTerminalMarkers,
   isGeminiSendControlDescriptor,
   isExactCustomGemConversationUrl,
   normalizeCustomGemTarget,
@@ -15,8 +21,10 @@ import {
   selectGeminiSendControlDescriptor,
   sha256Hex,
   summarizeGemSources,
+  validateGemRecoverRequest,
   validateGemStartRequest,
   validateGemSubmitRequest,
+  validateRequiredTerminalMarkers,
 } from '../skills/gemini/extension/custom-gem-browser-command.js';
 
 const requestId = '123e4567-e89b-12d3-a456-426614174000';
@@ -284,9 +292,11 @@ async function makeSubmitRequest(overrides = {}, target = PRIMARY_TARGET) {
     message: start.message,
     messageSha256,
     messageUtf8Bytes: new TextEncoder().encode(start.message).byteLength,
+    requiredTerminalMarkers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
     timeoutMs: 30_000,
     uploadReceipt: {
       version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
+      browserControlExtensionId: 'jojlgfnapegeomekbaimbhankfoolinf',
       commandId: 'bridge-command-1',
       receiptId: 'a'.repeat(64),
     },
@@ -294,7 +304,56 @@ async function makeSubmitRequest(overrides = {}, target = PRIMARY_TARGET) {
   };
 }
 
+test('terminal markers are bounded, unique, and required for terminal response text', () => {
+  expect(CUSTOM_GEM_SUBMIT_COMMAND_VERSION).toBe('custom-gem-browser-submit-command-v2');
+  expect(CUSTOM_GEM_RESPONSE_STABLE_MS).toBe(800);
+  expect(validateRequiredTerminalMarkers(['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'])).toEqual({
+    ok: true,
+    markers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+    utf8Bytes: 34,
+  });
+  expect(hasRequiredTerminalMarkers(
+    'Draft\nSTUDIO_IMPORT_READY\nEND_OF_RESPONSE',
+    ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+  )).toBe(true);
+  expect(hasRequiredTerminalMarkers('Draft\nSTUDIO_IMPORT_READY', ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'])).toBe(false);
+  expect(hasRequiredTerminalMarkers(
+    'Draft\nEND_OF_RESPONSE\nSTUDIO_IMPORT_READY',
+    ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+  )).toBe(false);
+
+  const invalidCases = [
+    [[], 'invalid_terminal_markers'],
+    [Array.from({ length: 9 }, (_, index) => `marker-${index}`), 'invalid_terminal_markers'],
+    [[''], 'invalid_terminal_marker_0'],
+    [[' marker'], 'invalid_terminal_marker_0'],
+    [['marker '], 'invalid_terminal_marker_0'],
+    [['mark\u0000er'], 'invalid_terminal_marker_0'],
+    [['same', 'same'], 'duplicate_terminal_marker'],
+    [['🙂'.repeat(65)], 'terminal_marker_too_large_0'],
+    [Array.from({ length: 5 }, (_, index) => `${index}${'x'.repeat(255)}`), 'terminal_markers_too_large'],
+  ];
+  for (const [markers, code] of invalidCases) {
+    expect(validateRequiredTerminalMarkers(markers)).toMatchObject({ ok: false, error: { code } });
+  }
+});
+
 describe('metadata-only Custom Gem submit validation', () => {
+  test('accepts only the two reviewed Browser Control extension owners', async () => {
+    expect(CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS).toEqual([
+      'ebijjoalkbhoackkociadkeaameeimih',
+      'jojlgfnapegeomekbaimbhankfoolinf',
+    ]);
+    for (const browserControlExtensionId of CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS) {
+      const valid = await makeSubmitRequest();
+      const result = await validateGemSubmitRequest({
+        ...valid,
+        uploadReceipt: { ...valid.uploadReceipt, browserControlExtensionId },
+      });
+      expect(result).toMatchObject({ ok: true });
+    }
+  });
+
   test('accepts both exact targets and retains the trusted metadata-only contract', async () => {
     for (const target of CUSTOM_GEM_TARGETS) {
       const result = await validateGemSubmitRequest(await makeSubmitRequest({}, target));
@@ -309,8 +368,10 @@ describe('metadata-only Custom Gem submit validation', () => {
       expect(result.request.sources[0]).not.toHaveProperty('base64');
       expect(result.request.sources[0]).not.toHaveProperty('data');
       expect(result.request.sources[0]).not.toHaveProperty('localPath');
+      expect(result.request.requiredTerminalMarkers).toEqual(['STUDIO_IMPORT_READY', 'END_OF_RESPONSE']);
       expect(result.request.uploadReceipt).toEqual({
         version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
+        browserControlExtensionId: 'jojlgfnapegeomekbaimbhankfoolinf',
         commandId: 'bridge-command-1',
         receiptId: 'a'.repeat(64),
       });
@@ -372,6 +433,9 @@ describe('metadata-only Custom Gem submit validation', () => {
     const valid = await makeSubmitRequest();
     const cases = [
       [{ extra: true }, 'invalid_command_shape'],
+      [{ version: 'custom-gem-browser-submit-command-v1' }, 'invalid_version'],
+      [{ requiredTerminalMarkers: [] }, 'invalid_terminal_markers'],
+      [{ requiredTerminalMarkers: ['DONE', 'DONE'] }, 'duplicate_terminal_marker'],
       [{ currentUrl: `${CUSTOM_GEM_URL}/conversation` }, 'invalid_gem_url'],
       [{ gemUrl: SECOND_TARGET.gemUrl }, 'invalid_gem_url'],
       [{ currentUrl: SECOND_TARGET.gemUrl }, 'invalid_gem_url'],
@@ -383,11 +447,76 @@ describe('metadata-only Custom Gem submit validation', () => {
       [{ messageUtf8Bytes: valid.messageUtf8Bytes + 1 }, 'message_byte_count_mismatch'],
       [{ messageSha256: 'b'.repeat(64) }, 'message_sha256_mismatch'],
       [{ uploadReceipt: { ...valid.uploadReceipt, receiptId: 'bad' } }, 'invalid_upload_receipt'],
+      [{ uploadReceipt: { ...valid.uploadReceipt, browserControlExtensionId: 'not-an-extension' } }, 'invalid_upload_receipt'],
+      [{ uploadReceipt: { ...valid.uploadReceipt, browserControlExtensionId: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' } }, 'invalid_upload_receipt'],
     ];
 
     for (const [override, code] of cases) {
       const result = await validateGemSubmitRequest({ ...valid, ...override });
       expect(result).toMatchObject({ ok: false, error: { code } });
+    }
+  });
+});
+
+async function makeRecoverRequest(overrides = {}, target = PRIMARY_TARGET) {
+  const message = 'Use the supplied images.';
+  return {
+    id: requestId,
+    action: CUSTOM_GEM_RECOVER_ACTION,
+    version: CUSTOM_GEM_RECOVER_COMMAND_VERSION,
+    requestId,
+    gemUrl: target.gemUrl,
+    conversationUrl: `${target.gemUrl}/87dc48f315422485`,
+    tabId: 42,
+    message,
+    messageSha256: await sha256Hex(new TextEncoder().encode(message)),
+    messageUtf8Bytes: new TextEncoder().encode(message).byteLength,
+    requiredTerminalMarkers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+    timeoutMs: 30_000,
+    ...overrides,
+  };
+}
+
+describe('read-only exact-conversation Custom Gem recovery validation', () => {
+  test('accepts the exact recovery shape for either approved Gem', async () => {
+    expect(CUSTOM_GEM_RECOVERY_RESULT_VERSION).toBe('custom-gem-browser-recovery-result-v1');
+    for (const target of CUSTOM_GEM_TARGETS) {
+      const result = await validateGemRecoverRequest(await makeRecoverRequest({}, target));
+      expect(result).toMatchObject({ ok: true });
+      if (!result.ok) continue;
+      expect(result.request).toEqual({
+        requestId,
+        tabId: 42,
+        gemId: target.gemId,
+        gemUrl: target.gemUrl,
+        currentUrl: `${target.gemUrl}/87dc48f315422485`,
+        conversationUrl: `${target.gemUrl}/87dc48f315422485`,
+        timeoutMs: 30_000,
+        message: 'Use the supplied images.',
+        messageSha256: await sha256Hex(new TextEncoder().encode('Use the supplied images.')),
+        requiredTerminalMarkers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+      });
+    }
+  });
+
+  test('fails closed for shape, identity, URL, message, marker, and timeout mismatches', async () => {
+    const valid = await makeRecoverRequest();
+    const { timeoutMs: _timeoutMs, ...missingField } = valid;
+    const cases = [
+      [{ ...valid, extra: true }, 'invalid_command_shape'],
+      [missingField, 'invalid_command_shape'],
+      [{ ...valid, id: '223e4567-e89b-12d3-a456-426614174000' }, 'invalid_request_id'],
+      [{ ...valid, version: 'wrong' }, 'invalid_version'],
+      [{ ...valid, conversationUrl: PRIMARY_TARGET.gemUrl }, 'invalid_conversation_url'],
+      [{ ...valid, conversationUrl: `${SECOND_TARGET.gemUrl}/87dc48f315422485` }, 'invalid_conversation_url'],
+      [{ ...valid, conversationUrl: `${PRIMARY_TARGET.gemUrl}/87dc48f315422485?x=1` }, 'invalid_conversation_url'],
+      [{ ...valid, messageUtf8Bytes: valid.messageUtf8Bytes + 1 }, 'message_byte_count_mismatch'],
+      [{ ...valid, messageSha256: 'b'.repeat(64) }, 'message_sha256_mismatch'],
+      [{ ...valid, requiredTerminalMarkers: [' DONE'] }, 'invalid_terminal_marker_0'],
+      [{ ...valid, timeoutMs: 29_999 }, 'invalid_timeout'],
+    ];
+    for (const [input, code] of cases) {
+      expect(await validateGemRecoverRequest(input)).toMatchObject({ ok: false, error: { code } });
     }
   });
 });
@@ -475,9 +604,12 @@ test('the extension logs only the action name, never the full MQTT command', asy
   expect(source).not.toContain("console.log('[Local Gemini Proxy] Command:', cmd.action, cmd);");
   expect(source).toContain("case 'gem_start_v1':");
   expect(source).toContain("case 'gem_submit_v1':");
+  expect(source).toContain("case 'gem_recover_v1':");
   expect(source).toContain("'gem-media-attachment.gem-attachment-tile'");
   expect(source).toContain("attachmentVerification: 'trusted_sequential_tiles'");
-  expect(source).toContain("const MAHIRO_BROWSER_CONTROL_EXTENSION_ID = 'ebijjoalkbhoackkociadkeaameeimih'")
+  expect(source).not.toContain('MAHIRO_BROWSER_CONTROL_EXTENSION_ID')
+  expect(source).toContain('chrome.runtime.sendMessage(request.uploadReceipt.browserControlExtensionId')
+  expect(source).toContain('browserControlExtensionId: request.uploadReceipt.browserControlExtensionId')
   expect(source).toContain("type: 'CONSUME_CUSTOM_GEM_UPLOAD_ATTESTATION_V1'")
   expect(source).toContain("type: 'TRUSTED_CUSTOM_GEM_SEND_V1'")
   expect(source).toContain('message: request.message')
@@ -507,6 +639,34 @@ test('the extension logs only the action name, never the full MQTT command', asy
   expect(source).toContain('const attributionToken = request.requestId')
   expect(source).toContain('attributedMessageNode.compareDocumentPosition(node)')
   expect(source).toContain('func: cleanupCustomGemAttributionPage')
+  const trustedResponseBlock = source.slice(
+    source.indexOf('async function awaitTrustedCustomGemResponsePage'),
+    source.indexOf('function cleanupCustomGemAttributionPage'),
+  )
+  expect(trustedResponseBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)')
+  expect(trustedResponseBlock).toContain('Date.now() - candidateSince >= stableMs')
+  expect(trustedResponseBlock).toContain('const nextMessageNode = currentMessages.find(')
+  expect(trustedResponseBlock).not.toContain('aria-busy')
+  const recoveryPageBlock = source.slice(
+    source.indexOf('async function recoverCustomGemResponsePage'),
+    source.indexOf('async function runCustomGemRecovery'),
+  )
+  expect(recoveryPageBlock).toContain('normalizeText(messageText(node)) === normalizeText(message)')
+  expect(recoveryPageBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)')
+  expect(recoveryPageBlock).toContain('Date.now() - candidateSince >= stableMs')
+  expect(recoveryPageBlock).not.toContain('.click(')
+  expect(recoveryPageBlock).not.toContain('aria-busy')
+  const recoveryRuntimeBlock = source.slice(
+    source.indexOf('async function executeCustomGemRecover'),
+    source.indexOf('async function executeCustomGemSubmit'),
+  )
+  expect(recoveryRuntimeBlock).toContain('tab?.url !== request.conversationUrl')
+  expect(recoveryRuntimeBlock).toContain('version: CUSTOM_GEM_RECOVERY_RESULT_VERSION')
+  expect(recoveryRuntimeBlock).not.toContain('chrome.tabs.update')
+  expect(recoveryRuntimeBlock).not.toContain('verifyTrustedCustomGemUploadReceipt')
+  expect(recoveryRuntimeBlock).not.toContain('reserveCustomGemDurableRequest')
+  expect(recoveryRuntimeBlock).not.toContain('completeCustomGemDurableRequest')
+  expect(source).toContain("const isExactRecoverySuccess = data?.version === CUSTOM_GEM_RECOVERY_RESULT_VERSION")
   expect(source).toContain("node.querySelectorAll('.query-text-line')")
   expect(source).toContain('const tabReadyDeadline = Math.min(deadlineAt, Date.now() + 5_000)')
   expect(source).toContain('const sendReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs)')

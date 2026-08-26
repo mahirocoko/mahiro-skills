@@ -1,9 +1,16 @@
 export const CUSTOM_GEM_ACTION = 'gem_start_v1';
 export const CUSTOM_GEM_COMMAND_VERSION = 'custom-gem-browser-command-v1';
 export const CUSTOM_GEM_SUBMIT_ACTION = 'gem_submit_v1';
-export const CUSTOM_GEM_SUBMIT_COMMAND_VERSION = 'custom-gem-browser-submit-command-v1';
-export const CUSTOM_GEM_UPLOAD_RESULT_VERSION = 'custom-gem-source-upload-result-v1';
+export const CUSTOM_GEM_SUBMIT_COMMAND_VERSION = 'custom-gem-browser-submit-command-v2';
+export const CUSTOM_GEM_RECOVER_ACTION = 'gem_recover_v1';
+export const CUSTOM_GEM_RECOVER_COMMAND_VERSION = 'custom-gem-browser-recover-command-v1';
+export const CUSTOM_GEM_RECOVERY_RESULT_VERSION = 'custom-gem-browser-recovery-result-v1';
+export const CUSTOM_GEM_UPLOAD_RESULT_VERSION = 'custom-gem-source-upload-result-v2';
 export const CUSTOM_GEM_RESULT_VERSION = 'custom-gem-browser-result-v1';
+export const CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS = Object.freeze([
+  'ebijjoalkbhoackkociadkeaameeimih',
+  'jojlgfnapegeomekbaimbhankfoolinf',
+]);
 export const CUSTOM_GEM_TARGETS = Object.freeze([
   Object.freeze({
     gemId: 'd6f1958dff66',
@@ -37,9 +44,14 @@ export const CUSTOM_GEM_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/we
 export const CUSTOM_GEM_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 export const CUSTOM_GEM_MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 export const CUSTOM_GEM_MAX_MESSAGE_BYTES = 8 * 1024;
+export const CUSTOM_GEM_MIN_TERMINAL_MARKERS = 1;
+export const CUSTOM_GEM_MAX_TERMINAL_MARKERS = 8;
+export const CUSTOM_GEM_MAX_TERMINAL_MARKER_BYTES = 256;
+export const CUSTOM_GEM_MAX_TERMINAL_MARKERS_BYTES = 1_024;
 export const CUSTOM_GEM_MIN_TIMEOUT_MS = 30_000;
 export const CUSTOM_GEM_MAX_TIMEOUT_MS = 360_000;
 export const CUSTOM_GEM_MAX_RESPONSE_BYTES = 64 * 1024;
+export const CUSTOM_GEM_RESPONSE_STABLE_MS = 800;
 export const CUSTOM_GEM_BASE_SEND_STABLE_MS = 2_000;
 export const CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS = 1_500;
 export const CUSTOM_GEM_SEND_READY_GRACE_MS = 10_000;
@@ -49,6 +61,7 @@ const SHA256_RE = /^[0-9a-f]{64}$/i;
 const MAX_FILENAME_BYTES = 255;
 const MAX_BASE64_CHARS = Math.ceil(CUSTOM_GEM_MAX_IMAGE_BYTES / 3) * 4;
 const SAFE_ID_RE = /^[a-zA-Z0-9._:-]{1,240}$/;
+const CHROME_EXTENSION_ID_RE = /^[a-p]{32}$/;
 
 function invalid(stage, code, message) {
   return { ok: false, error: { stage, code, message } };
@@ -126,6 +139,61 @@ function invalidSourceCount(collectionLabel) {
 
 export function utf8ByteLength(value) {
   return new TextEncoder().encode(String(value)).byteLength;
+}
+
+export function validateRequiredTerminalMarkers(value) {
+  if (!Array.isArray(value) ||
+      value.length < CUSTOM_GEM_MIN_TERMINAL_MARKERS ||
+      value.length > CUSTOM_GEM_MAX_TERMINAL_MARKERS) {
+    return invalid('validation', 'invalid_terminal_markers', 'requiredTerminalMarkers must contain 1 to 8 strings');
+  }
+
+  const markers = [];
+  const seen = new Set();
+  let totalUtf8Bytes = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const marker = value[index];
+    if (typeof marker !== 'string' || marker.length === 0 || marker !== marker.trim() || marker.includes('\u0000')) {
+      return invalid(
+        'validation',
+        `invalid_terminal_marker_${index}`,
+        `requiredTerminalMarkers ${index} must be a non-empty trimmed string without NUL`,
+      );
+    }
+    const markerUtf8Bytes = utf8ByteLength(marker);
+    if (markerUtf8Bytes > CUSTOM_GEM_MAX_TERMINAL_MARKER_BYTES) {
+      return invalid(
+        'validation',
+        `terminal_marker_too_large_${index}`,
+        `requiredTerminalMarkers ${index} exceeds 256 UTF-8 bytes`,
+      );
+    }
+    if (seen.has(marker)) {
+      return invalid('validation', 'duplicate_terminal_marker', 'requiredTerminalMarkers must contain unique strings');
+    }
+    seen.add(marker);
+    markers.push(marker);
+    totalUtf8Bytes += markerUtf8Bytes;
+  }
+  if (totalUtf8Bytes > CUSTOM_GEM_MAX_TERMINAL_MARKERS_BYTES) {
+    return invalid('validation', 'terminal_markers_too_large', 'requiredTerminalMarkers exceed 1024 aggregate UTF-8 bytes');
+  }
+  return { ok: true, markers, utf8Bytes: totalUtf8Bytes };
+}
+
+export function hasRequiredTerminalMarkers(text, requiredTerminalMarkers) {
+  if (typeof text !== 'string' ||
+      !Array.isArray(requiredTerminalMarkers) ||
+      requiredTerminalMarkers.length < CUSTOM_GEM_MIN_TERMINAL_MARKERS ||
+      requiredTerminalMarkers.length > CUSTOM_GEM_MAX_TERMINAL_MARKERS) return false;
+  let offset = 0;
+  for (const marker of requiredTerminalMarkers) {
+    if (typeof marker !== 'string' || marker.length === 0) return false;
+    const index = text.indexOf(marker, offset);
+    if (index < 0) return false;
+    offset = index + marker.length;
+  }
+  return true;
 }
 
 export function isUuid(value) {
@@ -324,6 +392,7 @@ export async function validateGemSubmitRequest(input) {
     'messageSha256',
     'messageUtf8Bytes',
     'requestId',
+    'requiredTerminalMarkers',
     'sources',
     'tabId',
     'timeoutMs',
@@ -412,17 +481,22 @@ export async function validateGemSubmitRequest(input) {
   if (input.messageSha256 !== messageSha256) {
     return invalid('validation', 'message_sha256_mismatch', 'messageSha256 must match the exact message');
   }
+  const terminalMarkers = validateRequiredTerminalMarkers(input.requiredTerminalMarkers);
+  if (!terminalMarkers.ok) return terminalMarkers;
   if (!Number.isSafeInteger(input.timeoutMs) ||
       input.timeoutMs < CUSTOM_GEM_MIN_TIMEOUT_MS || input.timeoutMs > CUSTOM_GEM_MAX_TIMEOUT_MS) {
     return invalid('validation', 'invalid_timeout', 'timeoutMs must be between 30000 and 360000 milliseconds');
   }
 
   const uploadReceipt = input.uploadReceipt;
-  const receiptKeys = ['commandId', 'receiptId', 'version'];
+  const receiptKeys = ['browserControlExtensionId', 'commandId', 'receiptId', 'version'];
   if (!uploadReceipt || typeof uploadReceipt !== 'object' || Array.isArray(uploadReceipt) ||
       Object.keys(uploadReceipt).length !== receiptKeys.length ||
       Object.keys(uploadReceipt).some((key) => !receiptKeys.includes(key)) ||
       uploadReceipt.version !== CUSTOM_GEM_UPLOAD_RESULT_VERSION ||
+      typeof uploadReceipt.browserControlExtensionId !== 'string' ||
+      !CHROME_EXTENSION_ID_RE.test(uploadReceipt.browserControlExtensionId) ||
+      !CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS.includes(uploadReceipt.browserControlExtensionId) ||
       typeof uploadReceipt.commandId !== 'string' || !SAFE_ID_RE.test(uploadReceipt.commandId) ||
       typeof uploadReceipt.receiptId !== 'string' || !SHA256_RE.test(uploadReceipt.receiptId)) {
     return invalid('validation', 'invalid_upload_receipt', 'uploadReceipt must bind one exact trusted upload result');
@@ -439,12 +513,94 @@ export async function validateGemSubmitRequest(input) {
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256,
+      requiredTerminalMarkers: terminalMarkers.markers,
       sources,
       uploadReceipt: {
         version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
+        browserControlExtensionId: uploadReceipt.browserControlExtensionId,
         commandId: uploadReceipt.commandId,
         receiptId: uploadReceipt.receiptId.toLowerCase(),
       },
+    },
+  };
+}
+
+export async function validateGemRecoverRequest(input) {
+  const requestId = input?.requestId ?? null;
+  const allowedKeys = [
+    'action',
+    'conversationUrl',
+    'gemUrl',
+    'id',
+    'message',
+    'messageSha256',
+    'messageUtf8Bytes',
+    'requestId',
+    'requiredTerminalMarkers',
+    'tabId',
+    'timeoutMs',
+    'version',
+  ];
+  if (!input || typeof input !== 'object' || Array.isArray(input) ||
+      Object.keys(input).length !== allowedKeys.length ||
+      Object.keys(input).some((key) => !allowedKeys.includes(key))) {
+    return invalid('validation', 'invalid_command_shape', 'recovery command fields must match the exact contract');
+  }
+  if (input.action !== CUSTOM_GEM_RECOVER_ACTION) {
+    return invalid('validation', 'invalid_action', `action must be ${CUSTOM_GEM_RECOVER_ACTION}`);
+  }
+  if (input.version !== CUSTOM_GEM_RECOVER_COMMAND_VERSION) {
+    return invalid('validation', 'invalid_version', `version must be ${CUSTOM_GEM_RECOVER_COMMAND_VERSION}`);
+  }
+  if (!isUuid(requestId) || input.id !== requestId) {
+    return invalid('validation', 'invalid_request_id', 'id and requestId must be the same canonical UUID');
+  }
+  const target = normalizeCustomGemTarget(input.gemUrl);
+  if (!target) {
+    return invalid(
+      'validation',
+      'invalid_gem_url',
+      `gemUrl must equal one of: ${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(', ')}`,
+    );
+  }
+  if (!isExactCustomGemConversationUrl(target.gemUrl, input.conversationUrl)) {
+    return invalid('validation', 'invalid_conversation_url', 'conversationUrl must be one exact conversation under gemUrl');
+  }
+  if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
+    return invalid('validation', 'invalid_tab_id', 'tabId must be an exact non-negative integer');
+  }
+  if (typeof input.message !== 'string' || input.message.length === 0 ||
+      input.message !== input.message.trim() || input.message.includes('\u0000')) {
+    return invalid('validation', 'invalid_message', 'message must be minimal text without surrounding whitespace or NUL');
+  }
+  const messageUtf8Bytes = utf8ByteLength(input.message);
+  if (messageUtf8Bytes > CUSTOM_GEM_MAX_MESSAGE_BYTES || input.messageUtf8Bytes !== messageUtf8Bytes) {
+    return invalid('validation', 'message_byte_count_mismatch', 'messageUtf8Bytes must match the bounded message');
+  }
+  const messageSha256 = await sha256Hex(new TextEncoder().encode(input.message));
+  if (input.messageSha256 !== messageSha256) {
+    return invalid('validation', 'message_sha256_mismatch', 'messageSha256 must match the exact message');
+  }
+  const terminalMarkers = validateRequiredTerminalMarkers(input.requiredTerminalMarkers);
+  if (!terminalMarkers.ok) return terminalMarkers;
+  if (!Number.isSafeInteger(input.timeoutMs) ||
+      input.timeoutMs < CUSTOM_GEM_MIN_TIMEOUT_MS || input.timeoutMs > CUSTOM_GEM_MAX_TIMEOUT_MS) {
+    return invalid('validation', 'invalid_timeout', 'timeoutMs must be between 30000 and 360000 milliseconds');
+  }
+
+  return {
+    ok: true,
+    request: {
+      requestId,
+      tabId: input.tabId,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: input.conversationUrl,
+      conversationUrl: input.conversationUrl,
+      timeoutMs: input.timeoutMs,
+      message: input.message,
+      messageSha256,
+      requiredTerminalMarkers: terminalMarkers.markers,
     },
   };
 }

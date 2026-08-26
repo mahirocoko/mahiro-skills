@@ -11592,9 +11592,16 @@ var mqtt_esm_default = XT();
 var CUSTOM_GEM_ACTION = "gem_start_v1";
 var CUSTOM_GEM_COMMAND_VERSION = "custom-gem-browser-command-v1";
 var CUSTOM_GEM_SUBMIT_ACTION = "gem_submit_v1";
-var CUSTOM_GEM_SUBMIT_COMMAND_VERSION = "custom-gem-browser-submit-command-v1";
-var CUSTOM_GEM_UPLOAD_RESULT_VERSION = "custom-gem-source-upload-result-v1";
+var CUSTOM_GEM_SUBMIT_COMMAND_VERSION = "custom-gem-browser-submit-command-v2";
+var CUSTOM_GEM_RECOVER_ACTION = "gem_recover_v1";
+var CUSTOM_GEM_RECOVER_COMMAND_VERSION = "custom-gem-browser-recover-command-v1";
+var CUSTOM_GEM_RECOVERY_RESULT_VERSION = "custom-gem-browser-recovery-result-v1";
+var CUSTOM_GEM_UPLOAD_RESULT_VERSION = "custom-gem-source-upload-result-v2";
 var CUSTOM_GEM_RESULT_VERSION = "custom-gem-browser-result-v1";
+var CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS = Object.freeze([
+  "ebijjoalkbhoackkociadkeaameeimih",
+  "jojlgfnapegeomekbaimbhankfoolinf"
+]);
 var CUSTOM_GEM_TARGETS = Object.freeze([
   Object.freeze({
     gemId: "d6f1958dff66",
@@ -11622,9 +11629,14 @@ var CUSTOM_GEM_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 var CUSTOM_GEM_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 var CUSTOM_GEM_MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 var CUSTOM_GEM_MAX_MESSAGE_BYTES = 8 * 1024;
+var CUSTOM_GEM_MIN_TERMINAL_MARKERS = 1;
+var CUSTOM_GEM_MAX_TERMINAL_MARKERS = 8;
+var CUSTOM_GEM_MAX_TERMINAL_MARKER_BYTES = 256;
+var CUSTOM_GEM_MAX_TERMINAL_MARKERS_BYTES = 1024;
 var CUSTOM_GEM_MIN_TIMEOUT_MS = 3e4;
 var CUSTOM_GEM_MAX_TIMEOUT_MS = 36e4;
 var CUSTOM_GEM_MAX_RESPONSE_BYTES = 64 * 1024;
+var CUSTOM_GEM_RESPONSE_STABLE_MS = 800;
 var CUSTOM_GEM_BASE_SEND_STABLE_MS = 2e3;
 var CUSTOM_GEM_EXTRA_SOURCE_STABLE_MS = 1500;
 var CUSTOM_GEM_SEND_READY_GRACE_MS = 1e4;
@@ -11633,6 +11645,7 @@ var SHA256_RE = /^[0-9a-f]{64}$/i;
 var MAX_FILENAME_BYTES = 255;
 var MAX_BASE64_CHARS = Math.ceil(CUSTOM_GEM_MAX_IMAGE_BYTES / 3) * 4;
 var SAFE_ID_RE = /^[a-zA-Z0-9._:-]{1,240}$/;
+var CHROME_EXTENSION_ID_RE = /^[a-p]{32}$/;
 function invalid(stage, code, message) {
   return { ok: false, error: { stage, code, message } };
 }
@@ -11678,6 +11691,53 @@ function invalidSourceCount(collectionLabel) {
 }
 function utf8ByteLength(value) {
   return new TextEncoder().encode(String(value)).byteLength;
+}
+function validateRequiredTerminalMarkers(value) {
+  if (!Array.isArray(value) || value.length < CUSTOM_GEM_MIN_TERMINAL_MARKERS || value.length > CUSTOM_GEM_MAX_TERMINAL_MARKERS) {
+    return invalid("validation", "invalid_terminal_markers", "requiredTerminalMarkers must contain 1 to 8 strings");
+  }
+  const markers = [];
+  const seen = /* @__PURE__ */ new Set();
+  let totalUtf8Bytes = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const marker = value[index];
+    if (typeof marker !== "string" || marker.length === 0 || marker !== marker.trim() || marker.includes("\0")) {
+      return invalid(
+        "validation",
+        `invalid_terminal_marker_${index}`,
+        `requiredTerminalMarkers ${index} must be a non-empty trimmed string without NUL`
+      );
+    }
+    const markerUtf8Bytes = utf8ByteLength(marker);
+    if (markerUtf8Bytes > CUSTOM_GEM_MAX_TERMINAL_MARKER_BYTES) {
+      return invalid(
+        "validation",
+        `terminal_marker_too_large_${index}`,
+        `requiredTerminalMarkers ${index} exceeds 256 UTF-8 bytes`
+      );
+    }
+    if (seen.has(marker)) {
+      return invalid("validation", "duplicate_terminal_marker", "requiredTerminalMarkers must contain unique strings");
+    }
+    seen.add(marker);
+    markers.push(marker);
+    totalUtf8Bytes += markerUtf8Bytes;
+  }
+  if (totalUtf8Bytes > CUSTOM_GEM_MAX_TERMINAL_MARKERS_BYTES) {
+    return invalid("validation", "terminal_markers_too_large", "requiredTerminalMarkers exceed 1024 aggregate UTF-8 bytes");
+  }
+  return { ok: true, markers, utf8Bytes: totalUtf8Bytes };
+}
+function hasRequiredTerminalMarkers(text, requiredTerminalMarkers) {
+  if (typeof text !== "string" || !Array.isArray(requiredTerminalMarkers) || requiredTerminalMarkers.length < CUSTOM_GEM_MIN_TERMINAL_MARKERS || requiredTerminalMarkers.length > CUSTOM_GEM_MAX_TERMINAL_MARKERS) return false;
+  let offset = 0;
+  for (const marker of requiredTerminalMarkers) {
+    if (typeof marker !== "string" || marker.length === 0) return false;
+    const index = text.indexOf(marker, offset);
+    if (index < 0) return false;
+    offset = index + marker.length;
+  }
+  return true;
 }
 function isUuid(value) {
   return typeof value === "string" && UUID_RE.test(value);
@@ -11845,6 +11905,7 @@ async function validateGemSubmitRequest(input) {
     "messageSha256",
     "messageUtf8Bytes",
     "requestId",
+    "requiredTerminalMarkers",
     "sources",
     "tabId",
     "timeoutMs",
@@ -11924,12 +11985,14 @@ async function validateGemSubmitRequest(input) {
   if (input.messageSha256 !== messageSha256) {
     return invalid("validation", "message_sha256_mismatch", "messageSha256 must match the exact message");
   }
+  const terminalMarkers = validateRequiredTerminalMarkers(input.requiredTerminalMarkers);
+  if (!terminalMarkers.ok) return terminalMarkers;
   if (!Number.isSafeInteger(input.timeoutMs) || input.timeoutMs < CUSTOM_GEM_MIN_TIMEOUT_MS || input.timeoutMs > CUSTOM_GEM_MAX_TIMEOUT_MS) {
     return invalid("validation", "invalid_timeout", "timeoutMs must be between 30000 and 360000 milliseconds");
   }
   const uploadReceipt = input.uploadReceipt;
-  const receiptKeys = ["commandId", "receiptId", "version"];
-  if (!uploadReceipt || typeof uploadReceipt !== "object" || Array.isArray(uploadReceipt) || Object.keys(uploadReceipt).length !== receiptKeys.length || Object.keys(uploadReceipt).some((key) => !receiptKeys.includes(key)) || uploadReceipt.version !== CUSTOM_GEM_UPLOAD_RESULT_VERSION || typeof uploadReceipt.commandId !== "string" || !SAFE_ID_RE.test(uploadReceipt.commandId) || typeof uploadReceipt.receiptId !== "string" || !SHA256_RE.test(uploadReceipt.receiptId)) {
+  const receiptKeys = ["browserControlExtensionId", "commandId", "receiptId", "version"];
+  if (!uploadReceipt || typeof uploadReceipt !== "object" || Array.isArray(uploadReceipt) || Object.keys(uploadReceipt).length !== receiptKeys.length || Object.keys(uploadReceipt).some((key) => !receiptKeys.includes(key)) || uploadReceipt.version !== CUSTOM_GEM_UPLOAD_RESULT_VERSION || typeof uploadReceipt.browserControlExtensionId !== "string" || !CHROME_EXTENSION_ID_RE.test(uploadReceipt.browserControlExtensionId) || !CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS.includes(uploadReceipt.browserControlExtensionId) || typeof uploadReceipt.commandId !== "string" || !SAFE_ID_RE.test(uploadReceipt.commandId) || typeof uploadReceipt.receiptId !== "string" || !SHA256_RE.test(uploadReceipt.receiptId)) {
     return invalid("validation", "invalid_upload_receipt", "uploadReceipt must bind one exact trusted upload result");
   }
   return {
@@ -11943,12 +12006,88 @@ async function validateGemSubmitRequest(input) {
       timeoutMs: input.timeoutMs,
       message: input.message,
       messageSha256,
+      requiredTerminalMarkers: terminalMarkers.markers,
       sources,
       uploadReceipt: {
         version: CUSTOM_GEM_UPLOAD_RESULT_VERSION,
+        browserControlExtensionId: uploadReceipt.browserControlExtensionId,
         commandId: uploadReceipt.commandId,
         receiptId: uploadReceipt.receiptId.toLowerCase()
       }
+    }
+  };
+}
+async function validateGemRecoverRequest(input) {
+  const requestId = input?.requestId ?? null;
+  const allowedKeys = [
+    "action",
+    "conversationUrl",
+    "gemUrl",
+    "id",
+    "message",
+    "messageSha256",
+    "messageUtf8Bytes",
+    "requestId",
+    "requiredTerminalMarkers",
+    "tabId",
+    "timeoutMs",
+    "version"
+  ];
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).length !== allowedKeys.length || Object.keys(input).some((key) => !allowedKeys.includes(key))) {
+    return invalid("validation", "invalid_command_shape", "recovery command fields must match the exact contract");
+  }
+  if (input.action !== CUSTOM_GEM_RECOVER_ACTION) {
+    return invalid("validation", "invalid_action", `action must be ${CUSTOM_GEM_RECOVER_ACTION}`);
+  }
+  if (input.version !== CUSTOM_GEM_RECOVER_COMMAND_VERSION) {
+    return invalid("validation", "invalid_version", `version must be ${CUSTOM_GEM_RECOVER_COMMAND_VERSION}`);
+  }
+  if (!isUuid(requestId) || input.id !== requestId) {
+    return invalid("validation", "invalid_request_id", "id and requestId must be the same canonical UUID");
+  }
+  const target = normalizeCustomGemTarget(input.gemUrl);
+  if (!target) {
+    return invalid(
+      "validation",
+      "invalid_gem_url",
+      `gemUrl must equal one of: ${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(", ")}`
+    );
+  }
+  if (!isExactCustomGemConversationUrl(target.gemUrl, input.conversationUrl)) {
+    return invalid("validation", "invalid_conversation_url", "conversationUrl must be one exact conversation under gemUrl");
+  }
+  if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
+    return invalid("validation", "invalid_tab_id", "tabId must be an exact non-negative integer");
+  }
+  if (typeof input.message !== "string" || input.message.length === 0 || input.message !== input.message.trim() || input.message.includes("\0")) {
+    return invalid("validation", "invalid_message", "message must be minimal text without surrounding whitespace or NUL");
+  }
+  const messageUtf8Bytes = utf8ByteLength(input.message);
+  if (messageUtf8Bytes > CUSTOM_GEM_MAX_MESSAGE_BYTES || input.messageUtf8Bytes !== messageUtf8Bytes) {
+    return invalid("validation", "message_byte_count_mismatch", "messageUtf8Bytes must match the bounded message");
+  }
+  const messageSha256 = await sha256Hex(new TextEncoder().encode(input.message));
+  if (input.messageSha256 !== messageSha256) {
+    return invalid("validation", "message_sha256_mismatch", "messageSha256 must match the exact message");
+  }
+  const terminalMarkers = validateRequiredTerminalMarkers(input.requiredTerminalMarkers);
+  if (!terminalMarkers.ok) return terminalMarkers;
+  if (!Number.isSafeInteger(input.timeoutMs) || input.timeoutMs < CUSTOM_GEM_MIN_TIMEOUT_MS || input.timeoutMs > CUSTOM_GEM_MAX_TIMEOUT_MS) {
+    return invalid("validation", "invalid_timeout", "timeoutMs must be between 30000 and 360000 milliseconds");
+  }
+  return {
+    ok: true,
+    request: {
+      requestId,
+      tabId: input.tabId,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: input.conversationUrl,
+      conversationUrl: input.conversationUrl,
+      timeoutMs: input.timeoutMs,
+      message: input.message,
+      messageSha256,
+      requiredTerminalMarkers: terminalMarkers.markers
     }
   };
 }
@@ -12052,7 +12191,6 @@ var TOPIC_STATUS = "claude/browser/status";
 var client = null;
 var connected = false;
 var CUSTOM_GEM_REPLAY_LIMIT = 64;
-var MAHIRO_BROWSER_CONTROL_EXTENSION_ID = "ebijjoalkbhoackkociadkeaameeimih";
 var CUSTOM_GEM_DURABLE_REQUESTS_KEY = "customGemDurableSubmitRequestsV1";
 var CUSTOM_GEM_DURABLE_REQUEST_LIMIT = 1e4;
 var CUSTOM_GEM_SEND_READINESS_CAPABILITY = "source-count-image-ready-v1";
@@ -12248,7 +12386,8 @@ function publishStatus(status) {
 }
 function sendResponse(id, data) {
   if (!client || !connected) return;
-  const payload = JSON.stringify({
+  const isExactRecoverySuccess = data?.version === CUSTOM_GEM_RECOVERY_RESULT_VERSION && data?.state === "succeeded";
+  const payload = JSON.stringify(isExactRecoverySuccess ? data : {
     id,
     ...data,
     ts: Date.now()
@@ -12285,6 +12424,9 @@ async function handleCommand(cmd) {
         break;
       case "gem_submit_v1":
         result = await handleCustomGemSubmit(cmd);
+        break;
+      case "gem_recover_v1":
+        result = await handleCustomGemRecover(cmd);
         break;
       case "list_tabs":
         result = await listGeminiTabs();
@@ -12444,12 +12586,21 @@ async function handleCommand(cmd) {
         result = { success: false, error: `Unknown action: ${cmd.action}` };
     }
   } catch (err) {
-    result = cmd.action === CUSTOM_GEM_ACTION || cmd.action === CUSTOM_GEM_SUBMIT_ACTION ? customGemFailure(
-      typeof cmd.requestId === "string" ? cmd.requestId : null,
-      "handler",
-      "handler_error",
-      "The Custom Gem handler failed safely"
-    ) : { success: false, error: err instanceof Error ? err.message : String(err) };
+    if (cmd.action === CUSTOM_GEM_RECOVER_ACTION) {
+      result = customGemRecoveryFailure(
+        typeof cmd.requestId === "string" ? cmd.requestId : null,
+        "handler",
+        "handler_error",
+        "The Custom Gem recovery handler failed safely"
+      );
+    } else {
+      result = cmd.action === CUSTOM_GEM_ACTION || cmd.action === CUSTOM_GEM_SUBMIT_ACTION ? customGemFailure(
+        typeof cmd.requestId === "string" ? cmd.requestId : null,
+        "handler",
+        "handler_error",
+        "The Custom Gem handler failed safely"
+      ) : { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
   }
   sendResponse(cmd.id, result);
 }
@@ -12503,6 +12654,18 @@ function customGemAmbiguous(requestId, stage, code, message, context = {}) {
     stage,
     error: { code, message }
   });
+}
+function customGemRecoveryFailure(requestId, stage, code, message, context = {}) {
+  const normalizedRequestId = isUuid(requestId) ? requestId : null;
+  return {
+    version: CUSTOM_GEM_RECOVERY_RESULT_VERSION,
+    id: normalizedRequestId,
+    requestId: normalizedRequestId,
+    state: "failed",
+    ...context,
+    stage,
+    error: { code, message }
+  };
 }
 function customGemPageDetails(payload) {
   if (!payload || typeof payload !== "object") return void 0;
@@ -12618,6 +12781,7 @@ async function customGemSubmitFingerprint(request) {
     sourceOrder: sources.map(({ role }) => role),
     sources,
     messageSha256: request.messageSha256,
+    requiredTerminalMarkers: request.requiredTerminalMarkers,
     uploadReceipt: request.uploadReceipt
   })));
 }
@@ -12688,6 +12852,7 @@ async function completeCustomGemDurableRequest(requestId, fingerprint, result) {
 function verifyTrustedCustomGemUploadReceipt(request) {
   const payload = {
     type: "CONSUME_CUSTOM_GEM_UPLOAD_ATTESTATION_V1",
+    browserControlExtensionId: request.uploadReceipt.browserControlExtensionId,
     commandId: request.uploadReceipt.commandId,
     receiptId: request.uploadReceipt.receiptId,
     requestId: request.requestId,
@@ -12700,9 +12865,9 @@ function verifyTrustedCustomGemUploadReceipt(request) {
   };
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(customGemBrowserError("upload_attestation_rejected")), 5e3);
-    chrome.runtime.sendMessage(MAHIRO_BROWSER_CONTROL_EXTENSION_ID, payload, (response) => {
+    chrome.runtime.sendMessage(request.uploadReceipt.browserControlExtensionId, payload, (response) => {
       clearTimeout(timer);
-      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.consumed !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
+      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.consumed !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.browserControlExtensionId !== request.uploadReceipt.browserControlExtensionId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
         const error = customGemBrowserError("upload_attestation_rejected");
         error.detail = String(
           chrome.runtime.lastError?.message || response?.error || "attestation response was invalid"
@@ -13395,13 +13560,35 @@ ${text}
   };
 }
 async function awaitTrustedCustomGemResponsePage(payload) {
-  const { expectedUrl, message, responseSelector, attributionToken, deadlineAt } = payload;
+  const {
+    expectedUrl,
+    message,
+    responseSelector,
+    attributionToken,
+    requiredTerminalMarkers,
+    responseStableMs,
+    deadlineAt
+  } = payload;
   if (location.href !== expectedUrl) {
     return { state: "ambiguous", errorCode: "gem_url_mismatch", clicked: true };
   }
   if (typeof attributionToken !== "string" || !/^[0-9a-f-]{36}$/.test(attributionToken)) {
     return { state: "ambiguous", errorCode: "message_attribution_failed", clicked: true };
   }
+  const markers = Array.isArray(requiredTerminalMarkers) ? requiredTerminalMarkers : [];
+  const stableMs = Number(responseStableMs || 0);
+  if (markers.length < 1 || stableMs < 800) {
+    return { state: "ambiguous", errorCode: "response_timeout", clicked: true };
+  }
+  const hasOrderedMarkers = (value) => {
+    let offset = 0;
+    for (const marker of markers) {
+      const index = value.indexOf(marker, offset);
+      if (index < 0) return false;
+      offset = index + marker.length;
+    }
+    return true;
+  };
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const isVisible = (element) => {
     if (!element) return false;
@@ -13410,11 +13597,6 @@ async function awaitTrustedCustomGemResponsePage(payload) {
     return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
   };
   const unique = (items) => Array.from(new Set(items));
-  const labelOf = (element) => [
-    element?.getAttribute?.("aria-label"),
-    element?.getAttribute?.("title"),
-    element?.textContent
-  ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim().toLowerCase();
   const responseNodes = () => unique(Array.from(document.querySelectorAll(responseSelector)).filter(isVisible));
   const responseText = (node) => {
     const content = node.querySelector('.markdown-main-panel, .markdown, message-content, [data-test-id="response"], [data-testid="response"]') || node;
@@ -13443,12 +13625,6 @@ ${text}
     }
     return lines.join("\n");
   };
-  const responseComplete = (node) => {
-    if (!node || String(node.getAttribute("aria-busy") || "").toLowerCase() === "true") return false;
-    if (node.querySelector('[aria-busy="true"], [data-state="loading"], [data-loading="true"]')) return false;
-    const controls = Array.from(node.querySelectorAll('button, [role="button"]'));
-    return !controls.some((control) => /(stop generating|cancel generation|generating)/i.test(labelOf(control)));
-  };
   const messageNodes = () => unique([
     ...document.querySelectorAll("user-query"),
     ...document.querySelectorAll('[data-test-id="user-query"]'),
@@ -13474,60 +13650,67 @@ ${text}
     return result;
   };
   let messageProof = false;
-  let attributedMessageNode = null;
   let candidateNode = null;
   let candidateText = "";
+  let candidateSince = null;
   while (Date.now() < deadlineAt) {
-    if (!messageProof) {
-      const matches = messageNodes().filter(
-        (node) => node.getAttribute("data-custom-gem-baseline") !== attributionToken && normalizeText(messageText(node)) === normalizeText(message)
-      );
-      if (matches.length > 1) {
-        return finish({ state: "ambiguous", errorCode: "message_attribution_failed", messageNodeCount: matches.length, clicked: true });
-      }
-      if (matches.length !== 1) {
-        await sleep(250);
-        continue;
-      }
-      messageProof = true;
-      attributedMessageNode = matches[0];
+    if (location.href !== expectedUrl) {
+      return finish({ state: "ambiguous", errorCode: "gem_url_mismatch", clicked: true });
     }
-    const newResponses = responseNodes().filter(
-      (node) => node.getAttribute("data-custom-gem-baseline") !== attributionToken && attributedMessageNode && Boolean(attributedMessageNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)
+    const currentMessages = messageNodes();
+    const matchingMessages = currentMessages.filter(
+      (node) => node.getAttribute("data-custom-gem-baseline") !== attributionToken && normalizeText(messageText(node)) === normalizeText(message)
     );
+    if (matchingMessages.length > 1) {
+      return finish({ state: "ambiguous", errorCode: "message_attribution_failed", messageNodeCount: matchingMessages.length, clicked: true });
+    }
+    if (matchingMessages.length !== 1) {
+      await sleep(250);
+      continue;
+    }
+    messageProof = true;
+    const attributedMessageNode = matchingMessages[0];
+    const nextMessageNode = currentMessages.find(
+      (node) => node !== attributedMessageNode && Boolean(attributedMessageNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ) || null;
+    const newResponses = responseNodes().filter((node) => {
+      if (node.getAttribute("data-custom-gem-baseline") === attributionToken) return false;
+      if (!Boolean(attributedMessageNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)) return false;
+      return !nextMessageNode || Boolean(node.compareDocumentPosition(nextMessageNode) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
     if (newResponses.length > 1) {
       return finish({ state: "ambiguous", errorCode: "multiple_new_assistant_responses", responseNodeCount: newResponses.length, clicked: true });
+    }
+    if (newResponses.length === 0 && nextMessageNode) {
+      return finish({ state: "ambiguous", errorCode: "no_new_assistant_response", responseNodeCount: 0, clicked: true });
     }
     if (newResponses.length === 1) {
       const node = newResponses[0];
       const text = responseText(node);
-      if (text.trim() && responseComplete(node)) {
-        if (candidateNode === node && candidateText === text) {
-          await sleep(800);
-          const stableResponses = responseNodes().filter(
-            (item) => item.getAttribute("data-custom-gem-baseline") !== attributionToken && attributedMessageNode && Boolean(attributedMessageNode.compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING)
-          );
-          const stableText = stableResponses.length === 1 ? responseText(stableResponses[0]) : "";
-          if (stableResponses.length === 1 && stableResponses[0] === node && stableText === text && responseComplete(node)) {
-            const responseUtf8Bytes = new TextEncoder().encode(text).byteLength;
-            if (responseUtf8Bytes > 64 * 1024) {
-              return finish({ state: "ambiguous", errorCode: "response_too_large", responseUtf8Bytes, clicked: true });
-            }
-            return finish({
-              state: "succeeded",
-              response: text,
-              responseUtf8Bytes,
-              conversationUrl: location.href,
-              responseNodeCount: 1,
-              clicked: true
-            });
-          }
+      const responseUtf8Bytes = new TextEncoder().encode(text).byteLength;
+      if (responseUtf8Bytes > 64 * 1024) {
+        return finish({ state: "ambiguous", errorCode: "response_too_large", responseUtf8Bytes, clicked: true });
+      }
+      const terminalText = text.trim() && hasOrderedMarkers(text);
+      if (terminalText) {
+        if (candidateNode !== node || candidateText !== text) {
+          candidateNode = node;
+          candidateText = text;
+          candidateSince = Date.now();
+        } else if (candidateSince !== null && Date.now() - candidateSince >= stableMs) {
+          return finish({
+            state: "succeeded",
+            response: text,
+            responseUtf8Bytes,
+            conversationUrl: location.href,
+            responseNodeCount: 1,
+            clicked: true
+          });
         }
-        candidateNode = node;
-        candidateText = text;
       } else {
         candidateNode = null;
         candidateText = "";
+        candidateSince = null;
       }
     }
     await sleep(250);
@@ -13545,6 +13728,164 @@ function cleanupCustomGemAttributionPage(attributionToken) {
     }
   }
   return { cleaned: true };
+}
+async function recoverCustomGemResponsePage(payload) {
+  const { expectedUrl, message, requiredTerminalMarkers, responseStableMs, deadlineAt } = payload;
+  if (location.href !== expectedUrl) return { state: "failed", errorCode: "gem_url_mismatch" };
+  const markers = Array.isArray(requiredTerminalMarkers) ? requiredTerminalMarkers : [];
+  const stableMs = Number(responseStableMs || 0);
+  if (markers.length < 1 || stableMs < 800) return { state: "failed", errorCode: "response_timeout" };
+  const hasOrderedMarkers = (value) => {
+    let offset = 0;
+    for (const marker of markers) {
+      const index = value.indexOf(marker, offset);
+      if (index < 0) return false;
+      offset = index + marker.length;
+    }
+    return true;
+  };
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const isVisible = (element) => {
+    if (!element) return false;
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+  };
+  const unique = (items) => Array.from(new Set(items));
+  const firstVisibleFamily = (selectors) => {
+    for (const selector of selectors) {
+      const nodes = unique(Array.from(document.querySelectorAll(selector)).filter(isVisible));
+      if (nodes.length > 0) return nodes;
+    }
+    return [];
+  };
+  const messageNodes = () => firstVisibleFamily([
+    "user-query",
+    '[data-test-id="user-query"]',
+    '[data-testid="user-query"]'
+  ]);
+  const responseNodes = () => firstVisibleFamily([
+    "model-response",
+    '[data-test-id="response"]',
+    '[data-testid="response"]',
+    "[data-response-index]"
+  ]);
+  const messageText = (node) => {
+    const lines = Array.from(node.querySelectorAll(".query-text-line"));
+    if (lines.length > 0) {
+      return lines.map((line) => String(line.innerText ?? line.textContent ?? "")).join("\n");
+    }
+    return String(node.innerText ?? node.textContent ?? "");
+  };
+  const responseText = (node) => {
+    const content = node.querySelector('.markdown-main-panel, .markdown, message-content, [data-test-id="response"], [data-testid="response"]') || node;
+    const blocks = Array.from(content.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li, pre, blockquote, hr"));
+    if (blocks.length === 0) return String(content.innerText ?? content.textContent ?? "");
+    const lines = [];
+    for (const block of blocks) {
+      const tag = block.tagName.toLowerCase();
+      if (tag === "p" && block.closest("li")) continue;
+      const text = String(block.innerText ?? block.textContent ?? "").trim();
+      if (tag === "hr") {
+        lines.push("---");
+      } else if (/^h[1-6]$/.test(tag) && text) {
+        lines.push(`${"#".repeat(Number(tag[1]))} ${text}`);
+      } else if (tag === "li" && text) {
+        lines.push(`- ${text}`);
+      } else if (tag === "pre" && text) {
+        lines.push(`\`\`\`
+${text}
+\`\`\``);
+      } else if (tag === "blockquote" && text) {
+        lines.push(text.split(/\r?\n/).map((line) => `> ${line}`).join("\n"));
+      } else if (text) {
+        lines.push(text);
+      }
+    }
+    return lines.join("\n");
+  };
+  const normalizeText = (value) => String(value || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  let messageProof = false;
+  let candidateNode = null;
+  let candidateText = "";
+  let candidateSince = null;
+  while (Date.now() < deadlineAt) {
+    if (location.href !== expectedUrl) return { state: "failed", errorCode: "gem_url_mismatch" };
+    const currentMessages = messageNodes();
+    const matchingMessages = currentMessages.filter(
+      (node) => normalizeText(messageText(node)) === normalizeText(message)
+    );
+    if (matchingMessages.length > 1) {
+      return { state: "failed", errorCode: "message_attribution_failed", messageNodeCount: matchingMessages.length };
+    }
+    if (matchingMessages.length !== 1) {
+      await sleep(250);
+      continue;
+    }
+    messageProof = true;
+    const attributedMessageNode = matchingMessages[0];
+    const nextMessageNode = currentMessages.find(
+      (node) => node !== attributedMessageNode && Boolean(attributedMessageNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ) || null;
+    const followingResponses = responseNodes().filter((node) => {
+      if (!Boolean(attributedMessageNode.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)) return false;
+      return !nextMessageNode || Boolean(node.compareDocumentPosition(nextMessageNode) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    if (followingResponses.length > 1) {
+      return { state: "failed", errorCode: "multiple_new_assistant_responses", responseNodeCount: followingResponses.length };
+    }
+    if (followingResponses.length === 0 && nextMessageNode) {
+      return { state: "failed", errorCode: "no_new_assistant_response", responseNodeCount: 0 };
+    }
+    if (followingResponses.length === 1) {
+      const node = followingResponses[0];
+      const text = responseText(node);
+      const responseUtf8Bytes = new TextEncoder().encode(text).byteLength;
+      if (responseUtf8Bytes > 64 * 1024) {
+        return { state: "failed", errorCode: "response_too_large", responseUtf8Bytes };
+      }
+      const terminalText = text.trim() && hasOrderedMarkers(text);
+      if (terminalText) {
+        if (candidateNode !== node || candidateText !== text) {
+          candidateNode = node;
+          candidateText = text;
+          candidateSince = Date.now();
+        } else if (candidateSince !== null && Date.now() - candidateSince >= stableMs) {
+          return {
+            state: "succeeded",
+            response: text,
+            responseUtf8Bytes,
+            conversationUrl: location.href,
+            responseNodeCount: 1
+          };
+        }
+      } else {
+        candidateNode = null;
+        candidateText = "";
+        candidateSince = null;
+      }
+    }
+    await sleep(250);
+  }
+  return {
+    state: "failed",
+    errorCode: messageProof ? "response_timeout" : "message_attribution_failed"
+  };
+}
+async function runCustomGemRecovery(tabId, request, deadlineAt) {
+  const results = await executeCustomGemScript(
+    tabId,
+    recoverCustomGemResponsePage,
+    [{
+      expectedUrl: request.conversationUrl,
+      message: request.message,
+      requiredTerminalMarkers: request.requiredTerminalMarkers,
+      responseStableMs: CUSTOM_GEM_RESPONSE_STABLE_MS,
+      deadlineAt
+    }],
+    deadlineAt
+  );
+  return results?.[0]?.result || null;
 }
 async function runCustomGemSubmit(tabId, request, responseSelector, deadlineAt) {
   const sources = request.sources.map(({ role, filename, mimeType, bytes }) => ({ role, filename, mimeType, bytes }));
@@ -13568,6 +13909,7 @@ async function runCustomGemSubmit(tabId, request, responseSelector, deadlineAt) 
 function requestTrustedCustomGemSend(request) {
   const payload = {
     type: "TRUSTED_CUSTOM_GEM_SEND_V1",
+    browserControlExtensionId: request.uploadReceipt.browserControlExtensionId,
     receiptId: request.uploadReceipt.receiptId,
     requestId: request.requestId,
     gemId: request.gemId,
@@ -13579,9 +13921,9 @@ function requestTrustedCustomGemSend(request) {
   };
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(customGemBrowserError("trusted_send_rejected")), 2e4);
-    chrome.runtime.sendMessage(MAHIRO_BROWSER_CONTROL_EXTENSION_ID, payload, (response) => {
+    chrome.runtime.sendMessage(request.uploadReceipt.browserControlExtensionId, payload, (response) => {
       clearTimeout(timer);
-      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.clicked !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
+      if (chrome.runtime.lastError || response?.ok !== true || response?.result?.clicked !== true || response.result.receiptId !== request.uploadReceipt.receiptId || response.result.browserControlExtensionId !== request.uploadReceipt.browserControlExtensionId || response.result.gemId !== request.gemId || response.result.gemUrl !== request.gemUrl || response.result.currentUrl !== request.currentUrl) {
         const error = customGemBrowserError("trusted_send_rejected");
         error.detail = String(
           chrome.runtime.lastError?.message || response?.error || "trusted send response was invalid"
@@ -13632,6 +13974,8 @@ async function runTrustedCustomGemSubmit(tabId, request, responseSelector, deadl
         message: request.message,
         responseSelector,
         attributionToken,
+        requiredTerminalMarkers: request.requiredTerminalMarkers,
+        responseStableMs: CUSTOM_GEM_RESPONSE_STABLE_MS,
         deadlineAt
       }],
       deadlineAt
@@ -13787,6 +14131,93 @@ async function executeCustomGemStart(cmd, validatedRequest = null) {
     }
   }
 }
+async function executeCustomGemRecover(cmd) {
+  const requestId = typeof cmd?.requestId === "string" ? cmd.requestId : null;
+  let validation;
+  try {
+    validation = await validateGemRecoverRequest(cmd);
+  } catch {
+    return customGemRecoveryFailure(requestId, "validation", "validator_error", "The Custom Gem recovery validator failed safely");
+  }
+  if (!validation.ok) {
+    return customGemRecoveryFailure(
+      requestId,
+      validation.error.stage,
+      validation.error.code,
+      validation.error.message
+    );
+  }
+  const request = validation.request;
+  const context = {
+    gemId: request.gemId,
+    gemUrl: request.gemUrl,
+    currentUrl: request.conversationUrl,
+    conversationUrl: request.conversationUrl,
+    tabId: request.tabId,
+    messageSha256: request.messageSha256,
+    requiredTerminalMarkers: request.requiredTerminalMarkers
+  };
+  const deadlineAt = Date.now() + request.timeoutMs;
+  try {
+    let tab;
+    try {
+      tab = await chrome.tabs.get(request.tabId);
+    } catch {
+      return customGemRecoveryFailure(request.requestId, "preflight", "invalid_tab", customGemErrorMessage("invalid_tab"), context);
+    }
+    if (tab?.url !== request.conversationUrl) {
+      return customGemRecoveryFailure(request.requestId, "preflight", "gem_url_mismatch", customGemErrorMessage("gem_url_mismatch"), context);
+    }
+    const recovered = await runCustomGemRecovery(request.tabId, request, deadlineAt);
+    if (!recovered || recovered.state !== "succeeded") {
+      const code = recovered?.errorCode || "response_timeout";
+      return customGemRecoveryFailure(request.requestId, "recovery", code, customGemErrorMessage(code), {
+        ...context,
+        details: customGemPageDetails(recovered)
+      });
+    }
+    const rawResponse = typeof recovered.response === "string" ? recovered.response : "";
+    const responseUtf8Bytes = utf8ByteLength(rawResponse);
+    if (!rawResponse || responseUtf8Bytes > CUSTOM_GEM_MAX_RESPONSE_BYTES) {
+      return customGemRecoveryFailure(request.requestId, "recovery", "response_too_large", customGemErrorMessage("response_too_large"), context);
+    }
+    if (recovered.conversationUrl !== request.conversationUrl || !hasRequiredTerminalMarkers(rawResponse, request.requiredTerminalMarkers)) {
+      return customGemRecoveryFailure(request.requestId, "recovery", "response_timeout", customGemErrorMessage("response_timeout"), context);
+    }
+    return {
+      version: CUSTOM_GEM_RECOVERY_RESULT_VERSION,
+      id: request.requestId,
+      requestId: request.requestId,
+      state: "succeeded",
+      gemId: request.gemId,
+      gemUrl: request.gemUrl,
+      currentUrl: request.conversationUrl,
+      conversationUrl: request.conversationUrl,
+      tabId: request.tabId,
+      messageSha256: request.messageSha256,
+      requiredTerminalMarkers: request.requiredTerminalMarkers,
+      rawResponse,
+      responseSha256: await sha256Hex(new TextEncoder().encode(rawResponse)),
+      responseUtf8Bytes,
+      recoveredAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  } catch (error) {
+    const code = customGemErrorCode(error);
+    return customGemRecoveryFailure(
+      request.requestId,
+      code === "deadline_exceeded" ? "timeout" : "browser",
+      code,
+      customGemErrorMessage(code),
+      {
+        ...context,
+        details: { runtimeError: customGemRuntimeDetail(error) }
+      }
+    );
+  }
+}
+async function handleCustomGemRecover(cmd) {
+  return executeCustomGemRecover(cmd);
+}
 async function executeCustomGemSubmit(cmd) {
   const requestId = typeof cmd?.requestId === "string" ? cmd.requestId : null;
   let validation;
@@ -13807,7 +14238,8 @@ async function executeCustomGemSubmit(cmd) {
   const context = {
     ...customGemTargetContext(request, request.tabId),
     sources: summarizeGemSources(request.sources),
-    messageSha256: request.messageSha256
+    messageSha256: request.messageSha256,
+    requiredTerminalMarkers: request.requiredTerminalMarkers
   };
   const deadlineAt = Date.now() + request.timeoutMs;
   let lockHeld = false;
@@ -13915,6 +14347,14 @@ async function executeCustomGemSubmit(cmd) {
     if (!rawResponse || responseUtf8Bytes > CUSTOM_GEM_MAX_RESPONSE_BYTES) {
       customGemQuarantinedTabs.set(request.tabId, request.requestId);
       return customGemAmbiguous(request.requestId, "response", "response_too_large", customGemErrorMessage("response_too_large"), context);
+    }
+    if (!hasRequiredTerminalMarkers(rawResponse, request.requiredTerminalMarkers)) {
+      customGemQuarantinedTabs.set(request.tabId, request.requestId);
+      return customGemAmbiguous(request.requestId, "response", "response_timeout", customGemErrorMessage("response_timeout"), context);
+    }
+    if (!isExactCustomGemConversationUrl(request.gemUrl, submitResult.conversationUrl)) {
+      customGemQuarantinedTabs.set(request.tabId, request.requestId);
+      return customGemAmbiguous(request.requestId, "response", "gem_url_mismatch", customGemErrorMessage("gem_url_mismatch"), context);
     }
     return customGemResultBase(request.requestId, {
       ...context,
