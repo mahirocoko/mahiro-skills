@@ -16,6 +16,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(standard).toContain("output contracts");
     expect(standard).toContain("adversarial or self-check pass");
     expect(standard).toContain("Do not copy whole external skills as the default move");
+    expect(standard).toContain("`rrr` — retrospective modes, optional gated non-canonical reference learnings, and derived pulse metrics");
+    expect(standard).not.toContain("`rrr` — retrospective modes, durable notes");
   });
 
   test("updates the skill template with reusable contract sections", () => {
@@ -43,6 +45,15 @@ describe("skill pattern adaptation phase a", () => {
     expect(guide).toContain("## Explain the Why Where It Changes Behavior");
     expect(guide).toContain("## Use Examples as Teaching Tools");
     expect(guide).toContain("## Human Readability Review");
+    expect(guide).toContain("## Make Shared Understanding Testable");
+    expect(guide).toContain("## Separate Evidence From Authority");
+    expect(guide).toContain("Intent");
+    expect(guide).toContain("Trigger");
+    expect(guide).toContain("Action");
+    expect(guide).toContain("Boundary");
+    expect(guide).toContain("Rationale");
+    expect(guide).toContain("`Merge`, `Replace`, `Create`, or `No-op`");
+    expect(guide).toContain("“No durable lesson” is a successful result");
     expect(guide).toContain("Do not rewrite the catalog for heading uniformity");
     expect(phaseA).toContain("Human-Readable Skill Writing — Phase B");
   });
@@ -98,12 +109,49 @@ describe("skill pattern adaptation phase a", () => {
     expect(rrr).not.toContain("skip silently and continue the retrospective");
   });
 
+  test("rrr keeps retrospectives historical and makes durable learning optional", () => {
+    const rrr = readRepoFile("skills", "rrr", "SKILL.md");
+    const deep = readRepoFile("skills", "rrr", "DEEP.md");
+    const command = readRepoFile("commands", "rrr.md");
+    const readme = readRepoFile("README.md");
+    const index = readRepoFile("skills", "llms.txt");
+    const fable = readRepoFile("skills", "fable", "SKILL.md");
+
+    for (const contract of [rrr, deep]) {
+      expect(contract).toContain("retrospective-only; no durable lesson promoted");
+      expect(contract).toContain("reference learning captured; guidance promotion not performed");
+      expect(contract).toContain("artifact: reference-learning");
+      expect(contract).toContain("authority: non-canonical");
+      expect(contract).toContain("status: candidate");
+      expect(contract).toContain("Intent");
+      expect(contract).toContain("Trigger");
+      expect(contract).toContain("Action");
+      expect(contract).toContain("Boundary");
+      expect(contract).toContain("Rationale");
+    }
+
+    expect(rrr).toContain("## Artifact Authority and Learning Promotion");
+    expect(rrr).toContain("A valid run may end as `retrospective-only; no durable lesson promoted`");
+    expect(rrr).toContain("RRR never turns its own learning note into approved guidance.");
+    expect(rrr).toContain("Reference learning: OPTIONAL");
+    expect(rrr).not.toContain("A durable lesson note under");
+    expect(rrr).not.toContain("Durable local learning note: REQUIRED");
+    expect(deep).toContain("incident-only details that must not be promoted");
+    expect(rrr).toContain("optionally capture a gated non-canonical reference learning");
+    expect(command).toContain("optionally capture a gated non-canonical reference learning");
+    expect(readme).toContain("optional gated non-canonical reference learning when a transferable decision exists");
+    expect(index).toContain("Session retrospective with an optional gated non-canonical reference learning");
+    expect(fable).toContain("`rrr` owns retrospectives and optional gated non-canonical reference learnings");
+  });
+
   test("mahiro-guidance-refine preserves feedback as approved guidance proposals", () => {
     const skill = readRepoFile("skills", "mahiro-guidance-refine", "SKILL.md");
 
     expect(skill).toContain("## Use When");
     expect(skill).toContain("## Evidence Taxonomy");
     expect(skill).toContain("## Durable vs Transient");
+    expect(skill).toContain("## Artifact Authority Model");
+    expect(skill).toContain("## Promotion Gates");
     expect(skill).toContain("## Proposal Workflow");
     expect(skill).toContain("## Approval Gate");
     expect(skill).toContain("## Integration With Related Skills");
@@ -111,6 +159,34 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("No silent durable edits.");
     expect(skill).toContain("Do not promote a single correction into global doctrine unless the user explicitly asks for global behavior.");
     expect(skill).toContain("Use the scope classifier to avoid turning a repo-specific mechanism into global doctrine.");
+    expect(skill).toContain("Evidence that a mistake happened is not, by itself, evidence that the mistake deserves permanent context.");
+    expect(skill).toContain("Intent");
+    expect(skill).toContain("Trigger");
+    expect(skill).toContain("Action");
+    expect(skill).toContain("Boundary");
+    expect(skill).toContain("Rationale");
+    expect(skill).toContain("`Merge`, `Replace`, `Create`, or `No-op`");
+    expect(skill).toContain("Do not preserve absent concepts merely to say they should be avoided.");
+    expect(skill).toContain("“No durable lesson” is a valid and often preferable result.");
+    expect(skill).toContain("one case where the contract applies and one adjacent case where it does not");
+    expect(skill).toContain("**Owner decision**: Merge | Replace | Create | No-op");
+    expect(skill).toContain("**Current owner**: ... | none");
+    expect(skill).toContain("**Behavior checks**:");
+    expect(skill).toContain("`rrr`** owns retrospectives and optional gated non-canonical reference learnings");
+    expect(skill).not.toContain("`rrr`** owns retrospective and durable lesson notes");
+  });
+
+  test("guidance workflow shares one promotion and authority model", () => {
+    const workflow = readRepoFile("docs", "authoring", "mahiro-docs-rules-init-and-style-workflow.md");
+
+    expect(workflow).toContain("## Shared Artifact and Authority Model");
+    expect(workflow).toContain("A retrospective records history and is non-authoritative.");
+    expect(workflow).toContain("A reference learning preserves candidate evidence and remains non-canonical.");
+    expect(workflow).toContain("Approved durable guidance is the canonical behavioral contract");
+    expect(workflow).toContain("`Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`");
+    expect(workflow).toContain("one applies and one does-not-apply case");
+    expect(workflow).toContain("`Merge`, `Replace`, `Create`, or `No-op`");
+    expect(workflow).toContain("allowing a truthful no-guidance outcome");
   });
 
   test("mahiro-style blocks cross-repo convention transplant", () => {

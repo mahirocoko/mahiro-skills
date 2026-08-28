@@ -12,6 +12,20 @@ They should not replace each other directly because they solve different problem
 
 Shared guardrail: all three tools are repo-reality-first. A pattern from another Mahiro repo can inspire a question or `Preferred Direction`, but package manager, framework, i18n source locale, primitive ownership, service/data shape, state layer, and verification commands must come from the target repo before they become `Current Reality`.
 
+## Shared Artifact and Authority Model
+
+Keep learning artifacts separate by job:
+
+1. A retrospective records history and is non-authoritative.
+2. A handoff records current state and next work; it is not doctrine.
+3. A reference learning preserves candidate evidence and remains non-canonical.
+4. Candidate guidance is a proposal awaiting shared-understanding review and approval.
+5. Approved durable guidance is the canonical behavioral contract in its owning docs, rules, skill, or project memory.
+
+Promotion is explicit: evidence may become a candidate only when it has an observable future trigger and transferable decision. The proposal must express `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`, then show one applies and one does-not-apply case so the human and agent can confirm the same meaning. Inspect the current owner and choose `Merge`, `Replace`, `Create`, or `No-op`; do not append a new rule merely because an incident produced new wording.
+
+Retrospectives and reference learnings may preserve provenance, but their existence does not make their wording current policy. `rrr` records the session and may capture a qualifying non-canonical reference learning; `mahiro-guidance-refine` owns proposal, consolidation, and approval before canonical guidance changes.
+
 ## 1. New Repo or Weak Docs Baseline
 
 Use first:
@@ -57,6 +71,9 @@ Goal:
 - classify the feedback as durable or transient
 - separate repo-local guidance from global Mahiro doctrine
 - classify scope as repo-local rule, global Mahiro-style doctrine, skill-specific procedure, or session-only note
+- separate retrospective or reference evidence from approved behavioral authority
+- preserve a transferable decision rather than incident chronology or a mistake inventory
+- establish shared understanding through `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`
 - propose the smallest docs/rules/style update
 - require approval before editing `AGENTS.md`, docs, skills, or style guidance
 
@@ -66,15 +83,19 @@ Recommended flow:
 2. Inspect repo-local docs/rules before using fallback style.
 3. Classify evidence: direct user feedback, repo-proven pattern, repeated friction, inference, or transient context.
 4. Classify scope: repo-local, global style, skill-specific procedure, or session-only note.
-5. Produce a proposal with target file, rationale, confidence, and rollback note.
-6. Edit only after approval.
-7. Use `rrr` or `forward` if the lesson should stay as session memory or next-session work instead of a durable rule.
+5. Run promotion checks: future applicability, transferable abstraction, current scope reality, and absence of incident-only clutter.
+6. Inspect the canonical owner and choose `Merge`, `Replace`, `Create`, or `No-op`.
+7. Produce one shared contract with `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`.
+8. Show one applies and one does-not-apply behavior check for human-agent alignment.
+9. Edit only after approval; keep review-only examples out of canonical wording unless they remain load-bearing.
+10. Use `rrr` for historical evidence, `forward` for next-session state, or `No-op` when no durable guidance is warranted.
 
 Best for:
 
 - refining docs after real feedback
 - keeping rules aligned with what the user actually wants
 - preventing transient session context from leaking into durable doctrine
+- allowing a truthful no-guidance outcome instead of forcing a permanent lesson
 - patching existing docs without full regeneration
 
 ## 3. Incremental Repo Growth

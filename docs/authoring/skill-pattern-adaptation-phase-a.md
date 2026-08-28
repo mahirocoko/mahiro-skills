@@ -84,7 +84,7 @@ Goal: ...
 The first Phase A pilot is the orientation bundle:
 
 - `recap` — evidence ordering and stale-context wording
-- `rrr` — retrospective modes, durable notes, and derived pulse metrics
+- `rrr` — retrospective modes, optional gated non-canonical reference learnings, and derived pulse metrics
 - `forward` — handoff output plus approval semantics for commit/push behavior
 
 This bundle is intentionally small, high-value, and already style-aligned with repo-local `.agent-state` conventions.

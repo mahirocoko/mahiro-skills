@@ -1,6 +1,6 @@
 ---
 name: rrr
-description: Create a session retrospective with lessons learned. Use at the end of a work session or when the user asks for a retrospective.
+description: Create a session retrospective and optionally capture a gated non-canonical reference learning. Use at the end of a work session or when the user asks for a retrospective.
 ---
 
 # /rrr
@@ -29,18 +29,36 @@ description: Create a session retrospective with lessons learned. Use at the end
 
 ## Output Contract
 
-Every non-`--deep` run must produce:
+Every non-`--deep` run follows this output contract:
 
 1. A retrospective under `$AGENT_STATE_DIR/memory/retrospectives/YYYY-MM/DD/HH.MM_slug.md`.
-2. A durable lesson note under `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md`.
+2. An optional non-canonical reference learning under `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md` only when the learning promotion gate passes.
 3. Updated pulse metrics when `python3` and local retrospective data are available.
-4. A brief final response with written file paths, missing evidence if any, and whether a commit was intentionally skipped.
+4. A brief final response with written file paths, missing evidence if any, whether a reference learning was captured, and whether a commit was intentionally skipped.
+
+A valid run may end as `retrospective-only; no durable lesson promoted`. Do not create an empty, forced, or incident-only learning file to satisfy the command shape.
+
+## Artifact Authority and Learning Promotion
+
+RRR records history first. Its retrospective is non-authoritative evidence of what happened, not a behavioral rule. A learning note is durable local reference material, but remains non-canonical until `mahiro-guidance-refine` promotes an approved contract into the owning docs, rules, skill, or project memory.
+
+Before creating a reference learning, require all of these:
+
+1. **Future trigger** — the learning names an observable situation likely to recur beyond the completed incident.
+2. **Transferable decision** — it can state what to decide or do without preserving the incident chronology or mistake inventory.
+3. **Scope reality** — named mechanisms are present in the relevant scope or are themselves the stable trigger; absent concepts are not retained merely as negative reminders.
+4. **Operational shape** — the candidate can be expressed as `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`.
+5. **Novelty** — nearby learning and canonical guidance do not already communicate the same decision. If they do, prefer no new file and route a merge or replacement proposal through `mahiro-guidance-refine` when needed.
+
+If any condition fails, write only the retrospective and report `retrospective-only; no durable lesson promoted`. RRR never turns its own learning note into approved guidance.
 
 ## Validation / Self-check
 
 Before finishing:
 
-- Confirm the retrospective and lesson note paths are under `$AGENT_STATE_DIR`, not the source tree unless the human configured that state root.
+- Confirm the retrospective path and any learning-note path are under `$AGENT_STATE_DIR`, not the source tree unless the human configured that state root.
+- Confirm a learning note exists only when every promotion condition passed; otherwise confirm that no learning file was created.
+- Confirm every new learning note labels itself as non-canonical reference material and links to its source retrospective.
 - Confirm `--deep` was the only path that used subagents.
 - Confirm pulse metrics are described as derived snapshots, not canonical telemetry.
 - Rerun pulse generation after writing the retrospective when the runtime supports it.
@@ -263,7 +281,6 @@ print((metrics_dir / "project.json").read_text())
 print((metrics_dir / "heartbeat.json").read_text())
 PY
 mkdir -p "$AGENT_STATE_DIR/memory/retrospectives/$(date +%Y-%m/%d)"
-mkdir -p "$AGENT_STATE_DIR/memory/learnings"
 ```
 
 If pulse generation fails because a dependency like `python3` is unavailable, skip pulse generation, continue the retrospective, and mention the missing pulse source in the final response.
@@ -293,13 +310,31 @@ Write immediately, no prompts. If pulse data was found, weave it into the narrat
 
 After writing the retrospective, rerun the pulse generation step once so `project.json` and `heartbeat.json` include the newly written session.
 
-### 3. Write Lesson Learned
+### 3. Evaluate Learning Promotion
 
-**Path**: `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md`
+Run the artifact-authority and learning-promotion checks above after the retrospective exists.
 
-### 4. Durable local note
+When every condition passes, write `$AGENT_STATE_DIR/memory/learnings/YYYY-MM-DD_slug.md` with this authority header:
 
-After writing the lesson learned, make sure the file is stored under `$AGENT_STATE_DIR/memory/learnings/` with clear tags and a specific slug so it stays easy to rediscover locally.
+```markdown
+---
+artifact: reference-learning
+authority: non-canonical
+status: candidate
+source: <retrospective path>
+---
+```
+
+Then capture the candidate as `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`, with clear tags and a specific slug. Do not copy the retrospective narrative into the note.
+
+When any condition fails, create no learning file and report `retrospective-only; no durable lesson promoted`.
+
+### 4. Report Promotion Truthfully
+
+Distinguish these outcomes in the final response:
+
+- `reference learning captured; guidance promotion not performed`
+- `retrospective-only; no durable lesson promoted`
 
 ### 5. Commit (optional)
 
@@ -340,7 +375,7 @@ Project: X sessions | Today: Y sessions | Active days: Z | Session size: small|m
 Streak: N days | Week trend: ±X% sessions | Branch: main | Recent commits (30d): N
 ```
 
-Then steps 3-5 same as default.
+Then run default steps 3-5, including the optional learning promotion gate.
 
 ---
 
@@ -373,7 +408,7 @@ Also run pulse context (step 1.5 from default mode) and weave into narrative.
 
 ### 3-5. Same as default steps 3-5
 
-Write the lesson learned, keep it local, and only commit if the human explicitly asks.
+Evaluate learning promotion, keep any qualifying reference learning local and non-canonical, and only commit if the human explicitly asks.
 
 Suggested paths remain under `$AGENT_STATE_DIR/memory/`.
 
@@ -390,5 +425,6 @@ Read `DEEP.md` in this skill directory. Only mode that uses subagents.
 - **NO SUBAGENTS**: Never spawn subagents outside `--deep`
 - AI Diary: 150+ words, vulnerability, first-person
 - Honest Feedback: 100+ words, 3 friction points
-- Durable local learning note: REQUIRED after every lesson learned
+- Reference learning: OPTIONAL and permitted only after the learning promotion gate passes
+- Approved guidance: NEVER created by RRR itself; route promotion through `mahiro-guidance-refine`
 - Time Zone: GMT+7 (Bangkok)

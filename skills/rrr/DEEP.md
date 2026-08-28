@@ -64,9 +64,10 @@ Extract patterns and learnings:
 - What problems were solved?
 - What techniques were used?
 - What could be reused?
-- What mistakes were made?
+- Which candidate decisions have an observable future trigger?
+- Which details are incident-only and should remain in the retrospective?
 
-Return: Key patterns, learnings, mistakes, reusable solutions
+Return: Candidate reference learnings, their future triggers and boundaries, plus a separate list of incident-only details that must not be promoted
 ```
 
 ### Agent 5: Local Memory Search
@@ -75,9 +76,10 @@ Search local notes for related context:
 - Check $AGENT_STATE_DIR/memory/learnings/ for similar topics
 - Find past retrospectives on similar work
 - Find prior traces on similar work
-- What did we learn before?
+- Distinguish non-canonical evidence from current approved guidance
+- Does an existing owner already communicate the same decision?
 
-Return: Related learnings, past insights, patterns to apply
+Return: Related evidence, current canonical owner if any, and whether the candidate should merge, replace, remain reference-only, or produce no new artifact
 ```
 
 ## Step 2: Compile Results
@@ -93,21 +95,28 @@ Include all standard sections PLUS:
 - Extracted patterns (from Agent 4)
 - Local memory connections (from Agent 5)
 
-## Step 3: Write Lesson Learned
+## Step 3: Evaluate Optional Reference Learning
 
-**Location**: `$AGENT_STATE_DIR/memory/learnings/${TODAY}_[slug].md`
+Apply the same learning promotion gate as default RRR. A deep analysis does not make every extracted observation durable guidance.
 
-With --deep, lesson learned should be more comprehensive:
-- Multiple patterns identified
-- Connections to past learnings
-- Confidence levels for each insight
+Create `$AGENT_STATE_DIR/memory/learnings/${TODAY}_[slug].md` only when at least one candidate has an observable future trigger, a transferable decision, scope reality, the `Intent` / `Trigger` / `Action` / `Boundary` / `Rationale` shape, and no equivalent current owner.
 
-## Step 4: Finalize local learning note
+Any created note must declare:
 
-Make the lesson learned comprehensive and locally searchable:
-- include tags from all 5 agents
-- include links or references to the related retrospectives and traces
-- keep the slug precise so later grep and trace work stays easy
+```markdown
+---
+artifact: reference-learning
+authority: non-canonical
+status: candidate
+source: <retrospective path>
+---
+```
+
+Keep it locally searchable, link its evidence, and omit incident chronology and mistake inventories. If no candidate passes, create no learning file and report `retrospective-only; no durable lesson promoted`.
+
+## Step 4: Report Authority
+
+Report either `reference learning captured; guidance promotion not performed` or `retrospective-only; no durable lesson promoted`. Route any later canonical promotion through `mahiro-guidance-refine` and human approval.
 
 ## Step 5: Commit (optional)
 

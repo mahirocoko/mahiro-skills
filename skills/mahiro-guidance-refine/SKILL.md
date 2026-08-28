@@ -5,7 +5,7 @@ description: Refine repo docs, AGENTS.md, and Mahiro-style guidance from session
 
 # /mahiro-guidance-refine — Session Guidance Refinement
 
-Convert user feedback from the current session into evidence-backed guidance proposals for repo docs, rules files, or Mahiro-style notes.
+Convert user feedback from the current session into evidence-backed guidance proposals for repo docs, rules files, or Mahiro-style notes. Preserve the decision that should transfer, not a diary of the incident that exposed it.
 
 This skill is for moments like: “that is not my pattern,” “you missed what I wanted,” “write it this way next time,” “this does not match our code style,” or “capture this as a rule.”
 
@@ -37,6 +37,20 @@ Classify each candidate lesson before proposing any docs/rules change:
 | **Inference** | Agent inferred preference without direct evidence. | Do not persist unless confirmed. |
 | **Transient Context** | One-off task detail, temporary constraint, or mood/preference. | Keep in session notes only. |
 
+Evidence that a mistake happened is not, by itself, evidence that the mistake deserves permanent context. Evidence establishes provenance; the promotion gates below establish whether a future agent should carry the lesson.
+
+## Artifact Authority Model
+
+Keep these artifacts distinct so historical detail does not silently become current doctrine:
+
+1. **Retrospective history** records what happened. It may be incident-specific and is non-authoritative.
+2. **Handoff state** records what is active or next. It is operational continuity, not a rule.
+3. **Reference learning** preserves transferable evidence for later review. It is non-canonical until promoted.
+4. **Candidate guidance** is a reviewable proposal with no behavioral authority yet.
+5. **Approved durable guidance** is the canonical behavioral contract after the human and agent agree on its meaning and target owner.
+
+Only approved durable guidance should direct future behavior as a rule. Do not cite the existence of a retrospective, handoff, or learning note as proof that its wording is current policy.
+
 ## Durable vs Transient
 
 Before writing or proposing anything, decide the destination:
@@ -48,6 +62,19 @@ Before writing or proposing anything, decide the destination:
 5. **Global Style Candidate** — possible future change to `mahiro-style`, but only after explicit confirmation that it is not repo-specific.
 
 Do not promote a single correction into global doctrine unless the user explicitly asks for global behavior.
+
+## Promotion Gates
+
+A candidate must pass every gate before it can become durable guidance:
+
+1. **Applicability** — identify an observable future trigger. If the lesson only applies to the completed incident, do not persist it as guidance.
+2. **Abstraction** — preserve the transferable decision, not the chronology, file names, rejected wording, or mistake inventory that revealed it.
+3. **Scope reality** — named tools, APIs, folders, frameworks, and mechanisms belong in canonical wording only when the target scope currently proves them or the name is itself the stable trigger. Do not preserve absent concepts merely to say they should be avoided.
+4. **Shared understanding** — express the candidate as `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale` so a human and an agent can predict the same future behavior.
+5. **Consolidation** — inspect the current owner and choose `Merge`, `Replace`, `Create`, or `No-op`. Prefer merge or replacement; never append by default.
+6. **Approval** — show one case where the contract applies and one adjacent case where it does not. These behavior checks support review and stay out of canonical wording unless they remain necessary to disambiguate the rule.
+
+If any gate fails, choose `No-op`, `Session Note`, or `Reference Learning`. “No durable lesson” is a valid and often preferable result.
 
 ## Scope Classifier
 
@@ -67,6 +94,7 @@ Preserve the distinction between the **underlying preference** and the **repo-sp
 - Quote or paraphrase the user’s feedback precisely.
 - Identify what the agent did wrong or what pattern was missing.
 - Separate the immediate fix from the durable lesson.
+- Keep incident detail as working evidence; do not assume it belongs in the proposed wording.
 
 ### Phase 2: Inspect repo-local truth
 
@@ -74,12 +102,15 @@ Preserve the distinction between the **underlying preference** and the **repo-sp
 - Prefer repo-local rules over Mahiro fallback doctrine.
 - Check whether a similar lesson already exists in `mahiro-style`, the target skill, project memory, or repo docs before adding another rule.
 - If repo evidence is weak, label it as weak instead of upgrading it to “Current Reality.”
+- Record the current canonical owner and whether the proposal would merge, replace, create, or make no change.
 
-### Phase 3: Classify and choose target
+### Phase 3: Run promotion gates and choose target
 
 - Use the evidence taxonomy.
 - Use the scope classifier to avoid turning a repo-specific mechanism into global doctrine.
+- Run the applicability, abstraction, scope-reality, shared-understanding, and consolidation gates.
 - Choose one destination: do not persist, session note, project proposal, repo docs patch, or global style candidate.
+- Choose one owner decision: `Merge`, `Replace`, `Create`, or `No-op`.
 - If target is ambiguous, ask one concise clarifying question.
 
 ### Phase 4: Draft proposal
@@ -89,7 +120,10 @@ Produce a proposed change before editing files. Include:
 - **Lesson** — what should change in future behavior.
 - **Evidence** — user quote, file path, or session event.
 - **Target** — exact file or “session note only.”
-- **Patch sketch** — concise wording to add/change.
+- **Owner decision** — `Merge`, `Replace`, `Create`, or `No-op`, with the current owner when one exists.
+- **Shared contract** — `Intent`, `Trigger`, `Action`, `Boundary`, and `Rationale`.
+- **Behavior checks** — one applies case and one does-not-apply case for alignment; omit them from the persisted patch unless they remain load-bearing.
+- **Patch sketch** — concise operational wording to add or change, stripped of non-transferable incident detail.
 - **Confidence** — high / medium / low.
 - **Rollback note** — how to revert or narrow the guidance if it proves too broad.
 
@@ -109,7 +143,9 @@ Before writing docs/rules, confirm all of these are true:
 
 - The user’s feedback is durable enough to preserve.
 - The target file is correct for the scope.
-- The proposed wording is narrower than the evidence.
+- The proposed wording passes every promotion gate and is narrower than the evidence.
+- A human and an agent can use the shared contract and behavior checks to predict the same future action.
+- The owner decision is explicit, and existing guidance is merged or replaced before new guidance is created.
 - Repo-local reality and preferred direction are labeled separately.
 - The user approved the edit, or the user directly requested the exact file update.
 
@@ -128,7 +164,7 @@ Do not include an approval ask when no durable docs/rules/style edit is recommen
 - **`mahiro-docs-rules-init`** owns initial repo docs/rules bootstrap. This skill owns targeted refinements after real feedback.
 - **`mahiro-style`** is fallback doctrine. Use it to shape wording, but do not overwrite repo-local truth with global style.
 - **Project memory** is appropriate when the rule helps this agent work in one repo but should not be packaged as a reusable skill instruction.
-- **`rrr`** owns retrospective and durable lesson notes. Send transient or session-only learnings there.
+- **`rrr`** owns retrospectives and optional gated non-canonical reference learnings. Send historical evidence there without treating it as approved guidance.
 - **`forward`** owns next-session handoff. Add pending docs/rules refinement there when approval is deferred.
 - **`recap`** can surface previous lessons before deciding whether feedback is repeated friction.
 
@@ -145,7 +181,18 @@ For proposal-only mode:
 **Destination**: Do Not Persist | Session Note | Project Proposal | Repo Docs Patch | Global Style Candidate
 **Scope**: Repo-local rule | Global Mahiro-style doctrine | Skill-specific procedure | Session-only note
 **Target**: ...
-**Proposed wording**: ...
+**Owner decision**: Merge | Replace | Create | No-op
+**Current owner**: ... | none
+**Shared contract**:
+- Intent: ...
+- Trigger: ...
+- Action: ...
+- Boundary: ...
+- Rationale: ...
+**Behavior checks**:
+- Applies: ...
+- Does not apply: ...
+**Proposed wording**: ... | none
 **Confidence**: high | medium | low
 **Needs approval**: yes | no
 ```
@@ -178,6 +225,8 @@ For approved edit mode:
 
 - Stop and ask if the lesson could be repo-local or global and the user has not clarified scope.
 - Stop before editing when only inference supports the change.
+- Stop promotion when no observable future trigger exists; report `No-op` instead of inventing a rule.
+- Stop promotion when canonical wording would preserve absent concepts, incident chronology, or a mistake inventory without changing a future decision.
 - Stop before writing to `mahiro-style` unless the user explicitly wants global Mahiro doctrine changed.
 - Stop before editing rules when the target file already says the opposite; surface the conflict first.
 - Stop before commit/push/delete. Those require separate explicit approval.
@@ -187,11 +236,14 @@ For approved edit mode:
 Before final output:
 
 1. Confirm every durable claim has evidence.
-2. Confirm transient context did not become a durable rule.
-3. Confirm repo-local facts are labeled separately from preferred direction.
-4. Confirm repo-specific mechanisms did not become global doctrine by accident.
-5. Confirm edits, if any, touched only approved target files.
-6. Confirm paired docs/indexes are updated only when their public description changed.
-7. Confirm proposal-only output with any `Needs approval: yes` includes a direct approval handoff naming target files and exact edit scope; omit it only when no durable edit is recommended.
+2. Confirm every promoted rule has an observable trigger and a shared `Intent` / `Trigger` / `Action` / `Boundary` / `Rationale` contract.
+3. Confirm transient context, absent concepts, and incident detail did not become durable wording.
+4. Confirm the proposal chose `Merge`, `Replace`, `Create`, or `No-op` against the current owner instead of appending automatically.
+5. Confirm the applies and does-not-apply checks predict the intended behavior for both readers.
+6. Confirm repo-local facts are labeled separately from preferred direction.
+7. Confirm repo-specific mechanisms did not become global doctrine by accident.
+8. Confirm edits, if any, touched only approved target files.
+9. Confirm paired docs/indexes are updated only when their public description changed.
+10. Confirm proposal-only output with any `Needs approval: yes` includes a direct approval handoff naming target files and exact edit scope; omit it only when no durable edit is recommended.
 
 ARGUMENTS: $ARGUMENTS

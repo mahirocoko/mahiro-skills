@@ -29,6 +29,34 @@ Do not sacrifice one reader for the other. Friendly prose without executable
 boundaries becomes vague advice. Dense rules without explanation become an
 opaque machine contract that people cannot inspect or learn from.
 
+## Make Shared Understanding Testable
+
+When a skill proposes durable guidance, friendly prose alone does not prove human readability. The human and the agent should be able to predict the same behavior from one canonical contract:
+
+- **Intent** — the outcome the guidance protects
+- **Trigger** — the observable future condition that activates it
+- **Action** — the decision or behavior expected
+- **Boundary** — the adjacent case where it must not be generalized
+- **Rationale** — the short reason that lets both readers transfer the decision
+
+During approval, show one case where the contract applies and one where it does not. Use those behavior checks to find semantic disagreement before writing. Keep them out of the canonical rule unless they remain necessary to preserve the boundary.
+
+Do not maintain a simplified human explanation beside a separate machine rule when both claim to own the same behavior. One readable operational contract should be canonical; schemas and metadata may support it without becoming a second source of truth.
+
+## Separate Evidence From Authority
+
+Writing becomes noisy when every observed mistake is treated as a permanent instruction. Keep artifact roles explicit:
+
+- a retrospective is historical evidence
+- a handoff is current or next-work state
+- a reference learning is non-canonical material for later review
+- candidate guidance is an unapproved proposal
+- approved durable guidance is behavioral authority
+
+Before promoting guidance, require an observable future trigger and a transferable decision. Strip incident chronology, mistake inventories, and names that are absent from the current scope unless a name is itself the stable trigger. Then inspect the current owner and choose `Merge`, `Replace`, `Create`, or `No-op`; append is not the default.
+
+“No durable lesson” is a successful result when the evidence does not improve a future decision. Historical provenance can remain available without occupying the active rule layer.
+
 ## Start With the Job, Not the Machinery
 
 After the frontmatter and title, explain the skill in one short paragraph:
@@ -248,6 +276,9 @@ Read the skill once as a maintainer rather than as an executor:
 - Are warnings proportional to risk?
 - Could a person learn the method without executing the skill?
 - Could an agent still identify the exact gates, outputs, and proof required?
+- For durable guidance, can both readers identify the same intent, trigger, action, boundary, and rationale?
+- Do applies and does-not-apply checks predict the same behavior without becoming permanent incident clutter?
+- Is historical evidence clearly non-authoritative, and did the author merge or replace an existing owner before creating another rule?
 
 The goal is not conversational decoration. The goal is inspectable procedural
 knowledge: clear enough to teach, precise enough to run.

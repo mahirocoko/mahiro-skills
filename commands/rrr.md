@@ -1,5 +1,5 @@
 ---
-description: Create a session retrospective with lessons learned. Use at the end of a work session or when the user asks for a retrospective.
+description: Create a session retrospective and optionally capture a gated non-canonical reference learning. Use at the end of a work session or when the user asks for a retrospective.
 allowed-tools:
   - Bash
   - Read
