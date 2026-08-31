@@ -31,7 +31,7 @@ describe("motion-design skill", () => {
     expect(skill).toContain("## Ownership Boundaries");
     expect(skill).toContain("the user, repo, and current product owner govern brand, visual, layout, and composition direction");
     expect(skill).toContain("`studying-codrops` owns Codrops evidence");
-    expect(skill).toContain("`vfx-workflow` owns game/runtime VFX");
+    expect(skill).toContain("the target repo's gameplay/VFX owner governs game/runtime effects");
     expect(skill).toContain("## Bounded Workflow");
     expect(skill).toContain("## Motion Brief / Output Contract");
     expect(skill).toContain("## Stop Gates");

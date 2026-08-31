@@ -54,7 +54,7 @@ Adjacent owners remain authoritative:
 
 - the user, repo, and current product owner govern brand, visual, layout, and composition direction. This skill translates approved direction into motion; it does not invent or overrule it.
 - `studying-codrops` owns Codrops evidence, source relationships, and transferability. Codrops findings may inform a motion brief, but this skill does not claim that evidence.
-- `vfx-workflow` owns game/runtime VFX and gameplay-authoritative cue timing.
+- the target repo's gameplay/VFX owner governs game/runtime effects and gameplay-authoritative cue timing.
 - target-repo code, runtime behavior, and browser/device QA prove implementation. This skill does not replace repo inspection, executable tests, profiling, or rendered evidence.
 
 ## Numeric and Runtime Posture
@@ -206,7 +206,7 @@ Stop or narrow the affected boundary when:
 - motion has no named user, product, orientation, feedback, hierarchy, or approved expressive purpose
 - brand/product/composition direction is material but missing; stop for an explicit user or product-owner decision
 - Codrops evidence is being inferred without a `studying-codrops` study
-- the request crosses into gameplay-authoritative or game/runtime VFX; route it to `vfx-workflow`
+- the request crosses into gameplay-authoritative or game/runtime VFX; route it to the target repo's gameplay/VFX owner
 - the target state machine, semantic completion event, focus behavior, or interruption path is unknown and guessing would change product behavior
 - reduced motion would remove required meaning, progress, focus, or completion feedback
 - a proposed dependency, token layer, or animation abstraction lacks repo evidence and approval

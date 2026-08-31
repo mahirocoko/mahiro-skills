@@ -8,7 +8,7 @@ The intended model is simple:
 - Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor.
 - Herdr-managed panes are preferred when the invocation already runs inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
 - The selected backend's pane output is treated as the nearest source of execution truth.
-- For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow. For sprite-like sheets, route through `sprite-workflow` first.
+- For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow.
 
 ## When to use direct CLI
 

@@ -501,6 +501,17 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).not.toContain("bounded Codex/Gemini/Agy lanes");
   });
 
+  test("codex asset production keeps bounded VFX asset roles under repo-local gameplay authority", () => {
+    const skill = readRepoFile("skills", "codex-asset-production", "SKILL.md");
+
+    for (const role of ["vfx-source", "vfx-dicut", "vfx-atlas", "vfx-runtime-composition", "vfx-accessibility-review"]) {
+      expect(skill).toContain(role);
+    }
+    expect(skill).toContain("the target repo's gameplay/VFX owner");
+    expect(skill).toContain("not runtime architecture or product acceptance");
+    expect(skill).toContain("never claims canonical runtime assembly or promotion");
+  });
+
   test("goal skill describes Goal Mode without old cockpit references", () => {
     const skill = readRepoFile("skills", "control-room-goals", "SKILL.md");
     const command = readRepoFile("commands", "control-room-goals.md");

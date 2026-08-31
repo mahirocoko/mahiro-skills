@@ -22,7 +22,7 @@ Phase role: `web-asset-prompts` is the per-asset prompt writer. It answers **how
 | Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
 | Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
-| Sprite sheets, animation frames, frame QA, GIF previews, promotion gates | `sprite-workflow` |
+| Generate/source/clean sprite-like raster assets | `codex-asset-production`; keep runtime assembly and promotion with the target repo's owner |
 | Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 

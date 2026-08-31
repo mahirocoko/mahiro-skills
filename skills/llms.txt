@@ -12,7 +12,6 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `direct-cli` — Direct executor playbook for Cursor CLI, Antigravity CLI, Codex CLI, and bounded Pi through Herdr-managed panes with a tmux fallback plus supported detached Herdr job collection. Trigger on: direct Cursor lane, direct Antigravity lane, agy lane, direct Codex lane, codex lane, Pi lane, use Pi, ใช้ Pi, Herdr pane, tmux pane, fresh CLI session, detached CLI job, collect direct job, yolo/offloaded executor lane.
 - `fable` — Bounded hard-task orchestration mode for explicit missions, falsifiable hypotheses, adaptive specialist lanes, retry budgets, checkpoints, and fresh verification. Trigger explicitly on `/fable` or Fable-style workflow. Auto-trigger immediately when static checks pass but required runtime behavior fails or the same hypothesis fails twice; otherwise require at least two hard-task signals such as ambiguity, long horizon, cross-system ownership, high risk, independent lanes, or costly wrong direction. Do not trigger for Cursor Fable model selection alone.
 - `forward` — Handoff and planning bridge for the next session. Trigger on: wrap up, handoff, forward this work, next session plan.
-- `game-production` — Thin production director for complete games. Trigger on: game production audit, whole-game inventory, prototype vs vertical-slice vs production vs release readiness, production roadmap, content-complete gate, cross-discipline game lanes, performance/device/browser QA, save/deploy/legal release readiness.
 - `gemini` — Control Gemini via MQTT WebSocket. Trigger on: Gemini tab automation, send message to Gemini, browser Gemini workflow, MQTT bridge.
 - `learn` — Explore a codebase with parallel agents. Trigger on: learn repo, study codebase, explore repository, GitHub URL for study.
 - `mac-calendar-booking` — Safe macOS Calendar event booking workflow with explicit confirmation. Trigger on: book calendar, add meeting to Mac Calendar, schedule event, create agenda then add event.
@@ -23,9 +22,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
 - `rrr` — Session retrospective with an optional gated non-canonical reference learning. Trigger on: retrospective, end of session, lessons learned, or review of whether a session contains a transferable decision.
-- `sprite-workflow` — CLI-first sprite/Codex handoff workflow with an attributed 107-example prompt catalog/templates, sprite and effect jobs, selected-cycle motion-reference intake, chroma-key extraction, dicut cleanup, 2D-grid extraction, native and target-size anchor/scale/body-FX/alpha QA, motion-jitter reports, native-grid recovery, strict approved atlases, previews, manifests, and safe promotion gates. Trigger on: sprite prompt, sprite sheet, mascot frames, animation strip, motion reference, pixel snap, sprite atlas, contact sheet, preview GIF, imagegen handoff, sprite QA, or promote generated assets.
 - `studying-codrops` — Explicit Codrops/Tympanus learning lane for mapping the site, studying article + live demo + source/case-study evidence, comparing creative-web techniques, and producing project-fit adaptation guidance. Trigger only when Codrops/Tympanus is named or `/studying-codrops` is invoked; do not auto-load for ordinary frontend work or use Codrops as universal taste.
-- `vfx-workflow` — Production runtime VFX workflow. Trigger on: game telegraph, cast, projectile, trail, impact, AOE, aura, status, barrier, pickup feedback, VFX cue timing, sockets/anchors, collision-overlay QA, reduced effects, pooling, effect budgets, VFX runtime integration or promotion.
 - `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
 - `watch` — Learn from YouTube through Gemini transcription plus local caption and learning-note capture. Trigger on: watch this video, transcribe YouTube, summarize video, learn from a talk.
 
@@ -40,8 +37,6 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Web assets bundle**: `web-asset-prompts`, `asset-designer`, `codex-asset-production`
 - **Creative web study bundle**: `studying-codrops`, `learn`
 - **Motion design bundle**: `motion-design`, `studying-codrops`
-- **Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`
-- **Game production bundle**: `game-production`, `vfx-workflow`, `sprite-workflow`, `codex-asset-production`, `asset-designer`
 
 ## Install examples
 
@@ -52,7 +47,6 @@ bun ./src/cli.ts install project learn --agent cursor,agy --scope local
 bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init mahiro-guidance-refine --agent opencode --scope local
 bun ./src/cli.ts install studying-codrops --agent letta-code --scope global
 bun ./src/cli.ts install motion-design studying-codrops --agent letta-code --scope global
-bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local
-bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local
+bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production --agent opencode --scope local
 bun ./src/cli.ts install --agent opencode --scope global
 ```

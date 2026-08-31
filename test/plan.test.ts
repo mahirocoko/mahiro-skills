@@ -13,8 +13,8 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.length).toBe(21);
+      expect(plan.commands.length).toBe(21);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
@@ -41,8 +41,8 @@ describe("plan", () => {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(24);
-      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.length).toBe(21);
+      expect(plan.commands.length).toBe(21);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "project")).toBe(true);
@@ -184,6 +184,17 @@ describe("plan", () => {
     const temp = makeTempEnv();
     try {
       expect(() => createPlan("opencode", "local", ["does-not-exist"], temp.env)).toThrow("Unknown install item");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("keeps removed game workflow skills outside the install catalog", () => {
+    const temp = makeTempEnv();
+    try {
+      for (const name of ["sprite-workflow", "vfx-workflow", "game-production"]) {
+        expect(() => createPlan("opencode", "local", [name], temp.env)).toThrow(`Unknown install item '${name}'.`);
+      }
     } finally {
       temp.cleanup();
     }

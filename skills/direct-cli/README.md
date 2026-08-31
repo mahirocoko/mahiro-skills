@@ -8,7 +8,7 @@ The default posture is now explicit: `--backend auto` selects Herdr only when th
 
 Pi is deliberately bounded. The mahiro-skills Pi adapter installs skill trees only—it does not install Pi, create a PATH launcher, or configure a provider. The direct lane resolves `DIRECT_PI_COMMAND`, then `pi` on `PATH`, then Mahiro's isolated wrapper; it must verify the executable, live models, and every required launch flag before creating pane state. Use an explicit tool allowlist and never expose literal API keys. PATH presence alone does not prove a canonical binary because `pi` may resolve to a wrapper; use named Herdr lifecycle only when the target pane proves it will launch the same executable and provider environment that passed preflight.
 
-For production-ish asset/imagegen work, use `/codex-asset-production` as the front door and `/direct-cli` as the executor layer. For sprite-like sheets, start from `/sprite-workflow` and use direct lanes only for scoped handoff/execution.
+For production-ish asset/imagegen work, use `/codex-asset-production` as the front door and `/direct-cli` as the executor layer.
 
 For one job with several direct lanes, use a single Herdr job tab or tmux job session with multiple panes. The playbook supports **role fanout** (shared context, different lane roles) and **same-prompt fanout**. Tmux loads one prompt buffer and checks byte identity at the boundary. Herdr uses the packaged `prompt-fanout.py` to pass one UTF-8 prompt to every named agent, require a real activity transition, and only then wait for settled state; this avoids matching stale idle state immediately after dispatch. For Agy specifically, use the playbook's multiline caveat instead of assuming either backend is lossless.
 

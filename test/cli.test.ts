@@ -87,22 +87,16 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(7);
-      expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 21)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
-      expect(payload.every((entry) => entry.installedSkills.includes("game-production"))).toBe(true);
-      expect(payload.every((entry) => entry.installedSkills.includes("vfx-workflow"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("motion-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
-      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("game-production");
-      expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("vfx-workflow");
       expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toEqual([]);
       expect(payload.find((entry) => entry.agent === "agy")?.installedCommands).toEqual([]);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
-      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("game-production"))).toBe(true);
-      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("vfx-workflow"))).toBe(true);
     } finally {
       temp.cleanup();
     }

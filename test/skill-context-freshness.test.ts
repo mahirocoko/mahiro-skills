@@ -185,15 +185,9 @@ describe("packaged skill context freshness", () => {
   });
 
   test("installed skill commands resolve through their skill roots", () => {
-    const spriteMarkdown = filesUnder(join(repoRoot, "skills", "sprite-workflow"), ".md")
-      .map((file) => readFileSync(file, "utf8"))
-      .join("\n");
     const auditSkill = read("skills", "auditing-context-contracts", "SKILL.md");
     const goalContract = read("skills", "control-room-goals", "references", "execution-contract.md");
 
-    expect(spriteMarkdown).not.toContain("python3 skills/sprite-workflow/scripts/");
-    expect(spriteMarkdown).not.toContain("~/.letta/skills/sprite-workflow");
-    expect(spriteMarkdown).toContain('python3 "$SKILL_DIR/scripts/');
     expect(auditSkill).toContain('bun "$SKILL_DIR/scripts/scan-context-contracts.ts"');
     expect(goalContract).not.toContain('$PWD/.agent-state/model-pilots');
     expect(goalContract).not.toContain('.agent-state/model-pilots');
@@ -202,7 +196,7 @@ describe("packaged skill context freshness", () => {
 
   test("all generic command wrappers avoid source-checkout fallback paths", () => {
     const commandFiles = filesUnder(join(repoRoot, "commands"), ".md");
-    expect(commandFiles.length).toBe(24);
+    expect(commandFiles.length).toBe(21);
 
     for (const file of commandFiles) {
       const command = readFileSync(file, "utf8");

@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.103 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.104 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.103 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.104 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -110,8 +110,6 @@ Current workflow highlights:
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, Codex, and Pi pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. `use Pi` / `ใช้ Pi` selects the Pi lane; Pi uses an explicit tool allowlist and provider/model preflight. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, with the durable watcher as an explicit/automatic fallback.
 - **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
-- **Sprite asset pipeline** — `/sprite-workflow` now ships the full MIT-attributed 107-example Image Cockpit prompt catalog plus reusable templates, deterministic chroma/2D-grid extraction, native pre-normalization review, bottom/center and cross-action scale QA, bounds/silhouette jitter gates, bounded selected-cycle motion intake, warning-first alpha-hole/body-FX reports, native-grid recovery, strict approved-manifest atlas assembly, previews, candidate scoring, and safe named promotion helpers.
-- **Game production stack** — `/game-production` coordinates whole-game maturity, content/art/UI/audio/save/performance/browser/release gates while `/vfx-workflow` keeps runtime effects mechanically truthful, accessible, bounded, and separately promotable from body sprites.
 
 Common commands:
 
@@ -179,7 +177,6 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, Codex, or bounded Pi lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection where the lane has named-agent lifecycle. |
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
-| `game-production` | `/game-production` | You need a whole-game production inventory, maturity/readiness audit, specialist-lane plan, cross-domain QA, or release gate. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
@@ -190,9 +187,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
 | `rrr` | `/rrr` | You need a retrospective, with an optional gated non-canonical reference learning when a transferable decision exists. |
-| `sprite-workflow` | `/sprite-workflow` | You need attributed sprite prompts/templates, imagegen handoff, motion-reference intake, chroma/grid extraction, anchor/scale/alpha/motion QA, native-grid recovery, approved atlas assembly, previews, or promotion gates. |
 | `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
-| `vfx-workflow` | `/vfx-workflow` | You need mechanically truthful game VFX cues, sockets, timing, geometry, accessibility, pooling, effect budgets, runtime QA, or promotion gates. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want Gemini transcription plus local captions and learning-note capture for a YouTube video. |
 
@@ -208,8 +203,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
-| Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production sprite-workflow --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, and sprite handoff/QA |
-| Game production | `bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local` | Whole-game inventory/readiness, runtime VFX truth, asset production lanes, performance/device QA, and release gates |
+| Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, cutout, cleanup, and bounded QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,agy,letta-code,pi --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites
@@ -222,7 +216,6 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `watch` | YouTube access; transcript availability varies by video |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
 | `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |
-| `sprite-workflow` | `python3`, ImageMagick `magick`, and Pillow for hash-pinned production validation/promotion, GIF, native-grid, and atlas lanes; optional `ffmpeg` + `ffprobe` for bounded motion-reference intake. Use a Python interpreter that actually resolves `import PIL`. Catalog, manifest, QA, review, and promotion helpers are bundled. |
 
 ## Repo map
 

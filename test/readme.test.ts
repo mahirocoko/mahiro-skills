@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.103 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.104 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("### Standard Agent Skills compatibility");
@@ -71,12 +71,6 @@ describe("README", () => {
     expect(content).toContain("backend-specific same-prompt fanout");
     expect(content).toContain("`use Pi` / `ใช้ Pi` selects the Pi lane");
     expect(content).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
-    expect(content).toContain("Sprite asset pipeline");
-    expect(content).toContain("bounds/silhouette jitter gates");
-    expect(content).toContain("safe named promotion helpers");
-    expect(content).toContain("Game production stack");
-    expect(content).toContain("`game-production` | `/game-production`");
-    expect(content).toContain("`vfx-workflow` | `/vfx-workflow`");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
     expect(content).toContain("bun ./src/cli.ts audit --agent-id \"$AGENT_ID\" --start-date 2026-06-01");
@@ -92,7 +86,6 @@ describe("README", () => {
     expect(content).toContain('PI_CODING_AGENT_DIR="$HOME/.9router-free/pi-pilot/home/.pi/agent"');
     expect(content).toContain("Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`");
     expect(content).toContain("including multi-pane fanout or detached Herdr result collection");
-    expect(content).toContain("sprite-workflow --agent opencode --scope local");
     expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("Prefer the source files in this repository and tagged releases over installed copies.");
@@ -112,11 +105,6 @@ describe("README", () => {
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("The canonical catalog is default-or-absent");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
-    expect(index).toContain("`sprite-workflow` — CLI-first sprite/Codex handoff workflow");
-    expect(index).toContain("`game-production` — Thin production director for complete games.");
-    expect(index).toContain("`vfx-workflow` — Production runtime VFX workflow.");
-    expect(index).toContain("chroma-key extraction, dicut cleanup");
-    expect(index).toContain("motion-jitter reports");
     expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with a portable project settings boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
@@ -127,9 +115,6 @@ describe("README", () => {
     expect(index).toContain("**Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
-    expect(index).toContain("**Sprite workflow bundle**: `sprite-workflow`, `asset-designer`, `web-asset-prompts`, `codex-asset-production`, `direct-cli`");
-    expect(index).toContain("**Game production bundle**: `game-production`, `vfx-workflow`, `sprite-workflow`, `codex-asset-production`, `asset-designer`");
-    expect(index).toContain("bun ./src/cli.ts install game-production vfx-workflow sprite-workflow codex-asset-production asset-designer --agent opencode --scope local");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");
   });

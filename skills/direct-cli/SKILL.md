@@ -19,7 +19,7 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), Codex CLI (`codex`), or Pi (`pi`
 - Mahiro Code / the main agent stays the conversation owner
 - Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor
 - The selected backend's pane output is treated as the nearest source of execution truth
-- For production-ish asset/imagegen work, use `codex-asset-production` as the front-door workflow and this skill only as the pane executor layer; for sprite-like sheets, start from `sprite-workflow`.
+- For production-ish asset/imagegen work, use `codex-asset-production` as the front-door workflow and this skill only as the pane executor layer.
 
 ## Backend Selection
 
