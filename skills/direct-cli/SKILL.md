@@ -19,7 +19,7 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), Codex CLI (`codex`), or Pi (`pi`
 - Mahiro Code / the main agent stays the conversation owner
 - Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor
 - The selected backend's pane output is treated as the nearest source of execution truth
-- For production-ish asset/imagegen work, use `codex-asset-production` as the front-door workflow and this skill only as the pane executor layer.
+- For production-ish asset work, use `asset-designer` as the front-door workflow; it routes Agy/Gemini dicut first and keeps Codex as an explicit fallback/A-B. This skill owns only pane execution, while `codex-asset-production` owns Codex source/imagegen and assigned fallback work.
 
 ## Backend Selection
 
@@ -65,7 +65,7 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 - For same-prompt fanout, write the prompt once. Tmux uses one loaded buffer; Herdr reads the file once and passes the same string to every named agent at the CLI boundary.
 - Keep direct-cli generic: multi-pane sessions can coordinate implementation, review, verification, research, asset work, or model-comparison lanes across Cursor/Agy/Codex. Pi remains single-lane in the initial contract until its fanout lifecycle is proven. Codex imagegen is one use case, not the default identity of this skill.
 - Keep a lane registry: pane title, CLI/model, role, write permissions, and output directory if it may write files
-- For asset/imagegen jobs, use `codex-asset-production` for the asset contract; in this skill, record source-vs-dicut role, lane output folder, expected `$CODEX_HOME/generated-images/...` collection path, and fanout type.
+- For asset jobs, use `asset-designer` for the asset/dicut contract and `codex-asset-production` only for Codex source/imagegen or fallback work. Record source-vs-dicut role, executor, fallback trigger, lane output folder, any expected `$CODEX_HOME/generated-images/...` collection path, and fanout type.
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - Model catalogs change independently of CLI binaries. `playbook.md` is the single owner of the curated role-to-model list; do not duplicate that list in this entrypoint, README, or command wrappers. Before launch, check `agent models`, `agy models`, `codex debug models`, or `pi --list-models` plus the CLI's help/doctor surface. A curated role is preference, not availability proof.

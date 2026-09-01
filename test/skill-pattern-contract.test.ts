@@ -501,6 +501,41 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).not.toContain("bounded Codex/Gemini/Agy lanes");
   });
 
+  test("asset workflow routes semantic dicut to Agy first with explicit Codex fallback", () => {
+    const assetDesigner = readRepoFile("skills", "asset-designer", "SKILL.md");
+    const webAssetPrompts = readRepoFile("skills", "web-asset-prompts", "SKILL.md");
+    const codexAssetProduction = readRepoFile("skills", "codex-asset-production", "SKILL.md");
+    const directCli = readRepoFile("skills", "direct-cli", "SKILL.md");
+    const directCliReadme = readRepoFile("skills", "direct-cli", "README.md");
+    const directCliPlaybook = readRepoFile("skills", "direct-cli", "playbook.md");
+    const rootReadme = readRepoFile("README.md");
+    const index = readRepoFile("skills", "llms.txt");
+    const assetCommand = readRepoFile("commands", "asset-designer.md");
+    const codexCommand = readRepoFile("commands", "codex-asset-production.md");
+
+    expect(assetDesigner).toContain("Agy/Gemini as the first semantic-dicut candidate writer");
+    expect(assetDesigner).toContain("remains the explicit dicut fallback and same-input A/B lane");
+    expect(assetDesigner).toContain("Never switch executors silently");
+    expect(assetDesigner).toContain("white fur or low-contrast details can be deleted or hardened");
+
+    for (const contract of [webAssetPrompts, codexAssetProduction, directCli, directCliReadme, rootReadme, index, assetCommand, codexCommand]) {
+      expect(contract).toContain("Agy/Gemini");
+      expect(contract).toContain("Codex");
+    }
+
+    expect(codexAssetProduction).toContain("Route final dicut through Agy first and retain Codex fallback");
+    expect(codexAssetProduction).toContain("Never switch executors silently");
+    expect(codexAssetProduction).not.toContain("Make Codex own final dicut and edge QA");
+    expect(codexAssetProduction).not.toContain("Codex owns image generation plus asset-designer-style cutout/cleanup");
+
+    expect(directCliPlaybook).toContain("`agy-dicut`");
+    expect(directCliPlaybook).toContain("`codex-dicut-fallback`");
+    expect(directCliPlaybook).not.toContain("| 2 | `codex-dicut`");
+    expect(directCliPlaybook).not.toContain("source/dicut/QA role fanout");
+    expect(directCli).toContain("use `asset-designer` as the front-door workflow");
+    expect(directCliReadme).toContain("use `/asset-designer` as the front door");
+  });
+
   test("codex asset production keeps bounded VFX asset roles under repo-local gameplay authority", () => {
     const skill = readRepoFile("skills", "codex-asset-production", "SKILL.md");
 

@@ -330,6 +330,39 @@ describe("install", () => {
     }
   });
 
+  test("installs Agy-first dicut routing for Letta Code", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install(
+        "letta-code",
+        "local",
+        ["web-asset-prompts", "asset-designer", "codex-asset-production", "direct-cli"],
+        false,
+        temp.env,
+      );
+      const skillsRoot = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills");
+      const assetDesigner = readFileSync(join(skillsRoot, "asset-designer", "SKILL.md"), "utf8");
+      const codexAssetProduction = readFileSync(join(skillsRoot, "codex-asset-production", "SKILL.md"), "utf8");
+      const webAssetPrompts = readFileSync(join(skillsRoot, "web-asset-prompts", "SKILL.md"), "utf8");
+      const directCli = readFileSync(join(skillsRoot, "direct-cli", "SKILL.md"), "utf8");
+      const directCliPlaybook = readFileSync(join(skillsRoot, "direct-cli", "playbook.md"), "utf8");
+
+      expect(result.installed).toEqual(["web-asset-prompts", "asset-designer", "codex-asset-production", "direct-cli"]);
+      expect(assetDesigner).toContain("description: Mahiro Skill | Directs website image assets and Agy/Gemini-first dicut work with an explicit Codex fallback");
+      expect(assetDesigner).toContain("Agy/Gemini as the first semantic-dicut candidate writer");
+      expect(assetDesigner).toContain("remains the explicit dicut fallback and same-input A/B lane");
+      expect(codexAssetProduction).toContain("Route final dicut through Agy first and retain Codex fallback");
+      expect(webAssetPrompts).toContain("routes Agy/Gemini first and keeps Codex as an explicit fallback/A-B lane");
+      expect(directCli).toContain("use `asset-designer` as the front-door workflow");
+      expect(directCliPlaybook).toContain("`agy-dicut`");
+      expect(directCliPlaybook).toContain("`codex-dicut-fallback`");
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands", "asset-designer.md"))).toBe(false);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "commands", "codex-asset-production.md"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("installs one skill for Pi without command output", () => {
     const temp = makeTempEnv();
     try {

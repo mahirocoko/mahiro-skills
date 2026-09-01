@@ -21,8 +21,9 @@ Phase role: `web-asset-prompts` is the per-asset prompt writer. It answers **how
 | --- | --- |
 | Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
-| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
-| Generate/source/clean sprite-like raster assets | `codex-asset-production`; keep runtime assembly and promotion with the target repo's owner |
+| Dicut, remove backgrounds, clean edges, or separate layers | `asset-designer`; it routes Agy/Gemini first and keeps Codex as an explicit fallback/A-B lane |
+| Have Codex generate/source production-ish asset families | `codex-asset-production`; route selected sources back through `asset-designer` for dicut |
+| Generate/source/clean sprite-like raster assets | Let the target repo own the runtime contract; use `asset-designer` for asset/dicut direction and `codex-asset-production` only for Codex source or fallback lanes |
 | Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 
@@ -32,7 +33,8 @@ Recommended chain:
 repo-grounded product/page brief
   -> asset-designer asset plan / manifest
   -> web-asset-prompts per-asset generation prompts
-  -> image generation or cleanup
+  -> image generation
+  -> asset-designer-owned dicut routing and QA
   -> asset-designer QA / delivery notes
 ```
 

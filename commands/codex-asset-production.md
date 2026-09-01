@@ -1,5 +1,5 @@
 ---
-description: Coordinates Codex imagegen and asset-designer/dicut lanes for production-ish web/game visual assets. Use when asset work needs Codex to generate source art, cut out, clean up, QA, or report provenance for mascots, icons, UI plates, props, share cards, or sprite-like assets.
+description: Coordinates Codex imagegen/source-art lanes and explicit Codex dicut fallback or A/B work for production-ish web/game assets. Use when the job needs Codex-generated source art, Codex-specific provenance, or a named fallback after Agy/Gemini dicut is unavailable or visibly weaker.
 allowed-tools:
   - Bash
   - Read

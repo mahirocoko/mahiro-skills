@@ -1,6 +1,6 @@
 ---
 name: asset-designer
-description: Personal designer workflow for website image assets. Use when users want to cut out/dicut images, remove backgrounds, separate layers, clean edges, create transparent PNG assets, generate missing web assets, or prepare production-ready asset packs for UI/web projects.
+description: Directs website image assets and Agy/Gemini-first dicut work with an explicit Codex fallback. Use when users want to cut out/dicut images, remove backgrounds, separate layers, clean edges, create transparent PNG assets, generate missing web assets, or prepare production-ready asset packs for UI/web projects.
 ---
 
 # /asset-designer
@@ -20,9 +20,11 @@ Phase role: `asset-designer` is the asset director. It answers **what assets sho
 | User intent | Use |
 | --- | --- |
 | Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
+| Dicut, remove backgrounds, clean edges, or separate layers | `asset-designer` for the contract; Agy/Gemini through `direct-cli` as the first semantic-dicut candidate writer |
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
-| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
-| Generate/source/clean sprite-like raster assets | `codex-asset-production`; keep runtime assembly and promotion with the target repo's owner |
+| Have Codex generate/source production-ish asset families | `codex-asset-production`; hand selected sources back to this workflow for dicut routing |
+| Run a Codex dicut fallback or same-input A/B | `codex-asset-production` after the fallback trigger is named |
+| Generate/source/clean sprite-like raster assets | Let the target repo own the runtime contract; use this skill for asset roles and dicut QA, with `codex-asset-production` only for Codex source or fallback lanes |
 | Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 
@@ -32,7 +34,8 @@ Recommended chain:
 repo-grounded product/page brief
   -> asset-designer asset plan / manifest
   -> web-asset-prompts per-asset generation prompts
-  -> image generation or cleanup
+  -> image generation
+  -> Agy/Gemini-first dicut candidate, with explicit Codex fallback/A-B when triggered
   -> asset-designer QA / delivery notes
 ```
 
@@ -64,6 +67,23 @@ When the user wants an asset pack, define the expected output before any generat
 - include `filename`, `role`, `ratio`, `format`, `source strategy`, and `expected QA checks` before production begins
 - treat background fit, crop behavior, and delivery size as part of the asset definition
 - if the manifest is missing a required field, stop and resolve that decision before making files
+
+## Dicut executor routing
+
+Use Agy/Gemini as the first semantic-dicut candidate writer on comparable visual extraction work. Resolve and visibly verify the current Agy/Gemini model through `direct-cli`; reject model-selection warnings or silent fallback before sending the real task.
+
+Keep the roles explicit:
+
+- **Main agent** owns scope, manifest, source preservation, provenance, output paths, deterministic checks, integration, and truthful reporting.
+- **Agy/Gemini** owns the first candidate matte, despill, component cleanup, and multi-background visual QA.
+- **Codex** remains the explicit dicut fallback and same-input A/B lane. Use it when Agy is unavailable, the selected model cannot be verified, Agy damages load-bearing detail, the provider/runtime is Codex-specific, or a same-input comparison visibly favors Codex.
+- **Mahiro** owns final visual acceptance. Executor-reported PASS, clean metrics, or pipeline success cannot promote an asset by themselves.
+
+For a collection, start with the hardest representative source. Preserve one identical input for the Agy candidate and any Codex fallback/A-B candidate. Compare actual output pixels at target size on light, dark, checker, and intended-stage backgrounds before choosing the production route. Never switch executors silently; record the attempted route, fallback trigger, winning evidence, and rejected candidate.
+
+Treat semantic extraction as a candidate, not a universal winner. Hair, fur, feathers, translucent material, and soft alpha often benefit from semantic mattes and mathematical despill, but white fur or low-contrast details can be deleted or hardened. When a bounded hybrid visibly performs better, preserve the stronger deterministic outer edge and apply semantic cleanup only inside the proven repair domain.
+
+Keep production proportional: cache immutable source/native/rule fingerprints, recompute only changed assets, verify unchanged assets by hash, and reserve one full-set reproduction for the final boundary instead of rerunning every full-resolution asset after reporting-only changes.
 
 ## Operating modes
 

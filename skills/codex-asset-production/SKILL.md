@@ -1,12 +1,12 @@
 ---
 name: codex-asset-production
-description: Coordinates Codex imagegen and asset-designer/dicut lanes for production-ish web/game visual assets and bounded game-VFX asset production. Use when asset work needs Codex to generate source art, cut out, clean up, QA, or report provenance for mascots, icons, UI plates, props, share cards, sprite-like assets, or effect textures/atlases.
+description: Coordinates Codex imagegen/source-art lanes and explicit Codex dicut fallback or A/B work for production-ish web/game visual assets. Use when asset work needs Codex-generated source art, Codex-specific provenance, or a named fallback after Agy/Gemini dicut is unavailable or visibly weaker.
 ---
 
 # Codex Asset Production
 
 ## Overview
-Use this workflow when Mahiro wants Codex to act as the visual designer for production-ish assets, not just a mood-board generator. The main agent owns art direction, contracts, repo integration, and final reporting; Codex owns image generation plus asset-designer-style cutout/cleanup and edge QA whenever possible. Do not conflate Codex procedural PNG/script output with real imagegen output: procedural drafts are diagnostic/reference candidates unless the lane explicitly used image generation.
+Use this workflow when Mahiro wants Codex to generate production-ish source art or serve as an explicit dicut fallback/A-B lane, not just a mood-board generator. The main agent owns art direction, contracts, repo integration, and final reporting. Codex owns its image-generation/source artifacts and any specifically assigned fallback candidate; `asset-designer` owns the cross-provider dicut route, where Agy/Gemini is tried first on comparable semantic extraction work. Do not conflate Codex procedural PNG/script output with real imagegen output: procedural drafts are diagnostic/reference candidates unless the lane explicitly used image generation.
 
 ## Skill routing
 
@@ -14,10 +14,11 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
 | --- | --- |
 | Decide what assets a UI/page needs, filenames, layers, QA, delivery manifest | `asset-designer` |
 | Write/refine one production-ready image prompt/spec | `web-asset-prompts` |
-| Have Codex generate/source/clean/QA production-ish asset families | `codex-asset-production` |
-| Sprite sheets, animation frames, raster bodies, and bounded candidate QA | `codex-asset-production`; runtime assembly and promotion stay repo-local |
+| Dicut, remove backgrounds, clean edges, or separate layers | `asset-designer`; use Agy/Gemini first and this skill only for a named Codex fallback/A-B |
+| Have Codex generate/source production-ish asset families | `codex-asset-production` |
+| Sprite sheets, animation frames, raster bodies, and bounded candidate QA | The target repo owns the runtime contract; this skill owns only Codex source or explicitly assigned fallback candidates |
 | Runtime VFX design, timing, emitters, shaders, collision truth, and integration | The target repo's gameplay/VFX owner |
-| Source textures, dicut, atlases, and bounded composite QA for game VFX | `codex-asset-production` |
+| Codex-generated source textures, fallback dicut candidates, atlases, and bounded composite QA for game VFX | `codex-asset-production` under the target repo's contract |
 | Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
 
 
@@ -28,12 +29,12 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Separate asset families instead of generating a full screen and cropping it later: e.g. mascot states, nav/action icons, UI surfaces/background plates, decorative props, share-card elements.
    - Mark generated Thai/English text in images as placeholder/reference unless copy has been separately authored.
 
-2. **Open Codex designer/dicut lanes**
+2. **Open Codex source lanes and the selected dicut handoff**
    - Use interactive Codex/tmux lanes when available; attach the relevant reference images and the manifest.
    - Resolve each Codex lane's current model/effort through `direct-cli`; do not duplicate a stale model catalog here and do not invent effort-suffixed slugs such as `gpt-5.6-sol-high`. Keep the model slug and `model_reasoning_effort` separate at launch.
    - Give each lane one clear asset family and constrain writes to that family folder or a scratch folder. Multiple panes are OK when families are independent.
-   - Prefer two explicit passes when quality matters: an imagegen/source-sheet lane first, then a separate dicut-only lane that reads the source sheet and owns cutout/cleanup/QA. This avoids silently letting the main shell become the final dicut owner after an imagegen lane succeeds.
-   - Ask Codex to use the asset-designer lens: create source art, cut/clean the assets, inspect edges, produce QA previews/contact sheets, and update manifests with honest status. If strict asset-designer behavior matters, explicitly require Codex to read/load the asset-designer skill before generation or dicut; do not rely on the main agent's contract language as proof every lane used the skill.
+   - Prefer two explicit passes when quality matters: a Codex imagegen/source-sheet lane first, then an `asset-designer` handoff that assigns Agy/Gemini as the first semantic-dicut candidate writer. Open a Codex dicut lane only when an explicit fallback trigger or same-input A/B requires it.
+   - Ask Codex source lanes to create source art, inspect source fidelity, produce source previews/contact sheets, and update manifests with honest status. If Codex receives a fallback dicut assignment, explicitly require it to load the asset-designer criteria and write to a separate candidate folder; do not let it overwrite the Agy candidate or canonical outputs.
    - If the intended pass is imagegen, say so explicitly in the lane prompt (for example, generate raster source sheets with image generation before dicut). If Codex instead produces assets procedurally via scripts/libraries, label the output as a procedural draft/reference, not an imagegen pass.
    - For an `imagegen-required` handoff, collect the raw generated raster artifacts and a hash-bound provider receipt before returning to the current task owner. If those are absent, treat the lane as blocked; do not let later dicut, manifest, or mechanical QA upgrade it.
 
@@ -42,8 +43,8 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Treat Codex `ultra` as a job-level automatic-delegation choice, not a default for every pane. Do not combine several manual Codex panes with ultra in every pane unless Mahiro explicitly wants nested fanout and accepts the extra token/coordination cost. Prefer either explicit manual lanes with ordinary effort or one deliberate ultra lane for a large parallelizable asset job.
    - Choose the fanout mode deliberately:
      - **Same-prompt fanout** for independent visual diversity: paste the exact same imagegen/source prompt into multiple Codex panes with tmux buffer fanout, and keep each lane isolated until the main agent compares outputs.
-     - **Role fanout** for pipeline speed: split `source/imagegen`, `variant exploration`, `dicut/cleanup`, `QA/contact-sheet`, and optional `review/critique` lanes.
-   - Keep a lane registry before launch: pane title, model, role, allowed paths, output directory, and whether the lane may write. Example roles: `codex-source-a`, `codex-source-b`, `codex-dicut`, `codex-qa`.
+     - **Role fanout** for pipeline speed: split Codex `source/imagegen`, `variant exploration`, Agy `dicut/cleanup`, optional Codex `dicut-fallback`, `QA/contact-sheet`, and optional `review/critique` lanes.
+   - Keep a lane registry before launch: pane title, model, role, allowed paths, output directory, and whether the lane may write. Example roles: `codex-source-a`, `codex-source-b`, `agy-dicut`, `codex-dicut-fallback`, `asset-qa`.
    - Give each source lane its own scratch/output folder; never let parallel lanes write the same canonical asset path. Main agent collects Codex imagegen outputs from lane folders or `$CODEX_HOME/generated-images/...`, records provenance, and promotes only accepted files.
    - Main agent should act as orchestrator: define contract, dispatch lanes early, capture pane outputs, compare candidates, pick winners, assign final cleanup, inspect actual files, then integrate. Do not let a lane self-promote its own output into runtime paths without main-agent review.
    - Use temporary specialist roles alongside direct panes only when the current runtime exposes them: repo-scout for asset contracts/runtime paths, sprite-forge for sprite/frame QA, ui-review for in-app composition, thai-copy-review/kien-thai for copy-bearing images, and asset-designer for alpha/edge review. These role labels are not packaged skill dependencies; preserve the bounded role split with available tools when a named specialist is absent.
@@ -73,11 +74,12 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Sample the actual matte/background color from the generated source instead of assuming the requested key was exact (for example, a requested `#ff00ff` can come back as a nearby magenta gradient or shaded matte). Use fuzzed transparency carefully and preserve sRGBA/alpha rather than accidentally converting the image to grayscale or dropping channels.
    - Verify alpha by compositing on light, sky/cream, peach, checker, and dark backgrounds; do not trust a contact sheet or checkerboard preview as real transparency.
 
-7. **Make Codex own final dicut and edge QA**
-   - Codex should perform the cutout/cleanup and inspect edges using asset-designer criteria.
-   - Start dicut lanes in normal workspace-write when possible, but if Codex hits sandbox write errors, stop and ask before retrying with scoped full-access. State the allowed paths, no-app-code, no-destructive, and no-commit constraints in the prompt.
-   - Have Codex write trial outputs to a separate folder first. The main agent should compare trial vs canonical QA, ask/confirm before replacement, then move accepted outputs into canonical paths and remove or neutralize duplicate trial assets so future implementers do not pick the wrong folder.
-   - Main-shell cleanup is only diagnostic/integration fallback unless Mahiro explicitly approves it as final. Do not claim main-shell cutouts are final Codex dicut.
+7. **Route final dicut through Agy first and retain Codex fallback**
+   - Follow `asset-designer`: Agy/Gemini writes the first semantic-dicut candidate after the current model and no-fallback state are visibly verified through `direct-cli`.
+   - Use Codex as an explicit fallback or same-input A/B when Agy is unavailable, model verification fails, semantic extraction damages load-bearing detail, the provider/runtime is Codex-specific, or the Codex candidate visibly wins. Never switch executors silently.
+   - Give Agy and Codex separate candidate folders and the same untouched source. Main compares actual output pixels and QA backgrounds before replacing canonical assets.
+   - Treat white fur, low-contrast edges, hair, feathers, and translucent material as hard proof cases. A semantic matte can outperform chroma cleanup while still deleting or hardening important detail; preserve a stronger deterministic outer edge when a bounded hybrid is visibly better.
+   - Main-shell cleanup remains diagnostic/integration fallback unless Mahiro explicitly approves it as final. Do not report any executor's cutout as final from script success or self-reported PASS alone.
 
 8. **QA before promotion**
    - Require contact sheets and previews on multiple backgrounds, but also open the actual output PNGs: contact sheets can hide loose trim, star/dot bounding-box bloat, or edge residue.
@@ -97,7 +99,9 @@ Use this workflow when Mahiro wants Codex to act as the visual designer for prod
    - Be explicit about limitations like rough alpha, dark-mode failure, raster-not-production, or text placeholders.
 
 ## Common Pitfalls
-- Treating Codex as a pure idea generator and letting the main shell do final cutouts after Mahiro asked Codex to own dicut.
+- Treating Codex as the automatic final dicut owner because it generated the source.
+- Treating Agy/Gemini as a universal winner and skipping the hardest same-input proof, especially for white fur or low-contrast detail.
+- Falling back from Agy to Codex without reporting the trigger, candidate paths, and visual evidence.
 - Assuming a requested magenta background is a flat chroma key; imagegen may return gradients, shaded mattes, or anti-aliased fringe that need edge-aware cleanup and visual QA.
 - Calling procedural/script-generated Codex assets an imagegen pass when no image generation was actually used.
 - Generating one full-screen composition, slicing pieces out, and calling them production assets.

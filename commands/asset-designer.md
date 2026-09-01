@@ -1,5 +1,5 @@
 ---
-description: Personal designer workflow for website image assets. Use when users want to cut out/dicut images, remove backgrounds, separate layers, clean edges, create transparent PNG assets, generate missing web assets, or prepare production-ready asset packs for UI/web projects.
+description: Directs website image assets and Agy/Gemini-first dicut work with an explicit Codex fallback. Use when users want to cut out/dicut images, remove backgrounds, separate layers, clean edges, create transparent PNG assets, generate missing web assets, or prepare production-ready asset packs for UI/web projects.
 allowed-tools:
   - Bash
   - Read

@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.104 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.105 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.104 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.105 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -169,9 +169,9 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 
 | Skill | Command | Use when |
 | --- | --- | --- |
-| `asset-designer` | `/asset-designer` | You need a website asset plan, cutout workflow, layer split, or production-ready asset pack. |
+| `asset-designer` | `/asset-designer` | You need a website asset plan, Agy/Gemini-first dicut workflow with explicit Codex fallback, layer split, or production-ready asset pack. |
 | `auditing-context-contracts` | `/auditing-context-contracts` | APIs, routes, packages, capabilities, ownership, generated prose, comments, agent-state, or historical records may disagree with current source/runtime truth and need an evidence-backed audit or authorized repair. |
-| `codex-asset-production` | `/codex-asset-production` | You need Codex to coordinate imagegen/source-art and asset-designer dicut/cleanup/QA lanes for production-ish assets. |
+| `codex-asset-production` | `/codex-asset-production` | You need Codex imagegen/source-art, Codex-specific provenance, or an explicit Codex dicut fallback/A-B after the asset-designer route. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md semantic-search guidance, portable project settings policy, filename-only preflight, or explicit strict-scan integration with `cocoindex-code` / `ccc`. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, Codex, or bounded Pi lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection where the lane has named-agent lifecycle. |
@@ -203,7 +203,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
-| Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production --agent opencode --scope local` | Asset packs, Codex asset lanes, image prompts, cutout, cleanup, and bounded QA |
+| Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production --agent opencode --scope local` | Asset packs, image prompts, Agy/Gemini-first dicut, explicit Codex source/fallback lanes, and bounded QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,agy,letta-code,pi --scope local` | Install one skill across adapters |
 
 ## Runtime prerequisites

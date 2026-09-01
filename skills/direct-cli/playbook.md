@@ -8,7 +8,7 @@ The intended model is simple:
 - Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor.
 - Herdr-managed panes are preferred when the invocation already runs inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
 - The selected backend's pane output is treated as the nearest source of execution truth.
-- For production-ish asset/imagegen work, route through `codex-asset-production` first; direct-cli owns pane execution, not the asset workflow.
+- For production-ish asset work, route through `asset-designer` first; direct-cli owns pane execution, not the asset workflow. Add `codex-asset-production` only when the contract needs Codex source/imagegen or an explicit Codex dicut fallback/A-B.
 
 ## When to use direct CLI
 
@@ -490,7 +490,7 @@ The existing tmux launch, fanout, capture, recovery, and cleanup commands below 
 
 ## Multi-pane job sessions
 
-Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Antigravity with Opus for critique, Cursor for alternatives, and Codex or Cursor for implementation cleanup.
+Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Opus for critique, or Cursor for alternatives.
 
 The goal is one job, one Herdr tab or tmux session, many panes — not scattered containers that lose the shared context.
 
@@ -500,7 +500,7 @@ Pi remains single-lane in the initial contract. Do not place Pi in role fanout, 
 
 - The user wants several model opinions on the same question.
 - The job has multiple independent roles: imagegen, design critique, implementation, verification, or risk review.
-- You want multiple Codex imagegen lanes for independent source candidates or source/dicut/QA role fanout in one asset job.
+- You want multiple Codex imagegen lanes for independent source candidates plus Agy/Gemini-first dicut, optional Codex fallback/A-B, and bounded QA roles in one asset job.
 - The same worktree/context should stay visible while lanes differ by CLI/model.
 - The user asks for several Cursor/Codex/Agy lanes at once for independent implementation, review, or verification.
 
@@ -685,9 +685,9 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 - Main agent owns final merge/synthesis into the real worktree. For asset jobs, that means capturing panes, comparing outputs, choosing candidates, assigning cleanup, and promoting accepted files.
 - Report exactly which lane changed or generated which artifact.
 
-### Codex imagegen multi-lane jobs
+### Asset imagegen and dicut multi-lane jobs
 
-Use this specific shape when `codex-asset-production` asks for several Codex imagegen/source lanes. Direct-cli remains the generic pane executor; this subsection is only the asset/imagegen specialization.
+Use this specific shape when `asset-designer` needs Codex imagegen/source lanes plus an Agy/Gemini-first dicut candidate. Direct-cli remains the generic pane executor; this subsection is only the asset specialization.
 
 Example asset lane registry:
 
@@ -695,14 +695,15 @@ Example asset lane registry:
 | --- | --- | --- | --- | --- |
 | 0 | `codex-source-a` | Codex `gpt-5.6-sol` high | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
 | 1 | `codex-source-b` | Codex `gpt-5.6-sol` high | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
-| 2 | `codex-dicut` | Codex `gpt-5.6-terra` high | cutout/cleanup/QA after source chosen | write only to `generated-images/codex/dicut/` |
-| 3 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
+| 2 | `agy-dicut` | Agy current verified Gemini | first semantic cutout/cleanup candidate after source selection | write only to `generated-images/agy/dicut/` |
+| 3 | `codex-dicut-fallback` | Codex current verified fallback | optional same-input fallback/A-B after a named trigger | write only to `generated-images/codex/dicut-fallback/` |
+| 4 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
 
 - Put all panes in one `direct-<asset-job>` Herdr tab or tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
-- Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `codex-dicut`, `codex-qa`, and optional `agy-review`.
+- Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `agy-dicut`, optional `codex-dicut-fallback`, `asset-qa`, and optional read-only review.
 - Record each pane's output folder and collect Codex generated PNGs from `$CODEX_HOME/generated-images/<session>/<call_id>.png` when the lane leaves images there.
-- The main agent compares source candidates, picks winners, assigns cleanup/dicut, inspects actual output files, and promotes only accepted assets to canonical paths.
+- The main agent compares source candidates, sends the same untouched winner to Agy and any triggered Codex fallback, records why fallback occurred, inspects actual output files, and promotes only accepted assets to canonical paths. Never treat executor-reported PASS as visual acceptance.
 
 ### Antigravity multi-model notes
 
