@@ -5,6 +5,10 @@ export const CUSTOM_GEM_SUBMIT_COMMAND_VERSION = 'custom-gem-browser-submit-comm
 export const CUSTOM_GEM_RECOVER_ACTION = 'gem_recover_v1';
 export const CUSTOM_GEM_RECOVER_COMMAND_VERSION = 'custom-gem-browser-recover-command-v1';
 export const CUSTOM_GEM_RECOVERY_RESULT_VERSION = 'custom-gem-browser-recovery-result-v1';
+export const CUSTOM_GEM_FOLLOWUP_ACTION = 'gem_followup_v1';
+export const CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION = 'custom-gem-browser-followup-command-v1';
+export const CUSTOM_GEM_REVISION_RESULT_VERSION = 'custom-gem-browser-revision-result-v1';
+export const CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION = 'custom-gem-followup-authorization-result-v1';
 export const CUSTOM_GEM_UPLOAD_RESULT_VERSION = 'custom-gem-source-upload-result-v2';
 export const CUSTOM_GEM_RESULT_VERSION = 'custom-gem-browser-result-v1';
 export const CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS = Object.freeze([
@@ -601,6 +605,111 @@ export async function validateGemRecoverRequest(input) {
       message: input.message,
       messageSha256,
       requiredTerminalMarkers: terminalMarkers.markers,
+    },
+  };
+}
+
+export async function validateGemFollowupRequest(input) {
+  const requestId = input?.requestId ?? null;
+  const allowedKeys = [
+    'action',
+    'authorizationReceipt',
+    'conversationUrl',
+    'currentUrl',
+    'gemUrl',
+    'id',
+    'message',
+    'messageSha256',
+    'messageUtf8Bytes',
+    'requestId',
+    'requiredTerminalMarkers',
+    'tabId',
+    'timeoutMs',
+    'version',
+  ];
+  if (!input || typeof input !== 'object' || Array.isArray(input) ||
+      Object.keys(input).length !== allowedKeys.length ||
+      Object.keys(input).some((key) => !allowedKeys.includes(key))) {
+    return invalid('validation', 'invalid_command_shape', 'followup command fields must match the exact contract');
+  }
+  if (input.action !== CUSTOM_GEM_FOLLOWUP_ACTION) {
+    return invalid('validation', 'invalid_action', `action must be ${CUSTOM_GEM_FOLLOWUP_ACTION}`);
+  }
+  if (input.version !== CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION) {
+    return invalid('validation', 'invalid_version', `version must be ${CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION}`);
+  }
+  if (!isUuid(requestId) || input.id !== requestId) {
+    return invalid('validation', 'invalid_request_id', 'id and requestId must be the same canonical UUID');
+  }
+  const target = normalizeCustomGemTarget(input.gemUrl);
+  if (!target) {
+    return invalid(
+      'validation',
+      'invalid_gem_url',
+      `gemUrl must equal one of: ${CUSTOM_GEM_TARGETS.map(({ gemUrl }) => gemUrl).join(', ')}`,
+    );
+  }
+  if (!isExactCustomGemConversationUrl(target.gemUrl, input.conversationUrl)) {
+    return invalid('validation', 'invalid_conversation_url', 'conversationUrl must be one exact conversation under gemUrl');
+  }
+  if (input.currentUrl !== input.conversationUrl) {
+    return invalid('validation', 'invalid_current_url', 'currentUrl must match conversationUrl');
+  }
+  if (!Number.isSafeInteger(input.tabId) || input.tabId < 0) {
+    return invalid('validation', 'invalid_tab_id', 'tabId must be an exact non-negative integer');
+  }
+  if (typeof input.message !== 'string' || input.message.length === 0 ||
+      input.message !== input.message.trim() || input.message.includes('\u0000')) {
+    return invalid('validation', 'invalid_message', 'message must be minimal text without surrounding whitespace or NUL');
+  }
+  const messageUtf8Bytes = utf8ByteLength(input.message);
+  if (messageUtf8Bytes > CUSTOM_GEM_MAX_MESSAGE_BYTES || input.messageUtf8Bytes !== messageUtf8Bytes) {
+    return invalid('validation', 'message_byte_count_mismatch', 'messageUtf8Bytes must match the bounded message');
+  }
+  const messageSha256 = await sha256Hex(new TextEncoder().encode(input.message));
+  if (input.messageSha256 !== messageSha256) {
+    return invalid('validation', 'message_sha256_mismatch', 'messageSha256 must match the exact message');
+  }
+  const terminalMarkers = validateRequiredTerminalMarkers(input.requiredTerminalMarkers);
+  if (!terminalMarkers.ok) return terminalMarkers;
+  if (!Number.isSafeInteger(input.timeoutMs) ||
+      input.timeoutMs < CUSTOM_GEM_MIN_TIMEOUT_MS || input.timeoutMs > CUSTOM_GEM_MAX_TIMEOUT_MS) {
+    return invalid('validation', 'invalid_timeout', 'timeoutMs must be between 30000 and 360000 milliseconds');
+  }
+
+  const authorizationReceipt = input.authorizationReceipt;
+  const receiptKeys = ['browserControlExtensionId', 'commandId', 'receiptId', 'version'];
+  if (!authorizationReceipt || typeof authorizationReceipt !== 'object' || Array.isArray(authorizationReceipt) ||
+      Object.keys(authorizationReceipt).length !== receiptKeys.length ||
+      Object.keys(authorizationReceipt).some((key) => !receiptKeys.includes(key)) ||
+      authorizationReceipt.version !== CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION ||
+      typeof authorizationReceipt.browserControlExtensionId !== 'string' ||
+      !CHROME_EXTENSION_ID_RE.test(authorizationReceipt.browserControlExtensionId) ||
+      !CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS.includes(authorizationReceipt.browserControlExtensionId) ||
+      typeof authorizationReceipt.commandId !== 'string' || !SAFE_ID_RE.test(authorizationReceipt.commandId) ||
+      typeof authorizationReceipt.receiptId !== 'string' || !SHA256_RE.test(authorizationReceipt.receiptId)) {
+    return invalid('validation', 'invalid_authorization_receipt', 'authorizationReceipt must bind one exact trusted follow-up authorization result');
+  }
+
+  return {
+    ok: true,
+    request: {
+      requestId,
+      tabId: input.tabId,
+      gemId: target.gemId,
+      gemUrl: target.gemUrl,
+      currentUrl: input.conversationUrl,
+      conversationUrl: input.conversationUrl,
+      timeoutMs: input.timeoutMs,
+      message: input.message,
+      messageSha256,
+      requiredTerminalMarkers: terminalMarkers.markers,
+      authorizationReceipt: {
+        version: CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION,
+        browserControlExtensionId: authorizationReceipt.browserControlExtensionId,
+        commandId: authorizationReceipt.commandId,
+        receiptId: authorizationReceipt.receiptId.toLowerCase(),
+      },
     },
   };
 }

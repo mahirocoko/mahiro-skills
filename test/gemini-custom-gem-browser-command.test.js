@@ -3,10 +3,14 @@ import {
   CUSTOM_GEM_ACTION,
   CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS,
   CUSTOM_GEM_COMMAND_VERSION,
+  CUSTOM_GEM_FOLLOWUP_ACTION,
+  CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION,
+  CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION,
   CUSTOM_GEM_RECOVER_ACTION,
   CUSTOM_GEM_RECOVER_COMMAND_VERSION,
   CUSTOM_GEM_RECOVERY_RESULT_VERSION,
   CUSTOM_GEM_RESPONSE_STABLE_MS,
+  CUSTOM_GEM_REVISION_RESULT_VERSION,
   CUSTOM_GEM_SUBMIT_ACTION,
   CUSTOM_GEM_SUBMIT_COMMAND_VERSION,
   CUSTOM_GEM_TARGETS,
@@ -21,6 +25,7 @@ import {
   selectGeminiSendControlDescriptor,
   sha256Hex,
   summarizeGemSources,
+  validateGemFollowupRequest,
   validateGemRecoverRequest,
   validateGemStartRequest,
   validateGemSubmitRequest,
@@ -521,6 +526,109 @@ describe('read-only exact-conversation Custom Gem recovery validation', () => {
   });
 });
 
+async function makeFollowupRequest(overrides = {}, target = PRIMARY_TARGET) {
+  const conversationUrl = `${target.gemUrl}/87dc48f315422485`;
+  const message = 'Continue with the next section.';
+  return {
+    id: requestId,
+    action: CUSTOM_GEM_FOLLOWUP_ACTION,
+    version: CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION,
+    requestId,
+    gemUrl: target.gemUrl,
+    conversationUrl,
+    currentUrl: conversationUrl,
+    tabId: 42,
+    message,
+    messageSha256: await sha256Hex(new TextEncoder().encode(message)),
+    messageUtf8Bytes: new TextEncoder().encode(message).byteLength,
+    requiredTerminalMarkers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+    timeoutMs: 30_000,
+    authorizationReceipt: {
+      version: CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION,
+      browserControlExtensionId: 'jojlgfnapegeomekbaimbhankfoolinf',
+      commandId: 'bridge-command-1',
+      receiptId: 'a'.repeat(64),
+    },
+    ...overrides,
+  };
+}
+
+describe('automatic follow-up Custom Gem request validation', () => {
+  test('accepts the exact follow-up shape for either approved Gem and allowlisted extension owners', async () => {
+    expect(CUSTOM_GEM_FOLLOWUP_ACTION).toBe('gem_followup_v1');
+    expect(CUSTOM_GEM_FOLLOWUP_COMMAND_VERSION).toBe('custom-gem-browser-followup-command-v1');
+    expect(CUSTOM_GEM_REVISION_RESULT_VERSION).toBe('custom-gem-browser-revision-result-v1');
+    expect(CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION).toBe('custom-gem-followup-authorization-result-v1');
+
+    for (const target of CUSTOM_GEM_TARGETS) {
+      for (const browserControlExtensionId of CUSTOM_GEM_BROWSER_CONTROL_EXTENSION_IDS) {
+        const valid = await makeFollowupRequest({
+          authorizationReceipt: {
+            version: CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION,
+            browserControlExtensionId,
+            commandId: 'followup-cmd-42',
+            receiptId: 'b'.repeat(64),
+          },
+        }, target);
+        const result = await validateGemFollowupRequest(valid);
+        expect(result).toMatchObject({ ok: true });
+        if (!result.ok) continue;
+        expect(result.request).toEqual({
+          requestId,
+          tabId: 42,
+          gemId: target.gemId,
+          gemUrl: target.gemUrl,
+          currentUrl: `${target.gemUrl}/87dc48f315422485`,
+          conversationUrl: `${target.gemUrl}/87dc48f315422485`,
+          timeoutMs: 30_000,
+          message: 'Continue with the next section.',
+          messageSha256: await sha256Hex(new TextEncoder().encode('Continue with the next section.')),
+          requiredTerminalMarkers: ['STUDIO_IMPORT_READY', 'END_OF_RESPONSE'],
+          authorizationReceipt: {
+            version: CUSTOM_GEM_FOLLOWUP_AUTHORIZATION_RESULT_VERSION,
+            browserControlExtensionId,
+            commandId: 'followup-cmd-42',
+            receiptId: 'b'.repeat(64),
+          },
+        });
+      }
+    }
+  });
+
+  test('fails closed for shape, identity, URL, message, marker, timeout, and receipt mismatches', async () => {
+    const valid = await makeFollowupRequest();
+    const { timeoutMs: _timeoutMs, ...missingField } = valid;
+    const cases = [
+      [{ ...valid, extra: true }, 'invalid_command_shape'],
+      [missingField, 'invalid_command_shape'],
+      [{ ...valid, id: '223e4567-e89b-12d3-a456-426614174000' }, 'invalid_request_id'],
+      [{ ...valid, action: 'gem_submit_v1' }, 'invalid_action'],
+      [{ ...valid, version: 'wrong' }, 'invalid_version'],
+      [{ ...valid, gemUrl: 'https://gemini.google.com/gem/unknown123456' }, 'invalid_gem_url'],
+      [{ ...valid, conversationUrl: PRIMARY_TARGET.gemUrl }, 'invalid_conversation_url'],
+      [{ ...valid, conversationUrl: `${SECOND_TARGET.gemUrl}/87dc48f315422485` }, 'invalid_conversation_url'],
+      [{ ...valid, conversationUrl: `${PRIMARY_TARGET.gemUrl}/87dc48f315422485?x=1` }, 'invalid_conversation_url'],
+      [{ ...valid, currentUrl: PRIMARY_TARGET.gemUrl }, 'invalid_current_url'],
+      [{ ...valid, tabId: -1 }, 'invalid_tab_id'],
+      [{ ...valid, tabId: 1.5 }, 'invalid_tab_id'],
+      [{ ...valid, message: '  trimmed  ' }, 'invalid_message'],
+      [{ ...valid, messageUtf8Bytes: valid.messageUtf8Bytes + 1 }, 'message_byte_count_mismatch'],
+      [{ ...valid, messageSha256: 'b'.repeat(64) }, 'message_sha256_mismatch'],
+      [{ ...valid, requiredTerminalMarkers: [] }, 'invalid_terminal_markers'],
+      [{ ...valid, requiredTerminalMarkers: ['DONE', 'DONE'] }, 'duplicate_terminal_marker'],
+      [{ ...valid, timeoutMs: 29_999 }, 'invalid_timeout'],
+      [{ ...valid, timeoutMs: 360_001 }, 'invalid_timeout'],
+      [{ ...valid, authorizationReceipt: { ...valid.authorizationReceipt, version: 'custom-gem-source-upload-result-v2' } }, 'invalid_authorization_receipt'],
+      [{ ...valid, authorizationReceipt: { ...valid.authorizationReceipt, browserControlExtensionId: 'unapprovedextensionid1234567890' } }, 'invalid_authorization_receipt'],
+      [{ ...valid, authorizationReceipt: { ...valid.authorizationReceipt, receiptId: 'not-a-hex' } }, 'invalid_authorization_receipt'],
+      [{ ...valid, authorizationReceipt: { ...valid.authorizationReceipt, extra: true } }, 'invalid_authorization_receipt'],
+    ];
+    for (const [input, code] of cases) {
+      expect(await validateGemFollowupRequest(input)).toMatchObject({ ok: false, error: { code } });
+    }
+  });
+});
+
 test('Thai Send detection accepts the real label, icon, and class but rejects ambiguity and unrelated buttons', () => {
   const thaiLabel = { ariaLabel: 'ส่งข้อความ' };
   const thaiIcon = { iconFont: 'send' };
@@ -605,92 +713,137 @@ test('the extension logs only the action name, never the full MQTT command', asy
   expect(source).toContain("case 'gem_start_v1':");
   expect(source).toContain("case 'gem_submit_v1':");
   expect(source).toContain("case 'gem_recover_v1':");
+  expect(source).toContain("case 'gem_followup_v1':");
   expect(source).toContain("'gem-media-attachment.gem-attachment-tile'");
   expect(source).toContain("attachmentVerification: 'trusted_sequential_tiles'");
-  expect(source).not.toContain('MAHIRO_BROWSER_CONTROL_EXTENSION_ID')
-  expect(source).toContain('chrome.runtime.sendMessage(request.uploadReceipt.browserControlExtensionId')
-  expect(source).toContain('browserControlExtensionId: request.uploadReceipt.browserControlExtensionId')
-  expect(source).toContain("type: 'CONSUME_CUSTOM_GEM_UPLOAD_ATTESTATION_V1'")
-  expect(source).toContain("type: 'TRUSTED_CUSTOM_GEM_SEND_V1'")
-  expect(source).toContain('message: request.message')
+  expect(source).not.toContain('MAHIRO_BROWSER_CONTROL_EXTENSION_ID');
+  expect(source).toContain('chrome.runtime.sendMessage(request.uploadReceipt.browserControlExtensionId');
+  expect(source).toContain('browserControlExtensionId: request.uploadReceipt.browserControlExtensionId');
+  expect(source).toContain('chrome.runtime.sendMessage(request.authorizationReceipt.browserControlExtensionId');
+  expect(source).toContain('browserControlExtensionId: request.authorizationReceipt.browserControlExtensionId');
+  expect(source).toContain("type: 'CONSUME_CUSTOM_GEM_UPLOAD_ATTESTATION_V1'");
+  expect(source).toContain("type: 'CONSUME_CUSTOM_GEM_FOLLOWUP_ATTESTATION_V1'");
+  expect(source).toContain("type: 'TRUSTED_CUSTOM_GEM_SEND_V1'");
+  expect(source).toContain("type: 'TRUSTED_CUSTOM_GEM_FOLLOWUP_SEND_V1'");
+  expect(source).toContain('message: request.message');
   const consumeAttestationBlock = source.slice(
     source.indexOf('function verifyTrustedCustomGemUploadReceipt'),
     source.indexOf('async function customGemSubmitPage'),
-  )
-  expect(consumeAttestationBlock).not.toContain('message: request.message')
+  );
+  expect(consumeAttestationBlock).not.toContain('message: request.message');
+  const consumeFollowupAttestationBlock = source.slice(
+    source.indexOf('function verifyTrustedCustomGemFollowupReceipt'),
+    source.indexOf('function executeCustomGemScript'),
+  );
+  expect(consumeFollowupAttestationBlock).not.toContain('message: request.message');
   const trustedSendBlock = source.slice(
     source.indexOf('function requestTrustedCustomGemSend'),
     source.indexOf('async function runTrustedCustomGemSubmit'),
-  )
-  expect(trustedSendBlock).toContain('message: request.message')
-  expect(source).toContain('await requestTrustedCustomGemSend(request)')
-  expect(source).toContain('gemId: request.gemId')
-  expect(source).toContain('gemUrl: request.gemUrl')
-  expect(source).toContain('currentUrl: request.currentUrl')
-  expect(source).toContain('response.result.gemId !== request.gemId')
-  expect(source).toContain('const navigation = await observeCustomGemConversationNavigation({')
-  expect(source).toContain('const conversationUrl = await navigation.promise')
-  expect(source).toContain('expectedUrl: conversationUrl')
-  expect(source).toContain('navigation.cancel()')
-  expect(source).toContain('awaitTrustedCustomGemResponsePage')
-  expect(source).toContain("node.setAttribute('data-custom-gem-baseline', payload.attributionToken)")
-  expect(source).toContain("normalizeText(messageText(node)) === normalizeText(message)")
-  expect(source).toContain("node.getAttribute('data-custom-gem-baseline') !== attributionToken")
-  expect(source).toContain('const attributionToken = request.requestId')
-  expect(source).toContain('attributedMessageNode.compareDocumentPosition(node)')
-  expect(source).toContain('func: cleanupCustomGemAttributionPage')
+  );
+  expect(trustedSendBlock).toContain('message: request.message');
+  const trustedFollowupSendBlock = source.slice(
+    source.indexOf('function requestTrustedCustomGemFollowupSend'),
+    source.indexOf('async function customGemFollowupPreparePage'),
+  );
+  expect(trustedFollowupSendBlock).toContain('message: request.message');
+  expect(source).toContain('await requestTrustedCustomGemSend(request)');
+  expect(source).toContain('await requestTrustedCustomGemFollowupSend(request)');
+  expect(source).toContain('gemId: request.gemId');
+  expect(source).toContain('gemUrl: request.gemUrl');
+  expect(source).toContain('currentUrl: request.currentUrl');
+  expect(source).toContain('response.result.gemId !== request.gemId');
+  expect(source).toContain('const navigation = await observeCustomGemConversationNavigation({');
+  expect(source).toContain('const conversationUrl = await navigation.promise');
+  expect(source).toContain('expectedUrl: conversationUrl');
+  expect(source).toContain('navigation.cancel()');
+  expect(source).toContain('awaitTrustedCustomGemResponsePage');
+  expect(source).toContain("node.setAttribute('data-custom-gem-baseline', payload.attributionToken)");
+  expect(source).toContain("normalizeText(messageText(node)) === normalizeText(message)");
+  expect(source).toContain("node.getAttribute('data-custom-gem-baseline') !== attributionToken");
+  expect(source).toContain('const attributionToken = request.requestId');
+  expect(source).toContain('attributedMessageNode.compareDocumentPosition(node)');
+  expect(source).toContain('func: cleanupCustomGemAttributionPage');
   const trustedResponseBlock = source.slice(
     source.indexOf('async function awaitTrustedCustomGemResponsePage'),
     source.indexOf('function cleanupCustomGemAttributionPage'),
-  )
-  expect(trustedResponseBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)')
-  expect(trustedResponseBlock).toContain('Date.now() - candidateSince >= stableMs')
-  expect(trustedResponseBlock).toContain('const nextMessageNode = currentMessages.find(')
-  expect(trustedResponseBlock).not.toContain('aria-busy')
+  );
+  expect(trustedResponseBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)');
+  expect(trustedResponseBlock).toContain('Date.now() - candidateSince >= stableMs');
+  expect(trustedResponseBlock).toContain('const nextMessageNode = currentMessages.find(');
+  expect(trustedResponseBlock).not.toContain('aria-busy');
   const recoveryPageBlock = source.slice(
     source.indexOf('async function recoverCustomGemResponsePage'),
     source.indexOf('async function runCustomGemRecovery'),
-  )
-  expect(recoveryPageBlock).toContain('normalizeText(messageText(node)) === normalizeText(message)')
-  expect(recoveryPageBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)')
-  expect(recoveryPageBlock).toContain('Date.now() - candidateSince >= stableMs')
-  expect(recoveryPageBlock).not.toContain('.click(')
-  expect(recoveryPageBlock).not.toContain('aria-busy')
+  );
+  expect(recoveryPageBlock).toContain('normalizeText(messageText(node)) === normalizeText(message)');
+  expect(recoveryPageBlock).toContain('const terminalText = text.trim() && hasOrderedMarkers(text)');
+  expect(recoveryPageBlock).toContain('Date.now() - candidateSince >= stableMs');
+  expect(recoveryPageBlock).not.toContain('.click(');
+  expect(recoveryPageBlock).not.toContain('aria-busy');
+  const followupPreparePageBlock = source.slice(
+    source.indexOf('async function customGemFollowupPreparePage'),
+    source.indexOf('async function runTrustedCustomGemFollowup'),
+  );
+  expect(followupPreparePageBlock).toContain('preexisting_attachments');
+  expect(followupPreparePageBlock).toContain('composer_not_empty');
+  expect(followupPreparePageBlock).toContain('composer_message_mismatch');
+  expect(followupPreparePageBlock).toContain('ส่งข้อความ');
+  expect(followupPreparePageBlock).not.toContain('.click(');
+  expect(followupPreparePageBlock).toContain("state: 'prepared'");
   const recoveryRuntimeBlock = source.slice(
     source.indexOf('async function executeCustomGemRecover'),
     source.indexOf('async function executeCustomGemSubmit'),
-  )
-  expect(recoveryRuntimeBlock).toContain('tab?.url !== request.conversationUrl')
-  expect(recoveryRuntimeBlock).toContain('version: CUSTOM_GEM_RECOVERY_RESULT_VERSION')
-  expect(recoveryRuntimeBlock).not.toContain('chrome.tabs.update')
-  expect(recoveryRuntimeBlock).not.toContain('verifyTrustedCustomGemUploadReceipt')
-  expect(recoveryRuntimeBlock).not.toContain('reserveCustomGemDurableRequest')
-  expect(recoveryRuntimeBlock).not.toContain('completeCustomGemDurableRequest')
-  expect(source).toContain("const isExactRecoverySuccess = data?.version === CUSTOM_GEM_RECOVERY_RESULT_VERSION")
-  expect(source).toContain("node.querySelectorAll('.query-text-line')")
-  expect(source).toContain('const tabReadyDeadline = Math.min(deadlineAt, Date.now() + 5_000)')
-  expect(source).toContain('const sendReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs)')
-  expect(source).toContain('Date.now() - readySince >= sendStableMs')
-  expect(source).toContain('sendReadyWindowMs: readiness.readyWindowMs')
-  expect(source).toContain("errorCode: 'attachment_media_not_ready'")
-  expect(source).toContain("attachment_media_not_ready: 'The Custom Gem attachments did not finish rendering before Send'")
-  expect(source).toContain('image.complete && image.naturalWidth > 0')
-  expect(source).toContain("customGemSendReadiness: CUSTOM_GEM_SEND_READINESS_CAPABILITY")
-  expect(source).toContain("node.querySelector('.markdown-main-panel, .markdown, message-content")
-  expect(source).toContain("lines.push(`${'#'.repeat(Number(tag[1]))} ${text}`)")
-  expect(source).toContain("chrome.runtime.lastError?.message || response?.error")
-  expect(source).toContain('await reserveCustomGemDurableRequest(request, fingerprint)')
-  expect(source).toContain('if (cached.fingerprint !== fingerprint)')
-  expect(source).toContain('if (inFlight.fingerprint !== fingerprint)')
-  expect(source).toContain('await completeCustomGemDurableRequest(requestId, reservation.fingerprint, result)')
-  expect(source).toContain("CUSTOM_GEM_DURABLE_REQUESTS_KEY = 'customGemDurableSubmitRequestsV1'")
-  expect(source).toContain('const customGemSubmitInFlight = new Map()')
-  expect(source).toContain("status: 'completed_tombstone'")
-  expect(source).not.toContain('CUSTOM_GEM_DURABLE_REQUEST_TTL_MS')
-  expect(source).toContain("return customGemAmbiguous(request.requestId, 'submit', code")
-  expect(source).toContain("return customGemAmbiguous(request.requestId, 'response', 'response_too_large'")
+  );
+  expect(recoveryRuntimeBlock).toContain('tab?.url !== request.conversationUrl');
+  expect(recoveryRuntimeBlock).toContain('version: CUSTOM_GEM_RECOVERY_RESULT_VERSION');
+  expect(recoveryRuntimeBlock).not.toContain('chrome.tabs.update');
+  expect(recoveryRuntimeBlock).not.toContain('chrome.tabs.create');
+  expect(recoveryRuntimeBlock).not.toContain('verifyTrustedCustomGemUploadReceipt');
+  expect(recoveryRuntimeBlock).not.toContain('verifyTrustedCustomGemFollowupReceipt');
+  expect(recoveryRuntimeBlock).not.toContain('reserveCustomGemDurableRequest');
+  expect(recoveryRuntimeBlock).not.toContain('completeCustomGemDurableRequest');
+  expect(recoveryRuntimeBlock).not.toContain('CONSUME_');
+  expect(recoveryRuntimeBlock).not.toContain('TRUSTED_');
+  const followupRuntimeBlock = source.slice(
+    source.indexOf('async function executeCustomGemFollowup'),
+    source.indexOf('async function handleCustomGemFollowup'),
+  );
+  expect(followupRuntimeBlock).toContain('tab?.url !== request.conversationUrl');
+  expect(followupRuntimeBlock).toContain('version: CUSTOM_GEM_REVISION_RESULT_VERSION');
+  expect(followupRuntimeBlock).toContain("mode: 'automatic_followup'");
+  expect(followupRuntimeBlock).toContain("stage: 'response_complete'");
+  expect(followupRuntimeBlock).toContain('if (!submitAttempted)');
+  expect(followupRuntimeBlock).toContain("'prepare'");
+  expect(followupRuntimeBlock).not.toContain('chrome.tabs.create');
+  expect(followupRuntimeBlock).not.toContain('chrome.tabs.update');
+  expect(source).toContain("const isExactRecoverySuccess = data?.version === CUSTOM_GEM_RECOVERY_RESULT_VERSION");
+  expect(source).toContain("const isExactRevisionSuccess = data?.version === CUSTOM_GEM_REVISION_RESULT_VERSION");
+  expect(source).toContain("node.querySelectorAll('.query-text-line')");
+  expect(source).toContain('const tabReadyDeadline = Math.min(deadlineAt, Date.now() + 5_000)');
+  expect(source).toContain('const sendReadyDeadline = Math.min(deadlineAt, Date.now() + sendReadyWindowMs)');
+  expect(source).toContain('Date.now() - readySince >= sendStableMs');
+  expect(source).toContain('sendReadyWindowMs: readiness.readyWindowMs');
+  expect(source).toContain("errorCode: 'attachment_media_not_ready'");
+  expect(source).toContain("attachment_media_not_ready: 'The Custom Gem attachments did not finish rendering before Send'");
+  expect(source).toContain("followup_attestation_rejected: 'Browser Control did not authenticate this one-time follow-up receipt'");
+  expect(source).toContain('image.complete && image.naturalWidth > 0');
+  expect(source).toContain("customGemSendReadiness: CUSTOM_GEM_SEND_READINESS_CAPABILITY");
+  expect(source).toContain("node.querySelector('.markdown-main-panel, .markdown, message-content");
+  expect(source).toContain("lines.push(`${'#'.repeat(Number(tag[1]))} ${text}`)");
+  expect(source).toContain("chrome.runtime.lastError?.message || response?.error");
+  expect(source).toContain('await reserveCustomGemDurableRequest(request, fingerprint)');
+  expect(source).toContain('if (cached.fingerprint !== fingerprint)');
+  expect(source).toContain('if (inFlight.fingerprint !== fingerprint)');
+  expect(source).toContain('await completeCustomGemDurableRequest(requestId, reservation.fingerprint, result)');
+  expect(source).toContain("CUSTOM_GEM_DURABLE_REQUESTS_KEY = 'customGemDurableSubmitRequestsV1'");
+  expect(source).toContain('const customGemSubmitInFlight = new Map()');
+  expect(source).toContain('const customGemFollowupInFlight = new Map()');
+  expect(source).toContain("status: 'completed_tombstone'");
+  expect(source).not.toContain('CUSTOM_GEM_DURABLE_REQUEST_TTL_MS');
+  expect(source).toContain("return customGemAmbiguous(request.requestId, 'submit', code");
+  expect(source).toContain("return customGemAmbiguous(request.requestId, 'response', 'response_too_large'");
   expect(source).toContain("cmd.action === 'reload_extension_v1'");
-  expect(source).toContain('proxy_reload_wake=')
+  expect(source).toContain('proxy_reload_wake=');
   expect(source).toContain('setTimeout(() => chrome.runtime.reload(), 100);');
   expect(source).toContain("if (this.type === 'file' && !this.disabled)");
   expect(source).toContain('capturedFileInput = this;');

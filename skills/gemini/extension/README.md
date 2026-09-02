@@ -68,6 +68,7 @@ If you change `background-src.js`, rebuild `background.js` from the repository r
 | `chat`         | tabId, text        | Send message to Gemini     |
 | `gem_submit_v1` | version, requestId, gemUrl, currentUrl, tabId, sources, message hashes, requiredTerminalMarkers, uploadReceipt, timeoutMs | Verify Browser Control's trusted pre-upload, then submit once |
 | `gem_recover_v1` | version, requestId, gemUrl, conversationUrl, tabId, message hashes, requiredTerminalMarkers, timeoutMs | Recover one exact terminal response without browser interaction |
+| `gem_followup_v1` | version, requestId, gemUrl, currentUrl, conversationUrl, tabId, message hashes, requiredTerminalMarkers, authorizationReceipt, timeoutMs | Automatic follow-up command on an existing successful conversation |
 | `gem_start_v1` | version, requestId, gemUrl, images, message, timeoutMs, tabId? | Transactional one-to-six-source Custom Gem run |
 | `reload_extension_v1` | id | Acknowledge then reload this local extension; use after a reviewed local build |
 | `inject_badge` | tabId, text?       | Show visual badge          |
@@ -88,6 +89,12 @@ The v2 request requires `requiredTerminalMarkers`: one to eight unique, non-empt
 The recovery command uses version `custom-gem-browser-recover-command-v1` and exactly: `id`, `action`, `version`, `requestId`, `gemUrl`, `conversationUrl`, `tabId`, `message`, `messageSha256`, `messageUtf8Bytes`, `requiredTerminalMarkers`, and `timeoutMs`. IDs must be the same canonical UUID; the base must be approved; the conversation must be an exact child of that same Gem; and message, marker, tab, and timeout bounds match submit v2. The current explicit tab URL must already equal `conversationUrl`.
 
 Recovery only reads the current conversation DOM. It never navigates, uploads, attests, clicks, sends, or touches submit durable state. It requires exactly one user query whose canonical visible text equals the canonical supplied message after NBSP-to-space conversion and whitespace collapse; `messageSha256` still binds the byte-exact request. It then requires exactly one following model response before any next user query, all terminal markers in declared order, at least 800 ms of stable text, and at most 64 KiB. Timeout and attribution failures are `failed`, never `ambiguous`. Success version `custom-gem-browser-recovery-result-v1` contains exactly `id`, `requestId`, `state`, `gemId`, `gemUrl`, `currentUrl`, `conversationUrl`, `tabId`, `messageSha256`, `requiredTerminalMarkers`, `rawResponse`, `responseSha256`, `responseUtf8Bytes`, and `recoveredAt`.
+
+### `gem_followup_v1` automatic successful-conversation follow-up
+
+The follow-up command uses version `custom-gem-browser-followup-command-v1` and exactly: `id`, `action`, `version`, `requestId`, `gemUrl`, `currentUrl`, `conversationUrl`, `tabId`, `message`, `messageSha256`, `messageUtf8Bytes`, `requiredTerminalMarkers`, `timeoutMs`, and `authorizationReceipt`. IDs must be the same canonical UUID; the base must be approved; `currentUrl` and `conversationUrl` must be identical and match the exact conversation child under `gemUrl`. The existing tab is used directly without creating or navigating tabs.
+
+The extension verifies the existing tab, checks the durable request reservation, verifies `CONSUME_CUSTOM_GEM_FOLLOWUP_ATTESTATION_V1` with the authorized Browser Control extension owner, confirms an empty composer with 0 attachments, writes and checks the exact message, requests `TRUSTED_CUSTOM_GEM_FOLLOWUP_SEND_V1` from Browser Control, and collects one attributable response with ordered terminal markers and 800 ms stability. Any post-send failure or ambiguity quarantines the tab and transitions to `state: "ambiguous"`. Success returns `version: "custom-gem-browser-revision-result-v1"` with `mode: "automatic_followup"`.
 
 ### `gem_start_v1` legacy standalone Custom Gem command
 

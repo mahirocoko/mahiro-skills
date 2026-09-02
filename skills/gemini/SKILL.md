@@ -331,6 +331,26 @@ Use `action: "gem_recover_v1"` with `version: "custom-gem-browser-recover-comman
 
 Recovery requires the current explicit tab URL to equal `conversationUrl`; it never navigates, uploads, attests, clicks, sends, or reads/writes submit durable state. It finds exactly one user query whose canonical visible text equals the canonical supplied message (NBSP becomes space and whitespace collapses), while `messageSha256` binds the byte-exact request, then exactly one following model response before any next user query. The same 800 ms stability, ordered-marker, and 64 KiB text-projection gates apply. A timeout or attribution failure is `failed`, never `ambiguous`. Success is exactly `version: "custom-gem-browser-recovery-result-v1"` with `id`, `requestId`, `state: "succeeded"`, `gemId`, `gemUrl`, `currentUrl` equal to `conversationUrl`, `conversationUrl`, `tabId`, `messageSha256`, `requiredTerminalMarkers`, `rawResponse`, `responseSha256`, `responseUtf8Bytes`, and `recoveredAt`.
 
+### `gem_followup_v1` — automatic successful-conversation follow-up
+
+Use `action: "gem_followup_v1"` with `version: "custom-gem-browser-followup-command-v1"` to send an automatic follow-up message in an existing successful Custom Gem conversation.
+
+Publish exactly one request to `claude/browser/command` with:
+
+- `action: "gem_followup_v1"` and `version: "custom-gem-browser-followup-command-v1"`;
+- the same canonical UUID in `id` and `requestId`;
+- approved base `gemUrl` (`https://gemini.google.com/gem/d6f1958dff66` or `https://gemini.google.com/gem/a217413102ab`);
+- exact `conversationUrl` and `currentUrl`, where `currentUrl === conversationUrl` and both represent the exact conversation child under `gemUrl`;
+- exact `tabId` of the existing open tab (must not create or navigate tabs);
+- bounded `message` (up to 8192 bytes, trimmed, no NUL), exact `messageSha256`, and `messageUtf8Bytes`;
+- `requiredTerminalMarkers`: 1 to 8 unique, trimmed strings with no NUL, at most 256 UTF-8 bytes each and at most 1024 UTF-8 bytes in aggregate;
+- `timeoutMs`: 30,000 to 360,000 ms;
+- `authorizationReceipt`: object binding `version: "custom-gem-followup-authorization-result-v1"`, allowlisted `browserControlExtensionId`, `commandId` (safe ID string), and `receiptId` (64-character lowercase SHA-256).
+
+The extension uses the existing tab only, verifies tab URL equals `conversationUrl`, reserves the durable request, verifies the one-time attestation via `CONSUME_CUSTOM_GEM_FOLLOWUP_ATTESTATION_V1`, ensures an empty composer with 0 attachments, writes and verifies the exact message, requests exactly one `TRUSTED_CUSTOM_GEM_FOLLOWUP_SEND_V1` click from Browser Control, and awaits exactly one attributable response with ordered terminal markers and 800 ms stable text.
+
+Any uncertain outcome or disconnection after Send transitions to `state: "ambiguous"`, quarantines the tab, and is never retried automatically. Succeeded result is `version: "custom-gem-browser-revision-result-v1"` with `mode: "automatic_followup"`, `stage: "response_complete"`, exact conversation identity, message hash, required terminal markers, `rawResponse`, `responseSha256`, and `responseUtf8Bytes`.
+
 ### `gem_start_v1` — legacy standalone transactional command
 
 Publish exactly one request to `claude/browser/command` with:
