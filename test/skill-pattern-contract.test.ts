@@ -309,6 +309,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("not reconciled as failed merely because they have no watcher");
     expect(skill).toContain("tmux load-buffer");
     expect(skill).toContain("one writer per file/asset contract");
+    expect(skill).toContain("Multi-pane output collection is receipt-bound");
+    expect(skill).toContain("This does not restrict multi-pane execution");
+    expect(skill).toContain("globally newest file");
+    expect(skill).toContain("exact provider-returned output identity");
+    expect(skill).not.toContain("$CODEX_HOME/generated-images");
     expect(skill).toContain("Antigravity newline caveat");
     expect(skill).toContain("--prompt-interactive");
     expect(skill).toContain("`playbook.md` is the single owner of the curated role-to-model list");
@@ -395,6 +400,12 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Same-prompt fanout");
     expect(playbook).toContain("Send byte-identical prompt content to every pane.");
     expect(playbook).toContain("Main agent owns final merge/synthesis into the real worktree.");
+    expect(playbook).toContain("Treat multi-pane output collection as receipt-bound");
+    expect(playbook).toContain("Never discover a lane's result by scanning a shared output root for the newest file");
+    expect(playbook).toContain("does not restrict multi-pane execution");
+    expect(playbook).toContain("do not infer a provider directory name or session/call layout");
+    expect(playbook).not.toContain("$CODEX_HOME/generated-images");
+    expect(readme).toContain("Multi-pane output collection is receipt-bound rather than recency-based");
     expect(playbook).toContain("Antigravity multiline prompt caveat");
     expect(playbook).toContain("agy --model claude-opus-4-6-thinking --dangerously-skip-permissions");
     expect(playbook).toContain("`claude-sonnet-4-6`");
@@ -496,6 +507,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Propagate the owning workflow's source requirement unchanged");
     expect(skill).toContain("hash-bound provider receipt");
     expect(skill).toContain("do not let later dicut, manifest, or mechanical QA upgrade it");
+    expect(skill).toContain("exact provider-returned path plus available session/result identity");
+    expect(skill).toContain("Never discover concurrent outputs by global newest-file or modification-time search");
+    expect(skill).toContain("request that structured control **and** state genuine transparent/no-background pixels");
+    expect(skill).toContain("Treat a provider or tool claim such as `transparent: true` as request/receipt evidence");
+    expect(skill).toContain("actual raster mode and alpha extrema/corners");
     expect(skill).toContain("source-ready-normalization-required");
     expect(skill).toContain("bounded Cursor/Agy/Codex/Pi lanes");
     expect(skill).not.toContain("bounded Codex/Gemini/Agy lanes");

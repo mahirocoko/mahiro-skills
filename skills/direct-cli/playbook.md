@@ -680,7 +680,9 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 - Default to one writer lane per file or asset contract.
 - Make review, idea, and risk lanes read-only unless explicitly assigned as writers.
 - If several lanes need to produce artifacts, give each a separate output directory such as `work/implement/`, `notes/review/`, `reports/verify/`, or asset-specific folders.
-- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in Codex's generated-images area for the main agent to collect.
+- Treat multi-pane output collection as receipt-bound. Record each lane's expected path or provider/result identity, and collect only the exact result returned for that lane. Never discover a lane's result by scanning a shared output root for the newest file or by comparing modification times; concurrent completions make recency ambiguous. If exact ownership cannot be proven, fail that lane rather than guessing. Compare hashes before synthesis and investigate unexpected duplicates.
+- This output-identity guard does not restrict multi-pane execution. Role fanout and same-prompt fanout remain supported; only ambiguous cross-lane collection is rejected.
+- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in the provider-managed area for receipt-bound collection.
 - Do not let parallel lanes overwrite canonical runtime paths.
 - Main agent owns final merge/synthesis into the real worktree. For asset jobs, that means capturing panes, comparing outputs, choosing candidates, assigning cleanup, and promoting accepted files.
 - Report exactly which lane changed or generated which artifact.
@@ -702,7 +704,7 @@ Example asset lane registry:
 - Put all panes in one `direct-<asset-job>` Herdr tab or tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
 - Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `agy-dicut`, optional `codex-dicut-fallback`, `asset-qa`, and optional read-only review.
-- Record each pane's output folder and collect Codex generated PNGs from `$CODEX_HOME/generated-images/<session>/<call_id>.png` when the lane leaves images there.
+- Record each pane's output folder plus exact session/call result identity, and collect only its exact provider-returned generated-output path when the lane leaves images in provider-managed storage. Never substitute the globally newest generated file or assume a directory shape.
 - The main agent compares source candidates, sends the same untouched winner to Agy and any triggered Codex fallback, records why fallback occurred, inspects actual output files, and promotes only accepted assets to canonical paths. Never treat executor-reported PASS as visual acceptance.
 
 ### Antigravity multi-model notes
@@ -1094,7 +1096,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 
 - Codex supports image input in the CLI through `--image <FILE>` for an initial prompt and through the interactive TUI's paste/attach image flow.
 - Codex can generate images through the hosted `image_generation` tool when ChatGPT/Codex backend auth, provider capability, feature flags, and model image input support are all active.
-- Generated images are saved as PNGs under `$CODEX_HOME/generated-images/<session>/<call_id>.png` by the Codex runtime.
+- A successful hosted generation reports its exact saved PNG path in the session. Capture that returned path at call completion; do not infer a provider directory name or session/call layout.
 - Do not treat image generation as a separate `codex image` command; it is an agent tool capability inside the session.
 
 ### Safety defaults

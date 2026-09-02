@@ -65,7 +65,8 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 - For same-prompt fanout, write the prompt once. Tmux uses one loaded buffer; Herdr reads the file once and passes the same string to every named agent at the CLI boundary.
 - Keep direct-cli generic: multi-pane sessions can coordinate implementation, review, verification, research, asset work, or model-comparison lanes across Cursor/Agy/Codex. Pi remains single-lane in the initial contract until its fanout lifecycle is proven. Codex imagegen is one use case, not the default identity of this skill.
 - Keep a lane registry: pane title, CLI/model, role, write permissions, and output directory if it may write files
-- For asset jobs, use `asset-designer` for the asset/dicut contract and `codex-asset-production` only for Codex source/imagegen or fallback work. Record source-vs-dicut role, executor, fallback trigger, lane output folder, any expected `$CODEX_HOME/generated-images/...` collection path, and fanout type.
+- Multi-pane output collection is receipt-bound: record each lane's expected output path or provider/result identity and collect only that exact result. Never scan a shared output root for the globally newest file or infer ownership from modification time. This does not restrict multi-pane execution; it restricts ambiguous collection.
+- For asset jobs, use `asset-designer` for the asset/dicut contract and `codex-asset-production` only for Codex source/imagegen or fallback work. Record source-vs-dicut role, executor, fallback trigger, lane output folder, exact provider-returned output identity, and fanout type.
 - Default write policy for multi-pane jobs: one writer per file/asset contract; other lanes are read-only/review/notes unless output directories are explicitly separated
 - Prefer the known-good launch commands first instead of spending the first move on discovery
 - Model catalogs change independently of CLI binaries. `playbook.md` is the single owner of the curated role-to-model list; do not duplicate that list in this entrypoint, README, or command wrappers. Before launch, check `agent models`, `agy models`, `codex debug models`, or `pi --list-models` plus the CLI's help/doctor surface. A curated role is preference, not availability proof.
@@ -207,7 +208,8 @@ This proves byte-identical input at the Herdr CLI argument boundary, not model r
 - Prefer one writer lane per file or asset contract.
 - Review/idea lanes should not edit files unless explicitly assigned.
 - If multiple lanes may write, give each lane a separate output directory such as `work/implement/`, `notes/review/`, `reports/verify/`, or asset-specific `generated-images/codex/source-a/`.
-- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in Codex's generated-images area for the main agent to collect. Do not let parallel lanes overwrite canonical runtime paths.
+- For provider-backed artifacts such as imagegen, capture the exact provider-returned path plus available session/result identity for each lane and move only that artifact into its assigned folder. Never discover a lane's result by scanning a shared output root for the newest file; concurrent completions make recency ambiguous. Fail the lane when exact ownership cannot be proven, and investigate unexpected duplicate hashes before synthesis.
+- For Codex imagegen specifically, same-prompt panes should write only to their own lane folders or leave generated PNGs in the provider-managed area for receipt-bound collection. Do not let parallel lanes overwrite canonical runtime paths.
 - Main agent owns final merge/synthesis into the real worktree: capture panes, compare outputs, choose candidates, assign cleanup, and promote accepted files.
 
 ## Quick Commands
