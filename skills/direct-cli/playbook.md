@@ -377,7 +377,7 @@ Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the la
 ```bash
 verify_herdr_unclaimed_pane_receipt "$CURSOR_PANE" || exit 1
 herdr agent start "$CURSOR_AGENT" --kind cursor --pane "$CURSOR_PANE" -- \
-  --model claude-fable-5-thinking-high \
+  --model claude-fable-5-1-thinking-high \
   --yolo \
   --approve-mcps \
   --trust
@@ -718,7 +718,7 @@ For several Agy models in one job:
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review and `claude-sonnet-4-6` for balanced work. The live Agy catalog confirms `gemini-3.7-flash-high` for the faster lane; keep `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
+Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review and `claude-sonnet-4-6` for balanced work. The live Agy catalog confirms `gemini-3.8-flash-high` for the faster lane; keep `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
 
 ### Antigravity multiline prompt caveat
 
@@ -761,12 +761,12 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 
 - Cursor ordinary implementation / cleanup model: `composer-2.5`
 - Cursor long-horizon agentic model: `cursor-grok-4.6-high`
-- Cursor Fable 5 reasoning model: `claude-fable-5-thinking-high`
-- Cursor Fable 5 extra-high reasoning model: `claude-fable-5-thinking-xhigh`
+- Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
+- Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-thinking-high`
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
 - Antigravity balanced model: `claude-sonnet-4-6`
-- Antigravity fast model: `gemini-3.7-flash-high` (`gemini-3.7-flash-medium`, then `gemini-3.7-flash-low` fallback)
+- Antigravity fast model: `gemini-3.8-flash-high` (`gemini-3.8-flash-medium`, then `gemini-3.8-flash-low` fallback)
 - Codex flagship model/effort: `gpt-5.6-sol` + `high`
 - Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
@@ -784,15 +784,15 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5` — recommended for ordinary Cursor direct-lane work: implementation, cleanup, narrow refactors, and follow-up fixes using the non-Fast model ID.
   2. `cursor-grok-4.6-high` — long-horizon agentic coding and complex tool-driven work using the non-Fast model ID.
-  3. `claude-fable-5-thinking-high` — Fable 5 reasoning lane; use this when Mahiro says “Fable 5” unless he asks for another Fable variant.
-  4. `claude-fable-5-thinking-xhigh` — Fable 5 extra-high lane for heavier review.
+  3. `claude-fable-5-1-thinking-high` — Fable 5.1 reasoning lane; use this when Mahiro says “Fable 5.1” unless he asks for another Fable variant.
+  4. `claude-fable-5-1-thinking-xhigh` — Fable 5.1 extra-high lane for heavier review.
   5. `claude-opus-5-thinking-high` — Opus heavy review / deep reasoning lane.
 - Do not offer a Fast-tier Cursor model in the default picker. Use a live-catalog-verified Fast model only when Mahiro explicitly requests Fast or delegates a speed-over-cost choice.
-- Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5” are not safe `--model` values; launch with the exact model ID.
+- Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5.1” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
   2. `claude-sonnet-4-6` — balanced reasoning lane.
-  3. `gemini-3.7-flash-high` — faster scoped lane; fall back to `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, only if High fails.
+  3. `gemini-3.8-flash-high` — faster scoped lane; fall back to `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only if High fails.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
@@ -820,7 +820,7 @@ These examples instantiate the current routing policy. Model availability change
 
 ```bash
 tmux new-session -d -s "cursor-task"
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CURSOR_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
@@ -908,7 +908,7 @@ pi --help
 
 ### Fresh session
 
-Use the known-good Cursor defaults first. If the model or flags are in doubt on this machine, validate with `agent models`, `agent --list-models`, or `agent --help` before changing the launch shape. Cursor wants exact model IDs for `--model`; display shorthands like “Fable 5” can fail or select unexpectedly.
+Use the known-good Cursor defaults first. If the model or flags are in doubt on this machine, validate with `agent models`, `agent --list-models`, or `agent --help` before changing the launch shape. Cursor wants exact model IDs for `--model`; display shorthands like “Fable 5.1” can fail or select unexpectedly.
 
 ```bash
 tmux new-session -d -s "cursor-task"
@@ -925,18 +925,18 @@ tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a Fable 5 reasoning pass (use this when Mahiro says “Fable 5”):
+For a Fable 5.1 reasoning pass (use this when Mahiro says “Fable 5.1”):
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a heavier Fable 5 pass:
+For a heavier Fable 5.1 pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-fable-5-thinking-xhigh" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-xhigh" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -1018,7 +1018,7 @@ Then choose the skill-defined model/effort in the TUI:
 
 - `claude-opus-4-6-thinking` — heavy reasoning/review; no separate effort flag.
 - `claude-sonnet-4-6` — balanced reasoning.
-- `gemini-3.7-flash-high` — faster scoped lane; use `gemini-3.7-flash-medium`, then `gemini-3.7-flash-low`, only as fallbacks.
+- `gemini-3.8-flash-high` — faster scoped lane; use `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only as fallbacks.
 
 ### Prompt template
 

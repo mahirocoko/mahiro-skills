@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-28T12:27:04",
+  "generatedAt": "2026-09-03T06:27:50",
   "source": "rrr-derived",
-  "totalSessions": 27,
+  "totalSessions": 28,
   "todaySessions": 1,
-  "activeDays": 21,
-  "avgSessionsPerActiveDay": 1.29,
+  "activeDays": 22,
+  "avgSessionsPerActiveDay": 1.27,
   "sizes": {
     "today": "small",
     "thresholds": {
