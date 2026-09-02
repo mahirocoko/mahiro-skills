@@ -415,6 +415,9 @@ Then use agent names as stable lane targets:
 ```bash
 herdr agent read "$CODEX_AGENT" --source recent-unwrapped --lines 120
 herdr agent prompt "$CODEX_AGENT" 'Continue from the current worktree only. <TASK>'
+# Foreground use is only for a brief synchronous gate. For ordinary task
+# completion, pass this bounded wait/status check to the controller's background
+# Monitor (or use callback-primary detached execution) so Main remains available.
 herdr agent wait "$CODEX_AGENT" --until idle --until done --until blocked --timeout 120000
 verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" || {
   echo "direct-cli: Codex cleanup receipt mismatch; refusing to interrupt" >&2
@@ -425,7 +428,7 @@ herdr agent send-keys "$CODEX_AGENT" ctrl+c
 
 The shell-readiness gate above is required even though `tab create` and `pane split` already returned IDs. Those commands create topology before a login shell and its startup hooks are necessarily idle; skipping the marker/process gate can fail immediately with `agent_pane_busy`.
 
-`agent wait` is lifecycle evidence, while `agent read` remains execution evidence. If agent detection cannot become ready, report that concrete blocker; do not silently migrate the job to tmux after the tab exists. Use `herdr pane run` and `pane read` only when a shell-shaped launch is required.
+`agent wait` is lifecycle evidence, while `agent read` remains execution evidence. Do not hold Main in a foreground task-completion wait when a bounded background Monitor is available: callback-primary detached execution remains the first choice, and an already-running lane without callback should be watched in the background with every terminal state covered. A transient `done`/`idle` observation is only a wake signal; re-read the exact receipt-bound pane/report and require the executor to remain terminal before closeout. Foreground waits remain appropriate for brief readiness or an immediate synchronous gate. If agent detection cannot become ready, report that concrete blocker; do not silently migrate the job to tmux after the tab exists. Use `herdr pane run` and `pane read` only when a shell-shaped launch is required.
 
 If `agent start` still reports `agent_name_taken` because another process won the race after the preflight, run `close_herdr_job_tab_if_owned` for every receipt-bound pane, then retry with fresh pane-derived names in Herdr. Do not switch backends or close an unverified tab.
 
@@ -1332,6 +1335,8 @@ Herdr jobs:
 herdr agent read "$AGENT_TARGET" --source recent-unwrapped --lines 120
 verify_herdr_agent_receipt "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID" || exit 1
 herdr agent send-keys "$AGENT_TARGET" ctrl+c
+# Put this bounded completion wait inside the controller's background Monitor;
+# run it in the foreground only for a brief synchronous gate.
 herdr agent wait "$AGENT_TARGET" --until idle --until done --until blocked --timeout 120000
 close_herdr_job_tab_if_owned "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID"
 ```

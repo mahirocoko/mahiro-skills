@@ -373,10 +373,19 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("explicit receive/retry/audit");
     expect(rootReadme).not.toContain("Detached Phase 1 jobs");
     expect(command).toContain("herdr-jobs.py wait <job-id> --json");
+    expect(command).toContain("--mode auto|callback|watcher");
+    expect(command).toContain("do not unconditionally start a watcher");
+    expect(command).toContain("prefer the same bounded background Monitor");
+    expect(command).not.toContain("and start the packaged durable watcher");
     expect(command).toContain("do not emulate return by launching a second `letta -p` turn");
     expect(playbook).toContain("One job maps to one `direct-<job-slug>` tab");
     expect(playbook).toContain('herdr agent start "$CODEX_AGENT"');
     expect(playbook).toContain('herdr agent wait "$CODEX_AGENT"');
+    expect(skill).toContain("the controller exposes a bounded background `Monitor`");
+    expect(skill).toContain("instead of blocking Main with foreground `herdr agent wait`");
+    expect(skill).toContain("a transient lifecycle state is notification evidence, not execution proof");
+    expect(playbook).toContain("Do not hold Main in a foreground task-completion wait");
+    expect(playbook).toContain("A transient `done`/`idle` observation is only a wake signal");
     expect(playbook).toContain('CODEX_AGENT="d${PANE_HASH}c"');
     expect(playbook).toContain("requested.isdisjoint(active)");
     expect(playbook).toContain("agent_name_taken");
@@ -393,7 +402,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("Accepted `agent.prompt`/`pane.run` delivery is not receipt or proof");
     expect(playbook).toContain("transport acceptance alone never finalizes");
     expect(playbook).toContain("ledger is capped at 200");
-    expect(playbook).not.toContain("background task/monitor");
+    expect(playbook).toContain("controller's background Monitor");
     expect(playbook).toContain("list --json");
     expect(playbook).toContain("collect \"$JOB_ID\"");
     expect(playbook).toContain("Role fanout");
