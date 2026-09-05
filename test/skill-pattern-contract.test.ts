@@ -433,8 +433,13 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("--dangerously-bypass-approvals-and-sandbox");
     expect(playbook).toContain('PI_TOOLS="read,bash,edit,write,grep,find,ls"');
     expect(playbook).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
-    expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=high');
-    expect(playbook).toContain('codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra');
+    expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=high');
+    expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=medium');
+    expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=ultra');
+    expect(playbook).not.toContain('codex --model "gpt-5.6-sol"');
+    expect(playbook).not.toContain("`gpt-5.6-terra`");
+    expect(playbook).not.toContain("`gpt-5.5`");
+    expect(playbook).toContain("Keep the current proven source-art route");
     expect(playbook).toContain("Verify supported effort levels from the current Codex catalog");
     expect(playbook).toContain("`gpt-5.3-codex-spark` + `high`");
     expect(playbook).not.toContain("Current freshness checkpoints");

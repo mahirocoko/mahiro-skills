@@ -384,7 +384,7 @@ herdr agent start "$CURSOR_AGENT" --kind cursor --pane "$CURSOR_PANE" -- \
 
 verify_herdr_unclaimed_pane_receipt "$ROOT_PANE" || exit 1
 herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
-  --model gpt-5.6-sol \
+  --model gpt-6-astra \
   -c model_reasoning_effort=high \
   --dangerously-bypass-approvals-and-sandbox
 
@@ -694,6 +694,8 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 
 Use this specific shape when `asset-designer` needs Codex imagegen/source lanes plus an Agy/Gemini-first dicut candidate. Direct-cli remains the generic pane executor; this subsection is only the asset specialization.
 
+Keep the current proven source-art route until the selected replacement model is observed receiving Codex's hosted `image_generation` tool. Image input support or a higher coding-model priority alone does not establish image-generation availability.
+
 Example asset lane registry:
 
 | Pane | Title | CLI / model | Role | Write permission |
@@ -770,12 +772,12 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Antigravity heavy review model: `claude-opus-4-6-thinking`
 - Antigravity balanced model: `claude-sonnet-4-6`
 - Antigravity fast model: `gemini-3.8-flash-high` (`gemini-3.8-flash-medium`, then `gemini-3.8-flash-low` fallback)
-- Codex flagship model/effort: `gpt-5.6-sol` + `high`
-- Codex balanced everyday model/effort: `gpt-5.6-terra` + `medium`
+- Codex flagship model/effort: `gpt-6-astra` + `high`
+- Codex balanced everyday model/effort: `gpt-6-astra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
-- Codex automatic-delegation model/effort: `gpt-5.6-sol` + `ultra` for large parallelizable jobs
+- Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra` for large parallelizable jobs
 - Codex specialized ultra-fast model/effort: `gpt-5.3-codex-spark` + `high`
-- Codex fallback choice: `gpt-5.5`
+- Codex fallback model/effort: `gpt-5.6-sol` + `high` when Astra is unavailable in the live catalog
 - Pi default autonomous implementation allowlist: `read,bash,edit,write,grep,find,ls`
 - Pi safe/read-only review allowlist: `read,grep,find,ls`, only when Mahiro explicitly requests the opt-down
 - Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps --trust`, then send the prompt after readiness
@@ -798,14 +800,15 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
   3. `gemini-3.8-flash-high` — faster scoped lane; fall back to `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only if High fails.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
-  1. `gpt-5.6-sol` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
-  2. `gpt-5.6-terra` + `medium` — balanced everyday coding and follow-up work.
+  1. `gpt-6-astra` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
+  2. `gpt-6-astra` + `medium` — balanced everyday coding and follow-up work.
   3. `gpt-5.6-luna` + `medium` — fast/cost-efficient scoped work.
-  4. `gpt-5.6-sol` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
+  4. `gpt-6-astra` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
   5. `gpt-5.3-codex-spark` + `high` — specialized ultra-fast lane for small, bounded coding or commit work.
-- Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent model IDs such as `gpt-5.6-sol-high`.
+- If Astra is absent from the live catalog, offer `gpt-5.6-sol` + `high` as the flagship fallback instead of silently choosing it.
+- Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent effort-suffixed model IDs.
 - Verify supported effort levels from the current Codex catalog before launch. Never infer that a model supports `ultra` from an older catalog snapshot.
-- `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When a recognized GPT-5.6 Codex model is explicit but effort is omitted, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
+- `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When `gpt-6-astra` is explicit but effort is omitted, use `medium`; for an explicitly selected GPT-5.6 model, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
 - If `/direct-cli pi ...` omits provider/model, resolve the Pi command and run its read-only `--list-models` check before backend mutation. Use the single configured provider/model after announcing it; ask when the command exposes multiple choices. Do not silently use a stale 9Router model slug.
 - Resolve Pi command in order: executable `DIRECT_PI_COMMAND`, `pi` on `PATH`, executable `~/.9router-free/pi-pilot/run-pi.sh`. The skills adapter does not install that executable or a PATH launcher. Fail before creating backend state when none exists; never install Pi or rewrite provider configuration implicitly.
@@ -833,7 +836,7 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t "codex-task" -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CODEX_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "codex-task" -S -120
@@ -1066,7 +1069,7 @@ Use Codex interactively by default. Do not launch `codex exec` unless the user e
 
 ```bash
 tmux new-session -d -s "codex-task"
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -1074,7 +1077,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a balanced everyday pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-terra" -c model_reasoning_effort=medium --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=medium --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -1090,7 +1093,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a large parallelizable job with automatic task delegation:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-5.6-sol" -c model_reasoning_effort=ultra --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=ultra --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Split independent workstreams when useful, then synthesize and verify the result. <YOUR TASK HERE>' Enter
 ```
