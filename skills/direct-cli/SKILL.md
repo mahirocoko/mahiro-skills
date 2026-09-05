@@ -75,7 +75,7 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 - Treat `/direct-cli ... --effort <level>` as a skill-level routing argument. For Antigravity, pass native `agy --effort <level>` only after the selected model is known to support it; otherwise stop instead of accepting Agy's silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex itself does not expose a `--effort` flag; for Cursor, use an exact effort-bearing model ID or supported parameterized model expression rather than passing `--effort`. If a model is explicit but effort is omitted, read the current role default from `playbook.md` after catalog verification. Never infer `ultra` unless the user asks for it or explicitly delegates model/effort choice for a genuinely large parallelizable job.
 - Launch Cursor, Antigravity, Codex, and Pi interactively in the selected backend, not with the task prompt inline
 - Confirm readiness from `herdr agent start` plus `agent read`/`pane read`, or from `tmux capture-pane`, before sending the real task prompt
-- After dispatching a Herdr Direct CLI task, prefer callback-primary detached execution when it fits the job. If the lane is already running without callback delivery and the controller exposes a bounded background `Monitor` or equivalent task primitive, arm that monitor instead of blocking Main with foreground `herdr agent wait` or repeated `write_stdin` polling. Emit only actionable state changes and every terminal state, continue other controller work, then collect the receipt-bound report immediately after the terminal notification. Use a foreground wait only for a brief readiness/synchronous gate or when no background primitive exists. Revalidate the pane/report before closeout because a transient lifecycle state is notification evidence, not execution proof.
+- After dispatching a named Herdr Direct CLI task, prefer callback-primary detached execution. A callback job automatically launches a detached lifecycle guard that waits for post-dispatch `idle`/`done`, allows a short final-report grace period, and wakes the exact parent only when the CLI ended without an accepted final callback. Do not arm a controller `Monitor` when `herdr-jobs.py start` reports `mode=callback`; the callback plus guard own return. If start reports watcher mode, or the lane was already launched without callback delivery, use a bounded background `Monitor` instead of foreground `herdr agent wait` or repeated `write_stdin` polling. Use foreground waits only for brief readiness/synchronous gates. Revalidate the pane/report before closeout because lifecycle evidence is not execution proof.
 - Cursor's default `--trust` should suppress its workspace trust prompt for the intended repo. If another CLI still shows a separate trust prompt, accept it only for that intended worktree before sending the task prompt
 - That trust prompt usually appears the first time a specific workspace path is opened in that CLI context and usually should not repeat once trust is recorded
 - If the prompt appears unsent in the pane, send `Enter` once and re-check the pane before changing course
@@ -101,11 +101,11 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 
 Use skill-level `--detach` only for an already-started named Herdr job whose result does not need to block the current main-agent turn. Detached execution is deliberately Herdr-only; reject `--backend tmux --detach` rather than inventing pane typing or a weaker tmux lifecycle. Pi detach and Pi same-prompt fanout remain unsupported.
 
-Before dispatching, confirm every named agent is interactive-ready, write one prompt file, choose a unique job ID, and choose the routing explicitly or use the safe default:
+Before dispatching, confirm every named agent is interactive-ready, write one prompt file, and choose a unique job ID. From an exact Letta parent pane that requires same-conversation return, use explicit `callback`; use `auto` only when watcher fallback is acceptable:
 
 ```bash
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
-  --mode auto|callback|watcher \
+  --mode callback \
   --callback-timeout 1800 \
   --job-id "$JOB_ID" \
   --prompt-file "$PROMPT_FILE" \
@@ -114,7 +114,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
   "$AGENT_A" "$AGENT_B"
 ```
 
-`auto` selects callback only after it captures the exact parent Letta pane from `HERDR_PANE_ID` through `herdr pane get` and captures exact target receipts. If that proof is unavailable, it uses the existing durable watcher. Explicit `callback` fails closed when the parent or target receipt cannot be captured; explicit `watcher` preserves the v1 lifecycle. Callback mode launches no continuous watcher. Its default 30-minute one-shot silence deadline sleeps rather than polls, records expiry, and wakes the exact parent with a `recover` command; tune it with `--callback-timeout`, or use `0` only for a deliberately unmanaged experiment. Every target receives the same prompt bytes plus one callback footer; the record keeps separate task and dispatch SHA-256 hashes.
+`auto` selects callback only after it captures the exact parent Letta pane from `HERDR_PANE_ID` through `herdr pane get` and captures exact target receipts. If that proof is unavailable, it uses the existing durable watcher. Explicit `callback` fails closed when the parent or target receipt cannot be captured; explicit `watcher` preserves the v1 lifecycle. Callback mode launches a lightweight detached lifecycle guard, not the full result-capture watcher or a controller Monitor. The guard confirms activity, revalidates the target receipt around its `idle`/`done` wait, and stays quiet when an accepted `report_ready`/`report_failed` exists; otherwise it emits at most one metadata-only parent wake per job with the exact `recover` command. Accepted transport suppresses an immediate duplicate guard wake but never finalizes the job; the default 30-minute one-shot silence deadline remains armed until parent acknowledgement and separately covers hung or unreceived work. Every target receives the same prompt bytes plus one callback footer; the record keeps separate task and dispatch SHA-256 hashes.
 
 Callback receipts bind pane, workspace, tab, terminal, Herdr session/socket, available non-secret Letta identifiers, and target agent session. Before every send or receive, the current pane is re-read and the sender is inferred from that receipt—never from a caller-supplied name. The ACL is exactly parent plus job targets: parent may message targets; targets may message parent or siblings; outsiders and stale receipts fail. Named targets wake through `agent.prompt`. The exact parent Letta pane wakes through one atomic single-line metadata-only `pane.run`, because the parent is not an active named Herdr agent. Both are best-effort transport: accepted delivery is not receipt or proof, and there is no tmux fallback.
 
@@ -132,7 +132,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" audit "$JOB_ID" --include
 
 Idempotency keys are scoped to the exact sender and immutable: exact duplicates are harmless and mismatches fail. Delivery failures remain durable until an explicit retry, and retry revalidates the original sender receipt as well as the caller/recipient. Parent audit includes every peer message and may explicitly include bounded bodies; peers see only their own incoming/outgoing metadata and cannot bulk-audit bodies. `report_ready` and `report_failed` persist bounded target results but finalize only after the exact parent has received every target report; transport acceptance alone never finalizes. Progress, question, blocked, and reply never finalize a job.
 
-Use `recover` when a callback job needs the existing watcher fallback. Callback jobs are not reconciled as failed merely because they have no watcher; old watcher/v1 jobs remain compatible. `list`, `show`, `wait`, and `collect` expose durable job state, while `collect` remains the controller's result-reading step. Notifications, wakes, and completion lines contain metadata only—never prompt, body, result, or failure-summary text. The watcher fallback does not inject a new message into the current Letta conversation. Do not launch `letta -p`, type into the parent pane, or create a second turn manually.
+Use `recover` when a callback guard or silence deadline reports missing callback evidence and the existing watcher must capture the result. Callback jobs are not reconciled as failed merely because they have no full watcher; old watcher/v1 jobs remain compatible. `list`, `show`, `wait`, and `collect` expose durable job state, while `collect` remains the controller's result-reading step. Notifications, wakes, and completion lines contain metadata only—never prompt, body, result, or failure-summary text. The watcher fallback does not inject a new message into the current Letta conversation. Do not launch `letta -p`, type into the parent pane, or create a second turn manually.
 
 ## Multi-pane Job Sessions
 
@@ -236,7 +236,7 @@ This proves byte-identical input at the Herdr CLI argument boundary, not model r
 - `playbook.md` - the full direct CLI operator playbook and current routing-policy owner
 - `scripts/select-backend.sh` - deterministic backend preflight
 - `scripts/prompt-fanout.py` - synchronous Herdr fanout with activity gating
-- `scripts/herdr-jobs.py` - callback-primary Herdr job registry, durable message ledger, watcher recovery, and collection CLI
+- `scripts/herdr-jobs.py` - callback-primary Herdr job registry, detached lifecycle guard, durable message ledger, watcher recovery, and collection CLI
 
 ## Working Rule
 

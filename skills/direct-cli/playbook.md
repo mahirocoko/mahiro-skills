@@ -604,7 +604,7 @@ This proves byte-identical input at the Herdr CLI argument boundary. It does not
 
 ### Callback-primary detached Herdr jobs
 
-Detached mode returns control after bounded dispatch while callback messages provide the primary worker-to-parent path. Cursor/Agy/Codex remain interactive in visible Herdr panes. Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete:
+Detached mode returns control after bounded dispatch while callback messages provide the primary worker-to-parent path. Cursor/Agy/Codex remain interactive in visible Herdr panes. Use it only after topology, shell readiness, agent naming, launch, and visible model verification are complete. From an exact Letta parent pane that requires same-conversation return, choose explicit callback routing; use auto only when watcher fallback is acceptable:
 
 ```bash
 JOB_ID="review-$(date +%Y%m%d-%H%M%S)"
@@ -614,7 +614,7 @@ cat > "$PROMPT_FILE" <<'PROMPT'
 PROMPT
 
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
-  --mode auto|callback|watcher \
+  --mode callback \
   --callback-timeout 1800 \
   --job-id "$JOB_ID" \
   --prompt-file "$PROMPT_FILE" \
@@ -625,8 +625,8 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" start \
 
 Routing is fail-closed and backward-compatible:
 
-1. `auto` captures the exact parent Letta pane from `HERDR_PANE_ID` through `herdr pane get`, then captures every target receipt. Only that proof selects callback; otherwise auto uses the existing watcher.
-2. Explicit `callback` fails before dispatch when an exact parent or target receipt is unavailable. Callback launches no continuous watcher; its default 30-minute one-shot silence process sleeps rather than polls, records expiry, and wakes the exact parent with a `recover` command. Use `--callback-timeout 0` only for a deliberately unmanaged experiment.
+1. `auto` captures the exact parent Letta pane from `HERDR_PANE_ID` through `herdr pane get`, then captures every target receipt. Only that proof selects callback; otherwise auto uses the existing watcher. When same-conversation return is required, prefer explicit `callback` so missing receipt evidence fails before prompt dispatch rather than silently changing lifecycle.
+2. Explicit `callback` fails before dispatch when an exact parent or target receipt is unavailable. It launches a lightweight detached lifecycle guard, not the full result-capture watcher or a controller Monitor. The guard first proves post-dispatch activity, revalidates each target receipt around the `idle`/`done` wait, allows a short final-report grace period, and checks the durable ledger. Accepted final-callback transport makes the guard exit silently; a missing, pending, failed, invalid, or receipt-mismatched result records per-target attention and emits at most one metadata-only parent wake per job with the exact `recover` command. Transport acceptance never finalizes the job, so the default 30-minute one-shot silence process remains armed until parent acknowledgement and separately covers hung or unreceived work. Use `--callback-timeout 0` only for a deliberately unmanaged experiment.
 3. Explicit `watcher` keeps the v1 record and lifecycle. Existing watcher/v1 jobs remain readable and reconcilable.
 4. Callback records separate task and dispatch hashes, appends one byte-identical footer to every target prompt, and persists mode-0600 job/ledger files. Named targets wake through Herdr `agent.prompt`; the exact parent Letta pane wakes through one atomic single-line metadata-only `pane.run`, because it is not an active named Herdr agent.
 
@@ -646,7 +646,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" audit "$JOB_ID" --include
 
 Bodies come only from private regular files and are capped at 8 KiB; each message has private files and the ledger is capped at 200. Wakes contain only job/message/from/kind plus the exact receive command—never body, wake summary, notification text, or secrets. Idempotency keys are sender-scoped and immutable: exact duplicates are idempotent and mismatches fail. Delivery failure is durable until explicit `retry`, which revalidates the original sender. Parent audit sees every peer message and may explicitly include bounded bodies; peers see only their own incoming/outgoing metadata and cannot bulk-audit bodies. `report_ready` and `report_failed` persist bounded target results and finalize only after the exact parent receives every target report; transport acceptance alone never finalizes. Progress, question, blocked, and reply do not finalize.
 
-Use `recover "$JOB_ID"` to invoke the existing watcher fallback for a callback job. A callback job with no watcher is not reconciled as failed merely for that absence. Notifications remain generic metadata only.
+Use `recover "$JOB_ID"` when the lifecycle guard or silence deadline reports that the existing full watcher must capture the result. A callback job with no full watcher is not reconciled as failed merely for that absence. Notifications remain generic metadata only.
 
 Default state root:
 
@@ -659,13 +659,15 @@ Use `DIRECT_CLI_STATE_DIR` or `--state-dir` for an explicit local root. The help
 
 ### Same-conversation live return
 
-When the runtime offers a native background task, it may run the metadata-only wait command:
+Callback mode already owns same-conversation return through worker callbacks plus its detached lifecycle guard. Do not add a controller Monitor for a job whose start result says `mode=callback`.
+
+When start reports watcher mode, or a lane was launched without callback delivery, run the metadata-only wait command through the controller's native background task:
 
 ```bash
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" wait "$JOB_ID" --json
 ```
 
-`wait` polls the private job record and emits one JSON line containing only `job`, `status`, and `job_dir` after terminal state. Callback wakes and `receive` are the durable worker/parent path; `wait` is optional controller-side observation, not a receipt or proof. Run `collect` only after the parent judges the durable results. Do not invoke `letta -p --conversation`, type into the main Letta pane, or treat a desktop notification as a model turn.
+`wait` polls the private job record and emits one JSON line containing only `job`, `status`, and `job_dir` after terminal state. It must run in the background for task completion; foreground use is limited to a brief synchronous gate. Callback wakes and `receive` remain the durable worker/parent path, while watcher-mode `wait` is controller-side observation rather than receipt or proof. Run `collect` only after the parent judges the durable results. Do not invoke `letta -p --conversation`, type into the main Letta pane, or treat a desktop notification as a model turn.
 
 At the start of every later direct-cli turn, inspect durable state before launching duplicate work:
 
@@ -676,7 +678,7 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" show "$JOB_ID"
 python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" collect "$JOB_ID"
 ```
 
-`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. Watcher `attention` remains terminal and means a prompt never showed activity; inspect the named pane and submit one Enter only when visibly unsent. Watcher `error` preserves failure evidence. Callback `running` remains live without a watcher until reports arrive or `recover` is requested. Reject detached mode when tmux is selected; do not silently retry or switch backends.
+`collect` prints captured results and records `collectedAt`; use `--no-mark` for read-only inspection. Watcher `attention` remains terminal and means a prompt never showed activity; inspect the named pane and submit one Enter only when visibly unsent. Watcher `error` preserves failure evidence. Callback `running` remains live without a full watcher until reports arrive or `recover` is requested; inspect `callbackGuardStatus` and `callbackGuardTargets` when a guard wake arrives. Reject detached mode when tmux is selected; do not silently retry or switch backends.
 
 ### Write policy for multi-pane work
 

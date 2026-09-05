@@ -291,10 +291,18 @@ def receipt_matches(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
 
 
 def revalidate_target_receipt(target: str, expected: dict[str, Any]) -> dict[str, Any]:
-    _status, _sequence, actual = capture_target_receipt(target)
+    _status, _sequence, actual = revalidated_target_state(target, expected)
+    return actual
+
+
+def revalidated_target_state(
+    target: str,
+    expected: dict[str, Any],
+) -> tuple[str, int, dict[str, Any]]:
+    status, sequence, actual = capture_target_receipt(target)
     if not receipt_matches(expected, actual):
         raise ValueError(f"stale or mismatched Herdr receipt for target {target}")
-    return actual
+    return status, sequence, actual
 
 
 def revalidate_current_participant(payload: dict[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -384,6 +392,7 @@ def mark_terminal(
 ) -> None:
     notification_pending = False
     deadline_pid: int | None = None
+    guard_pid: int | None = None
     with job_lock(job_dir):
         latest = load_job(job_dir)
         if latest.get("status") in TERMINAL_STATUSES:
@@ -399,11 +408,18 @@ def mark_terminal(
         notification_pending = latest["notification"] == "pending"
         if isinstance(latest.get("callbackDeadlinePid"), int):
             deadline_pid = int(latest["callbackDeadlinePid"])
+        if isinstance(latest.get("callbackGuardPid"), int):
+            guard_pid = int(latest["callbackGuardPid"])
         save_job(job_dir, latest)
 
     if deadline_pid is not None and callback_deadline_process_matches(deadline_pid, job_dir):
         try:
-            os.kill(deadline_pid, signal.SIGTERM)
+            os.killpg(deadline_pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
+    if guard_pid is not None and callback_guard_process_matches(guard_pid, job_dir):
+        try:
+            os.killpg(guard_pid, signal.SIGTERM)
         except (ProcessLookupError, PermissionError):
             pass
     if not notification_pending:
@@ -447,6 +463,21 @@ def launch_callback_deadline(job_dir: Path, timeout_seconds: float) -> int:
         start_new_session=True,
         close_fds=True,
     )
+    return process.pid
+
+
+def launch_callback_guard(job_dir: Path) -> int:
+    guard_log = job_dir / "callback-guard.log"
+    log_descriptor = os.open(guard_log, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(log_descriptor, "a", encoding="utf-8") as log_handle:
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "_guard", "--job-dir", str(job_dir)],
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            close_fds=True,
+        )
     return process.pid
 
 
@@ -526,6 +557,7 @@ def command_start(args: argparse.Namespace) -> int:
             "resultLines": args.result_lines,
             "callTimeoutSeconds": call_timeout_seconds(),
             "callbackTimeoutSeconds": args.callback_timeout,
+            "callbackGuardGraceSeconds": args.callback_guard_grace,
             "notify": args.notify,
         },
     }
@@ -575,6 +607,7 @@ def command_start(args: argparse.Namespace) -> int:
         return 1
 
     deadline_launch_error: OSError | None = None
+    guard_launch_error: OSError | None = None
     with job_lock(job_dir):
         payload = load_job(job_dir)
         if payload.get("status") not in TERMINAL_STATUSES:
@@ -590,6 +623,14 @@ def command_start(args: argparse.Namespace) -> int:
                     payload["callbackDeadlineAt"] = (
                         datetime.now(timezone.utc) + timedelta(seconds=args.callback_timeout)
                     ).isoformat().replace("+00:00", "Z")
+            if mode == "callback":
+                try:
+                    guard_pid = launch_callback_guard(job_dir)
+                except OSError as error:
+                    guard_launch_error = error
+                else:
+                    payload["callbackGuardPid"] = guard_pid
+                    payload["callbackGuardStatus"] = "starting"
             save_job(job_dir, payload)
 
     if deadline_launch_error is not None:
@@ -597,6 +638,13 @@ def command_start(args: argparse.Namespace) -> int:
             job_dir,
             status="error",
             summary=f"callback deadline launch failed: {type(deadline_launch_error).__name__}",
+        )
+        return 1
+    if guard_launch_error is not None:
+        mark_terminal(
+            job_dir,
+            status="error",
+            summary=f"callback lifecycle guard launch failed: {type(guard_launch_error).__name__}",
         )
         return 1
     if mode == "watcher" and payload.get("status") not in TERMINAL_STATUSES:
@@ -798,6 +846,10 @@ def watcher_process_matches(pid: int, job_dir: Path) -> bool:
 
 def callback_deadline_process_matches(pid: int, job_dir: Path) -> bool:
     return helper_process_matches(pid, job_dir, "_deadline")
+
+
+def callback_guard_process_matches(pid: int, job_dir: Path) -> bool:
+    return helper_process_matches(pid, job_dir, "_guard")
 
 
 def reconcile_job(job_dir: Path, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1306,6 +1358,288 @@ def command_deadline(args: argparse.Namespace) -> int:
     return 0 if deadline_delivery == "accepted" else 1
 
 
+def callback_report_delivery(job_dir: Path, target: str) -> tuple[str, str | None]:
+    payload = load_job(job_dir)
+    report = payload.get("reports", {}).get(target, {})
+    message_id = report.get("message")
+    if not isinstance(message_id, str) or not message_id:
+        return "missing", None
+    record = load_message(job_dir, message_id)
+    if record.get("from") != target or record.get("to") != "parent":
+        return "invalid", message_id
+    if record.get("kind") not in {"report_ready", "report_failed"}:
+        return "invalid", message_id
+    return str(record.get("delivery", {}).get("status", "pending")), message_id
+
+
+def record_callback_guard_target(
+    job_dir: Path,
+    target: str,
+    *,
+    status: str,
+    reason: str | None = None,
+    wake: str | None = None,
+    message_id: str | None = None,
+) -> bool:
+    with job_lock(job_dir):
+        payload = load_job(job_dir)
+        if payload.get("status") in TERMINAL_STATUSES:
+            return False
+        targets = payload.setdefault("callbackGuardTargets", {})
+        record: dict[str, Any] = {"status": status, "at": utc_now()}
+        if reason:
+            record["reason"] = reason
+        if wake:
+            record["wake"] = wake
+        if message_id:
+            record["message"] = message_id
+        targets[target] = record
+        save_job(job_dir, payload)
+    return True
+
+
+def claim_callback_guard_wake(job_dir: Path, target: str, reason: str) -> bool:
+    with job_lock(job_dir):
+        payload = load_job(job_dir)
+        if payload.get("status") in TERMINAL_STATUSES:
+            return False
+        current = payload.get("callbackGuardWake", {})
+        if current:
+            return False
+        payload["callbackGuardWake"] = {
+            "target": target,
+            "reason": reason,
+            "delivery": "pending",
+            "at": utc_now(),
+        }
+        save_job(job_dir, payload)
+    return True
+
+
+def wake_callback_guard_attention(
+    job_dir: Path,
+    target: str,
+    reason: str,
+    *,
+    message_id: str | None = None,
+) -> None:
+    if not record_callback_guard_target(
+        job_dir,
+        target,
+        status="attention",
+        reason=reason,
+        wake="pending",
+        message_id=message_id,
+    ):
+        return
+    if not claim_callback_guard_wake(job_dir, target, reason):
+        return
+    payload = load_job(job_dir)
+    recover_command = " ".join(
+        shlex.quote(part)
+        for part in (
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "recover",
+            str(payload["id"]),
+            "--state-dir",
+            str(job_dir.parent),
+        )
+    )
+    wake = (
+        "[direct-cli callback guard] "
+        f"job={payload['id']} target={target} reason={reason} recover={recover_command} ; "
+        "lifecycle evidence is not a final report"
+    )
+    try:
+        parent = payload["parentReceipt"]
+        _revalidate_recipient(payload, "parent")
+        subprocess.run(
+            ["herdr", "pane", "run", str(parent["paneId"]), wake],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=call_timeout_seconds(),
+        )
+        delivery = "accepted"
+    except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+        delivery = f"failed:{type(error).__name__}"
+    with job_lock(job_dir):
+        latest = load_job(job_dir)
+        current = latest.get("callbackGuardWake", {})
+        if current.get("target") == target and current.get("reason") == reason:
+            current["delivery"] = delivery
+            current["finishedAt"] = utc_now()
+            latest["callbackGuardWake"] = current
+            save_job(job_dir, latest)
+    record_callback_guard_target(
+        job_dir,
+        target,
+        status="attention",
+        reason=reason,
+        wake=delivery,
+        message_id=message_id,
+    )
+
+
+def command_callback_guard(args: argparse.Namespace) -> int:
+    job_dir = args.job_dir.expanduser().resolve(strict=True)
+    waiters: dict[str, subprocess.Popen[bytes]] = {}
+    try:
+        with job_lock(job_dir):
+            payload = load_job(job_dir)
+            if not is_callback_job(payload):
+                print("direct-cli: callback guard requires a callback job", file=sys.stderr)
+                return 2
+            if payload.get("status") in TERMINAL_STATUSES:
+                return 0
+            expected_pid = payload.get("callbackGuardPid")
+            if isinstance(expected_pid, int) and expected_pid != os.getpid():
+                print("direct-cli: callback guard PID does not match its job receipt", file=sys.stderr)
+                return 2
+            payload["callbackGuardStatus"] = "watching"
+            payload["callbackGuardStartedAt"] = utc_now()
+            save_job(job_dir, payload)
+
+        records = {str(record["name"]): record for record in payload["targets"]}
+        pending_activity = set(records)
+        invalid_targets: set[str] = set()
+        activity_deadline = time.monotonic() + float(payload["options"]["activityTimeoutSeconds"])
+        while pending_activity and time.monotonic() < activity_deadline:
+            if load_job(job_dir).get("status") in TERMINAL_STATUSES:
+                return 0
+            for target in tuple(pending_activity):
+                status, sequence = agent_state(target)
+                if sequence > int(records[target]["baselineSeq"]) or status == "working":
+                    pending_activity.remove(target)
+                    try:
+                        revalidate_target_receipt(target, records[target]["receipt"])
+                    except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError):
+                        invalid_targets.add(target)
+                        wake_callback_guard_attention(job_dir, target, "target-receipt-mismatch")
+                    else:
+                        record_callback_guard_target(job_dir, target, status="active")
+            if pending_activity:
+                time.sleep(0.1)
+
+        for target in sorted(pending_activity):
+            wake_callback_guard_attention(job_dir, target, "no-activity-transition")
+
+        active_targets = [
+            target
+            for target in records
+            if target not in pending_activity and target not in invalid_targets
+        ]
+        timeout_ms = str(int(payload["options"]["settleTimeoutMs"]))
+        for target in active_targets:
+            waiters[target] = subprocess.Popen(
+                [
+                    "herdr",
+                    "agent",
+                    "wait",
+                    target,
+                    "--until",
+                    "idle",
+                    "--until",
+                    "done",
+                    "--timeout",
+                    timeout_ms,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+        pending_waits = set(waiters)
+        wait_deadline = time.monotonic() + (int(timeout_ms) / 1000) + call_timeout_seconds()
+        next_heartbeat = 0.0
+        while pending_waits and time.monotonic() < wait_deadline:
+            if load_job(job_dir).get("status") in TERMINAL_STATUSES:
+                return 0
+            for target in tuple(pending_waits):
+                return_code = waiters[target].poll()
+                if return_code is None:
+                    continue
+                pending_waits.remove(target)
+                if return_code != 0:
+                    wake_callback_guard_attention(job_dir, target, "lifecycle-wait-failed")
+                    continue
+
+                try:
+                    revalidate_target_receipt(target, records[target]["receipt"])
+                except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError):
+                    wake_callback_guard_attention(job_dir, target, "target-receipt-mismatch")
+                    continue
+
+                grace_deadline = time.monotonic() + float(payload["options"]["callbackGuardGraceSeconds"])
+                delivery, message_id = callback_report_delivery(job_dir, target)
+                while delivery in {"missing", "pending"} and time.monotonic() < grace_deadline:
+                    if load_job(job_dir).get("status") in TERMINAL_STATUSES:
+                        return 0
+                    time.sleep(0.05)
+                    delivery, message_id = callback_report_delivery(job_dir, target)
+
+                if delivery == "accepted":
+                    record_callback_guard_target(
+                        job_dir,
+                        target,
+                        status="report-transport-accepted",
+                        message_id=message_id,
+                    )
+                else:
+                    reason = {
+                        "failed": "final-callback-delivery-failed",
+                        "invalid": "invalid-final-callback",
+                        "pending": "final-callback-delivery-pending",
+                    }.get(delivery, "lifecycle-ended-without-final-callback")
+                    wake_callback_guard_attention(
+                        job_dir,
+                        target,
+                        reason,
+                        message_id=message_id,
+                    )
+
+            if time.monotonic() >= next_heartbeat:
+                with job_lock(job_dir):
+                    latest = load_job(job_dir)
+                    if latest.get("status") not in TERMINAL_STATUSES:
+                        latest["callbackGuardHeartbeatAt"] = utc_now()
+                        save_job(job_dir, latest)
+                next_heartbeat = time.monotonic() + 5
+            if pending_waits:
+                time.sleep(0.2)
+
+        for target in sorted(pending_waits):
+            wake_callback_guard_attention(job_dir, target, "lifecycle-wait-timeout")
+
+        with job_lock(job_dir):
+            latest = load_job(job_dir)
+            if latest.get("status") not in TERMINAL_STATUSES:
+                targets = latest.get("callbackGuardTargets", {})
+                has_attention = any(record.get("status") == "attention" for record in targets.values())
+                latest["callbackGuardStatus"] = "attention" if has_attention else "completed"
+                latest["callbackGuardFinishedAt"] = utc_now()
+                save_job(job_dir, latest)
+        return 0
+    except Exception as error:  # guard must preserve a wakeable failure signal
+        try:
+            wake_callback_guard_attention(job_dir, "guard", "callback-guard-failed")
+            with job_lock(job_dir):
+                latest = load_job(job_dir)
+                if latest.get("status") not in TERMINAL_STATUSES:
+                    latest["callbackGuardStatus"] = "error"
+                    latest["callbackGuardFinishedAt"] = utc_now()
+                    latest["callbackGuardError"] = type(error).__name__
+                    save_job(job_dir, latest)
+        except Exception:
+            print(f"direct-cli callback guard failed without durable state: {error}", file=sys.stderr)
+        return 1
+    finally:
+        for waiter in waiters.values():
+            if waiter.poll() is None:
+                waiter.kill()
+            waiter.wait()
+
+
 def command_audit(args: argparse.Namespace) -> int:
     job_dir = resolve_job_dir(args.state_dir, args.job_id)
     payload = load_job(job_dir)
@@ -1501,6 +1835,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=1_800,
         help="one-shot silence deadline in seconds for callback mode; 0 disables it",
     )
+    start.add_argument(
+        "--callback-guard-grace",
+        type=float,
+        default=2.0,
+        help="seconds to allow a final callback to persist after Herdr reports idle/done",
+    )
     notification = start.add_mutually_exclusive_group()
     notification.add_argument("--notify", action="store_true", dest="notify")
     notification.add_argument("--no-notify", action="store_false", dest="notify")
@@ -1577,6 +1917,10 @@ def build_parser() -> argparse.ArgumentParser:
     deadline.add_argument("--job-dir", required=True, type=Path)
     deadline.add_argument("--timeout", required=True, type=float)
     deadline.set_defaults(handler=command_deadline)
+
+    guard = subparsers.add_parser("_guard", help="Internal detached callback lifecycle guard.")
+    guard.add_argument("--job-dir", required=True, type=Path)
+    guard.set_defaults(handler=command_callback_guard)
     return parser
 
 
@@ -1592,6 +1936,8 @@ def main() -> int:
             parser.error("--result-lines must be between 1 and 5000")
         if not 0 <= args.callback_timeout <= 86_400:
             parser.error("--callback-timeout must be between 0 and 86400 seconds")
+        if not 0.05 <= args.callback_guard_grace <= 30:
+            parser.error("--callback-guard-grace must be between 0.05 and 30 seconds")
     if args.command == "_deadline" and not 0 < args.timeout <= 86_400:
         parser.error("--timeout must be between 0 and 86400 seconds")
     if args.command == "wait":
