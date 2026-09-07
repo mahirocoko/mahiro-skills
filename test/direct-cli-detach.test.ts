@@ -677,15 +677,19 @@ describe("direct-cli detached Herdr jobs", () => {
     const wakePath = join(harness.agentStateDir, "parent-pane.wake");
     const deadline = Date.now() + 5000;
     let wake = "";
-    while (!wake.includes("reason=silence-deadline") && Date.now() < deadline) {
+    let payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (
+      (!wake.includes("reason=silence-deadline") || payload.callbackDeadlineWake !== "accepted")
+      && Date.now() < deadline
+    ) {
       await Bun.sleep(25);
       try {
         wake = readFileSync(wakePath, "utf8");
       } catch {
         // The accepted callback or deadline has not emitted its wake yet.
       }
+      payload = JSON.parse(readFileSync(jobPath, "utf8"));
     }
-    const payload = JSON.parse(readFileSync(jobPath, "utf8"));
     expect(payload.status).toBe("running");
     expect(payload.callbackGuardTargets["agent-a"].status).toBe("report-transport-accepted");
     expect(payload.callbackDeadlineWake).toBe("accepted");
@@ -708,18 +712,22 @@ describe("direct-cli detached Herdr jobs", () => {
     const wakePath = join(harness.agentStateDir, "parent-pane.wake");
     const deadline = Date.now() + 3000;
     let wake = "";
-    while (!wake.includes("[direct-cli callback guard]") && Date.now() < deadline) {
+    let guarded = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (
+      (!wake.includes("[direct-cli callback guard]") || guarded.callbackGuardStatus !== "attention")
+      && Date.now() < deadline
+    ) {
       await Bun.sleep(25);
       try {
         wake = readFileSync(wakePath, "utf8");
       } catch {
         // The guard has not emitted its metadata-only wake yet.
       }
+      guarded = JSON.parse(readFileSync(jobPath, "utf8"));
     }
     expect(wake).toContain("reason=lifecycle-ended-without-final-callback");
     expect(wake).toContain("recover=");
 
-    const guarded = JSON.parse(readFileSync(jobPath, "utf8"));
     expect(guarded.status).toBe("running");
     expect(guarded.callbackGuardStatus).toBe("attention");
     expect(guarded.callbackGuardTargets["agent-a"].wake).toBe("accepted");
