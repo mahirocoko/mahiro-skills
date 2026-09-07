@@ -87,7 +87,8 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(7);
-      expect(payload.every((entry) => entry.installedSkills.length === 21)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 22)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("creating-character-ip"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("motion-design"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
@@ -97,6 +98,7 @@ describe("cli", () => {
       expect(payload.find((entry) => entry.agent === "agy")?.installedCommands).toEqual([]);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("creating-character-ip"))).toBe(true);
     } finally {
       temp.cleanup();
     }

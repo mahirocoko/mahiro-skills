@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Antigravity CL
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex/Pi lanes, docs bootstrapping, research, video learning, motion design, and web asset workflows.
+Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex/Pi lanes, docs bootstrapping, research, video learning, character/IP creation and adaptation, motion design, and web asset workflows.
 
 ## Contents
 
@@ -109,6 +109,7 @@ Current workflow highlights:
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, Codex, and Pi pane-first in Herdr when already inside a healthy compatible Herdr runtime, with tmux as the portable fallback. `use Pi` / `ใช้ Pi` selects the Pi lane; Pi uses an explicit tool allowlist and provider/model preflight. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, with the durable watcher as an explicit/automatic fallback.
 - **Multi-pane direct jobs** — one job can use one Herdr tab or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
+- **Character/IP creation and adaptation** — `/creating-character-ip` creates simple independent character directions when no identity exists, or preserves one human-selected character through direct reference edits of composition, crop, scale, posture, or target-surface fit. Explore and Adapt remain separated by a human visual lock.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
 
 Common commands:
@@ -173,6 +174,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `auditing-context-contracts` | `/auditing-context-contracts` | APIs, routes, packages, capabilities, ownership, generated prose, comments, agent-state, or historical records may disagree with current source/runtime truth and need an evidence-backed audit or authorized repair. |
 | `codex-asset-production` | `/codex-asset-production` | You need Codex imagegen/source-art, Codex-specific provenance, or an explicit Codex dicut fallback/A-B after the asset-designer route. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
+| `creating-character-ip` | `/creating-character-ip` | You need to create a simple mascot/character IP, preserve the same human-selected generated character, move it to another corner, or recompose it for an app icon, avatar, sticker, or layout without silently redesigning it. |
 | `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md semantic-search guidance, portable project settings policy, filename-only preflight, or explicit strict-scan integration with `cocoindex-code` / `ccc`. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, Codex, or bounded Pi lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection where the lane has named-agent lifecycle. |
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
@@ -203,6 +205,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
+| Character IP | `bun ./src/cli.ts install creating-character-ip --agent opencode --scope local` | Create a simple character identity or preserve one selected character through controlled reference edits and a human visual gate |
 | Web assets | `bun ./src/cli.ts install web-asset-prompts asset-designer codex-asset-production --agent opencode --scope local` | Asset packs, image prompts, Agy/Gemini-first dicut, explicit Codex source/fallback lanes, and bounded QA |
 | Multi-agent install | `bun ./src/cli.ts install project --agent cursor,agy,letta-code,pi --scope local` | Install one skill across adapters |
 
@@ -214,6 +217,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), Codex CLI, and/or Pi plus either Herdr or tmux. Auto uses Herdr only from a healthy compatible managed pane; otherwise tmux is required. Pi requires an explicit tool allowlist and provider/model preflight; custom Pi wrappers use generic pane control and do not support detach/fanout yet. Multi-pane jobs use one named Herdr tab or tmux session. Detached named-agent jobs are callback-primary only after exact parent-pane receipt capture, with mode-0600 bounded messages/results, explicit receive/retry/audit, a detached lifecycle guard for missing final callbacks, one-shot silence deadlines, and `recover` for the existing watcher fallback. Named peers wake through `agent.prompt`; the exact parent Letta pane wakes through one atomic metadata-only `pane.run` because it is not a named Herdr agent. Accepted transport is not receipt/proof and there is no tmux fallback. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `watch` | Gemini web/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
+| `creating-character-ip` | An image-generation provider; Adapt additionally requires direct reference-image input and a transferable local source file |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
 | `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |
 
