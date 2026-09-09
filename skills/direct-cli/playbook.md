@@ -18,6 +18,23 @@ Use this path when you want:
 - direct pane visibility into prompts, thinking, approval blocking, and errors
 - narrow follow-up work on the current worktree
 
+## Task packet and return decision
+
+Write one compact packet before dispatch. Keep it in the existing prompt file, not a second coordination system:
+
+```text
+Scope: <latest request, allowed writes, protected boundaries; current worktree only>
+Outcome: <observable result; writer and checker ownership>
+Proof: <actual action/consumer to exercise; what would disprove success>
+Report: <exact output path; changes, checks with evidence, gaps/blockers>
+```
+
+For a customizer, prove a real panel edit reaches the rendered preview and Reset restores it when relevant. Root-token inspection or injected DOM styles alone do not prove that path. Preserve human visual acceptance and any designated visual owner; this packet is not permission to invent design constraints.
+
+Keep four observations distinct: **submitted**, **observed working**, **report available**, and **Main audited**. A successful send is not observed execution; an idle pane is not a finished task. Use the existing callback guard or documented watcher fallback below, not an extra controller monitor in callback mode. Never reuse a finalized job receipt for follow-up work.
+
+On return, collect the exact report promptly and ask whether its evidence answers the requested outcome or only a proxy. Run the cheapest missing disconfirming check, not another broad review for reassurance. State the proven scope and remaining gaps. Continue still-authorized work; stop only at completion, a real blocker, or a human decision boundary. Close the owned lane after collection and the bounded audit.
+
 ## Core operator rules
 
 - Prefer a **fresh Herdr tab or tmux session** when an old job container looks unhealthy.

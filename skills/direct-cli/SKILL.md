@@ -56,6 +56,7 @@ Herdr agent names must be unique across the live session and match `[a-z][a-z0-9
 
 ## Default Lane Contract
 
+- Use the compact **Scope → Outcome → Proof → Report** packet in `playbook.md` before dispatch; distinguish submitted, observed working, report available, and Main audited when collecting results. This is a decision aid, not a new runtime or mandatory review lane.
 - Use a fresh interactive lane in the selected backend by default
 - Default to uninterrupted execution for the intended current worktree unless Mahiro explicitly asks for a safer/read-only lane: Cursor uses `--yolo --approve-mcps --trust`, Antigravity uses `--dangerously-skip-permissions`, Codex uses `--dangerously-bypass-approvals-and-sandbox`, and Pi uses `--approve` with the full implementation allowlist `read,bash,edit,write,grep,find,ls`
 - Treat those autonomy flags as approval policy, not expanded scope: destructive operations, secret handling, commits, pushes, releases, installs, and work outside the assigned worktree still require their normal explicit authorization
