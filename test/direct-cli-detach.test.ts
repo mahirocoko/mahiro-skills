@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "fs";
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { findStandalonePython } from "./helpers/python";
@@ -28,7 +28,17 @@ case "$1:$2" in
   agent:get)
     read status sequence < "$state_file"
     if [ "\${FAKE_CALLBACK:-false}" = "true" ]; then
-      printf '{"result":{"agent":{"agent_status":"%s","state_change_seq":%s,"pane_id":"pane-%s","agent_session":{"value":"agent-session-%s"}}}}\\n' "$status" "$sequence" "$3" "$3"
+      sval="agent-session-$3"
+      if [ -f "$FAKE_AGENT_STATE_DIR/$3.no-session" ]; then
+        sval=""
+      elif [ -f "$FAKE_AGENT_STATE_DIR/$3.session" ]; then
+        read -r sval < "$FAKE_AGENT_STATE_DIR/$3.session"
+      fi
+      if [ -z "$sval" ]; then
+        printf '{"result":{"agent":{"agent_status":"%s","state_change_seq":%s,"pane_id":"pane-%s","agent_session":null}}}\\n' "$status" "$sequence" "$3"
+      else
+        printf '{"result":{"agent":{"agent_status":"%s","state_change_seq":%s,"pane_id":"pane-%s","agent_session":{"value":"%s"}}}}\\n' "$status" "$sequence" "$3" "$sval"
+      fi
     else
       printf '{"result":{"agent":{"agent_status":"%s","state_change_seq":%s}}}\\n' "$status" "$sequence"
     fi
@@ -48,9 +58,19 @@ case "$1:$2" in
     fi
     terminal="terminal-1"
     if [ -f "$FAKE_AGENT_STATE_DIR/$pane_name.receipt-terminal" ]; then
-      terminal="$(cat "$FAKE_AGENT_STATE_DIR/$pane_name.receipt-terminal")"
+      read -r terminal < "$FAKE_AGENT_STATE_DIR/$pane_name.receipt-terminal"
     fi
-    printf '{"result":{"pane":{"pane_id":"%s","workspace_id":"workspace-1","tab_id":"tab-1","cwd":"%s","terminal":"%s","agent":"%s","agent_session":{"value":"agent-session-%s"},"herdr_session":"herdr-session-1","herdr_socket":"socket-1"%s}}}\\n' "$pane_name" "$FAKE_CWD" "$terminal" "$pane_agent" "$pane_agent" "$tokens"
+    sval="agent-session-$pane_agent"
+    if [ -f "$FAKE_AGENT_STATE_DIR/$pane_agent.no-session" ]; then
+      sval=""
+    elif [ -f "$FAKE_AGENT_STATE_DIR/$pane_agent.session" ]; then
+      read -r sval < "$FAKE_AGENT_STATE_DIR/$pane_agent.session"
+    fi
+    if [ -z "$sval" ]; then
+      printf '{"result":{"pane":{"pane_id":"%s","workspace_id":"workspace-1","tab_id":"tab-1","cwd":"%s","terminal":"%s","agent":"%s","agent_session":null,"herdr_session":"herdr-session-1","herdr_socket":"socket-1"%s}}}\\n' "$pane_name" "$FAKE_CWD" "$terminal" "$pane_agent" "$tokens"
+    else
+      printf '{"result":{"pane":{"pane_id":"%s","workspace_id":"workspace-1","tab_id":"tab-1","cwd":"%s","terminal":"%s","agent":"%s","agent_session":{"value":"%s"},"herdr_session":"herdr-session-1","herdr_socket":"socket-1"%s}}}\\n' "$pane_name" "$FAKE_CWD" "$terminal" "$pane_agent" "$sval" "$tokens"
+    fi
     ;;
   pane:run)
     printf 'wake\\n' >> "$FAKE_AGENT_STATE_DIR/$3.wake-count"
@@ -942,10 +962,9 @@ describe("direct-cli detached Herdr jobs", () => {
     const recordPath = join(harness.jobStateDir, "callback-retry", "messages", failedMessage.message, "message.json");
     expect(JSON.parse(readFileSync(recordPath, "utf8")).delivery.status).toBe("failed");
 
-    const jobPath = join(harness.jobStateDir, "callback-retry", "job.json");
-    const staleJob = JSON.parse(readFileSync(jobPath, "utf8"));
-    staleJob.targets[0].receipt.terminal = "stale-terminal";
-    writeFileSync(jobPath, JSON.stringify(staleJob, null, 2) + "\n");
+    // Change the observed endpoint, not job state concurrently owned by the guard.
+    const terminalFixture = join(harness.agentStateDir, "pane-agent-a.receipt-terminal");
+    writeFileSync(terminalFixture, "stale-terminal\n");
     const staleParentRetry = runHelper(
       harness,
       ["retry", "callback-retry", "--message-id", failedMessage.message, "--state-dir", harness.jobStateDir],
@@ -953,8 +972,7 @@ describe("direct-cli detached Herdr jobs", () => {
     );
     expect(staleParentRetry.exitCode).toBe(1);
     expect(staleParentRetry.stderr).toContain("stale or mismatched Herdr receipt");
-    staleJob.targets[0].receipt.terminal = "terminal-1";
-    writeFileSync(jobPath, JSON.stringify(staleJob, null, 2) + "\n");
+    writeFileSync(terminalFixture, "terminal-1\n");
 
     const retried = runHelper(
       harness,
@@ -1135,4 +1153,219 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(payload.watcherFallback).toBe(true);
     expect(typeof payload.watcherPid).toBe("number");
   }, 10_000);
+
+  test("explicit callback missing target agentSession fails before prompt dispatch or job creation", () => {
+    const harness = makeHarness();
+    writeFileSync(join(harness.agentStateDir, "agent-a.no-session"), "");
+    const start = callbackStart(
+      harness,
+      "callback-missing-session",
+      ["agent-a"],
+      "Task for uninitialized agent.\n",
+      "callback",
+    );
+
+    expect(start.exitCode).toBe(1);
+    expect(start.stderr).toContain("callback target agent-a has no authoritative agent session; retry after session initialization");
+    const jobDir = join(harness.jobStateDir, "callback-missing-session");
+    expect(existsSync(jobDir)).toBe(false);
+    expect(existsSync(join(harness.agentStateDir, "agent-a.prompt"))).toBe(false);
+  });
+
+  test("auto mode preserves watcher fallback when target lacks agent session", () => {
+    const harness = makeHarness();
+    writeFileSync(join(harness.agentStateDir, "agent-a.no-session"), "");
+    const start = callbackStart(
+      harness,
+      "auto-missing-session",
+      ["agent-a"],
+      "Auto task fallback.\n",
+      "auto",
+    );
+
+    expect(start.exitCode).toBe(0);
+    expect(start.stdout).toContain("mode=watcher");
+    const jobDir = join(harness.jobStateDir, "auto-missing-session");
+    expect(existsSync(jobDir)).toBe(true);
+    const payload = JSON.parse(readFileSync(join(jobDir, "job.json"), "utf8"));
+    expect(payload.mode).toBe("watcher");
+    expect(existsSync(join(harness.agentStateDir, "agent-a.prompt"))).toBe(true);
+  });
+
+  test("session replaced while pane/workspace/tab/terminal/socket unchanged rejects delivery, receive, and finalization through mismatch path", async () => {
+    const harness = makeHarness();
+    const bodyFile = join(harness.root, "session-replaced.body.txt");
+    writeFileSync(bodyFile, "report from replaced session\n");
+
+    const start = callbackStart(
+      harness,
+      "session-replaced-job",
+      ["agent-a"],
+      "Target session replacement task.\n",
+      "callback",
+    );
+    expect(start.exitCode).toBe(0);
+    const jobDir = join(harness.jobStateDir, "session-replaced-job");
+    const payload = JSON.parse(readFileSync(join(jobDir, "job.json"), "utf8"));
+    expect(payload.targets[0].receipt.agentSession).toBe("agent-session-agent-a");
+
+    // Replace session in agent-a while pane, workspace, tab, terminal, and socket remain unchanged
+    writeFileSync(join(harness.agentStateDir, "agent-a.session"), "agent-session-agent-a-v2\n");
+
+    // Delivery from replaced target pane is rejected
+    const sendFromReplaced = runHelper(
+      harness,
+      [
+        "send", "session-replaced-job", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "progress", "--body-file", bodyFile,
+        "--idempotency-key", "progress-1",
+      ],
+      callbackEnv("pane-agent-a"),
+    );
+    expect(sendFromReplaced.exitCode).not.toBe(0);
+    expect(sendFromReplaced.stderr).toContain("current Herdr pane is not one exact authorized parent or job target receipt");
+
+    // Delivery TO replaced target is rejected
+    const sendToReplaced = runHelper(
+      harness,
+      [
+        "send", "session-replaced-job", "--state-dir", harness.jobStateDir,
+        "--to", "agent-a", "--kind", "reply", "--body-file", bodyFile,
+        "--idempotency-key", "reply-1",
+      ],
+      callbackEnv("parent-pane"),
+    );
+    expect(sendToReplaced.exitCode).toBe(1);
+    const sendMeta = JSON.parse(sendToReplaced.stdout);
+    expect(sendMeta.delivery.status).toBe("failed");
+    expect(sendMeta.delivery.error).toContain("stale or mismatched Herdr receipt for target agent-a");
+
+    // Receive by replaced target is rejected
+    const receiveByReplaced = runHelper(
+      harness,
+      [
+        "receive", "session-replaced-job", "--state-dir", harness.jobStateDir,
+        "--message-id", sendMeta.message,
+      ],
+      callbackEnv("pane-agent-a"),
+    );
+    expect(receiveByReplaced.exitCode).not.toBe(0);
+    expect(receiveByReplaced.stderr).toContain("current Herdr pane is not one exact authorized parent or job target receipt");
+
+    // Finalization is rejected through existing mismatch path
+    // Restore original session briefly to send report_ready
+    writeFileSync(join(harness.agentStateDir, "agent-a.session"), "agent-session-agent-a\n");
+    const validSend = runHelper(
+      harness,
+      [
+        "send", "session-replaced-job", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
+        "--idempotency-key", "final",
+      ],
+      callbackEnv("pane-agent-a"),
+    );
+    expect(validSend.exitCode).toBe(0);
+    const reportMessageId = JSON.parse(validSend.stdout).message;
+
+    // Replace session before parent receives/finalizes
+    writeFileSync(join(harness.agentStateDir, "agent-a.session"), "agent-session-agent-a-v2\n");
+    const parentReceive = runHelper(
+      harness,
+      [
+        "receive", "session-replaced-job", "--state-dir", harness.jobStateDir,
+        "--message-id", reportMessageId,
+      ],
+      callbackEnv("parent-pane"),
+    );
+    expect(parentReceive.exitCode).not.toBe(0);
+    expect(parentReceive.stderr).toContain("stale or mismatched Herdr receipt for target agent-a");
+    expect(JSON.parse(readFileSync(join(jobDir, "job.json"), "utf8")).status).toBe("running");
+  });
+
+  test("valid stable target with authoritative session completes normally", async () => {
+    const harness = makeHarness();
+    const bodyFile = join(harness.root, "stable.body.txt");
+    writeFileSync(bodyFile, "stable report output\n");
+
+    const start = callbackStart(
+      harness,
+      "callback-stable",
+      ["agent-a"],
+      "Stable session task.\n",
+      "callback",
+    );
+    expect(start.exitCode).toBe(0);
+    const jobDir = join(harness.jobStateDir, "callback-stable");
+    const jobPath = join(jobDir, "job.json");
+
+    const sent = runHelper(
+      harness,
+      [
+        "send", "callback-stable", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
+        "--idempotency-key", "final",
+      ],
+      callbackEnv("pane-agent-a"),
+    );
+    expect(sent.exitCode).toBe(0);
+    const messageId = JSON.parse(sent.stdout).message;
+
+    const received = runHelper(
+      harness,
+      ["receive", "callback-stable", "--state-dir", harness.jobStateDir, "--message-id", messageId],
+      callbackEnv("parent-pane"),
+    );
+    expect(received.exitCode).toBe(0);
+    expect(received.stdout).toBe("stable report output\n");
+    expect(JSON.parse(readFileSync(jobPath, "utf8")).status).toBe("done");
+  });
+
+  test("persisted callback receipts missing session identity cannot bypass revalidation", () => {
+    const harness = makeHarness();
+    const bodyFile = join(harness.root, "old-receipt.body.txt");
+    writeFileSync(bodyFile, "old receipt test\n");
+
+    const start = callbackStart(
+      harness,
+      "old-receipt-job",
+      ["agent-a"],
+      "Old receipt task.\n",
+      "callback",
+    );
+    expect(start.exitCode).toBe(0);
+    const jobPath = join(harness.jobStateDir, "old-receipt-job", "job.json");
+    const payload = JSON.parse(readFileSync(jobPath, "utf8"));
+
+    // Simulate old persisted receipt without agentSession
+    payload.targets[0].receipt.agentSession = null;
+    writeFileSync(jobPath, JSON.stringify(payload, null, 2) + "\n");
+
+    // Target pane trying to send fails closed
+    const sendResult = runHelper(
+      harness,
+      [
+        "send", "old-receipt-job", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "progress", "--body-file", bodyFile,
+        "--idempotency-key", "prog-old",
+      ],
+      callbackEnv("pane-agent-a"),
+    );
+    expect(sendResult.exitCode).not.toBe(0);
+    expect(sendResult.stderr).toContain("current Herdr pane is not one exact authorized parent or job target receipt");
+
+    // Parent trying to send to target with legacy receipt fails closed
+    const parentSend = runHelper(
+      harness,
+      [
+        "send", "old-receipt-job", "--state-dir", harness.jobStateDir,
+        "--to", "agent-a", "--kind", "reply", "--body-file", bodyFile,
+        "--idempotency-key", "reply-old",
+      ],
+      callbackEnv("parent-pane"),
+    );
+    expect(parentSend.exitCode).toBe(1);
+    const meta = JSON.parse(parentSend.stdout);
+    expect(meta.delivery.status).toBe("failed");
+    expect(meta.delivery.error).toContain("stale or mismatched Herdr receipt for target agent-a");
+  });
 });

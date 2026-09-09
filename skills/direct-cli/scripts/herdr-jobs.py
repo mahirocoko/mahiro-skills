@@ -176,7 +176,10 @@ def _first_value(mapping: dict[str, Any], *keys: str) -> Any:
 def _session_value(value: Any) -> str | None:
     if isinstance(value, dict):
         value = _first_value(value, "value", "id", "session_id", "sessionId")
-    return str(value) if value not in (None, "") else None
+    if value in (None, ""):
+        return None
+    session_str = str(value).strip()
+    return session_str if session_str else None
 
 
 def _available_letta_tokens(pane: dict[str, Any]) -> dict[str, Any]:
@@ -262,6 +265,12 @@ def capture_callback_context(targets: list[str]) -> tuple[dict[str, Any], list[d
     records: list[dict[str, Any]] = []
     for target in targets:
         status, sequence, receipt = capture_target_receipt(target)
+        agent_session = _session_value(receipt.get("agentSession"))
+        if not agent_session:
+            raise ValueError(
+                f"callback target {target} has no authoritative agent session; retry after session initialization"
+            )
+        receipt["agentSession"] = agent_session
         records.append(
             {
                 "name": target,
@@ -274,7 +283,12 @@ def capture_callback_context(targets: list[str]) -> tuple[dict[str, Any], list[d
     return parent, records
 
 
-def receipt_matches(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
+def receipt_matches(
+    expected: dict[str, Any],
+    actual: dict[str, Any],
+    *,
+    require_agent_session: bool | None = None,
+) -> bool:
     for key in (
         "paneId",
         "workspaceId",
@@ -284,8 +298,22 @@ def receipt_matches(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
     ):
         if expected.get(key) in (None, "") or actual.get(key) != expected.get(key):
             return False
-    for key in ("cwd", "herdrSession", "agentSession", "lettaTokens"):
+    for key in ("cwd", "herdrSession", "lettaTokens"):
         if expected.get(key) not in (None, "") and actual.get(key) != expected.get(key):
+            return False
+
+    should_require_session = (
+        require_agent_session
+        if require_agent_session is not None
+        else (expected.get("role") == "target" or actual.get("role") == "target")
+    )
+    if should_require_session:
+        expected_session = _session_value(expected.get("agentSession"))
+        actual_session = _session_value(actual.get("agentSession"))
+        if not expected_session or not actual_session or expected_session != actual_session:
+            return False
+    else:
+        if expected.get("agentSession") not in (None, "") and actual.get("agentSession") != expected.get("agentSession"):
             return False
     return True
 
@@ -300,7 +328,7 @@ def revalidated_target_state(
     expected: dict[str, Any],
 ) -> tuple[str, int, dict[str, Any]]:
     status, sequence, actual = capture_target_receipt(target)
-    if not receipt_matches(expected, actual):
+    if not receipt_matches(expected, actual, require_agent_session=True):
         raise ValueError(f"stale or mismatched Herdr receipt for target {target}")
     return status, sequence, actual
 
@@ -312,7 +340,11 @@ def revalidate_current_participant(payload: dict[str, Any]) -> tuple[str, dict[s
     actual = capture_pane_receipt(current_pane_id, role="current")
     candidates: list[tuple[str, dict[str, Any]]] = [("parent", payload["parentReceipt"])]
     candidates.extend((str(record["name"]), record["receipt"]) for record in payload["targets"])
-    matches = [(name, expected) for name, expected in candidates if receipt_matches(expected, actual)]
+    matches = [
+        (name, expected)
+        for name, expected in candidates
+        if receipt_matches(expected, actual, require_agent_session=(name != "parent"))
+    ]
     if len(matches) != 1:
         raise ValueError("current Herdr pane is not one exact authorized parent or job target receipt")
     principal, expected = matches[0]
@@ -1046,7 +1078,7 @@ def _revalidate_recipient(payload: dict[str, Any], recipient: str) -> dict[str, 
         actual = capture_pane_receipt(str(expected["paneId"]), role="parent")
     else:
         actual = revalidate_target_receipt(recipient, expected)
-    if not receipt_matches(expected, actual):
+    if not receipt_matches(expected, actual, require_agent_session=(recipient != "parent")):
         raise ValueError(f"stale or mismatched Herdr receipt for recipient {recipient}")
     return actual
 
@@ -1073,6 +1105,7 @@ def _report_finalize_locked(job_dir: Path, payload: dict[str, Any], record: dict
     target = str(record["from"])
     if target == "parent":
         return None
+    revalidate_target_receipt(target, participant_receipt(payload, target))
     reports = payload.setdefault("reports", {})
     current = reports.get(target, {"status": "pending"})
     if current.get("status") not in (None, "pending"):
@@ -1287,6 +1320,9 @@ def command_receive(args: argparse.Namespace) -> int:
     if record["to"] != principal:
         raise ValueError("message is not addressed to the current exact pane")
     body = read_message_body(job_dir, record)
+    if record["kind"] in {"report_ready", "report_failed"} and record["to"] == "parent" and record["from"] != "parent":
+        target = str(record["from"])
+        revalidate_target_receipt(target, participant_receipt(payload, target))
     final_status: str | None = None
     with job_lock(job_dir):
         payload = load_job(job_dir)
