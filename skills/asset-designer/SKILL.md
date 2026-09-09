@@ -35,7 +35,8 @@ repo-grounded product/page brief
   -> asset-designer asset plan / manifest
   -> web-asset-prompts per-asset generation prompts
   -> image generation
-  -> Agy/Gemini-first dicut candidate, with explicit Codex fallback/A-B when triggered
+  -> inspect native alpha; skip dicut when usable
+  -> only if extraction is needed: Agy/Gemini-first dicut, with explicit Codex fallback/A-B
   -> asset-designer QA / delivery notes
 ```
 
@@ -70,6 +71,8 @@ When the user wants an asset pack, define the expected output before any generat
 
 ## Dicut executor routing
 
+For newly generated cutouts, prefer a proven provider-native transparency control and inspect the actual output alpha and compositing. Prompt wording alone does not prove transparency. If native alpha passes, skip dicut; otherwise allow one justified correction before taking the extraction route. Existing opaque sources and required layer separation can enter dicut directly.
+
 Use Agy/Gemini as the first semantic-dicut candidate writer on comparable visual extraction work. Resolve and visibly verify the current Agy/Gemini model through `direct-cli`; reject model-selection warnings or silent fallback before sending the real task.
 
 Keep the roles explicit:
@@ -86,6 +89,19 @@ Treat semantic extraction as a candidate, not a universal winner. Hair, fur, fea
 Keep production proportional: cache immutable source/native/rule fingerprints, recompute only changed assets, verify unchanged assets by hash, and reserve one full-set reproduction for the final boundary instead of rerunning every full-resolution asset after reporting-only changes.
 
 ## Operating modes
+
+### Chroma-key option for clear-edged objects
+
+Use this candidate technique for opaque objects on a reasonably uniform key background, not as the default for every cutout. Keep the executor routing above; choosing Agy does not require a semantic model when a bounded deterministic extraction works better.
+
+1. Choose a key color absent from the subject, including edge details and reflections. Do not force green: a green object may need magenta. For generated sources, request a uniform background without cast shadows on it; retain the subject's own shading.
+2. Build a color-tolerant background candidate mask, then flood-fill eligible pixels connected to the image borders. Do not flood-fill arbitrary colors or globally delete every pixel matching the key. Preserve the raw source and inspect actual colors rather than assuming the generator emitted the exact requested hex.
+3. Inspect enclosed background holes separately, such as inside a handle. Border-connected fill will miss them. Conversely, subject-colored regions matching the key can be removed if connected to the background; connectivity is not semantic protection.
+4. Refine the edge matte only where needed to preserve antialiasing and partial coverage. Avoid blanket blur, erosion, or binary alpha that hardens fine edges. Hair, fur, glass, and translucent material may require semantic or hybrid matting instead.
+5. Apply selective despill to contaminated edge pixels, preserving genuine subject colors and luminance. Do not globally suppress the green channel; inspect green details and reflected materials for color damage.
+6. Crop to meaningful alpha bounds with role-appropriate padding. Inspect faint alpha before choosing a crop threshold so soft detail is not clipped; preserve shared canvas/alignment contracts for asset families.
+
+Check the raw and cutout side by side at target size on light, dark, checker, and intended backgrounds. Verify real alpha, enclosed holes, silhouette, color fidelity, and padding. A PNG extension, successful script, or method description does not establish a ready asset. Treat this recipe as guidance until an actual before/after pair passes inspection; do not present an untested example as proven quality.
 
 ### 1. User provides an image
 
