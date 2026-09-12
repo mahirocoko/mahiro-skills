@@ -1199,16 +1199,17 @@ For Herdr, revalidate the receipt-bound Pi pane plus its agent session when avai
 
 ## Recommended combined flow
 
-### Cursor first, Codex, Agy, or Pi second
+### Choose executors by role and verified capability
 
-1. Run Cursor CLI for scoped implementation, cleanup, or reasoning.
-2. Inspect the pane output and then inspect the diff.
-3. Run Codex, Antigravity, or bounded Pi for review, verification, or an alternative lane when useful.
-4. Run verification locally.
+1. Start from the requested task role, scope, evidence needs, and any explicit user-selected executor.
+2. Launch one interactive lane in the selected executor, then verify its readiness and visible model before dispatch.
+3. Inspect the pane output, exact evidence, and any resulting diff.
+4. Add an independent lane only when it can materially change the verdict; keep writer and reviewer sessions distinct and avoid duplicate lanes for reassurance.
+5. Run the narrowest meaningful verification locally and keep the calling agent responsible for final judgment.
 
-### Antigravity as a verification or exploration lane
+### Antigravity as an implementation, research, review, or QA lane
 
-Use Antigravity CLI after implementation when you want another agent harness to inspect the repo, run raw verification commands, or test agent/subagent behavior. Keep prompts explicit about not using local wrappers such as `rtk` in user-facing snippets.
+Use Antigravity CLI when its current verified model and tool capabilities fit the assigned role. Keep writer and independent reviewer/browser-QA sessions distinct, and keep prompts explicit about not using local wrappers such as `rtk` in user-facing snippets.
 
 ### Codex as coding or image-capable lane
 
