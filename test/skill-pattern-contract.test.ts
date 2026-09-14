@@ -295,7 +295,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("not the full result-capture watcher or a controller Monitor");
     expect(skill).toContain("one-shot silence deadline remains armed until parent acknowledgement");
     expect(skill).toContain("Do not arm a controller `Monitor` when `herdr-jobs.py start` reports `mode=callback`");
-    expect(skill).toContain("revalidates the target receipt around its `idle`/`done` wait");
+    expect(skill).toContain("must observe real `working` activity");
+    expect(skill).toContain("continuously confirm a stable `idle`/`done` state");
     expect(skill).toContain("at most one metadata-only parent wake per job");
     expect(skill).toContain("Accepted transport suppresses an immediate duplicate guard wake but never finalizes the job");
     expect(skill).toContain("one atomic single-line metadata-only `pane.run`");
@@ -308,7 +309,12 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("herdr-jobs.py\" audit \"$JOB_ID\"");
     expect(skill).toContain("audit \"$JOB_ID\" --include-bodies");
     expect(skill).toContain("Idempotency keys are scoped to the exact sender");
-    expect(skill).toContain("Use `recover`");
+    expect(skill).toContain("then run `recover`");
+    expect(skill).toContain("from the exact parent only");
+    expect(skill).toContain("first requires a fully dispatched `running` job");
+    expect(skill).toContain("durable guard evidence that every target was observed `working`");
+    expect(skill).toContain("exits with `recovery=deferred`");
+    expect(skill).toContain("already has a final callback record");
     expect(skill).toContain("Do not launch `letta -p`");
     expect(skill).toContain("never prompt, body, result, or failure-summary text");
     expect(skill).toContain("not reconciled as failed merely because they have no full watcher");
@@ -408,7 +414,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("### Callback-primary detached Herdr jobs");
     expect(playbook).toContain("--mode callback");
     expect(playbook).toContain("Do not add a controller Monitor for a job whose start result says `mode=callback`");
-    expect(playbook).toContain("Use `recover \"$JOB_ID\"`");
+    expect(playbook).toContain("then run `recover \"$JOB_ID\"`");
     expect(playbook).toContain("Accepted `agent.prompt`/`pane.run` delivery is not receipt or proof");
     expect(playbook).toContain("transport acceptance alone never finalizes");
     expect(playbook).toContain("ledger is capped at 200");
@@ -477,6 +483,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("callback-primary");
     expect(readme).toContain("Accepted delivery is never receipt/proof");
     expect(readme).toContain("recover");
+    expect(readme).toContain("persists positive `working` evidence");
+    expect(readme).toContain("bounded synchronous output capture");
+    expect(readme).toContain("defers terminalization while work is active, state changed, or a final callback already exists");
     expect(readme).toContain("`--backend auto`");
     expect(readme).toContain("`--backend herdr`");
     expect(readme).toContain("`--backend tmux`");
@@ -507,11 +516,16 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("Pi adapter installs skills only");
       expect(wrapper).toContain("PATH presence alone is insufficient");
       expect(wrapper).toContain("reject any fallback warning or visible model mismatch");
+      expect(wrapper).toContain("continuously stable `idle`/`done` window");
+      expect(wrapper).toContain("not authorization for blind fallback capture");
       expect(wrapper).not.toContain("Antigravity `Claude Opus 4.6 (Thinking)`");
     }
 
     expect(rootReadme).toContain("callback-primary routing");
     expect(rootReadme).toContain("exact parent-pane receipt capture");
+    expect(rootReadme).toContain("stable termination");
+    expect(rootReadme).toContain("exact-parent synchronous recovery after completed dispatch");
+    expect(rootReadme).toContain("defers terminalization while work or callback evidence remains active");
     expect(rootReadme).toContain("one atomic metadata-only `pane.run`");
     expect(rootReadme).toContain("there is no tmux fallback");
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");

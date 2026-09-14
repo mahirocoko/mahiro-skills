@@ -1422,7 +1422,14 @@ def record_callback_guard_target(
         if payload.get("status") in TERMINAL_STATUSES:
             return False
         targets = payload.setdefault("callbackGuardTargets", {})
-        record: dict[str, Any] = {"status": status, "at": utc_now()}
+        previous = targets.get(target, {})
+        recorded_at = utc_now()
+        record: dict[str, Any] = {"status": status, "at": recorded_at}
+        working_observed_at = previous.get("workingObservedAt")
+        if status == "active" and not working_observed_at:
+            working_observed_at = recorded_at
+        if working_observed_at:
+            record["workingObservedAt"] = working_observed_at
         if reason:
             record["reason"] = reason
         if wake:
@@ -1485,7 +1492,7 @@ def wake_callback_guard_attention(
     wake = (
         "[direct-cli callback guard] "
         f"job={payload['id']} target={target} reason={reason} recover={recover_command} ; "
-        "lifecycle evidence is not a final report"
+        "lifecycle evidence is advisory; recover rechecks target state and callback records"
     )
     try:
         parent = payload["parentReceipt"]
@@ -1520,7 +1527,6 @@ def wake_callback_guard_attention(
 
 def command_callback_guard(args: argparse.Namespace) -> int:
     job_dir = args.job_dir.expanduser().resolve(strict=True)
-    waiters: dict[str, subprocess.Popen[bytes]] = {}
     try:
         with job_lock(job_dir):
             payload = load_job(job_dir)
@@ -1540,13 +1546,31 @@ def command_callback_guard(args: argparse.Namespace) -> int:
         records = {str(record["name"]): record for record in payload["targets"]}
         pending_activity = set(records)
         invalid_targets: set[str] = set()
+        callback_completed_targets: set[str] = set()
+        transition_seen: set[str] = set()
         activity_deadline = time.monotonic() + float(payload["options"]["activityTimeoutSeconds"])
         while pending_activity and time.monotonic() < activity_deadline:
             if load_job(job_dir).get("status") in TERMINAL_STATUSES:
                 return 0
             for target in tuple(pending_activity):
+                delivery, message_id = callback_report_delivery(job_dir, target)
+                if delivery == "accepted":
+                    pending_activity.remove(target)
+                    callback_completed_targets.add(target)
+                    record_callback_guard_target(
+                        job_dir,
+                        target,
+                        status="report-transport-accepted",
+                        message_id=message_id,
+                    )
+                    continue
                 status, sequence = agent_state(target)
-                if sequence > int(records[target]["baselineSeq"]) or status == "working":
+                if sequence > int(records[target]["baselineSeq"]):
+                    transition_seen.add(target)
+                # A sequence change alone can be the queued prompt while the
+                # previous done state is still visible. Require a real working
+                # observation before treating a later idle/done as task end.
+                if status == "working":
                     pending_activity.remove(target)
                     try:
                         revalidate_target_receipt(target, records[target]["receipt"])
@@ -1559,61 +1583,84 @@ def command_callback_guard(args: argparse.Namespace) -> int:
                 time.sleep(0.1)
 
         for target in sorted(pending_activity):
-            wake_callback_guard_attention(job_dir, target, "no-activity-transition")
+            delivery, message_id = callback_report_delivery(job_dir, target)
+            if delivery == "accepted":
+                callback_completed_targets.add(target)
+                record_callback_guard_target(
+                    job_dir,
+                    target,
+                    status="report-transport-accepted",
+                    message_id=message_id,
+                )
+                continue
+            reason = "no-working-transition" if target in transition_seen else "no-activity-transition"
+            wake_callback_guard_attention(job_dir, target, reason, message_id=message_id)
 
-        active_targets = [
+        active_targets = {
             target
             for target in records
-            if target not in pending_activity and target not in invalid_targets
-        ]
-        timeout_ms = str(int(payload["options"]["settleTimeoutMs"]))
-        for target in active_targets:
-            waiters[target] = subprocess.Popen(
-                [
-                    "herdr",
-                    "agent",
-                    "wait",
-                    target,
-                    "--until",
-                    "idle",
-                    "--until",
-                    "done",
-                    "--timeout",
-                    timeout_ms,
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-
-        pending_waits = set(waiters)
-        wait_deadline = time.monotonic() + (int(timeout_ms) / 1000) + call_timeout_seconds()
+            if target not in pending_activity
+            and target not in invalid_targets
+            and target not in callback_completed_targets
+        }
+        terminal_candidates: dict[str, tuple[str, int, float]] = {}
+        wait_deadline = time.monotonic() + (int(payload["options"]["settleTimeoutMs"]) / 1000)
+        stable_seconds = float(payload["options"]["callbackGuardGraceSeconds"])
         next_heartbeat = 0.0
-        while pending_waits and time.monotonic() < wait_deadline:
+        while active_targets and time.monotonic() < wait_deadline:
             if load_job(job_dir).get("status") in TERMINAL_STATUSES:
                 return 0
-            for target in tuple(pending_waits):
-                return_code = waiters[target].poll()
-                if return_code is None:
+            for target in tuple(active_targets):
+                delivery, message_id = callback_report_delivery(job_dir, target)
+                if delivery == "accepted":
+                    active_targets.remove(target)
+                    terminal_candidates.pop(target, None)
+                    record_callback_guard_target(
+                        job_dir,
+                        target,
+                        status="report-transport-accepted",
+                        message_id=message_id,
+                    )
                     continue
-                pending_waits.remove(target)
-                if return_code != 0:
-                    wake_callback_guard_attention(job_dir, target, "lifecycle-wait-failed")
+
+                status, sequence = agent_state(target)
+                if status == "working":
+                    if target in terminal_candidates:
+                        terminal_candidates.pop(target, None)
+                        record_callback_guard_target(
+                            job_dir,
+                            target,
+                            status="active",
+                            reason="terminal-transition-resumed",
+                        )
+                    continue
+
+                if status not in {"idle", "done"}:
+                    terminal_candidates.pop(target, None)
+                    continue
+
+                candidate = terminal_candidates.get(target)
+                if candidate is None or candidate[0] != status or candidate[1] != sequence:
+                    terminal_candidates[target] = (status, sequence, time.monotonic())
+                    record_callback_guard_target(
+                        job_dir,
+                        target,
+                        status="terminal-candidate",
+                        reason=f"{status}-awaiting-stability",
+                    )
+                    continue
+                if time.monotonic() - candidate[2] < stable_seconds:
                     continue
 
                 try:
                     revalidate_target_receipt(target, records[target]["receipt"])
                 except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError):
                     wake_callback_guard_attention(job_dir, target, "target-receipt-mismatch")
+                    active_targets.remove(target)
+                    terminal_candidates.pop(target, None)
                     continue
 
-                grace_deadline = time.monotonic() + float(payload["options"]["callbackGuardGraceSeconds"])
                 delivery, message_id = callback_report_delivery(job_dir, target)
-                while delivery in {"missing", "pending"} and time.monotonic() < grace_deadline:
-                    if load_job(job_dir).get("status") in TERMINAL_STATUSES:
-                        return 0
-                    time.sleep(0.05)
-                    delivery, message_id = callback_report_delivery(job_dir, target)
-
                 if delivery == "accepted":
                     record_callback_guard_target(
                         job_dir,
@@ -1627,12 +1674,9 @@ def command_callback_guard(args: argparse.Namespace) -> int:
                         "invalid": "invalid-final-callback",
                         "pending": "final-callback-delivery-pending",
                     }.get(delivery, "lifecycle-ended-without-final-callback")
-                    wake_callback_guard_attention(
-                        job_dir,
-                        target,
-                        reason,
-                        message_id=message_id,
-                    )
+                    wake_callback_guard_attention(job_dir, target, reason, message_id=message_id)
+                active_targets.remove(target)
+                terminal_candidates.pop(target, None)
 
             if time.monotonic() >= next_heartbeat:
                 with job_lock(job_dir):
@@ -1641,10 +1685,10 @@ def command_callback_guard(args: argparse.Namespace) -> int:
                         latest["callbackGuardHeartbeatAt"] = utc_now()
                         save_job(job_dir, latest)
                 next_heartbeat = time.monotonic() + 5
-            if pending_waits:
+            if active_targets:
                 time.sleep(0.2)
 
-        for target in sorted(pending_waits):
+        for target in sorted(active_targets):
             wake_callback_guard_attention(job_dir, target, "lifecycle-wait-timeout")
 
         with job_lock(job_dir):
@@ -1669,11 +1713,6 @@ def command_callback_guard(args: argparse.Namespace) -> int:
         except Exception:
             print(f"direct-cli callback guard failed without durable state: {error}", file=sys.stderr)
         return 1
-    finally:
-        for waiter in waiters.values():
-            if waiter.poll() is None:
-                waiter.kill()
-            waiter.wait()
 
 
 def command_audit(args: argparse.Namespace) -> int:
@@ -1697,8 +1736,265 @@ def command_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def callback_recovery_preflight(
+    job_dir: Path,
+    payload: dict[str, Any],
+) -> tuple[bool, str, dict[str, tuple[str, int]]]:
+    report_records: list[str] = []
+    for record in payload["targets"]:
+        target = str(record["name"])
+        delivery, message_id = callback_report_delivery(job_dir, target)
+        if message_id:
+            report_records.append(f"{target}={delivery}:{message_id}")
+    if report_records:
+        return (
+            False,
+            "final callback records already exist; use receive, retry, or audit before recovery: "
+            + ", ".join(report_records),
+            {},
+        )
+
+    guard_targets = payload.get("callbackGuardTargets", {})
+    for record in payload["targets"]:
+        target = str(record["name"])
+        guard_record = guard_targets.get(target, {})
+        guard_reason = guard_record.get("reason")
+        if guard_reason in {"no-activity-transition", "no-working-transition"}:
+            return (
+                False,
+                f"callback guard never observed working activity for {target}; inspect the exact pane before recovery",
+                {},
+            )
+        if not guard_record.get("workingObservedAt"):
+            return (
+                False,
+                f"callback guard has not yet observed working activity for {target}",
+                {},
+            )
+
+    stable_seconds = min(
+        30.0,
+        max(0.05, float(payload.get("options", {}).get("callbackGuardGraceSeconds", 2.0))),
+    )
+    stable_since: float | None = None
+    previous_states: dict[str, tuple[str, int]] = {}
+    latest_states: dict[str, tuple[str, int]] = {}
+    while stable_since is None or time.monotonic() - stable_since < stable_seconds:
+        latest = load_job(job_dir)
+        if latest.get("status") in TERMINAL_STATUSES:
+            return False, f"job became terminal during recovery preflight: {latest['status']}", {}
+
+        latest_states = {}
+        for record in payload["targets"]:
+            target = str(record["name"])
+            delivery, message_id = callback_report_delivery(job_dir, target)
+            if message_id:
+                return (
+                    False,
+                    f"final callback record appeared during recovery preflight: {target}={delivery}:{message_id}",
+                    {},
+                )
+            try:
+                revalidate_target_receipt(target, record["receipt"])
+                status, sequence = agent_state(target)
+            except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+                return (
+                    False,
+                    f"callback target receipt/state check failed: {target}={type(error).__name__}",
+                    {},
+                )
+            latest_states[target] = (status, sequence)
+            if status == "working":
+                return False, f"callback target is still working: {target}=working", {}
+            if status not in {"idle", "done", "blocked"}:
+                return False, f"callback target is not safely recoverable: {target}={status}", {}
+
+        if stable_since is None or latest_states != previous_states:
+            stable_since = time.monotonic()
+        previous_states = latest_states
+        if stable_since is not None and time.monotonic() - stable_since < stable_seconds:
+            time.sleep(0.1)
+
+    summary = ", ".join(f"{target}={state[0]}" for target, state in sorted(latest_states.items()))
+    return True, f"receipt-bound targets remained terminal for {stable_seconds:g}s: {summary}", latest_states
+
+
+def print_recovery_deferred(payload: dict[str, Any], reason: str) -> int:
+    print(f"direct-cli: recovery deferred: {reason}", file=sys.stderr)
+    print(f"job={payload['id']}")
+    print("status=running")
+    print("mode=callback")
+    print("recovery=deferred")
+    return 3
+
+
 def command_recover(args: argparse.Namespace) -> int:
     job_dir = resolve_job_dir(args.state_dir, args.job_id)
+    payload = load_job(job_dir)
+    if payload.get("status") in TERMINAL_STATUSES:
+        print(f"direct-cli: job is already terminal: {payload['status']}", file=sys.stderr)
+        return 2
+
+    if is_callback_job(payload):
+        principal, _receipt = revalidate_current_participant(payload)
+        if principal != "parent":
+            raise ValueError("only the exact parent may recover a callback job")
+        if payload.get("status") != "running" or not isinstance(payload.get("dispatchedAt"), str):
+            return print_recovery_deferred(payload, "callback dispatch has not completed")
+        recoverable, reason, expected_states = callback_recovery_preflight(job_dir, payload)
+        if not recoverable:
+            return print_recovery_deferred(payload, reason)
+
+        captured: dict[str, str] = {}
+        result_lines = str(int(payload["options"]["resultLines"]))
+        try:
+            for record in payload["targets"]:
+                target = str(record["name"])
+                completed = subprocess.run(
+                    [
+                        "herdr",
+                        "agent",
+                        "read",
+                        target,
+                        "--source",
+                        "recent-unwrapped",
+                        "--lines",
+                        result_lines,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=call_timeout_seconds(),
+                )
+                captured[target] = completed.stdout
+        except (OSError, subprocess.SubprocessError) as error:
+            return print_recovery_deferred(
+                payload,
+                f"receipt-bound result capture failed: {type(error).__name__}",
+            )
+
+        # Reading pane output is not enough. Recheck the exact callback ledger,
+        # receipt, status, and sequence after capture before claiming terminal
+        # ownership. Any resumed work invalidates the captured snapshot.
+        for record in payload["targets"]:
+            target = str(record["name"])
+            delivery, message_id = callback_report_delivery(job_dir, target)
+            if message_id:
+                return print_recovery_deferred(
+                    payload,
+                    f"final callback appeared during recovery capture: {target}={delivery}:{message_id}",
+                )
+            try:
+                revalidate_target_receipt(target, record["receipt"])
+                observed_state = agent_state(target)
+            except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+                return print_recovery_deferred(
+                    payload,
+                    f"callback target receipt/state changed during recovery capture: "
+                    f"{target}={type(error).__name__}",
+                )
+            if observed_state != expected_states[target]:
+                return print_recovery_deferred(
+                    payload,
+                    f"callback target changed during recovery capture: "
+                    f"{target}={observed_state[0]} seq={observed_state[1]}",
+                )
+
+        notification_pending = False
+        deadline_pid: int | None = None
+        guard_pid: int | None = None
+        terminal_status = (
+            "attention"
+            if any(status == "blocked" for status, _sequence in expected_states.values())
+            else "done"
+        )
+        summary = f"recovery captured {len(captured)} agent result(s) after stable terminal confirmation"
+        with job_lock(job_dir):
+            latest = load_job(job_dir)
+            if latest.get("status") in TERMINAL_STATUSES:
+                print(f"direct-cli: job is already terminal: {latest['status']}", file=sys.stderr)
+                return 2
+            if latest.get("status") != "running" or not isinstance(latest.get("dispatchedAt"), str):
+                return print_recovery_deferred(latest, "callback dispatch is not complete at terminal boundary")
+            for record in latest["targets"]:
+                target = str(record["name"])
+                delivery, message_id = callback_report_delivery(job_dir, target)
+                if message_id:
+                    return print_recovery_deferred(
+                        latest,
+                        f"final callback appeared before recovery terminalization: "
+                        f"{target}={delivery}:{message_id}",
+                    )
+                try:
+                    revalidate_target_receipt(target, record["receipt"])
+                    boundary_state = agent_state(target)
+                except (OSError, ValueError, KeyError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+                    return print_recovery_deferred(
+                        latest,
+                        f"callback target receipt/state failed at terminal boundary: "
+                        f"{target}={type(error).__name__}",
+                    )
+                if boundary_state != expected_states[target]:
+                    return print_recovery_deferred(
+                        latest,
+                        f"callback target changed at terminal boundary: "
+                        f"{target}={boundary_state[0]} seq={boundary_state[1]}",
+                    )
+
+            result_index: list[tuple[str, Path]] = []
+            for target, output in captured.items():
+                relative_path = Path("results") / f"{target}.txt"
+                atomic_write_text(job_dir / relative_path, output)
+                result_index.append((target, relative_path))
+            result_summary = [f"# Direct CLI job: {latest['id']}", "", f"Status: {terminal_status}", ""]
+            result_summary.extend(f"- `{target}`: `{path}`" for target, path in result_index)
+            atomic_write_text(job_dir / "result.md", "\n".join(result_summary) + "\n")
+
+            latest["watcherFallback"] = False
+            latest["recoveredAt"] = utc_now()
+            latest["recoveryMode"] = "synchronous-capture"
+            latest["recoveryPreflight"] = reason
+            latest["recoveryBoundaryCheckedAt"] = utc_now()
+            latest["recoveryStates"] = {
+                target: {"status": state[0], "sequence": state[1]}
+                for target, state in expected_states.items()
+            }
+            latest["status"] = terminal_status
+            latest["summary"] = summary
+            latest["finishedAt"] = utc_now()
+            notification_enabled = bool(latest["options"]["notify"])
+            latest["notification"] = "pending" if notification_enabled else "disabled"
+            notification_pending = notification_enabled
+            if isinstance(latest.get("callbackDeadlinePid"), int):
+                deadline_pid = int(latest["callbackDeadlinePid"])
+            if isinstance(latest.get("callbackGuardPid"), int):
+                guard_pid = int(latest["callbackGuardPid"])
+            save_job(job_dir, latest)
+
+        if deadline_pid is not None and callback_deadline_process_matches(deadline_pid, job_dir):
+            try:
+                os.killpg(deadline_pid, signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                pass
+        if guard_pid is not None and callback_guard_process_matches(guard_pid, job_dir):
+            try:
+                os.killpg(guard_pid, signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                pass
+        if notification_pending:
+            notification = notify(str(payload["id"]), terminal_status, True)
+            with job_lock(job_dir):
+                latest = load_job(job_dir)
+                if latest.get("status") == terminal_status and latest.get("notification") == "pending":
+                    latest["notification"] = notification
+                    save_job(job_dir, latest)
+
+        print(f"job={payload['id']}")
+        print(f"status={terminal_status}")
+        print("mode=callback-recovery-capture")
+        print(f"job_dir={job_dir}")
+        return 0
+
     with job_lock(job_dir):
         payload = load_job(job_dir)
         if payload.get("status") in TERMINAL_STATUSES:
@@ -1706,6 +2002,7 @@ def command_recover(args: argparse.Namespace) -> int:
             return 2
         payload["watcherFallback"] = True
         payload["recoveredAt"] = utc_now()
+        payload["recoveryPreflight"] = "watcher job"
         payload["status"] = "running"
         save_job(job_dir, payload)
     try:
@@ -1874,8 +2171,8 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument(
         "--callback-guard-grace",
         type=float,
-        default=2.0,
-        help="seconds to allow a final callback to persist after Herdr reports idle/done",
+        default=10.0,
+        help="seconds idle/done must remain stable while allowing the final callback to persist",
     )
     notification = start.add_mutually_exclusive_group()
     notification.add_argument("--notify", action="store_true", dest="notify")
@@ -1913,7 +2210,10 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--include-bodies", action="store_true", help="Include bounded bodies for the exact parent only.")
     audit.set_defaults(handler=command_audit)
 
-    recover = subparsers.add_parser("recover", help="Explicitly invoke the existing watcher fallback.")
+    recover = subparsers.add_parser(
+        "recover",
+        help="Safely capture callback results or restart an interrupted watcher-mode job.",
+    )
     recover.add_argument("job_id")
     recover.add_argument("--state-dir", type=Path)
     recover.set_defaults(handler=command_recover)

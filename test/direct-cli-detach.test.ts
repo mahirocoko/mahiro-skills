@@ -110,7 +110,32 @@ case "$1:$2" in
       exit 9
     fi
     if [ "\${FAKE_STALL:-false}" != "true" ]; then
-      printf 'working 2\\n' > "$state_file"
+      if [ "\${FAKE_LATE_WORKING:-false}" = "true" ]; then
+        printf 'done 2\\n' > "$state_file"
+        (
+          /bin/sleep 0.2
+          printf 'working 3\\n' > "$state_file"
+          /bin/sleep 0.4
+          printf 'done 4\\n' > "$state_file"
+        ) &
+      else
+        printf 'working 2\\n' > "$state_file"
+        if [ "\${FAKE_CALLBACK:-false}" = "true" ] && [ "\${FAKE_TRANSIENT_TERMINAL:-false}" = "true" ]; then
+          (
+            /bin/sleep 0.15
+            printf 'done 3\\n' > "$state_file"
+            /bin/sleep 0.1
+            printf 'working 4\\n' > "$state_file"
+            /bin/sleep 0.4
+            printf 'done 5\\n' > "$state_file"
+          ) &
+        elif [ "\${FAKE_CALLBACK:-false}" = "true" ] && [ "\${FAKE_GUARD_AUTO_SETTLE:-false}" = "true" ]; then
+          (
+            /bin/sleep "\${FAKE_GUARD_SETTLE_SECONDS:-0.3}"
+            printf 'done 3\\n' > "$state_file"
+          ) &
+        fi
+      fi
     fi
     printf '{"result":{"type":"agent_prompted"}}\\n'
     ;;
@@ -120,6 +145,17 @@ case "$1:$2" in
     printf '{"result":{"type":"agent_info"}}\\n'
     ;;
   agent:read)
+    if [ "\${FAKE_READ_SECONDS:-}" != "" ]; then
+      /bin/sleep "$FAKE_READ_SECONDS"
+    fi
+    if [ "\${FAKE_REPLACE_RECEIPT_ON_READ:-false}" = "true" ]; then
+      printf 'replacement-terminal\\n' > "$FAKE_AGENT_STATE_DIR/pane-$3.receipt-terminal"
+    fi
+    if [ "\${FAKE_AUTO_REPORT_ON_READ_JOB:-}" != "" ] && [ "$3" = "agent-a" ]; then
+      auto_body="$FAKE_AGENT_STATE_DIR/auto-read-report.body"
+      printf 'finished while recovery was reading\\n' > "$auto_body"
+      HERDR_PANE_ID="pane-$3" "$FAKE_PYTHON" "$FAKE_HELPER" send "$FAKE_AUTO_REPORT_ON_READ_JOB" --state-dir "$FAKE_JOB_STATE_DIR" --to parent --kind report_ready --body-file "$auto_body" --idempotency-key final >/dev/null
+    fi
     printf 'RESULT:%s\\n' "$3"
     ;;
   *)
@@ -187,6 +223,19 @@ async function waitForStatus(jobJson: string, expected: string, timeoutMs = 5000
   throw new Error(`timed out waiting for ${expected}; last=${JSON.stringify(lastPayload)}; log=${log}`);
 }
 
+async function waitForGuardWorking(jobJson: string, target: string, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  let payload = JSON.parse(readFileSync(jobJson, "utf8"));
+  while (!payload.callbackGuardTargets?.[target]?.workingObservedAt && Date.now() < deadline) {
+    await Bun.sleep(25);
+    payload = JSON.parse(readFileSync(jobJson, "utf8"));
+  }
+  if (!payload.callbackGuardTargets?.[target]?.workingObservedAt) {
+    throw new Error(`timed out waiting for callback guard working evidence for ${target}`);
+  }
+  return payload;
+}
+
 function callbackStart(
   harness: ReturnType<typeof makeHarness>,
   jobId: string,
@@ -195,6 +244,7 @@ function callbackStart(
   mode = "callback",
   env: Record<string, string> = {},
 ) {
+  const callbackGuardGrace = env.FAKE_CALLBACK_GUARD_GRACE ?? "0.05";
   const promptFile = join(harness.root, `${jobId}.prompt.txt`);
   writeFileSync(promptFile, prompt);
   for (const target of targets) {
@@ -217,11 +267,11 @@ function callbackStart(
       "--callback-timeout",
       "0",
       "--callback-guard-grace",
-      "0.05",
+      callbackGuardGrace,
       "--no-notify",
       ...targets,
     ],
-    { FAKE_CALLBACK: "true", HERDR_PANE_ID: "parent-pane", ...env },
+    { FAKE_CALLBACK: "true", FAKE_GUARD_AUTO_SETTLE: "true", HERDR_PANE_ID: "parent-pane", ...env },
   );
 }
 
@@ -665,6 +715,130 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(JSON.parse(readFileSync(jobPath, "utf8")).status).toBe("done");
   });
 
+  test("callback guard requires observed working and ignores a queued done state", async () => {
+    const harness = makeHarness();
+    const start = callbackStart(
+      harness,
+      "callback-late-working",
+      ["agent-a"],
+      "Do not mistake queued done for completion.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_LATE_WORKING: "true",
+        FAKE_CALLBACK_GUARD_GRACE: "0.2",
+      },
+    );
+    expect(start.exitCode).toBe(0);
+
+    const statePath = join(harness.agentStateDir, "agent-a.state");
+    const workingDeadline = Date.now() + 3000;
+    while (!readFileSync(statePath, "utf8").startsWith("working") && Date.now() < workingDeadline) {
+      await Bun.sleep(25);
+    }
+    expect(readFileSync(statePath, "utf8")).toStartWith("working 3");
+    const beforeReport = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-late-working", "job.json"), "utf8"));
+    expect(beforeReport).not.toHaveProperty("callbackGuardWake");
+
+    const bodyFile = join(harness.root, "late-working.body");
+    writeFileSync(bodyFile, "finished after real working activity\n");
+    const sent = runHelper(
+      harness,
+      [
+        "send", "callback-late-working", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
+        "--idempotency-key", "final",
+      ],
+      callbackEnv("pane-agent-a", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(sent.exitCode).toBe(0);
+    const messageId = JSON.parse(sent.stdout).message;
+
+    const jobPath = join(harness.jobStateDir, "callback-late-working", "job.json");
+    const guardDeadline = Date.now() + 3000;
+    let payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (payload.callbackGuardStatus !== "completed" && Date.now() < guardDeadline) {
+      await Bun.sleep(25);
+      payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    }
+    expect(payload.callbackGuardStatus).toBe("completed");
+    expect(payload.callbackGuardTargets["agent-a"].status).toBe("report-transport-accepted");
+    const wake = readFileSync(join(harness.agentStateDir, "parent-pane.wake"), "utf8");
+    const wakeCount = readFileSync(join(harness.agentStateDir, "parent-pane.wake-count"), "utf8").trim().split("\n");
+    expect(wake).toContain("[direct-cli callback wake]");
+    expect(wake).not.toContain("[direct-cli callback guard]");
+    expect(wakeCount).toHaveLength(1);
+
+    expect(runHelper(
+      harness,
+      ["receive", "callback-late-working", "--state-dir", harness.jobStateDir, "--message-id", messageId],
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    ).exitCode).toBe(0);
+  });
+
+  test("callback guard resets terminal confirmation when the target resumes working", async () => {
+    const harness = makeHarness();
+    const start = callbackStart(
+      harness,
+      "callback-transient-terminal",
+      ["agent-a"],
+      "Resume after a transient terminal state.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_TRANSIENT_TERMINAL: "true",
+        FAKE_CALLBACK_GUARD_GRACE: "0.2",
+      },
+    );
+    expect(start.exitCode).toBe(0);
+
+    const statePath = join(harness.agentStateDir, "agent-a.state");
+    const resumedDeadline = Date.now() + 3000;
+    while (!readFileSync(statePath, "utf8").startsWith("working 4") && Date.now() < resumedDeadline) {
+      await Bun.sleep(25);
+    }
+    expect(readFileSync(statePath, "utf8")).toStartWith("working 4");
+    await Bun.sleep(250);
+    const beforeReport = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-transient-terminal", "job.json"), "utf8"));
+    expect(beforeReport).not.toHaveProperty("callbackGuardWake");
+
+    const bodyFile = join(harness.root, "transient-terminal.body");
+    writeFileSync(bodyFile, "finished after resumed work\n");
+    const sent = runHelper(
+      harness,
+      [
+        "send", "callback-transient-terminal", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
+        "--idempotency-key", "final",
+      ],
+      callbackEnv("pane-agent-a", { FAKE_GUARD_AUTO_SETTLE: "false", FAKE_TRANSIENT_TERMINAL: "true" }),
+    );
+    expect(sent.exitCode).toBe(0);
+    const messageId = JSON.parse(sent.stdout).message;
+
+    const jobPath = join(harness.jobStateDir, "callback-transient-terminal", "job.json");
+    const guardDeadline = Date.now() + 3000;
+    let payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (payload.callbackGuardStatus !== "completed" && Date.now() < guardDeadline) {
+      await Bun.sleep(25);
+      payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    }
+    expect(payload.callbackGuardStatus).toBe("completed");
+    expect(payload.callbackGuardTargets["agent-a"].status).toBe("report-transport-accepted");
+    const wake = readFileSync(join(harness.agentStateDir, "parent-pane.wake"), "utf8");
+    const wakeCount = readFileSync(join(harness.agentStateDir, "parent-pane.wake-count"), "utf8").trim().split("\n");
+    expect(wake).toContain("[direct-cli callback wake]");
+    expect(wake).not.toContain("[direct-cli callback guard]");
+    expect(wakeCount).toHaveLength(1);
+
+    expect(runHelper(
+      harness,
+      ["receive", "callback-transient-terminal", "--state-dir", harness.jobStateDir, "--message-id", messageId],
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false", FAKE_TRANSIENT_TERMINAL: "true" }),
+    ).exitCode).toBe(0);
+    await Bun.sleep(450);
+  });
+
   test("accepted but unacknowledged final transport remains covered by the silence deadline", async () => {
     const harness = makeHarness();
     const promptFile = join(harness.root, "unacknowledged.prompt.txt");
@@ -755,11 +929,332 @@ describe("direct-cli detached Herdr jobs", () => {
 
     const recovered = runHelper(harness, [
       "recover", "callback-guard-missing", "--state-dir", harness.jobStateDir,
-    ]);
+    ], callbackEnv("parent-pane"));
     expect(recovered.exitCode).toBe(0);
     const completed = await waitForStatus(jobPath, "done");
-    expect(completed.watcherFallback).toBe(true);
+    expect(completed.watcherFallback).toBe(false);
+    expect(completed.recoveryMode).toBe("synchronous-capture");
+    expect(completed).not.toHaveProperty("watcherPid");
+    expect(readFileSync(join(harness.jobStateDir, "callback-guard-missing", "results", "agent-a.txt"), "utf8")).toBe("RESULT:agent-a\n");
   }, 10_000);
+
+  test("recover refuses fallback capture while the callback target is still working", async () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-working",
+      ["agent-a"],
+      "Keep working.\n",
+      "callback",
+      { FAKE_GUARD_SETTLE_SECONDS: "5" },
+    ).exitCode).toBe(0);
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-recover-working", "job.json"),
+      "agent-a",
+    );
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-working", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_GUARD_SETTLE_SECONDS: "5" }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stdout).toContain("recovery=deferred");
+    expect(recovered.stderr).toContain("callback target is still working");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-working", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload.watcherFallback).toBe(false);
+    expect(payload).not.toHaveProperty("watcherPid");
+  });
+
+  test("only the exact parent may recover a callback job", () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-parent-only",
+      ["agent-a"],
+      "Parent-owned recovery.\n",
+      "callback",
+      { FAKE_GUARD_AUTO_SETTLE: "false" },
+    ).exitCode).toBe(0);
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "done 3\n");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-parent-only", "--state-dir", harness.jobStateDir],
+      callbackEnv("pane-agent-a", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(recovered.exitCode).toBe(1);
+    expect(recovered.stderr).toContain("only the exact parent may recover a callback job");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-parent-only", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload).not.toHaveProperty("recoveryMode");
+  });
+
+  test("recover defers while callback dispatch is still in progress", async () => {
+    const harness = makeHarness();
+    const promptFile = join(harness.root, "recover-dispatching.prompt.txt");
+    writeFileSync(promptFile, "Keep the dispatch call in flight.\n");
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "idle 1\n");
+    const startProcess = Bun.spawn({
+      cmd: [
+        findStandalonePython(), helper, "start",
+        "--job-id", "callback-recover-dispatching",
+        "--prompt-file", promptFile,
+        "--cwd", harness.root,
+        "--state-dir", harness.jobStateDir,
+        "--mode", "callback",
+        "--callback-timeout", "0",
+        "--callback-guard-grace", "0.05",
+        "--no-notify",
+        "agent-a",
+      ],
+      env: {
+        FAKE_AGENT_STATE_DIR: harness.agentStateDir,
+        FAKE_CALLBACK: "true",
+        FAKE_CWD: harness.root,
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_PROMPT_HANG: "true",
+        HERDR_PANE_ID: "parent-pane",
+        PATH: harness.binDir,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+    const jobPath = join(harness.jobStateDir, "callback-recover-dispatching", "job.json");
+    const dispatchDeadline = Date.now() + 3000;
+    while (!existsSync(jobPath) && Date.now() < dispatchDeadline) {
+      await Bun.sleep(25);
+    }
+    expect(existsSync(jobPath)).toBe(true);
+    expect(JSON.parse(readFileSync(jobPath, "utf8")).status).toBe("dispatching");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-dispatching", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("callback dispatch has not completed");
+    expect(JSON.parse(readFileSync(jobPath, "utf8"))).not.toHaveProperty("recoveryMode");
+    expect(await startProcess.exited).toBe(0);
+  }, 10_000);
+
+  test("recover defers before the guard has observed positive working activity", () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-before-working",
+      ["agent-a"],
+      "Remain queued while recovery is attempted.\n",
+      "callback",
+      { FAKE_STALL: "true", FAKE_GUARD_AUTO_SETTLE: "false" },
+    ).exitCode).toBe(0);
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-before-working", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_STALL: "true", FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("has not yet observed working activity");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-before-working", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload).not.toHaveProperty("recoveryMode");
+    expect(payload).not.toHaveProperty("watcherPid");
+  });
+
+  test("recover defers when the guard never observed working activity", async () => {
+    const harness = makeHarness();
+    const promptFile = join(harness.root, "recover-no-working.prompt.txt");
+    writeFileSync(promptFile, "Remain queued without working.\n");
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "idle 1\n");
+    const start = runHelper(
+      harness,
+      [
+        "start", "--job-id", "callback-recover-no-working", "--prompt-file", promptFile,
+        "--cwd", harness.root, "--state-dir", harness.jobStateDir, "--mode", "callback",
+        "--activity-timeout", "0.2", "--callback-timeout", "0",
+        "--callback-guard-grace", "0.05", "--no-notify", "agent-a",
+      ],
+      callbackEnv("parent-pane", { FAKE_STALL: "true", FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(start.exitCode).toBe(0);
+    const jobPath = join(harness.jobStateDir, "callback-recover-no-working", "job.json");
+    const guardDeadline = Date.now() + 3000;
+    let guarded = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (guarded.callbackGuardStatus !== "attention" && Date.now() < guardDeadline) {
+      await Bun.sleep(25);
+      guarded = JSON.parse(readFileSync(jobPath, "utf8"));
+    }
+    expect(guarded.callbackGuardTargets["agent-a"].reason).toBe("no-activity-transition");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-no-working", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_STALL: "true", FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("never observed working activity");
+    const payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload).not.toHaveProperty("recoveryMode");
+  });
+
+  test("recover resets terminal confirmation when target state changes during preflight", async () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-state-change",
+      ["agent-a"],
+      "Resume while recovery is checking.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.2",
+      },
+    ).exitCode).toBe(0);
+    const statePath = join(harness.agentStateDir, "agent-a.state");
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-recover-state-change", "job.json"),
+      "agent-a",
+    );
+    writeFileSync(statePath, "done 3\n");
+    const resumer = Bun.spawn({
+      cmd: ["/bin/sh", "-c", `/bin/sleep 0.1; printf 'working 4\\n' > ${JSON.stringify(statePath)}`],
+      stderr: "ignore",
+      stdout: "ignore",
+    });
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-state-change", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.2",
+      }),
+    );
+    await resumer.exited;
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("callback target is still working");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-state-change", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload.watcherFallback).toBe(false);
+    expect(payload).not.toHaveProperty("watcherPid");
+  });
+
+  test("recover refuses fallback capture when a final callback record already exists", () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-reported",
+      ["agent-a"],
+      "Report before recovery.\n",
+      "callback",
+      { FAKE_GUARD_SETTLE_SECONDS: "5" },
+    ).exitCode).toBe(0);
+    const bodyFile = join(harness.root, "recover-reported.body");
+    writeFileSync(bodyFile, "report already persisted\n");
+    const sent = runHelper(
+      harness,
+      [
+        "send", "callback-recover-reported", "--state-dir", harness.jobStateDir,
+        "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
+        "--idempotency-key", "final",
+      ],
+      callbackEnv("pane-agent-a", { FAKE_GUARD_SETTLE_SECONDS: "5" }),
+    );
+    expect(sent.exitCode).toBe(0);
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-reported", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_GUARD_SETTLE_SECONDS: "5" }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("final callback records already exist");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-reported", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload.watcherFallback).toBe(false);
+    expect(payload).not.toHaveProperty("watcherPid");
+  });
+
+  test("recover yields when a final callback appears during synchronous capture", async () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-report-race",
+      ["agent-a"],
+      "Report while recovery is reading.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.05",
+      },
+    ).exitCode).toBe(0);
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-recover-report-race", "job.json"),
+      "agent-a",
+    );
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "done 3\n");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-report-race", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.05",
+        FAKE_AUTO_REPORT_ON_READ_JOB: "callback-recover-report-race",
+        FAKE_HELPER: helper,
+        FAKE_JOB_STATE_DIR: harness.jobStateDir,
+        FAKE_PYTHON: findStandalonePython(),
+      }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("final callback appeared during recovery capture");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-report-race", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload.reports["agent-a"].message).toStartWith("m-");
+    expect(payload).not.toHaveProperty("recoveryMode");
+    expect(payload).not.toHaveProperty("watcherPid");
+  });
+
+  test("recover yields when the receipt changes during synchronous capture", async () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-recover-receipt-race",
+      ["agent-a"],
+      "Replace the receipt while recovery is reading.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.05",
+      },
+    ).exitCode).toBe(0);
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-recover-receipt-race", "job.json"),
+      "agent-a",
+    );
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "done 3\n");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-receipt-race", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.05",
+        FAKE_REPLACE_RECEIPT_ON_READ: "true",
+      }),
+    );
+    expect(recovered.exitCode).toBe(3);
+    expect(recovered.stderr).toContain("receipt/state changed during recovery capture");
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-recover-receipt-race", "job.json"), "utf8"));
+    expect(payload.status).toBe("running");
+    expect(payload).not.toHaveProperty("recoveryMode");
+    expect(payload).not.toHaveProperty("watcherPid");
+    expect(existsSync(join(harness.jobStateDir, "callback-recover-receipt-race", "results", "agent-a.txt"))).toBe(false);
+  });
 
   test("callback lifecycle guard emits only one wake for several missing reports", async () => {
     const harness = makeHarness();
@@ -864,6 +1359,7 @@ describe("direct-cli detached Herdr jobs", () => {
     const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-dispatch-race", "job.json"), "utf8"));
     expect(payload.status).toBe("done");
     expect(payload.summary).toBe("all target reports acknowledged");
+    expect(payload.options.callbackGuardGraceSeconds).toBe(10);
     expect(payload).not.toHaveProperty("callbackDeadlinePid");
     expect(payload).not.toHaveProperty("watcherPid");
   });
@@ -1142,16 +1638,117 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(wake).not.toContain("reason=silence-deadline");
   }, 10_000);
 
-  test("callback jobs stay running without a full watcher until explicit recover", async () => {
+  test("callback jobs stay running until explicit stable recovery capture", async () => {
     const harness = makeHarness();
     expect(callbackStart(harness, "callback-recover", ["agent-a"]).exitCode).toBe(0);
     const before = runHelper(harness, ["list", "--state-dir", harness.jobStateDir]);
     expect(before.stdout).toContain("callback-recover\trunning");
-    const recovered = runHelper(harness, ["recover", "callback-recover", "--state-dir", harness.jobStateDir]);
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-recover", "job.json"),
+      "agent-a",
+    );
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "done 3\n");
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane"),
+    );
     expect(recovered.exitCode).toBe(0);
     const payload = await waitForStatus(join(harness.jobStateDir, "callback-recover", "job.json"), "done");
-    expect(payload.watcherFallback).toBe(true);
-    expect(typeof payload.watcherPid).toBe("number");
+    expect(payload.watcherFallback).toBe(false);
+    expect(payload.recoveryMode).toBe("synchronous-capture");
+    expect(payload).not.toHaveProperty("watcherPid");
+  }, 10_000);
+
+  test("concurrent callback recovery attempts produce one terminal capture and no watcher", async () => {
+    const harness = makeHarness();
+    expect(callbackStart(
+      harness,
+      "callback-concurrent-recover",
+      ["agent-a"],
+      "Allow one recovery owner.\n",
+      "callback",
+      {
+        FAKE_GUARD_AUTO_SETTLE: "false",
+        FAKE_CALLBACK_GUARD_GRACE: "0.05",
+      },
+    ).exitCode).toBe(0);
+    await waitForGuardWorking(
+      join(harness.jobStateDir, "callback-concurrent-recover", "job.json"),
+      "agent-a",
+    );
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "done 3\n");
+    const command = [
+      findStandalonePython(), helper, "recover", "callback-concurrent-recover",
+      "--state-dir", harness.jobStateDir,
+    ];
+    const environment = {
+      FAKE_AGENT_STATE_DIR: harness.agentStateDir,
+      FAKE_CALLBACK: "true",
+      FAKE_CWD: harness.root,
+      FAKE_GUARD_AUTO_SETTLE: "false",
+      HERDR_PANE_ID: "parent-pane",
+      PATH: harness.binDir,
+    };
+    const first = Bun.spawn({ cmd: command, env: environment, stderr: "pipe", stdout: "pipe" });
+    const second = Bun.spawn({ cmd: command, env: environment, stderr: "pipe", stdout: "pipe" });
+    const exitCodes = await Promise.all([first.exited, second.exited]);
+
+    expect(exitCodes.sort()).toEqual([0, 2]);
+    const payload = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-concurrent-recover", "job.json"), "utf8"));
+    expect(payload.status).toBe("done");
+    expect(payload.recoveryMode).toBe("synchronous-capture");
+    expect(payload).not.toHaveProperty("watcherPid");
+    expect(readFileSync(join(harness.jobStateDir, "callback-concurrent-recover", "results", "agent-a.txt"), "utf8")).toBe("RESULT:agent-a\n");
+  }, 10_000);
+
+  test("successful callback recovery stops its guard and deadline processes", async () => {
+    const harness = makeHarness();
+    const promptFile = join(harness.root, "recover-cleanup.prompt.txt");
+    writeFileSync(promptFile, "Become blocked for recovery.\n");
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "idle 1\n");
+    const start = runHelper(
+      harness,
+      [
+        "start", "--job-id", "callback-recover-cleanup", "--prompt-file", promptFile,
+        "--cwd", harness.root, "--state-dir", harness.jobStateDir, "--mode", "callback",
+        "--callback-timeout", "10", "--callback-guard-grace", "0.05", "--no-notify", "agent-a",
+      ],
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(start.exitCode).toBe(0);
+    const jobPath = join(harness.jobStateDir, "callback-recover-cleanup", "job.json");
+    const activeDeadline = Date.now() + 3000;
+    let activePayload = JSON.parse(readFileSync(jobPath, "utf8"));
+    while (activePayload.callbackGuardTargets?.["agent-a"]?.status !== "active" && Date.now() < activeDeadline) {
+      await Bun.sleep(25);
+      activePayload = JSON.parse(readFileSync(jobPath, "utf8"));
+    }
+    const guardPid = activePayload.callbackGuardPid as number;
+    const deadlinePid = activePayload.callbackDeadlinePid as number;
+    expect(processExists(guardPid)).toBe(true);
+    expect(processExists(deadlinePid)).toBe(true);
+    writeFileSync(join(harness.agentStateDir, "agent-a.state"), "blocked 3\n");
+
+    const recovered = runHelper(
+      harness,
+      ["recover", "callback-recover-cleanup", "--state-dir", harness.jobStateDir],
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false" }),
+    );
+    expect(recovered.exitCode).toBe(0);
+    expect(recovered.stdout).toContain("status=attention");
+    const cleanupDeadline = Date.now() + 3000;
+    while ((processExists(guardPid) || processExists(deadlinePid)) && Date.now() < cleanupDeadline) {
+      await Bun.sleep(25);
+    }
+    const payload = JSON.parse(readFileSync(jobPath, "utf8"));
+    expect(payload.status).toBe("attention");
+    expect(payload.recoveryMode).toBe("synchronous-capture");
+    expect(payload.notification).toBe("disabled");
+    expect(processExists(guardPid)).toBe(false);
+    expect(processExists(deadlinePid)).toBe(false);
+    const wakePath = join(harness.agentStateDir, "parent-pane.wake");
+    expect(existsSync(wakePath)).toBe(false);
   }, 10_000);
 
   test("explicit callback missing target agentSession fails before prompt dispatch or job creation", () => {
