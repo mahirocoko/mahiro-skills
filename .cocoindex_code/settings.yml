@@ -7,10 +7,8 @@ exclude_patterns:
 - "**/.env.production"
 - "**/.env.test"
 - "**/.env.staging"
-- "**/.env.sample"
-- "**/.env.template"
 - "**/.envrc"
-- "**/.letta/**"
+- "**/.letta/settings.local.json"
 - "**/credentials/**"
 - "**/credential/**"
 - "**/secrets/**"
@@ -52,7 +50,6 @@ exclude_patterns:
 - "**/.pytest_cache"
 - "**/.mypy_cache"
 - "**/.ruff_cache"
-- "**/.agent-state"
 - "**/.cache"
 - "**/.next"
 - "**/.turbo"
@@ -65,6 +62,12 @@ exclude_patterns:
 - "**/*.map"
 # END MAHIRO CCC V2 MANAGED EXCLUDES
 include_patterns:
+# BEGIN MAHIRO CCC V2 MANAGED INCLUDES
+# CONTENT: safe templates admitted only after strict scanning
+- "**/.env.example"
+- "**/.env.sample"
+- "**/.env.template"
+# END MAHIRO CCC V2 MANAGED INCLUDES
 - '**/*.py'
 - '**/*.pyi'
 - '**/*.js'

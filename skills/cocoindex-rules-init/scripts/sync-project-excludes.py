@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize the portable CCC V2 deny/noise policy into project settings."""
+"""Materialize the portable CCC V2 include/deny/noise policy into project settings."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def _local_policy(root: Path, raw: str | None) -> Path | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Synchronize portable CCC V2 project excludes")
+    parser = argparse.ArgumentParser(description="Synchronize portable CCC V2 project includes and excludes")
     parser.add_argument("--project-root", default=".", help="Git project root")
     parser.add_argument("--local-policy", help="Optional deny-only path pattern file inside the project")
     parser.add_argument("--check", action="store_true", help="Check drift without writing")
@@ -65,6 +65,7 @@ def main(argv: list[str] | None = None) -> int:
             "settings": str(settings_path.relative_to(root)),
             "changed": changed,
             "check": bool(args.check),
+            "include_pattern_count": len(policy.include_patterns),
             "security_pattern_count": len(policy.security_patterns) + len(policy.exact_denies),
             "noise_pattern_count": len(policy.noise_patterns),
             "content_scan_path_count": len(policy.content_scan_paths),

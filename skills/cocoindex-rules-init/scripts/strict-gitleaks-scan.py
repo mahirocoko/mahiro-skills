@@ -508,8 +508,10 @@ def _filename_only(root: Path, local_policy: Path | None, report_path: Path, rec
     policy = build_policy(root, local_policy)
     candidates = collect_candidates(root, require_git=False)
     denied = sorted(candidate.relative_path for candidate in candidates if candidate.classification.startswith("deny-"))
-    env_examples = sorted(
-        candidate.relative_path for candidate in candidates if candidate.classification == "content-scan-env-example"
+    dotenv_templates = sorted(
+        candidate.relative_path
+        for candidate in candidates
+        if candidate.classification == "content-scan-dotenv-template"
     )
     classification_counts = Counter(candidate.classification for candidate in candidates)
     scope_sha256 = json_hash([candidate.relative_path for candidate in candidates])
@@ -532,7 +534,7 @@ def _filename_only(root: Path, local_policy: Path | None, report_path: Path, rec
         "policy": {"policy_sha256": policy.policy_sha256},
         "classification_counts": dict(sorted(classification_counts.items())),
         "derived_sensitive_paths": denied,
-        "env_example_content_scan_paths": env_examples,
+        "dotenv_template_content_scan_paths": dotenv_templates,
         "findings": [],
     }
     _write_json(report_path, payload, root)

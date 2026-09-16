@@ -9,7 +9,6 @@
 **/.pytest_cache
 **/.mypy_cache
 **/.ruff_cache
-**/.agent-state
 **/.cache
 **/.next
 **/.turbo

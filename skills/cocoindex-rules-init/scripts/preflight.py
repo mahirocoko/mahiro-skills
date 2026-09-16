@@ -57,10 +57,10 @@ def main(argv: list[str] | None = None) -> int:
         policy = build_policy(root, _local_policy(root, args.local_policy))
         candidates = collect_candidates(root, require_git=False)
         denied = [candidate.relative_path for candidate in candidates if candidate.classification.startswith("deny-")]
-        env_examples = [
+        dotenv_templates = [
             candidate.relative_path
             for candidate in candidates
-            if candidate.classification == "content-scan-env-example"
+            if candidate.classification == "content-scan-dotenv-template"
         ]
         classification_counts = Counter(candidate.classification for candidate in candidates)
         result = {
@@ -73,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
             "scope_kind": "git-candidate-regular-files-before-settings-excludes",
             "classification_counts": dict(sorted(classification_counts.items())),
             "derived_sensitive_paths": sorted(denied),
-            "env_example_content_scan_paths": sorted(env_examples),
+            "dotenv_template_content_scan_paths": sorted(dotenv_templates),
             "policy_sha256": policy.policy_sha256,
             "noise_pattern_count": len(policy.noise_patterns),
         }

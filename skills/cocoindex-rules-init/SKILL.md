@@ -58,23 +58,30 @@ make claims about external repository behavior.
 
 Use `sync-project-excludes.py` to materialize the current security and noise
 policy into the target project before search or refresh. The target project's
-`.cocoindex_code/settings.yml` is the portable enforcement
-boundary. The managed block has separate security and noise ownership:
+`.cocoindex_code/settings.yml` is the portable enforcement boundary. Managed
+include and exclude blocks have separate content, security, and noise ownership:
 
+- Content includes admit only the three explicit dotenv template filenames.
 - Credential/path denies come from the security baseline, derived exact
   filename-only paths, and optional local deny-only policy.
 - Noise/performance excludes come only from the noise baseline.
+- Portable noise rules cover reproducible dependencies, caches, generated
+  output, and index artifacts. They do not blanket-exclude `.agent-state`,
+  which can contain durable tracked learnings, retrospectives, tests, and code.
 - Local policy can add denies; it cannot remove, allow, or weaken a baseline.
 - Unrelated settings and unrelated exclude entries are preserved.
 - The managed block is written atomically and repeated synchronization is
   idempotent.
 
 The policy never blanket-denies `.json`, `.yaml`, `.yml`, `.toml`, `.xml`, or
-`.txt`. The exact filename `.env.example` is not a filename deny and is routed to
-content scanning unless an unrelated project `exclude_patterns` entry
-explicitly matches it. `.env.sample`, `.env.template`, real `.env` variants,
-and credential/key/provider paths are not auto-allowed. A filename such as
-`token-guide.md` is not denied merely because it contains a security word.
+`.txt`. The explicit dotenv template filenames `.env.example`, `.env.sample`,
+and `.env.template` are not filename denies. The managed include block admits
+them to the index only after they pass strict content scanning, unless an
+unrelated project `exclude_patterns` entry explicitly matches them. Real `.env`
+variants and credential/key/provider paths remain denied by path. Repo-local
+`.letta/settings.local.json` is denied, while other `.letta` files remain
+eligible for strict scanning. A filename such as `token-guide.md` is not denied
+merely because it contains a security word.
 
 Synchronize before indexing or refresh:
 
@@ -128,7 +135,7 @@ Useful triggers include `search the codebase`, `find where X is implemented`,
 resources, and project settings when `--check-settings` is requested. It must
 not hash, open, parse, or emit candidate source bytes. It reports the
 pre-settings Git candidate count/classification counts, derived sensitive paths,
-and the `.env.example` content-scan route, and always labels itself
+and the dotenv-template content-scan route, and always labels itself
 `filename-only` and `equivalent_to_strict: false`.
 
 The preflight scope is conservative: regular files only, no directory symlink
@@ -169,8 +176,9 @@ project excludes all participate in this boundary; excluded paths are not
 opened to prove they are excluded. The project
 `.cocoindex_code/settings.yml` is itself bound by hash even when its directory
 is excluded, while `.cocoindex_code/ccc-security/**` runtime outputs stay out
-of source scope. `.env.example` remains eligible for strict content scanning
-unless an unrelated project exclude explicitly matches it. The helper does
+of source scope. Explicit dotenv templates and durable `.agent-state` files
+remain eligible for strict content scanning unless an unrelated project exclude
+explicitly matches them. The helper does
 not scan history or follow external symlinks; final source-file symlinks are
 skipped while intermediate path and control-file symlinks fail closed. A
 mode-0700 temporary root contains mode-0600 copied snapshots, never hardlinks;
@@ -233,8 +241,9 @@ Before finishing, report:
 ## Validation / Self-check
 
 - Confirm `.cocoindex_code/settings.yml` contains the current managed V2 block.
-- Confirm structured extensions remain eligible and `.env.example` is not a deny pattern.
-- Confirm `.env.sample` and `.env.template` are not auto-allowed.
+- Confirm structured extensions and durable `.agent-state` files remain eligible.
+- Confirm `.env.example`, `.env.sample`, and `.env.template` are explicitly included for indexing and routed through strict content scanning rather than denied by path.
+- Confirm real dotenv variants, credential stores, keys, provider auth paths, and targeted local settings remain denied by path.
 - Confirm security and noise resources remain separate.
 - Confirm sync preserves unrelated settings, is atomic/idempotent, and honors `--check`.
 - Confirm malformed, missing, symlinked, and unsafe inputs fail closed.

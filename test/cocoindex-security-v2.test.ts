@@ -52,6 +52,12 @@ function makeProject() {
   mkdirSync(join(root, ".letta"), { recursive: true });
   mkdirSync(join(root, ".agent-state"), { recursive: true });
   mkdirSync(join(root, ".github"), { recursive: true });
+  mkdirSync(join(root, ".config", "gcloud"), { recursive: true });
+  mkdirSync(join(root, ".config", "gh"), { recursive: true });
+  mkdirSync(join(root, ".config", "aws"), { recursive: true });
+  mkdirSync(join(root, "credentials"), { recursive: true });
+  mkdirSync(join(root, "secrets"), { recursive: true });
+  mkdirSync(join(root, "private-keys"), { recursive: true });
   writeFileSync(join(root, ".gitignore"), ".cocoindex_code/\n", "utf8");
   writeFileSync(
     join(root, ".cocoindex_code", "settings.yml"),
@@ -74,6 +80,13 @@ function makeProject() {
   writeFileSync(join(root, ".env.example"), `${safeExample}=safe\n`, "utf8");
   writeFileSync(join(root, ".env.sample"), "PUBLIC_SAMPLE=safe\n", "utf8");
   writeFileSync(join(root, ".env.template"), "PUBLIC_TEMPLATE=safe\n", "utf8");
+  writeFileSync(join(root, ".env"), "REAL_ENV=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".env.local"), "LOCAL_ONLY=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".env.development"), "DEVELOPMENT_ONLY=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".env.production"), "PRODUCTION_ONLY=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".env.test"), "TEST_ONLY=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".env.staging"), "STAGING_ONLY=safe fixture\n", "utf8");
+  writeFileSync(join(root, ".envrc"), "ENVRC_ONLY=safe fixture\n", "utf8");
   writeFileSync(join(root, "config", "data.json"), '{"name":"safe"}\n', "utf8");
   writeFileSync(join(root, "config", "data.yaml"), "name: safe\n", "utf8");
   writeFileSync(join(root, "config", "data.toml"), "name = 'safe'\n", "utf8");
@@ -81,12 +94,19 @@ function makeProject() {
   writeFileSync(join(root, "docs", "readme.txt"), "safe text\n", "utf8");
   writeFileSync(join(root, ".claude", "settings.local.json"), '{"local":true}\n', "utf8");
   writeFileSync(join(root, ".letta", "state.json"), '{"local":true}\n', "utf8");
+  writeFileSync(join(root, ".letta", "settings.local.json"), '{"local":true}\n', "utf8");
   writeFileSync(join(root, ".agent-state", "session.txt"), "local state\n", "utf8");
   writeFileSync(join(root, ".github", "workflow.yml"), "name: safe\n", "utf8");
+  writeFileSync(join(root, ".config", "gcloud", "config.json"), '{"local":true}\n', "utf8");
+  writeFileSync(join(root, ".config", "gh", "hosts.yml"), "github: safe fixture\n", "utf8");
+  writeFileSync(join(root, ".config", "aws", "config"), "aws safe fixture\n", "utf8");
+  writeFileSync(join(root, "credentials", "local.txt"), "credential safe fixture\n", "utf8");
+  writeFileSync(join(root, "secrets", "local.txt"), "secret safe fixture\n", "utf8");
+  writeFileSync(join(root, "private-keys", "local.txt"), "key safe fixture\n", "utf8");
   writeFileSync(join(root, "keys", "id.key"), "safe fixture key path\n", "utf8");
   writeFileSync(join(root, "credentials.json"), '{"name":"safe fixture"}\n', "utf8");
   run(["git", "-C", root, "init", "--quiet"]);
-  run(["git", "-C", root, "add", "-f", "--", ".claude/settings.local.json", ".letta/state.json", ".agent-state/session.txt", ".github/workflow.yml"]);
+  run(["git", "-C", root, "add", "-f", "--", ".claude/settings.local.json", ".letta/state.json", ".letta/settings.local.json", ".agent-state/session.txt", ".github/workflow.yml"]);
   return root;
 }
 
@@ -182,11 +202,29 @@ function withProject(callback: (root: string) => void) {
 }
 
 describe("CocoIndex security V2 package", () => {
-  test("keeps structured data eligible and routes dotenv examples conservatively", () => {
+  test("keeps durable state and structured data eligible while routing dotenv templates through strict scan", () => {
     withProject((root) => {
       const sync = run(["python3", syncScript, "--project-root", root]);
       expect(sync.exitCode).toBe(0);
-      const preflight = run(["python3", preflightScript, "--project-root", root]);
+      const sourceReadTraps = [
+        ".env.example",
+        ".env.sample",
+        ".env.template",
+        ".agent-state/session.txt",
+        ".letta/state.json",
+        "config/data.json",
+      ];
+      for (const relativePath of sourceReadTraps) {
+        chmodSync(join(root, relativePath), 0o000);
+      }
+      let preflight: ProcessResult;
+      try {
+        preflight = run(["python3", preflightScript, "--project-root", root]);
+      } finally {
+        for (const relativePath of sourceReadTraps) {
+          chmodSync(join(root, relativePath), 0o640);
+        }
+      }
       expect(preflight.exitCode).toBe(0);
       const result = parseJson(preflight.stdout);
       expect(result.mode).toBe("filename-only");
@@ -194,32 +232,54 @@ describe("CocoIndex security V2 package", () => {
       expect(result.scope_kind).toBe("git-candidate-regular-files-before-settings-excludes");
       expect(result.classification_counts).toMatchObject({
         "content-scan": expect.any(Number),
-        "content-scan-env-example": 1,
+        "content-scan-dotenv-template": 3,
       });
-      expect(result.env_example_content_scan_paths).toEqual([".env.example"]);
+      expect(result.dotenv_template_content_scan_paths).toEqual([".env.example", ".env.sample", ".env.template"]);
       expect(result.derived_sensitive_paths).toEqual(
         expect.arrayContaining([
-          ".env.sample",
-          ".env.template",
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test",
+          ".env.staging",
+          ".envrc",
           ".claude/settings.local.json",
-          ".letta/state.json",
+          ".letta/settings.local.json",
+          ".config/gcloud/config.json",
+          ".config/gh/hosts.yml",
+          ".config/aws/config",
+          "credentials/local.txt",
+          "secrets/local.txt",
+          "private-keys/local.txt",
           "credentials.json",
           "keys/id.key",
         ]),
       );
+      expect(result.derived_sensitive_paths).not.toContain(".env.sample");
+      expect(result.derived_sensitive_paths).not.toContain(".env.template");
+      expect(result.derived_sensitive_paths).not.toContain(".letta/state.json");
       expect(result.derived_sensitive_paths).not.toContain("docs/token-guide.md");
       expect(result.derived_sensitive_paths).not.toContain(".github/workflow.yml");
       expect(result.derived_sensitive_paths).not.toContain(".agent-state/session.txt");
 
       const settings = readFileSync(join(root, ".cocoindex_code", "settings.yml"), "utf8");
       const excludeSection = settings.split("include_patterns:", 1)[0];
+      const includeSection = settings.split("include_patterns:", 2)[1];
       for (const broadPattern of ["**/*.json", "**/*.yaml", "**/*.yml", "**/*.toml", "**/*.xml", "**/*.txt", "**/.*", "**/*.env.*"]) {
         expect(excludeSection).not.toContain(broadPattern);
       }
-      expect(settings).toContain('include_patterns:\n- "**/*.json"');
-      expect(settings).toContain('- "**/.letta/**"');
+      expect(includeSection).toContain('- "**/*.json"');
+      expect(settings).toContain('- "**/.letta/settings.local.json"');
       expect(settings).toContain('- "**/.claude/settings.local.json"');
-      expect(settings).toContain('- "**/.agent-state"');
+      expect(settings).not.toContain('- "**/.letta/**"');
+      expect(settings).not.toContain('- "**/.agent-state"');
+      expect(excludeSection).not.toContain('- "**/.env.sample"');
+      expect(excludeSection).not.toContain('- "**/.env.template"');
+      expect(settings).toContain('# BEGIN MAHIRO CCC V2 MANAGED INCLUDES');
+      expect(settings).toContain('- "**/.env.example"');
+      expect(settings).toContain('- "**/.env.sample"');
+      expect(settings).toContain('- "**/.env.template"');
       expect(settings).toContain("custom_option: keep");
       expect(readFileSync(join(repoRoot, "skills", "cocoindex-rules-init", "resources", "portable-credential-deny-baseline.txt"), "utf8")).not.toContain("**/*.json");
     });
@@ -265,6 +325,8 @@ describe("CocoIndex security V2 package", () => {
       expect(check.exitCode).toBe(0);
       expect((readFileSync(settingsPath, "utf8").match(/BEGIN MAHIRO CCC V2 MANAGED EXCLUDES/g) ?? []).length).toBe(1);
       expect((readFileSync(settingsPath, "utf8").match(/END MAHIRO CCC V2 MANAGED EXCLUDES/g) ?? []).length).toBe(1);
+      expect((readFileSync(settingsPath, "utf8").match(/BEGIN MAHIRO CCC V2 MANAGED INCLUDES/g) ?? []).length).toBe(1);
+      expect((readFileSync(settingsPath, "utf8").match(/END MAHIRO CCC V2 MANAGED INCLUDES/g) ?? []).length).toBe(1);
       expect(statSync(settingsPath).mode & 0o777).toBe(0o640);
       expect(existsSync(join(root, ".cocoindex_code", ".settings.yml."))).toBe(false);
       writeFileSync(settingsPath, firstText.replace('**/.env"', '**/.env-changed"'), "utf8");
@@ -320,6 +382,8 @@ describe("CocoIndex security V2 package", () => {
       const settingsPath = join(root, ".cocoindex_code", "settings.yml");
       writeFileSync(settingsPath, "exclude_patterns: [\n", "utf8");
       expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+      writeFileSync(settingsPath, 'exclude_patterns:\n- "**/.git"\ninclude_patterns: [\n', "utf8");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
 
       rmSync(settingsPath, { force: true });
       const target = join(root, ".cocoindex_code", "settings-target.yml");
@@ -362,11 +426,21 @@ describe("CocoIndex security V2 package", () => {
           );
 
         const excludedReadTrapPaths = [
-          ".agent-state/session.txt",
-          ".letta/state.json",
-          ".env.sample",
-          ".env.template",
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test",
+          ".env.staging",
+          ".envrc",
+          ".letta/settings.local.json",
           ".claude/settings.local.json",
+          ".config/gcloud/config.json",
+          ".config/gh/hosts.yml",
+          ".config/aws/config",
+          "credentials/local.txt",
+          "secrets/local.txt",
+          "private-keys/local.txt",
           "credentials.json",
           "keys/id.key",
           "docs/keep-me",
@@ -393,17 +467,31 @@ describe("CocoIndex security V2 package", () => {
         expect(capture.source_nlink).toBe(1);
         const stagedFiles = capture.files as string[];
         expect(stagedFiles).toContain(".env.example");
+        expect(stagedFiles).toContain(".env.sample");
+        expect(stagedFiles).toContain(".env.template");
+        expect(stagedFiles).toContain(".agent-state/session.txt");
+        expect(stagedFiles).toContain(".letta/state.json");
         expect(stagedFiles).toContain("config/data.json");
         expect(stagedFiles).toContain("config/data.yaml");
         expect(stagedFiles).toContain("config/data.toml");
         expect(stagedFiles).toContain("config/data.xml");
         expect(stagedFiles).toContain("docs/readme.txt");
         expect(stagedFiles).not.toContain("docs/keep-me");
-        expect(stagedFiles).not.toContain(".agent-state/session.txt");
-        expect(stagedFiles).not.toContain(".letta/state.json");
-        expect(stagedFiles).not.toContain(".env.sample");
-        expect(stagedFiles).not.toContain(".env.template");
+        expect(stagedFiles).not.toContain(".env");
+        expect(stagedFiles).not.toContain(".env.local");
+        expect(stagedFiles).not.toContain(".env.development");
+        expect(stagedFiles).not.toContain(".env.production");
+        expect(stagedFiles).not.toContain(".env.test");
+        expect(stagedFiles).not.toContain(".env.staging");
+        expect(stagedFiles).not.toContain(".envrc");
+        expect(stagedFiles).not.toContain(".letta/settings.local.json");
         expect(stagedFiles).not.toContain(".claude/settings.local.json");
+        expect(stagedFiles).not.toContain(".config/gcloud/config.json");
+        expect(stagedFiles).not.toContain(".config/gh/hosts.yml");
+        expect(stagedFiles).not.toContain(".config/aws/config");
+        expect(stagedFiles).not.toContain("credentials/local.txt");
+        expect(stagedFiles).not.toContain("secrets/local.txt");
+        expect(stagedFiles).not.toContain("private-keys/local.txt");
         expect(stagedFiles).not.toContain("credentials.json");
         expect(stagedFiles).not.toContain("keys/id.key");
         expect(stagedFiles).not.toContain(".cocoindex_code/settings.yml");

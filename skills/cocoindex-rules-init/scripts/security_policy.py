@@ -32,9 +32,12 @@ MAX_EXCLUDE_PATTERN_BYTES = 512
 
 MANAGED_BEGIN = "# BEGIN MAHIRO CCC V2 MANAGED EXCLUDES"
 MANAGED_END = "# END MAHIRO CCC V2 MANAGED EXCLUDES"
+MANAGED_INCLUDE_BEGIN = "# BEGIN MAHIRO CCC V2 MANAGED INCLUDES"
+MANAGED_INCLUDE_END = "# END MAHIRO CCC V2 MANAGED INCLUDES"
 SECURITY_HEADER = "# SECURITY: portable credential/path denies; local policy may only add denies"
 NOISE_HEADER = "# NOISE: portable performance exclusions; not a security policy"
 DERIVED_HEADER = "# SECURITY: filename-only derived exact paths"
+CONTENT_SCAN_INCLUDE_HEADER = "# CONTENT: safe templates admitted only after strict scanning"
 
 RESOURCE_DIR = Path(__file__).resolve().parent.parent / "resources"
 CREDENTIAL_BASELINE = RESOURCE_DIR / "portable-credential-deny-baseline.txt"
@@ -66,14 +69,18 @@ SENSITIVE_DIRECTORY_NAMES = frozenset(
         "private-keys",
         "private_keys",
         "keyring",
-        ".letta",
         ".aws",
         ".azure",
         ".docker",
         ".kube",
     }
 )
-SENSITIVE_EXACT_PATHS = frozenset({(".claude", "settings.local.json")})
+SENSITIVE_EXACT_PATHS = frozenset(
+    {
+        (".claude", "settings.local.json"),
+        (".letta", "settings.local.json"),
+    }
+)
 SENSITIVE_PROVIDER_PATHS = frozenset(
     {
         (".config", "gcloud"),
@@ -103,6 +110,8 @@ SENSITIVE_BASENAMES = frozenset(
     }
 )
 SENSITIVE_SUFFIXES = frozenset({".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".der"})
+DOTENV_TEMPLATE_BASENAMES = frozenset({".env.example", ".env.sample", ".env.template"})
+DOTENV_TEMPLATE_INCLUDE_PATTERNS = tuple(f"**/{name}" for name in sorted(DOTENV_TEMPLATE_BASENAMES))
 NOISE_FALLBACK_DIRECTORIES = frozenset(
     {
         ".git",
@@ -112,7 +121,6 @@ NOISE_FALLBACK_DIRECTORIES = frozenset(
         ".pytest_cache",
         ".mypy_cache",
         ".ruff_cache",
-        ".agent-state",
         ".cache",
         ".next",
         ".turbo",
@@ -182,6 +190,7 @@ class Candidate:
 
 @dataclass(frozen=True)
 class PolicySnapshot:
+    include_patterns: tuple[str, ...]
     security_patterns: tuple[str, ...]
     noise_patterns: tuple[str, ...]
     exact_denies: tuple[str, ...]
@@ -557,10 +566,10 @@ def _classify_filename(relative_path: str) -> str:
     lowered_parts = tuple(part.lower() for part in relative_path.split("/"))
     basename = lowered_parts[-1]
 
-    # This one exact filename is intentionally allowed through filename
-    # filtering and must be content-scanned by strict mode.
-    if basename == ".env.example":
-        return "content-scan-env-example"
+    # These explicit template filenames are intentionally allowed through
+    # filename filtering and must be content-scanned by strict mode.
+    if basename in DOTENV_TEMPLATE_BASENAMES:
+        return "content-scan-dotenv-template"
     if basename == ".env" or basename.startswith(".env.") or basename == ".envrc":
         return "deny-dotenv"
     if len(lowered_parts) >= 2 and lowered_parts[-2:] in SENSITIVE_EXACT_PATHS:
@@ -627,11 +636,12 @@ def build_policy(project_root: Path, local_policy_path: Path | None = None) -> P
     content_scan_paths = tuple(
         candidate.relative_path
         for candidate in candidates
-        if candidate.classification == "content-scan-env-example"
+        if candidate.classification == "content-scan-dotenv-template"
     )
     all_security = _dedupe((*security, *local_patterns))
     policy_payload = {
         "schema": SCHEMA_VERSION,
+        "includes": DOTENV_TEMPLATE_INCLUDE_PATTERNS,
         "security": all_security,
         "exact_denies": exact_denies,
         "noise": noise,
@@ -641,6 +651,7 @@ def build_policy(project_root: Path, local_policy_path: Path | None = None) -> P
         [json.dumps(policy_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")]
     )
     return PolicySnapshot(
+        include_patterns=DOTENV_TEMPLATE_INCLUDE_PATTERNS,
         security_patterns=all_security,
         noise_patterns=noise,
         exact_denies=_dedupe(exact_denies),
@@ -678,31 +689,31 @@ def _root_key(line: str) -> str | None:
     return match.group(1) if match else None
 
 
-def _remove_managed_block(lines: list[str]) -> list[str]:
-    begins = [index for index, line in enumerate(lines) if line.strip() == MANAGED_BEGIN]
-    ends = [index for index, line in enumerate(lines) if line.strip() == MANAGED_END]
+def _remove_managed_block(lines: list[str], begin: str, end: str, label: str) -> list[str]:
+    begins = [index for index, line in enumerate(lines) if line.strip() == begin]
+    ends = [index for index, line in enumerate(lines) if line.strip() == end]
     if len(begins) > 1 or len(ends) > 1 or len(begins) != len(ends):
-        raise PolicyError("malformed managed exclusion block")
+        raise PolicyError(f"malformed managed {label} block")
     if not begins:
         return lines
     if ends[0] <= begins[0]:
-        raise PolicyError("malformed managed exclusion block")
+        raise PolicyError(f"malformed managed {label} block")
     return lines[: begins[0]] + lines[ends[0] + 1 :]
 
 
-def _find_exclude_section(lines: Sequence[str]) -> tuple[int | None, int | None, str]:
+def _find_pattern_section(lines: Sequence[str], key_name: str) -> tuple[int | None, int | None, str]:
     keys = [(index, _root_key(line)) for index, line in enumerate(lines)]
-    exclude_keys = [index for index, key in keys if key == "exclude_patterns"]
-    if len(exclude_keys) > 1:
-        raise PolicyError("malformed settings: duplicate exclude_patterns")
-    if not exclude_keys:
+    section_keys = [index for index, key in keys if key == key_name]
+    if len(section_keys) > 1:
+        raise PolicyError(f"malformed settings: duplicate {key_name}")
+    if not section_keys:
         return None, None, ""
-    start = exclude_keys[0]
+    start = section_keys[0]
     inline = lines[start].split(":", 1)[1].strip()
     if inline:
         if inline not in {"[]"}:
-            raise PolicyError("malformed settings: inline exclude_patterns is unsupported")
-        raise PolicyError("malformed settings: exclude_patterns must be a list block")
+            raise PolicyError(f"malformed settings: inline {key_name} is unsupported")
+        raise PolicyError(f"malformed settings: {key_name} must be a list block")
     end = len(lines)
     for index in range(start + 1, len(lines)):
         if _root_key(lines[index]) is not None:
@@ -714,10 +725,14 @@ def _find_exclude_section(lines: Sequence[str]) -> tuple[int | None, int | None,
         if not stripped or stripped.startswith("#"):
             continue
         if _parse_pattern_line(line) is None:
-            raise PolicyError("malformed settings: exclude_patterns must contain path list items")
+            raise PolicyError(f"malformed settings: {key_name} must contain path list items")
         if not indent:
             indent = line[: len(line) - len(line.lstrip(" "))]
     return start, end, indent
+
+
+def _find_exclude_section(lines: Sequence[str]) -> tuple[int | None, int | None, str]:
+    return _find_pattern_section(lines, "exclude_patterns")
 
 
 def _validate_settings_exclude_pattern(pattern: str, line_number: int) -> str:
@@ -772,6 +787,14 @@ def _render_managed_block(policy: PolicySnapshot, indent: str) -> list[str]:
     return lines
 
 
+def _render_managed_include_block(policy: PolicySnapshot, indent: str) -> list[str]:
+    lines = [f"{indent}{MANAGED_INCLUDE_BEGIN}", f"{indent}{CONTENT_SCAN_INCLUDE_HEADER}"]
+    for pattern in policy.include_patterns:
+        lines.append(f"{indent}- {json.dumps(pattern, ensure_ascii=False)}")
+    lines.append(f"{indent}{MANAGED_INCLUDE_END}")
+    return lines
+
+
 def materialize_settings(settings_text: str, policy: PolicySnapshot) -> str:
     if "\x00" in settings_text or "\t" in settings_text:
         raise PolicyError("malformed settings: NUL or tab is not accepted")
@@ -779,7 +802,8 @@ def materialize_settings(settings_text: str, policy: PolicySnapshot) -> str:
     lines = settings_text.replace("\r\n", "\n").split("\n")
     if had_final_newline:
         lines = lines[:-1]
-    lines = _remove_managed_block(lines)
+    lines = _remove_managed_block(lines, MANAGED_BEGIN, MANAGED_END, "exclusion")
+    lines = _remove_managed_block(lines, MANAGED_INCLUDE_BEGIN, MANAGED_INCLUDE_END, "include")
     start, end, indent = _find_exclude_section(lines)
     managed_patterns = set((*policy.security_patterns, *policy.exact_denies, *policy.noise_patterns))
     managed_patterns.update(LEGACY_BROAD_EXCLUDES)
@@ -798,6 +822,23 @@ def materialize_settings(settings_text: str, policy: PolicySnapshot) -> str:
         if lines and lines[-1].strip():
             lines.append("")
         lines.extend(["exclude_patterns:", *_render_managed_block(policy, "")])
+
+    include_start, include_end, include_indent = _find_pattern_section(lines, "include_patterns")
+    managed_includes = set(policy.include_patterns)
+    if include_start is not None and include_end is not None:
+        include_body = lines[include_start + 1 : include_end]
+        filtered_include_body: list[str] = []
+        for line in include_body:
+            parsed = _parse_pattern_line(line)
+            if parsed is not None and parsed in managed_includes:
+                continue
+            filtered_include_body.append(line)
+        include_block = _render_managed_include_block(policy, include_indent)
+        lines = lines[: include_start + 1] + include_block + filtered_include_body + lines[include_end:]
+    else:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.extend(["include_patterns:", *_render_managed_include_block(policy, "")])
 
     rendered = "\n".join(lines)
     if had_final_newline or rendered:
