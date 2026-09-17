@@ -26,7 +26,8 @@ GITLEAKS_VERSION = "8.30.1"
 GITLEAKS_LICENSE = "MIT"
 GITLEAKS_ARCHIVE_SHA256 = "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5"
 MAX_POLICY_BYTES = 2 * 1024 * 1024
-MAX_SOURCE_FILE_BYTES = 10 * 1024 * 1024
+MAX_FILE_SIZE_CAP = 5 * 1024 * 1024
+MAX_SOURCE_FILE_BYTES = MAX_FILE_SIZE_CAP
 GIT_COMMAND_TIMEOUT_SECONDS = 10
 MAX_EXCLUDE_PATTERN_BYTES = 512
 
@@ -197,6 +198,7 @@ class PolicySnapshot:
     content_scan_paths: tuple[str, ...]
     local_policy_sha256: str
     policy_sha256: str
+    max_file_size: int = MAX_FILE_SIZE_CAP
 
     @property
     def all_managed_patterns(self) -> tuple[str, ...]:
@@ -523,10 +525,7 @@ def _fallback_candidate_names(project_root: Path) -> list[str]:
             except OSError as exc:
                 raise PolicyError("cannot inspect project filename") from exc
             if is_link:
-                # A final source symlink is not a source file. Skip it without
-                # following the target; a Git candidate crossing a symlinked
-                # intermediate path is rejected by _validate_candidate_path.
-                continue
+                raise PolicyError("symlinked project candidate is not accepted")
             if entry.is_dir(follow_symlinks=False):
                 stack.append(Path(relative))
             elif entry.is_file(follow_symlinks=False):
@@ -536,7 +535,7 @@ def _fallback_candidate_names(project_root: Path) -> list[str]:
     return sorted(set(names))
 
 
-def _validate_candidate_path(project_root: Path, relative_path: str) -> Path | None:
+def _validate_candidate_path(project_root: Path, relative_path: str) -> Path:
     relative = _safe_relative_path(relative_path)
     current = project_root
     parts = relative.split("/")
@@ -549,16 +548,14 @@ def _validate_candidate_path(project_root: Path, relative_path: str) -> Path | N
         except OSError as exc:
             raise PolicyError("cannot inspect project candidate") from exc
         if stat.S_ISLNK(info.st_mode):
-            if index == len(parts) - 1:
-                return None
             raise PolicyError("symlinked project candidate is not accepted")
         if index < len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
             raise PolicyError("candidate path crosses a non-directory")
     final_info = os.lstat(current)
     if stat.S_ISLNK(final_info.st_mode):
-        return None
+        raise PolicyError("symlinked project candidate is not accepted")
     if not stat.S_ISREG(final_info.st_mode):
-        return None
+        raise PolicyError("unsafe non-regular project candidate")
     return current
 
 
@@ -614,8 +611,6 @@ def collect_candidates(
     candidates: list[Candidate] = []
     for name in names:
         absolute = _validate_candidate_path(project_root, name)
-        if absolute is None:
-            continue
         candidates.append(Candidate(name, absolute, _classify_filename(name)))
     return tuple(candidates)
 
@@ -639,6 +634,16 @@ def build_policy(project_root: Path, local_policy_path: Path | None = None) -> P
         if candidate.classification == "content-scan-dotenv-template"
     )
     all_security = _dedupe((*security, *local_patterns))
+
+    settings_file = project_settings_path(project_root)
+    if settings_file.exists() or settings_file.is_symlink():
+        _, settings_text, _ = read_project_settings(project_root)
+        lines = settings_text.replace("\r\n", "\n").split("\n")
+        _validate_chunkers(lines)
+        effective_max_file_size, _, _ = extract_settings_max_file_size(settings_text)
+    else:
+        effective_max_file_size = MAX_FILE_SIZE_CAP
+
     policy_payload = {
         "schema": SCHEMA_VERSION,
         "includes": DOTENV_TEMPLATE_INCLUDE_PATTERNS,
@@ -646,6 +651,7 @@ def build_policy(project_root: Path, local_policy_path: Path | None = None) -> P
         "exact_denies": exact_denies,
         "noise": noise,
         "local_policy_sha256": local_policy_sha256,
+        "max_file_size": effective_max_file_size,
     }
     policy_sha256 = _hash_bytes(
         [json.dumps(policy_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")]
@@ -658,6 +664,7 @@ def build_policy(project_root: Path, local_policy_path: Path | None = None) -> P
         content_scan_paths=content_scan_paths,
         local_policy_sha256=local_policy_sha256,
         policy_sha256=policy_sha256,
+        max_file_size=effective_max_file_size,
     )
 
 
@@ -699,6 +706,107 @@ def _remove_managed_block(lines: list[str], begin: str, end: str, label: str) ->
     if ends[0] <= begins[0]:
         raise PolicyError(f"malformed managed {label} block")
     return lines[: begins[0]] + lines[ends[0] + 1 :]
+
+
+_FILE_SIZE_UNITS: dict[str, int] = {
+    "B": 1,
+    "KB": 1024,
+    "MB": 1024 * 1024,
+    "GB": 1024 * 1024 * 1024,
+}
+
+
+def parse_max_file_size(value: object) -> int:
+    """Parse and validate a max_file_size setting value into positive bytes.
+
+    Fails closed on non-positive, boolean, or malformed values.
+    """
+    if isinstance(value, bool):
+        raise PolicyError("malformed settings: max_file_size must be a positive integer")
+    if isinstance(value, int):
+        size = value
+    elif isinstance(value, float):
+        if not value.is_integer():
+            raise PolicyError("malformed settings: max_file_size must be an integer byte count")
+        size = int(value)
+    elif isinstance(value, str):
+        text = value.strip()
+        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+            text = text[1:-1].strip()
+        if not text:
+            raise PolicyError("malformed settings: max_file_size cannot be empty")
+        upper_text = text.upper()
+        multiplier = 1
+        number_str = text
+        for suffix in ("GB", "MB", "KB", "B"):
+            if upper_text.endswith(suffix):
+                number_str = text[: -len(suffix)].strip()
+                multiplier = _FILE_SIZE_UNITS[suffix]
+                break
+        try:
+            val_float = float(number_str)
+            size = int(val_float * multiplier)
+        except (ValueError, OverflowError) as exc:
+            raise PolicyError(f"malformed settings: invalid max_file_size {value!r}") from exc
+    else:
+        raise PolicyError("malformed settings: invalid max_file_size")
+
+    if size <= 0:
+        raise PolicyError("malformed settings: max_file_size must be a positive integer")
+    return size
+
+
+def extract_settings_max_file_size(settings_text: str) -> tuple[int, bool, int | None]:
+    """Inspect max_file_size in settings text.
+
+    Returns:
+        (effective_max_file_size, is_present, raw_size_or_none)
+    """
+    if "\x00" in settings_text or "\t" in settings_text:
+        raise PolicyError("malformed settings: NUL or tab is not accepted")
+    lines = settings_text.replace("\r\n", "\n").split("\n")
+    keys = [(index, _root_key(line)) for index, line in enumerate(lines)]
+    matching = [index for index, key in keys if key == "max_file_size"]
+    if len(matching) > 1:
+        raise PolicyError("malformed settings: duplicate max_file_size")
+    if not matching:
+        return MAX_FILE_SIZE_CAP, False, None
+    idx = matching[0]
+    line = lines[idx]
+    raw_val, _ = _split_settings_scalar(line.split(":", 1)[1])
+    if not raw_val:
+        raise PolicyError("malformed settings: max_file_size cannot be empty")
+    parsed = parse_max_file_size(raw_val)
+    effective = min(parsed, MAX_FILE_SIZE_CAP)
+    return effective, True, parsed
+
+
+def _split_settings_scalar(raw: str) -> tuple[str, str]:
+    """Split a root scalar from a YAML-style whitespace-prefixed comment."""
+
+    for index, char in enumerate(raw):
+        if char != "#" or (index > 0 and not raw[index - 1].isspace()):
+            continue
+        before = raw[:index]
+        spacing = before[len(before.rstrip()) :]
+        return before.strip(), f"{spacing or ' '}{raw[index:]}"
+    return raw.strip(), ""
+
+
+def _validate_chunkers(lines: Sequence[str]) -> None:
+    keys = [(index, _root_key(line)) for index, line in enumerate(lines)]
+    matching = [index for index, key in keys if key == "chunkers"]
+    if len(matching) > 1:
+        raise PolicyError("malformed settings: duplicate chunkers")
+    if not matching:
+        return
+    start = matching[0]
+    line = lines[start]
+    inline, _ = _split_settings_scalar(line.split(":", 1)[1])
+    if inline not in {"[]", "{}", "''", '""'}:
+        raise PolicyError(
+            "malformed settings: chunkers must be omitted or an explicit empty list, map, or string"
+        )
 
 
 def _find_pattern_section(lines: Sequence[str], key_name: str) -> tuple[int | None, int | None, str]:
@@ -757,6 +865,8 @@ def extract_exclude_patterns(settings_text: str) -> tuple[str, ...]:
     lines = settings_text.replace("\r\n", "\n").split("\n")
     if had_final_newline:
         lines = lines[:-1]
+    _validate_chunkers(lines)
+    extract_settings_max_file_size(settings_text)
     start, end, _ = _find_exclude_section(lines)
     if start is None or end is None:
         raise PolicyError("malformed settings: exclude_patterns is required")
@@ -802,9 +912,29 @@ def materialize_settings(settings_text: str, policy: PolicySnapshot) -> str:
     lines = settings_text.replace("\r\n", "\n").split("\n")
     if had_final_newline:
         lines = lines[:-1]
+    _, _, original_exclude_indent = _find_exclude_section(lines)
+    _, _, original_include_indent = _find_pattern_section(lines, "include_patterns")
     lines = _remove_managed_block(lines, MANAGED_BEGIN, MANAGED_END, "exclusion")
     lines = _remove_managed_block(lines, MANAGED_INCLUDE_BEGIN, MANAGED_INCLUDE_END, "include")
+
+    _validate_chunkers(lines)
+    _, has_mfs, raw_mfs = extract_settings_max_file_size(settings_text)
+    keys = [(index, _root_key(line)) for index, line in enumerate(lines)]
+    mfs_indices = [index for index, key in keys if key == "max_file_size"]
+    if has_mfs and mfs_indices:
+        mfs_idx = mfs_indices[0]
+        if raw_mfs is not None and raw_mfs > MAX_FILE_SIZE_CAP:
+            _, comment = _split_settings_scalar(lines[mfs_idx].split(":", 1)[1])
+            lines[mfs_idx] = f"max_file_size: {MAX_FILE_SIZE_CAP}{comment}"
+    else:
+        start_ex, _, _ = _find_exclude_section(lines)
+        if start_ex is not None:
+            lines.insert(start_ex, f"max_file_size: {MAX_FILE_SIZE_CAP}")
+        else:
+            lines.insert(0, f"max_file_size: {MAX_FILE_SIZE_CAP}")
+
     start, end, indent = _find_exclude_section(lines)
+    indent = indent or original_exclude_indent
     managed_patterns = set((*policy.security_patterns, *policy.exact_denies, *policy.noise_patterns))
     managed_patterns.update(LEGACY_BROAD_EXCLUDES)
 
@@ -824,6 +954,7 @@ def materialize_settings(settings_text: str, policy: PolicySnapshot) -> str:
         lines.extend(["exclude_patterns:", *_render_managed_block(policy, "")])
 
     include_start, include_end, include_indent = _find_pattern_section(lines, "include_patterns")
+    include_indent = include_indent or original_include_indent
     managed_includes = set(policy.include_patterns)
     if include_start is not None and include_end is not None:
         include_body = lines[include_start + 1 : include_end]
@@ -941,14 +1072,33 @@ def hash_file(
     return digest.hexdigest(), size
 
 
-def source_manifest(candidates: Sequence[Candidate]) -> tuple[str, str, int, int]:
+def filter_candidates_by_max_file_size(
+    candidates: Sequence[Candidate], max_bytes: int
+) -> tuple[Candidate, ...]:
+    """Exclude files outside the upstream-consumed project size boundary."""
+
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
+        raise PolicyError("candidate file-size limit must be a positive integer")
+    accepted: list[Candidate] = []
+    for candidate in candidates:
+        info = _assert_regular_not_symlink(candidate.absolute_path, candidate.relative_path)
+        if info.st_size <= max_bytes:
+            accepted.append(candidate)
+    return tuple(accepted)
+
+
+def source_manifest(
+    candidates: Sequence[Candidate], max_bytes: int = MAX_SOURCE_FILE_BYTES
+) -> tuple[str, str, int, int]:
     """Return scope hash, content hash, count, and total bytes without exposing bytes."""
 
     scope_digest = hashlib.sha256()
     content_digest = hashlib.sha256()
     total_bytes = 0
     for candidate in candidates:
-        source_hash, size = hash_file(candidate.absolute_path, candidate.relative_path)
+        source_hash, size = hash_file(
+            candidate.absolute_path, candidate.relative_path, max_bytes=max_bytes
+        )
         encoded_path = candidate.relative_path.encode("utf-8")
         scope_digest.update(encoded_path + b"\0")
         scope_digest.update(str(size).encode("ascii") + b"\0")
@@ -1085,4 +1235,5 @@ def scanner_contract_metadata(
         "settings_sha256": settings_sha256,
         "policy_sha256": policy.policy_sha256,
         "local_policy_sha256": policy.local_policy_sha256,
+        "max_file_size": policy.max_file_size,
     }

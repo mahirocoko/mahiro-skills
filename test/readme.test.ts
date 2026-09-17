@@ -105,7 +105,7 @@ describe("README", () => {
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("The canonical catalog is default-or-absent");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
-    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with a portable project settings boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
+    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with a portable project settings boundary (5 MiB cap, chunkers rejection), candidate symlink fail-closed boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");

@@ -329,7 +329,26 @@ describe("CocoIndex security V2 package", () => {
       expect((readFileSync(settingsPath, "utf8").match(/END MAHIRO CCC V2 MANAGED INCLUDES/g) ?? []).length).toBe(1);
       expect(statSync(settingsPath).mode & 0o777).toBe(0o640);
       expect(existsSync(join(root, ".cocoindex_code", ".settings.yml."))).toBe(false);
-      writeFileSync(settingsPath, firstText.replace('**/.env"', '**/.env-changed"'), "utf8");
+
+      writeFileSync(
+        settingsPath,
+        [
+          "include_patterns:",
+          '  - "**/*.py"',
+          "exclude_patterns:",
+          '  - "**/.git"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      const includeFirstText = readFileSync(settingsPath, "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toBe(includeFirstText);
+
+      const driftBase = readFileSync(settingsPath, "utf8");
+      writeFileSync(settingsPath, driftBase.replace('**/.env"', '**/.env-changed"'), "utf8");
       expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(1);
     });
   });
@@ -342,8 +361,8 @@ describe("CocoIndex security V2 package", () => {
       symlinkSync(join(root, "docs", "token-guide.md"), trackedLink);
       expect(run(["git", "-C", root, "add", "--", "tracked-link.md"]).exitCode).toBe(0);
       const symlinkPreflight = run(["python3", preflightScript, "--project-root", root]);
-      expect(symlinkPreflight.exitCode).toBe(0);
-      expect(parseJson(symlinkPreflight.stdout).derived_sensitive_paths).not.toContain("unsafe-link.md");
+      expect(symlinkPreflight.exitCode).toBe(2);
+      expect(symlinkPreflight.stderr).toContain("symlinked project candidate is not accepted");
       rmSync(unsafeCandidate, { force: true });
       rmSync(trackedLink, { force: true });
       expect(run(["git", "-C", root, "update-index", "--force-remove", "tracked-link.md"]).exitCode).toBe(0);
@@ -659,5 +678,397 @@ describe("CocoIndex security V2 package", () => {
       expect(blockedReport).toContain('"mode": "strict"');
       expect(blockedReport).not.toContain("DO_NOT_EMIT");
     });
+  });
+
+  test("fails closed on candidate symlinks across Git and non-Git fallback paths with non-secret errors", () => {
+    withProject((root) => {
+      // 1. Untracked file symlink in Git
+      const fileSymlink = join(root, "untracked-symlink.txt");
+      symlinkSync(join(root, "docs", "token-guide.md"), fileSymlink);
+      const untrackedPreflight = run(["python3", preflightScript, "--project-root", root]);
+      expect(untrackedPreflight.exitCode).toBe(2);
+      expect(untrackedPreflight.stderr).toContain("symlinked project candidate is not accepted");
+      expect(untrackedPreflight.stderr).not.toContain("token-guide");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+      expect(run(["python3", strictScript, "filename-only", "--project-root", root]).exitCode).toBe(2);
+      expect(run(["python3", strictScript, "check", "--project-root", root]).exitCode).toBe(2);
+      rmSync(fileSymlink, { force: true });
+
+      // 2. Tracked file symlink in Git
+      const trackedSymlink = join(root, "tracked-symlink.txt");
+      symlinkSync(join(root, "docs", "token-guide.md"), trackedSymlink);
+      expect(run(["git", "-C", root, "add", "--", "tracked-symlink.txt"]).exitCode).toBe(0);
+      const trackedPreflight = run(["python3", preflightScript, "--project-root", root]);
+      expect(trackedPreflight.exitCode).toBe(2);
+      expect(trackedPreflight.stderr).toContain("symlinked project candidate is not accepted");
+      rmSync(trackedSymlink, { force: true });
+      expect(run(["git", "-C", root, "update-index", "--force-remove", "tracked-symlink.txt"]).exitCode).toBe(0);
+
+      // 3. Untracked directory symlink in Git
+      const dirSymlink = join(root, "dir-symlink");
+      symlinkSync(join(root, "docs"), dirSymlink);
+      const dirPreflight = run(["python3", preflightScript, "--project-root", root]);
+      expect(dirPreflight.exitCode).toBe(2);
+      expect(dirPreflight.stderr).toContain("symlinked project candidate is not accepted");
+      rmSync(dirSymlink, { force: true });
+
+      // 4. Tracked directory symlink in Git
+      const trackedDirSymlink = join(root, "tracked-dir-symlink");
+      symlinkSync(join(root, "docs"), trackedDirSymlink);
+      expect(run(["git", "-C", root, "add", "--", "tracked-dir-symlink"]).exitCode).toBe(0);
+      const trackedDirPreflight = run(["python3", preflightScript, "--project-root", root]);
+      expect(trackedDirPreflight.exitCode).toBe(2);
+      expect(trackedDirPreflight.stderr).toContain("symlinked project candidate is not accepted");
+      rmSync(trackedDirSymlink, { force: true });
+      expect(run(["git", "-C", root, "update-index", "--force-remove", "tracked-dir-symlink"]).exitCode).toBe(0);
+
+      // 5. Non-Git fallback path
+      const nonGitRoot = mkdtempSync(join(tmpdir(), "mahiro-ccc-nongit-"));
+      try {
+        mkdirSync(join(nonGitRoot, "docs"), { recursive: true });
+        writeFileSync(join(nonGitRoot, "docs", "readme.txt"), "regular content\n", "utf8");
+
+        // Clean non-git preflight succeeds
+        expect(run(["python3", preflightScript, "--project-root", nonGitRoot]).exitCode).toBe(0);
+
+        // Fallback file symlink fails closed
+        const fallbackFileLink = join(nonGitRoot, "docs", "link.txt");
+        symlinkSync(join(nonGitRoot, "docs", "readme.txt"), fallbackFileLink);
+        const fallbackFileRes = run(["python3", preflightScript, "--project-root", nonGitRoot]);
+        expect(fallbackFileRes.exitCode).toBe(2);
+        expect(fallbackFileRes.stderr).toContain("symlinked project candidate is not accepted");
+        rmSync(fallbackFileLink, { force: true });
+
+        // Fallback directory symlink fails closed
+        const fallbackDirLink = join(nonGitRoot, "docs-link");
+        symlinkSync(join(nonGitRoot, "docs"), fallbackDirLink);
+        const fallbackDirRes = run(["python3", preflightScript, "--project-root", nonGitRoot]);
+        expect(fallbackDirRes.exitCode).toBe(2);
+        expect(fallbackDirRes.stderr).toContain("symlinked project candidate is not accepted");
+        rmSync(fallbackDirLink, { force: true });
+
+        // Clean again passes
+        expect(run(["python3", preflightScript, "--project-root", nonGitRoot]).exitCode).toBe(0);
+      } finally {
+        rmSync(nonGitRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
+  test("hardened profile rejects non-empty chunkers while preserving empty chunkers and unrelated keys", () => {
+    withProject((root) => {
+      const settingsPath = join(root, ".cocoindex_code", "settings.yml");
+      const baseSettings = readFileSync(settingsPath, "utf8");
+
+      // 1. Rejects non-empty chunkers list
+      writeFileSync(
+        settingsPath,
+        [
+          "chunkers:",
+          '  - ext: ".py"',
+          '    module: "arbitrary.evil:chunker"',
+          baseSettings,
+        ].join("\n"),
+        "utf8",
+      );
+      const rejectList = run(["python3", syncScript, "--project-root", root]);
+      expect(rejectList.exitCode).toBe(2);
+      expect(rejectList.stderr).toContain("chunkers must be omitted");
+
+      // 2. Rejects inline list chunkers
+      writeFileSync(
+        settingsPath,
+        ["chunkers: ['evil:chunker']", baseSettings].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // 3. Rejects scalar chunkers
+      writeFileSync(
+        settingsPath,
+        ["chunkers: evil.module", baseSettings].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // 4. Rejects mapping chunkers
+      writeFileSync(
+        settingsPath,
+        ["chunkers:", "  py: evil.module", baseSettings].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // 5. Rejects duplicate chunkers key
+      writeFileSync(
+        settingsPath,
+        ["chunkers: []", "chunkers: []", baseSettings].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // YAML strings and nested scalar tokens are not empty chunker collections upstream.
+      for (const unsupported of [
+        ["chunkers: None"],
+        ["chunkers: null"],
+        ["chunkers: ~"],
+        ["chunkers:", "  # no custom chunkers"],
+        ["chunkers:", "  []"],
+        ["chunkers:", "  null"],
+      ]) {
+        writeFileSync(settingsPath, [...unsupported, baseSettings].join("\n"), "utf8");
+        expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+      }
+
+      // 6. Preserves empty chunkers: [] and unrelated keys
+      writeFileSync(
+        settingsPath,
+        ["chunkers: []", "custom_option: keep_unrelated", "exclude_patterns:", '- "**/.git"'].join("\n"),
+        "utf8",
+      );
+      const syncEmptyList = run(["python3", syncScript, "--project-root", root]);
+      expect(syncEmptyList.exitCode).toBe(0);
+      const syncedText = readFileSync(settingsPath, "utf8");
+      expect(syncedText).toContain("chunkers: []");
+      expect(syncedText).toContain("custom_option: keep_unrelated");
+      // Idempotence check
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toBe(syncedText);
+
+      // 7. Preserves empty chunkers: {}
+      writeFileSync(
+        settingsPath,
+        ["chunkers: {}", "custom_option: keep_unrelated", "exclude_patterns:", '- "**/.git"'].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("chunkers: {}");
+
+      // 8. Preserves explicit empty string forms accepted by upstream.
+      writeFileSync(
+        settingsPath,
+        ["chunkers: ''", "custom_option: keep_unrelated", "exclude_patterns:", '- "**/.git"'].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("chunkers: ''");
+
+      writeFileSync(
+        settingsPath,
+        ['chunkers: ""', "custom_option: keep_unrelated", "exclude_patterns:", '- "**/.git"'].join("\n"),
+        "utf8",
+      );
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain('chunkers: ""');
+    });
+  });
+
+  test("enforces finite 5 MiB max_file_size cap and preserves stricter positive values", () => {
+    withProject((root) => {
+      const settingsPath = join(root, ".cocoindex_code", "settings.yml");
+
+      // 1. Absent max_file_size: check detects drift, sync creates 5 MiB cap, check passes
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(1);
+      const syncFirst = run(["python3", syncScript, "--project-root", root]);
+      expect(syncFirst.exitCode).toBe(0);
+      const syncedText = readFileSync(settingsPath, "utf8");
+      expect(syncedText).toContain("max_file_size: 5242880");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+      // Idempotence
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toBe(syncedText);
+
+      // 2. Larger value (10 MiB / 10485760): check detects drift, sync lowers to 5 MiB
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 10485760"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(1);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("max_file_size: 5242880");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+
+      // Larger value with unit suffix (10MB)
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 10MB"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(1);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("max_file_size: 5242880");
+
+      // Lowering an oversized cap preserves its inline comment.
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 10MB # preserve me"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("max_file_size: 5242880 # preserve me");
+
+      // 3. Stricter positive value (1 MiB / 1048576) is preserved, not raised
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 1048576"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("max_file_size: 1048576");
+      expect(readFileSync(settingsPath, "utf8")).not.toContain("max_file_size: 5242880");
+
+      // Stricter value with suffix (1MB) is preserved
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 1MB"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(readFileSync(settingsPath, "utf8")).toContain("max_file_size: 1MB");
+    });
+  }, 20000);
+
+  test("rejects malformed max_file_size and binds cap into scanner receipt freshness", () => {
+    withProject((root) => {
+      const settingsPath = join(root, ".cocoindex_code", "settings.yml");
+      const syncFirst = run(["python3", syncScript, "--project-root", root]);
+      expect(syncFirst.exitCode).toBe(0);
+      const syncedText = readFileSync(settingsPath, "utf8");
+
+      // 4. Malformed and non-positive values fail closed
+      for (const malformedVal of ["0", "-1", "-100", "true", "false", "invalid", '""']) {
+        writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", `max_file_size: ${malformedVal}`), "utf8");
+        expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+        expect(run(["python3", preflightScript, "--project-root", root]).exitCode).toBe(2);
+      }
+
+      // Duplicate max_file_size fails closed
+      writeFileSync(settingsPath, `max_file_size: 5242880\n${syncedText}`, "utf8");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // Match the installed upstream parser exactly: IEC spellings are unsupported.
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 1MiB"), "utf8");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(2);
+
+      // 5. Freshness and receipt binding: modifying max_file_size invalidates receipt
+      writeFileSync(settingsPath, syncedText, "utf8"); // Restore clean synced 5 MiB settings
+      const scanner = writeFakeScanner(root);
+      const scannerSha256 = createHash("sha256").update(readFileSync(scanner)).digest("hex");
+      const report = ".cocoindex_code/ccc-security/report.json";
+      const receipt = ".cocoindex_code/ccc-security/receipt.json";
+      const scanRes = run([
+        "python3",
+        strictScript,
+        "scan",
+        "--project-root",
+        root,
+        "--gitleaks",
+        scanner,
+        "--expected-binary-sha256",
+        scannerSha256,
+        "--report",
+        report,
+        "--receipt",
+        receipt,
+      ]);
+      expect(scanRes.exitCode).toBe(0);
+      expect(run(["python3", strictScript, "check", "--project-root", root, "--gitleaks", scanner, "--expected-binary-sha256", scannerSha256, "--report", report, "--receipt", receipt]).exitCode).toBe(0);
+
+      // Changing max_file_size to stricter 1048576 in settings makes receipt stale (exit 4)
+      writeFileSync(settingsPath, syncedText.replace("max_file_size: 5242880", "max_file_size: 1048576"), "utf8");
+      expect(run(["python3", strictScript, "check", "--project-root", root, "--gitleaks", scanner, "--expected-binary-sha256", scannerSha256, "--report", report, "--receipt", receipt]).exitCode).toBe(4);
+    });
+  }, 20000);
+
+  test("strict scope applies a stricter project max_file_size before reading or staging", () => {
+    withProject((root) => {
+      const settingsPath = join(root, ".cocoindex_code", "settings.yml");
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      const settings = readFileSync(settingsPath, "utf8").replace(
+        "max_file_size: 5242880",
+        "max_file_size: 1048576",
+      );
+      writeFileSync(settingsPath, settings, "utf8");
+      expect(run(["python3", syncScript, "--project-root", root, "--check"]).exitCode).toBe(0);
+
+      const boundaryPath = join(root, "boundary.py");
+      const oversizedPath = join(root, "oversized.py");
+      writeFileSync(boundaryPath, Buffer.alloc(1024 * 1024, 97));
+      writeFileSync(oversizedPath, Buffer.alloc(1024 * 1024 + 1, 98));
+      chmodSync(oversizedPath, 0o000);
+
+      const scanner = writeFakeScanner(root);
+      const scannerSha256 = createHash("sha256").update(readFileSync(scanner)).digest("hex");
+      const captureRoot = mkdtempSync(join(tmpdir(), "mahiro-ccc-size-capture-"));
+      const capturePath = join(captureRoot, "scan.json");
+      const report = ".cocoindex_code/ccc-security/report.json";
+      const receipt = ".cocoindex_code/ccc-security/receipt.json";
+      try {
+        const result = run(
+          [
+            "python3",
+            strictScript,
+            "scan",
+            "--project-root",
+            root,
+            "--gitleaks",
+            scanner,
+            "--expected-binary-sha256",
+            scannerSha256,
+            "--report",
+            report,
+            "--receipt",
+            receipt,
+          ],
+          { FAKE_GITLEAKS_MODE: "clean", FAKE_GITLEAKS_CAPTURE: capturePath },
+        );
+        expect(result.exitCode).toBe(0);
+        const capture = parseJson(readFileSync(capturePath, "utf8"));
+        expect(capture.files as string[]).toContain("boundary.py");
+        expect(capture.files as string[]).not.toContain("oversized.py");
+        const strictReceipt = parseJson(readFileSync(join(root, receipt), "utf8"));
+        expect(strictReceipt.max_file_size).toBe(1048576);
+        expect((strictReceipt.policy as Record<string, unknown>).max_file_size).toBe(1048576);
+      } finally {
+        chmodSync(oversizedPath, 0o640);
+        rmSync(captureRoot, { recursive: true, force: true });
+      }
+    });
+  }, 20000);
+
+  test("strict snapshot copy rechecks the effective size cap", () => {
+    const probe = run([
+      "python3",
+      "-c",
+      String.raw`
+import ast
+import importlib.util
+import inspect
+import sys
+import tempfile
+from pathlib import Path
+
+script = Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(script.parent))
+spec = importlib.util.spec_from_file_location("mahiro_strict_probe", script)
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+
+strict_tree = ast.parse(inspect.getsource(module._strict_scan))
+manifest_calls = [
+    node
+    for node in ast.walk(strict_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "source_manifest"
+]
+assert len(manifest_calls) == 2
+assert all(any(keyword.arg == "max_bytes" for keyword in call.keywords) for call in manifest_calls)
+
+limit = 1024
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+    source = root / "source.py"
+    accepted = root / "accepted.py"
+    blocked = root / "blocked.py"
+    source.write_bytes(b"a" * limit)
+    module._copy_snapshot(source, accepted, limit)
+    assert accepted.stat().st_size == limit
+    source.write_bytes(b"b" * (limit + 1))
+    try:
+        module._copy_snapshot(source, blocked, limit)
+    except module.ScannerError:
+        pass
+    else:
+        raise AssertionError("oversized source reached strict snapshot")
+    assert not blocked.exists()
+`,
+      strictScript,
+    ]);
+    expect(probe.exitCode).toBe(0);
   });
 });

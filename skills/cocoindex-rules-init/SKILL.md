@@ -41,7 +41,7 @@ make claims about external repository behavior.
 - Editing global agent settings, installed CocoIndex code, upstream/site-packages code, hooks, or another checkout.
 - Reading suspected credential contents during filename-only preflight.
 - Rewriting a repo's whole docs family.
-- History scans, external symlink traversal, external repository comparisons, or release work.
+- History scans, external repository comparisons, or release work (all candidate symlinks fail closed).
 
 ## V2 Resource Map
 
@@ -69,6 +69,13 @@ include and exclude blocks have separate content, security, and noise ownership:
   output, and index artifacts. They do not blanket-exclude `.agent-state`,
   which can contain durable tracked learnings, retrospectives, tests, and code.
 - Local policy can add denies; it cannot remove, allow, or weaken a baseline.
+- Managed settings enforce a finite 5 MiB `max_file_size` cap, preserving stricter
+  positive existing values, lowering absent or larger values to 5 MiB, and failing
+  closed on non-positive or malformed values.
+- The hardened profile rejects project `chunkers` because upstream imports
+  arbitrary Python, except when the key is omitted or uses an upstream-compatible
+  explicit empty list, map, or string. YAML null and bare/comment-only forms are
+  rejected because installed upstream `0.2.41` does not parse them as empty.
 - Unrelated settings and unrelated exclude entries are preserved.
 - The managed block is written atomically and repeated synchronization is
   idempotent.
@@ -179,8 +186,12 @@ is excluded, while `.cocoindex_code/ccc-security/**` runtime outputs stay out
 of source scope. Explicit dotenv templates and durable `.agent-state` files
 remain eligible for strict content scanning unless an unrelated project exclude
 explicitly matches them. The helper does
-not scan history or follow external symlinks; final source-file symlinks are
-skipped while intermediate path and control-file symlinks fail closed. A
+not scan history; all candidate symlinks (file or directory, intermediate or
+final, across both Git and non-Git fallback paths) fail closed with clear
+non-secret errors, and are never followed or silently omitted from helper scan
+scope. This helper/Letta-Mod gate is cooperative, not an upstream sandbox;
+direct unguarded `ccc` invocation can bypass it. The strict candidate set also
+applies the effective project `max_file_size` before hashing or staging. A
 mode-0700 temporary root contains mode-0600 copied snapshots, never hardlinks;
 the staged snapshot and source scope are compared before a receipt is written.
 
@@ -247,6 +258,9 @@ Before finishing, report:
 - Confirm security and noise resources remain separate.
 - Confirm sync preserves unrelated settings, is atomic/idempotent, and honors `--check`.
 - Confirm malformed, missing, symlinked, and unsafe inputs fail closed.
+- Confirm candidate symlinks (file and directory, tracked and untracked, Git and fallback) fail closed with clear non-secret errors.
+- Confirm chunkers is omitted or uses only an upstream-compatible explicit empty list, map, or string; reject YAML null and bare/comment-only forms.
+- Confirm max_file_size 5 MiB cap is enforced, preserved when stricter, lowered when larger, and bound into drift/policy/receipt freshness.
 - Confirm filename-only output is explicitly non-equivalent.
 - Confirm strict invocation pins/version-checks Gitleaks and uses the reviewed
   metadata-only report contract without raw secret output.

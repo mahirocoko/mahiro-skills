@@ -1,3 +1,4 @@
+max_file_size: 5242880
 exclude_patterns:
 # BEGIN MAHIRO CCC V2 MANAGED EXCLUDES
 # SECURITY: portable credential/path denies; local policy may only add denies

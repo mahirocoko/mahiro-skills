@@ -28,13 +28,13 @@ from security_policy import (
     GITLEAKS_CONFIG,
     GITLEAKS_TEMPLATE,
     GITLEAKS_VERSION,
-    MAX_SOURCE_FILE_BYTES,
     PolicyError,
     atomic_write_text,
     build_policy,
     collect_candidates,
     extract_exclude_patterns,
     file_sha256,
+    filter_candidates_by_max_file_size,
     json_hash,
     materialize_settings,
     project_root_id,
@@ -187,11 +187,14 @@ def _source_metadata(root: Path, local_policy: Path | None):
         require_git=True,
         exclude_patterns=settings_excludes,
     )
+    candidates = filter_candidates_by_max_file_size(candidates, policy.max_file_size)
     if any(Path(candidate.relative_path).name == ".gitleaksignore" for candidate in candidates):
         raise ScannerError("unmanaged target .gitleaksignore is not accepted")
     if any(candidate.relative_path.startswith(STRICT_RUNTIME_PREFIX) for candidate in candidates):
         raise ScannerError("CCC runtime output reached the strict source scope")
-    scope_sha256, content_sha256, file_count, total_bytes = source_manifest(candidates)
+    scope_sha256, content_sha256, file_count, total_bytes = source_manifest(
+        candidates, max_bytes=policy.max_file_size
+    )
     candidate_paths = {candidate.relative_path for candidate in candidates}
     allowlist_path = None
     return {
@@ -272,8 +275,10 @@ def _identity(
         "policy": {
             "policy_sha256": metadata["policy"].policy_sha256,
             "local_policy_sha256": metadata["policy"].local_policy_sha256,
+            "max_file_size": metadata["policy"].max_file_size,
         },
         "settings_sha256": metadata["settings_sha256"],
+        "max_file_size": metadata["policy"].max_file_size,
         "scope": {
             "scope_sha256": metadata["scope_sha256"],
             "content_sha256": metadata["content_sha256"],
@@ -290,14 +295,14 @@ def _identity(
     return identity, metadata, allowlist
 
 
-def _copy_snapshot(source: Path, destination: Path) -> None:
+def _copy_snapshot(source: Path, destination: Path, max_bytes: int) -> None:
     try:
         source_info = os.lstat(source)
     except OSError as exc:
         raise ScannerError("cannot inspect a source file for strict scan") from exc
     if stat.S_ISLNK(source_info.st_mode) or not stat.S_ISREG(source_info.st_mode):
         raise ScannerError("a source file changed to an unsafe non-regular path")
-    if source_info.st_size > MAX_SOURCE_FILE_BYTES:
+    if source_info.st_size > max_bytes:
         raise ScannerError("a source file exceeds the strict scan file-size limit")
 
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
@@ -324,7 +329,7 @@ def _copy_snapshot(source: Path, destination: Path) -> None:
             if not chunk:
                 break
             copied += len(chunk)
-            if copied > MAX_SOURCE_FILE_BYTES:
+            if copied > max_bytes:
                 raise ScannerError("a source file exceeds the strict scan file-size limit")
             offset = 0
             while offset < len(chunk):
@@ -357,7 +362,7 @@ def _copy_snapshot(source: Path, destination: Path) -> None:
 
 
 @contextmanager
-def _staged_scan_tree(candidates) -> Iterator[Path]:
+def _staged_scan_tree(candidates, max_bytes: int) -> Iterator[Path]:
     """Build a private copied snapshot without following source links."""
 
     with tempfile.TemporaryDirectory(prefix="mahiro-ccc-gitleaks-") as temporary_name:
@@ -378,7 +383,7 @@ def _staged_scan_tree(candidates) -> Iterator[Path]:
                 if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
                     raise ScannerError("unsafe path in the private strict scan tree")
                 os.chmod(current, 0o700)
-            _copy_snapshot(candidate.absolute_path, destination)
+            _copy_snapshot(candidate.absolute_path, destination, max_bytes)
         yield scan_root
 
 
@@ -487,6 +492,7 @@ def _check_receipt(root: Path, receipt_path: Path, identity: dict[str, object]) 
         "scanner",
         "policy",
         "settings_sha256",
+        "max_file_size",
         "scope",
         "allowlist_sha256",
     )
@@ -531,7 +537,11 @@ def _filename_only(root: Path, local_policy: Path | None, report_path: Path, rec
             "history_scanned": False,
             "external_symlink_traversal": False,
         },
-        "policy": {"policy_sha256": policy.policy_sha256},
+        "policy": {
+            "policy_sha256": policy.policy_sha256,
+            "max_file_size": policy.max_file_size,
+        },
+        "max_file_size": policy.max_file_size,
         "classification_counts": dict(sorted(classification_counts.items())),
         "derived_sensitive_paths": denied,
         "dotenv_template_content_scan_paths": dotenv_templates,
@@ -566,6 +576,7 @@ def _strict_scan(
     )
     scanner = _scanner_path(scanner_raw)
     candidates = metadata["candidates"]
+    max_file_size = metadata["policy"].max_file_size
     expected_manifest = (
         metadata["scope_sha256"],
         metadata["content_sha256"],
@@ -573,7 +584,7 @@ def _strict_scan(
         metadata["total_bytes"],
     )
     try:
-        with _staged_scan_tree(candidates) as scan_root:
+        with _staged_scan_tree(candidates, max_file_size) as scan_root:
             staged_candidates = tuple(
                 Candidate(
                     candidate.relative_path,
@@ -582,7 +593,7 @@ def _strict_scan(
                 )
                 for candidate in candidates
             )
-            staged_manifest = source_manifest(staged_candidates)
+            staged_manifest = source_manifest(staged_candidates, max_bytes=max_file_size)
             if staged_manifest != expected_manifest:
                 raise ScannerError("staged source snapshot does not match the bound source identity")
             findings = _run_gitleaks(
@@ -598,7 +609,7 @@ def _strict_scan(
         raise ScannerError("source snapshot validation failed") from exc
 
     try:
-        current_manifest = source_manifest(candidates)
+        current_manifest = source_manifest(candidates, max_bytes=max_file_size)
     except (OSError, PolicyError) as exc:
         raise ScannerError("source scope changed during strict scan") from exc
     if current_manifest != expected_manifest:

@@ -76,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
             "dotenv_template_content_scan_paths": sorted(dotenv_templates),
             "policy_sha256": policy.policy_sha256,
             "noise_pattern_count": len(policy.noise_patterns),
+            "max_file_size": policy.max_file_size,
         }
         if args.check_settings:
             _, current, _ = read_project_settings(root)

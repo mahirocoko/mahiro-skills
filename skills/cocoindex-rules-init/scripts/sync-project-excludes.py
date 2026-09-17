@@ -69,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
             "security_pattern_count": len(policy.security_patterns) + len(policy.exact_denies),
             "noise_pattern_count": len(policy.noise_patterns),
             "content_scan_path_count": len(policy.content_scan_paths),
+            "max_file_size": policy.max_file_size,
         }
         if args.check:
             exit_code = EXIT_DRIFT if changed else EXIT_OK
