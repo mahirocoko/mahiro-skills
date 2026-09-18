@@ -45,10 +45,12 @@ Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how
 - Flag shared UI changes that absorb page-specific business rules just to reduce line count in a route or module file.
 - Flag UI trees that get deeper without earning a real semantic, layout, accessibility, state, or ownership boundary.
 - Flag generic AI-looking UI drift: unexplained metric-card walls, fake-premium gradients, decorative pill overload, gratuitous transitions, verbose helper copy, or styling that ignores the repo's product tone.
+- For a persisted user-owned entity or collection, map the expected lifecycle before calling the surface complete: Create, Read, Update or explicit immutability, Delete or Archive, recovery, and the relevant empty/error/confirmation states. MVP may reduce breadth, but it must not silently omit a primary lifecycle action for data the user owns. Imported catalogs, append-only evidence, audit records, and other intentionally immutable owners are exempt when that boundary is explicit and locally proven.
 - For unresolved or consequential UI/visual-design decisions, consult Agy/Gemini for one implementation-ready recommendation grounded in the exact rendered anatomy and constraints before locking direction. Treat the consultation as advisory: Main retains repo-truth, accessibility, and correctness ownership; preserve accepted visual ownership; Mahiro retains final visual/product acceptance.
 - Flag refactors that preserve logic but noticeably drift from the established product feel of a screen, such as turning a sparse premium surface into a verbose instructional one.
 - Flag spacing overrides on shared primitives when they appear reflexive rather than driven by a clear visual requirement.
 - Do not approve spacing from utility names or isolated elements. Inspect the full rendered surface and separate row cadence, label-to-row gap, section gap, parent-child gap, and viewport density. Compare those roles with the selected source owner, measure geometry when needed, and audit selector scope after wrappers change. Functional checks and source-class fidelity do not prove readable visual rhythm; final spacing acceptance remains human-owned.
+- When Mahiro gives a literal micro-position correction such as moving one element out, in, up, or down by 1px, test that exact element-local offset first. Freeze path, paint, masks, wrapper geometry, and neighboring surfaces. Define direction relative to the named owner, inspect the rendered result, and stop if accepted. Expand diagnosis only when the literal probe fails or creates a concrete regression.
 - Flag local one-off error message mappers when the repo already has a shared error resolver or stable error-code path.
 - Flag raw upstream error strings shown directly in UI when the repo already normalizes shared failures.
 
@@ -117,6 +119,7 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 - Does each UI layer have a visible job, or is the depth just hiding weak component boundaries?
 - Did the change preserve the screen's established product feel, or did technically correct logic come with heavier copy, denser spacing, or a less intentional tone?
 - Did the design start from repo-local primitives and product tone, or from generic AI SaaS defaults such as gradient hero cards, pill clusters, and decorative stat grids?
+- If this diff introduces persisted user-owned data, does the user have the expected lifecycle controls and recovery states, or did “MVP” stop at the happy-path create/read flow without an explicit immutable boundary?
 - Did shared primitives keep their default spacing where appropriate, or did the diff add overrides before proving a visual need?
 
 ### Real review themes to keep active
