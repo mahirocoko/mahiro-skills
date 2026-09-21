@@ -141,6 +141,10 @@ explicit human-control surfaces; they are not the default creation path.
   unified `mh_execution_run` tool only when multiple executors, worktrees, target
   ownership, or a bounded cross-lane handoff materially help. Do not require it
   for simple edits, and never imply that it launches or controls executors.
+- When recording a `letta_subagent` lane, encode every returned launch identity
+  as `letta:agent=<agent-id>;conversation=<conversation-id>`. Never retain only
+  the conversation ID: `default` is not globally unique. This reference remains
+  caller-supplied coordination metadata, not readiness, execution, or result proof.
 - When Goal and Execution Run are both active, bind the relevant Goal criterion
   refs while the run is still in `plan`; after `ready`, treat that binding as
   immutable. A handed-off `code_evidence_intake` is caller metadata, not proof.

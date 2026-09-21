@@ -392,6 +392,12 @@ describe("skill pattern adaptation phase a", () => {
     expect(command).toContain("explicit `--mode callback`");
     expect(command).toContain("must not also receive a controller Monitor");
     expect(command).toContain("bounded background `Monitor`");
+    expect(skill).toContain("a turn interruption is not cancellation");
+    expect(skill).toContain("use `TaskStop` for explicit closeout");
+    expect(playbook).toContain("never arm a duplicate merely because the parent turn was interrupted");
+    expect(playbook).toContain("confirm it stopped");
+    expect(command).toContain("do not re-arm it after an interrupted turn");
+    expect(command).toContain("close it explicitly with `TaskStop`");
     expect(command).not.toContain("and start the packaged durable watcher");
     expect(command).toContain("do not emulate return by launching a second `letta -p` turn");
     expect(playbook).toContain("One job maps to one `direct-<job-slug>` tab");
@@ -629,6 +635,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Goal Mode owns mission truth");
     expect(skill).toContain("Execution Run is optional coordination for complex external lanes");
     expect(skill).toContain("Do not require it\n  for simple edits");
+    expect(skill).toContain("`letta:agent=<agent-id>;conversation=<conversation-id>`");
+    expect(skill).toContain("`default` is not globally unique");
+    expect(skill).toContain("not readiness, execution, or result proof");
     expect(skill).toContain("A handed-off `code_evidence_intake` is caller metadata, not proof");
     expect(skill).toContain("Code Evidence owns fresh repository/check attribution");
     expect(skill).toContain("neither an\n  executor report nor a Code Evidence intake may auto-claim criteria");

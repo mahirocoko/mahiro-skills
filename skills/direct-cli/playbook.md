@@ -686,6 +686,8 @@ python3 "$DIRECT_CLI_SKILL_ROOT/scripts/herdr-jobs.py" wait "$JOB_ID" --json
 
 `wait` polls the private job record and emits one JSON line containing only `job`, `status`, and `job_dir` after terminal state. It must run in the background for task completion; foreground use is limited to a brief synchronous gate. Callback wakes and `receive` remain the durable worker/parent path, while watcher-mode `wait` is controller-side observation rather than receipt or proof. Run `collect` only after the parent judges the durable results. Do not invoke `letta -p --conversation`, type into the main Letta pane, or treat a desktop notification as a model turn.
 
+Current Letta Code keeps an existing controller Monitor alive across Esc, SIGINT, and `abort_message`; a turn interruption is not cancellation. Keep the exact task ID as the ownership receipt, inspect that same task after the next turn, and never arm a duplicate merely because the parent turn was interrupted. At explicit watcher closeout, call `TaskStop` for that exact task and confirm it stopped. This persistence is turn-scoped behavior, not evidence that a Monitor survives a Letta process restart.
+
 At the start of every later direct-cli turn, inspect durable state before launching duplicate work:
 
 ```bash
