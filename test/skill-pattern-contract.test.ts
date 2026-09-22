@@ -450,7 +450,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("single owner of direct-cli's role-to-model choices");
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-high\" --yolo --approve-mcps --trust");
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-xhigh\" --yolo --approve-mcps --trust");
-    expect(playbook).not.toContain("claude-fable-5-thinking");
+    expect(playbook).toContain("agent --model \"grok-4.7-high\" --yolo --approve-mcps --trust");
+    expect(playbook).not.toContain("cursor-grok-4.6-high");
     expect(playbook).toContain('herdr agent start "$CURSOR_AGENT" --kind cursor');
     expect(playbook).toContain("--dangerously-bypass-approvals-and-sandbox");
     expect(playbook).toContain('PI_TOOLS="read,bash,edit,write,grep,find,ls"');
@@ -463,7 +464,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("`gpt-5.5`");
     expect(playbook).toContain("Keep the current proven source-art route");
     expect(playbook).toContain("Verify supported effort levels from the current Codex catalog");
-    expect(playbook).toContain("`gpt-5.3-codex-spark` + `high`");
+    expect(playbook).not.toContain("gpt-5.3-codex-spark");
     expect(playbook).not.toContain("Current freshness checkpoints");
     expect(playbook).not.toContain("`kimi-k3-high`");
     expect(playbook).toContain("## Pi direct playbook");

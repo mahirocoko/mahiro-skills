@@ -786,7 +786,7 @@ Herdr compatibility is capability-based: require managed-pane markers, a compati
 This is the single owner of direct-cli's role-to-model choices. Replace superseded entries here instead of appending catalog snapshots elsewhere. Intersect these choices with the live CLI catalog before every launch; a listed role is preference, not availability proof.
 
 - Cursor ordinary implementation / cleanup model: `composer-2.5`
-- Cursor long-horizon agentic model: `cursor-grok-4.6-high`
+- Cursor long-horizon agentic model: `grok-4.7-high`
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-thinking-high`
@@ -797,7 +797,6 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Codex balanced everyday model/effort: `gpt-6-astra` + `medium`
 - Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`
 - Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra` for large parallelizable jobs
-- Codex specialized ultra-fast model/effort: `gpt-5.3-codex-spark` + `high`
 - Codex fallback model/effort: `gpt-5.6-sol` + `high` when Astra is unavailable in the live catalog
 - Pi default autonomous implementation allowlist: `read,bash,edit,write,grep,find,ls`
 - Pi safe/read-only review allowlist: `read,grep,find,ls`, only when Mahiro explicitly requests the opt-down
@@ -809,7 +808,7 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5` — recommended for ordinary Cursor direct-lane work: implementation, cleanup, narrow refactors, and follow-up fixes using the non-Fast model ID.
-  2. `cursor-grok-4.6-high` — long-horizon agentic coding and complex tool-driven work using the non-Fast model ID.
+  2. `grok-4.7-high` — long-horizon agentic coding and complex tool-driven work using the non-Fast model ID.
   3. `claude-fable-5-1-thinking-high` — Fable 5.1 reasoning lane; use this when Mahiro says “Fable 5.1” unless he asks for another Fable variant.
   4. `claude-fable-5-1-thinking-xhigh` — Fable 5.1 extra-high lane for heavier review.
   5. `claude-opus-5-thinking-high` — Opus heavy review / deep reasoning lane.
@@ -825,7 +824,6 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
   2. `gpt-6-astra` + `medium` — balanced everyday coding and follow-up work.
   3. `gpt-5.6-luna` + `medium` — fast/cost-efficient scoped work.
   4. `gpt-6-astra` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
-  5. `gpt-5.3-codex-spark` + `high` — specialized ultra-fast lane for small, bounded coding or commit work.
 - If Astra is absent from the live catalog, offer `gpt-5.6-sol` + `high` as the flagship fallback instead of silently choosing it.
 - Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent effort-suffixed model IDs.
 - Verify supported effort levels from the current Codex catalog before launch. Never infer that a model supports `ultra` from an older catalog snapshot.
@@ -947,7 +945,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a long-horizon agentic pass without the Fast variant:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "cursor-grok-4.6-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "grok-4.7-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
