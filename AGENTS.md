@@ -51,7 +51,7 @@
 ## Strict Security Scan
 
 - Strict mode is explicit and requires Gitleaks `v8.30.1` plus an approved executable SHA-256; it never silently downgrades to filename-only mode.
-- The packaged helper starts from tracked and untracked nonignored regular Git candidates, then applies the synchronized project `exclude_patterns` with a bounded Git `check-ignore --no-index` pass and the effective project `max_file_size` before staging the post-settings/index-candidate regular files; it never scans history, fails closed on all candidate symlinks (never following or silently omitting them), and emits metadata-only reports/receipts.
+- The packaged helper starts from tracked and untracked nonignored regular Git candidates, subtracts tracked entries that Git confirms are already deleted from the worktree, then applies the synchronized project `exclude_patterns` with a bounded Git `check-ignore --no-index` pass and the effective project `max_file_size` before staging the post-settings/index-candidate regular files. Git exit `1` is accepted only for a complete, ordered `--non-matching` result where no candidate matched an exclude; every malformed or other failing result remains blocked. Candidate disappearance outside Git's explicit deleted-path view still fails closed. After scanning, the helper recollects and rehashes the full candidate scope before issuing a receipt, so new files and deleted-path reappearance also block. The helper never scans history, fails closed on all candidate symlinks (never following or silently omitting them), and emits metadata-only reports/receipts.
 - Findings, scanner errors, missing scanner, stale receipt, and rule/policy/settings/source mismatch fail closed. Filename-only output is labeled non-equivalent.
 
 ## Release Checklist

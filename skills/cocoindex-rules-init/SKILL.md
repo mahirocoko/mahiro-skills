@@ -103,11 +103,17 @@ an unsafe candidate path, or an unsafe local policy is a blocking error.
 
 Strict candidate derivation is separate from filename-only classification. The
 helper first obtains tracked plus untracked nonignored regular Git candidates,
+subtracts tracked entries that Git confirms are already deleted from the
+worktree,
 then feeds the synchronized `exclude_patterns` to a bounded Git
 `check-ignore --no-index` pass in an isolated temporary Git context. It does
 not approximate patterns with `pathlib` or `fnmatch`; unsupported settings
 syntax (including negating exclude entries) or a Git/check-ignore failure
-fails closed rather than widening the scan.
+fails closed rather than widening the scan. Git's documented exit `1` when no
+candidate matches an exclude is accepted only when the complete
+`--non-matching` output parses and preserves every candidate path in order.
+Any candidate disappearance outside Git's explicit deleted-path view still
+fails closed.
 
 ## Search Workflow
 
@@ -193,7 +199,10 @@ scope. This helper/Letta-Mod gate is cooperative, not an upstream sandbox;
 direct unguarded `ccc` invocation can bypass it. The strict candidate set also
 applies the effective project `max_file_size` before hashing or staging. A
 mode-0700 temporary root contains mode-0600 copied snapshots, never hardlinks;
-the staged snapshot and source scope are compared before a receipt is written.
+the staged snapshot is checked against the initial bound identity, then the
+post-settings candidate set is recollected from Git and rehashed after scanning
+before a receipt is written. New files, deleted-path reappearance, content
+changes, or scope changes therefore invalidate the scan.
 
 The raw scanner template emits only path, line, and rule ID. The helper
 canonicalizes the relative path and derives a stable SHA-256 fingerprint from

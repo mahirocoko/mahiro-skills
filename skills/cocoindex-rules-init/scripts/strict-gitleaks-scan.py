@@ -609,8 +609,14 @@ def _strict_scan(
         raise ScannerError("source snapshot validation failed") from exc
 
     try:
-        current_manifest = source_manifest(candidates, max_bytes=max_file_size)
-    except (OSError, PolicyError) as exc:
+        current_metadata = _source_metadata(root, local_policy)
+        current_manifest = (
+            current_metadata["scope_sha256"],
+            current_metadata["content_sha256"],
+            current_metadata["file_count"],
+            current_metadata["total_bytes"],
+        )
+    except (OSError, PolicyError, ScannerError) as exc:
         raise ScannerError("source scope changed during strict scan") from exc
     if current_manifest != expected_manifest:
         raise ScannerError("source scope changed during strict scan")

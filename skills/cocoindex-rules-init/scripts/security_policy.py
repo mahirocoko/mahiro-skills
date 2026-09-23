@@ -368,6 +368,29 @@ def _git_candidate_names(project_root: Path) -> list[str]:
         raise PolicyError("cannot enumerate Git worktree files") from exc
     if result.returncode != 0:
         raise PolicyError("cannot enumerate Git worktree files")
+    try:
+        deleted_result = subprocess.run(
+            ["git", "-C", str(project_root), "ls-files", "--deleted", "-z"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise PolicyError("cannot enumerate deleted Git worktree files") from exc
+    if deleted_result.returncode != 0:
+        raise PolicyError("cannot enumerate deleted Git worktree files")
+
+    deleted_names: set[str] = set()
+    for raw in deleted_result.stdout.split(b"\x00"):
+        if not raw:
+            continue
+        try:
+            name = raw.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise PolicyError("Git returned a non-UTF-8 deleted path") from exc
+        deleted_names.add(_safe_relative_path(name))
+
     names: list[str] = []
     for raw in result.stdout.split(b"\x00"):
         if not raw:
@@ -376,7 +399,9 @@ def _git_candidate_names(project_root: Path) -> list[str]:
             name = raw.decode("utf-8")
         except UnicodeDecodeError as exc:
             raise PolicyError("Git returned a non-UTF-8 candidate path") from exc
-        names.append(_safe_relative_path(name))
+        safe_name = _safe_relative_path(name)
+        if safe_name not in deleted_names:
+            names.append(safe_name)
     return sorted(set(names))
 
 
@@ -460,7 +485,11 @@ def _git_ignored_names(project_root: Path, names: Sequence[str], patterns: Seque
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise PolicyError("Git/check-ignore failed") from exc
-        if result.returncode != 0:
+        # Git returns 1 when none of the supplied paths are ignored, even with
+        # --non-matching. That is a valid all-candidates-included result; the
+        # complete output shape is still validated below. Every other nonzero
+        # status remains a fail-closed matcher error.
+        if result.returncode not in (0, 1):
             raise PolicyError("Git/check-ignore failed")
 
         fields = result.stdout.split(b"\0")
@@ -475,15 +504,26 @@ def _git_ignored_names(project_root: Path, names: Sequence[str], patterns: Seque
             source, line_number, pattern, raw_name = fields[start : start + 4]
             try:
                 actual_name = raw_name.decode("utf-8")
-                pattern.decode("utf-8")
-                source.decode("utf-8")
-                line_number.decode("ascii")
+                decoded_pattern = pattern.decode("utf-8")
+                decoded_source = source.decode("utf-8")
+                decoded_line_number = line_number.decode("ascii")
             except UnicodeDecodeError as exc:
                 raise PolicyError("Git/check-ignore returned malformed output") from exc
             if actual_name != expected_name:
                 raise PolicyError("Git/check-ignore reordered or changed candidate paths")
-            if pattern:
+            metadata_fields = (decoded_source, decoded_line_number, decoded_pattern)
+            if any(metadata_fields) and not all(metadata_fields):
+                raise PolicyError("Git/check-ignore returned malformed match metadata")
+            if result.returncode == 1 and any(metadata_fields):
+                raise PolicyError("Git/check-ignore status contradicted its match output")
+            if decoded_pattern:
+                if decoded_source != str(excludes_path):
+                    raise PolicyError("Git/check-ignore used an unexpected ignore source")
+                if not decoded_line_number.isdigit() or int(decoded_line_number) <= 0:
+                    raise PolicyError("Git/check-ignore returned an invalid match line")
                 ignored.add(expected_name)
+        if result.returncode == 0 and not ignored:
+            raise PolicyError("Git/check-ignore status contradicted its non-match output")
         return ignored
 
 

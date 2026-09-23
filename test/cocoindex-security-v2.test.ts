@@ -128,6 +128,9 @@ function writeFakeScanner(root: string) {
       "report = Path(sys.argv[sys.argv.index('--report-path') + 1])",
       "target = Path(sys.argv[-1])",
       "capture_path = os.environ.get('FAKE_GITLEAKS_CAPTURE')",
+      "reappear_path = os.environ.get('FAKE_GITLEAKS_REAPPEAR_PATH')",
+      "if reappear_path:",
+      "    Path(reappear_path).write_text('reappeared during scan\\n', encoding='utf-8')",
       "if capture_path:",
       "    source = target / 'docs' / 'token-guide.md'",
       "    staged_files = sorted(path.relative_to(target).as_posix() for path in target.rglob('*') if path.is_file())",
@@ -176,6 +179,32 @@ function writeFailingCheckIgnore(realGit: string) {
       "  if [ \"$arg\" = check-ignore ]; then exit 42; fi",
       "done",
       `exec ${JSON.stringify(realGit)} \"$@\"`,
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  chmodSync(fakeGit, 0o755);
+  return binRoot;
+}
+
+function writeContradictoryCheckIgnore(realGit: string) {
+  const binRoot = mkdtempSync(join(tmpdir(), "mahiro-ccc-git-contradiction-"));
+  const fakeGit = join(binRoot, "git");
+  writeFileSync(
+    fakeGit,
+    [
+      "#!/usr/bin/env python3",
+      "import os",
+      "import sys",
+      "",
+      "if 'check-ignore' in sys.argv:",
+      "    names = [name for name in sys.stdin.buffer.read().split(b'\\0') if name]",
+      "    fields = []",
+      "    for name in names:",
+      "        fields.extend((b'/tmp/forged-excludes', b'1', b'**/forged', name))",
+      "    sys.stdout.buffer.write(b'\\0'.join(fields) + b'\\0')",
+      "    raise SystemExit(1)",
+      `os.execv(${JSON.stringify(realGit)}, [${JSON.stringify(realGit)}, *sys.argv[1:]])`,
       "",
     ].join("\n"),
     "utf8",
@@ -650,6 +679,133 @@ describe("CocoIndex security V2 package", () => {
       } finally {
         rmSync(failingGitRoot, { recursive: true, force: true });
       }
+
+      const contradictoryGitRoot = writeContradictoryCheckIgnore(realGit);
+      try {
+        const contradictoryStatus = run(
+          [
+            "python3",
+            strictScript,
+            "scan",
+            "--project-root",
+            root,
+            "--gitleaks",
+            scanner,
+            "--expected-binary-sha256",
+            scannerSha256,
+            "--report",
+            report,
+            "--receipt",
+            receipt,
+          ],
+          { PATH: `${contradictoryGitRoot}:${process.env.PATH ?? ""}` },
+        );
+        expect(contradictoryStatus.exitCode).toBe(2);
+        expect(contradictoryStatus.stderr).toContain("status contradicted its match output");
+      } finally {
+        rmSync(contradictoryGitRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
+  test("strict matching accepts Git's no-path-ignored exit with complete non-matching output", () => {
+    const root = mkdtempSync(join(tmpdir(), "mahiro-ccc-no-excludes-"));
+    try {
+      mkdirSync(join(root, ".cocoindex_code"), { recursive: true });
+      mkdirSync(join(root, "docs"), { recursive: true });
+      writeFileSync(join(root, ".gitignore"), ".cocoindex_code/\n", "utf8");
+      writeFileSync(join(root, ".cocoindex_code", "settings.yml"), "exclude_patterns:\n", "utf8");
+      writeFileSync(join(root, "docs", "readme.md"), "safe documentation\n", "utf8");
+      expect(run(["git", "-C", root, "init", "--quiet"]).exitCode).toBe(0);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+
+      const scanner = writeFakeScanner(root);
+      const scannerSha256 = createHash("sha256").update(readFileSync(scanner)).digest("hex");
+      const result = run([
+        "python3",
+        strictScript,
+        "scan",
+        "--project-root",
+        root,
+        "--gitleaks",
+        scanner,
+        "--expected-binary-sha256",
+        scannerSha256,
+      ]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("strict Gitleaks scan completed");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("tracked worktree deletions are not treated as readable source candidates", () => {
+    withProject((root) => {
+      const deletedPath = join(root, "docs", "deleted-source.md");
+      writeFileSync(deletedPath, "tracked before deletion\n", "utf8");
+      expect(run(["git", "-C", root, "add", "--", "docs/deleted-source.md"]).exitCode).toBe(0);
+      rmSync(deletedPath);
+
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+      expect(run(["python3", preflightScript, "--project-root", root, "--check-settings"]).exitCode).toBe(0);
+
+      const scanner = writeFakeScanner(root);
+      const scannerSha256 = createHash("sha256").update(readFileSync(scanner)).digest("hex");
+      const captureRoot = mkdtempSync(join(tmpdir(), "mahiro-ccc-deleted-capture-"));
+      try {
+        const capturePath = join(captureRoot, "scan.json");
+        const result = run(
+          [
+            "python3",
+            strictScript,
+            "scan",
+            "--project-root",
+            root,
+            "--gitleaks",
+            scanner,
+            "--expected-binary-sha256",
+            scannerSha256,
+          ],
+          { FAKE_GITLEAKS_CAPTURE: capturePath },
+        );
+        expect(result.exitCode).toBe(0);
+        const capture = parseJson(readFileSync(capturePath, "utf8"));
+        expect(capture.files as string[]).not.toContain("docs/deleted-source.md");
+      } finally {
+        rmSync(captureRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
+  test("strict scan rejects a tracked deletion that reappears while scanning", () => {
+    withProject((root) => {
+      const deletedPath = join(root, "docs", "reappearing-source.md");
+      writeFileSync(deletedPath, "tracked before deletion\n", "utf8");
+      expect(run(["git", "-C", root, "add", "--", "docs/reappearing-source.md"]).exitCode).toBe(0);
+      rmSync(deletedPath);
+      expect(run(["python3", syncScript, "--project-root", root]).exitCode).toBe(0);
+
+      const scanner = writeFakeScanner(root);
+      const scannerSha256 = createHash("sha256").update(readFileSync(scanner)).digest("hex");
+      const result = run(
+        [
+          "python3",
+          strictScript,
+          "scan",
+          "--project-root",
+          root,
+          "--gitleaks",
+          scanner,
+          "--expected-binary-sha256",
+          scannerSha256,
+        ],
+        { FAKE_GITLEAKS_REAPPEAR_PATH: deletedPath },
+      );
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("source scope changed during strict scan");
+      expect(existsSync(join(root, ".cocoindex_code", "ccc-security", "strict-receipt.json"))).toBe(false);
     });
   });
 
@@ -1039,15 +1195,32 @@ sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 
 strict_tree = ast.parse(inspect.getsource(module._strict_scan))
-manifest_calls = [
+strict_manifest_calls = [
     node
     for node in ast.walk(strict_tree)
     if isinstance(node, ast.Call)
     and isinstance(node.func, ast.Name)
     and node.func.id == "source_manifest"
 ]
-assert len(manifest_calls) == 2
-assert all(any(keyword.arg == "max_bytes" for keyword in call.keywords) for call in manifest_calls)
+assert len(strict_manifest_calls) == 1
+assert all(any(keyword.arg == "max_bytes" for keyword in call.keywords) for call in strict_manifest_calls)
+assert any(
+    isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "_source_metadata"
+    for node in ast.walk(strict_tree)
+)
+
+metadata_tree = ast.parse(inspect.getsource(module._source_metadata))
+metadata_manifest_calls = [
+    node
+    for node in ast.walk(metadata_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "source_manifest"
+]
+assert len(metadata_manifest_calls) == 1
+assert all(any(keyword.arg == "max_bytes" for keyword in call.keywords) for call in metadata_manifest_calls)
 
 limit = 1024
 with tempfile.TemporaryDirectory() as temporary:
