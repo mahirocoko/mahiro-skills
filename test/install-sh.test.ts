@@ -38,7 +38,7 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.120");
+    expect(decode(result.stdout)).toContain("v0.1.121");
   });
 
   test("installs one skill and paired command from a provided repo root", () => {
