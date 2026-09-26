@@ -1,5 +1,5 @@
 ---
-description: Project-local CocoIndex Code rule bootstrapper with a portable settings boundary, filename-only preflight, and explicit strict-scan guidance.
+description: Repo-local CocoIndex Code rule bootstrapper. Patches AGENTS.md and invokes the installed sibling ccc skill for portable settings, preflight, and strict scan.
 allowed-tools:
   - Bash
   - Read

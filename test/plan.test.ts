@@ -13,8 +13,8 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(22);
-      expect(plan.commands.length).toBe(22);
+      expect(plan.skills.length).toBe(23);
+      expect(plan.commands.length).toBe(23);
       expect(plan.skills.some((entry) => entry.name === "creating-character-ip")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
@@ -42,8 +42,8 @@ describe("plan", () => {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(22);
-      expect(plan.commands.length).toBe(22);
+      expect(plan.skills.length).toBe(23);
+      expect(plan.commands.length).toBe(23);
       expect(plan.skills.some((entry) => entry.name === "creating-character-ip")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "direct-cli")).toBe(true);
@@ -197,6 +197,30 @@ describe("plan", () => {
       for (const name of ["sprite-workflow", "vfx-workflow", "game-production"]) {
         expect(() => createPlan("opencode", "local", [name], temp.env)).toThrow(`Unknown install item '${name}'.`);
       }
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("selecting cocoindex-rules-init also plans the ccc skill", () => {
+    const temp = makeTempEnv();
+    try {
+      const plan = createPlan("opencode", "local", ["cocoindex-rules-init"], temp.env);
+      expect(plan.requested).toEqual(["cocoindex-rules-init"]);
+      expect(plan.skills.map((entry) => entry.name)).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(plan.commands.map((entry) => entry.name)).toEqual(["cocoindex-rules-init", "ccc"]);
+
+      const onlyCcc = createPlan("opencode", "local", ["ccc"], temp.env);
+      expect(onlyCcc.skills.map((entry) => entry.name)).toEqual(["ccc"]);
+      expect(onlyCcc.commands.map((entry) => entry.name)).toEqual(["ccc"]);
+
+      const agy = createPlan("agy", "local", ["cocoindex-rules-init"], temp.env);
+      expect(agy.commands).toEqual([]);
+      expect(agy.skills.map((entry) => entry.name)).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(agy.skills.map((entry) => entry.target)).toEqual([
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-ccc"),
+        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-cocoindex-rules-init"),
+      ]);
     } finally {
       temp.cleanup();
     }

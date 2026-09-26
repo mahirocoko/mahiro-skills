@@ -4,6 +4,11 @@
 The strict path is the only path that reads source bytes, and it does so only
 through the scanner staging/hash boundary. Filename-only mode is intentionally
 separate and always labels itself non-equivalent to a content scan.
+
+This command never downloads Gitleaks and never downgrades to filename-only.
+Callers run ensure-gitleaks.py check first. They may run ensure only when the
+managed path is missing. Invalid state blocks. Then check again, and only then scan/check.
+Hash mismatch and other invalid states are not repaired by replacement.
 """
 
 from __future__ import annotations
@@ -14,7 +19,6 @@ from collections import Counter
 import json
 import os
 import re
-import shutil
 import stat
 import subprocess
 import sys
@@ -36,6 +40,7 @@ from security_policy import (
     file_sha256,
     filter_candidates_by_max_file_size,
     json_hash,
+    managed_gitleaks_dest,
     materialize_settings,
     project_root_id,
     read_json_file,
@@ -91,22 +96,14 @@ def _local_policy(root: Path, raw: str | None) -> Path | None:
 def _scanner_path(raw: str | None) -> Path:
     if raw:
         candidate = Path(raw).expanduser()
-        if not candidate.is_absolute() and "/" not in raw:
-            resolved = shutil.which(raw)
-            if resolved is None:
-                raise ScannerError("pinned Gitleaks scanner is missing")
-            candidate = Path(resolved)
-        elif not candidate.is_absolute():
-            candidate = Path.cwd() / candidate
+        if not candidate.is_absolute():
+            raise ScannerError("pinned Gitleaks scanner path must be absolute")
     else:
-        resolved = shutil.which("gitleaks")
-        if resolved is None:
-            raise ScannerError("pinned Gitleaks scanner is missing")
-        candidate = Path(resolved)
+        candidate = managed_gitleaks_dest()
     try:
         info = os.lstat(candidate)
     except OSError as exc:
-        raise ScannerError("pinned Gitleaks scanner is missing") from exc
+        raise ScannerError("pinned Gitleaks scanner is missing; run ensure-gitleaks.py check, and ensure only when the managed path is absent") from exc
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or not os.access(candidate, os.X_OK):
         raise ScannerError("pinned Gitleaks scanner path is unsafe")
     return candidate.absolute()
@@ -680,7 +677,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("action", nargs="?", choices=("scan", "check", "filename-only"), default="scan")
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--local-policy")
-    parser.add_argument("--gitleaks", help="Pinned scanner path or executable name; never downloaded")
+    parser.add_argument(
+        "--gitleaks",
+        help="Pinned managed scanner path. Never downloads a scanner and never downgrades to filename-only; run ensure-gitleaks.py check, and ensure only when that path is missing. Invalid state blocks.",
+    )
     parser.add_argument(
         "--expected-binary-sha256",
         help="Approved SHA-256 for the scanner executable; required in strict mode",

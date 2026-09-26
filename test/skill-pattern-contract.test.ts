@@ -238,9 +238,10 @@ describe("skill pattern adaptation phase a", () => {
 
   test("cocoindex rules fail closed before broad indexing", () => {
     const skill = readRepoFile("skills", "cocoindex-rules-init", "SKILL.md");
+    const ccc = readRepoFile("skills", "ccc", "SKILL.md");
     const agents = readRepoFile("AGENTS.md");
 
-    for (const contract of [skill, agents]) {
+    for (const contract of [skill, ccc, agents]) {
       expect(contract).toContain("Never chain `ccc init && ccc index`");
       expect(contract).toContain("without opening suspected secret contents");
       expect(contract).toContain("materialize");
@@ -251,7 +252,19 @@ describe("skill pattern adaptation phase a", () => {
       expect(contract).not.toContain("global matcher");
     }
 
-    for (const contract of [skill, agents]) {
+    expect(skill).toContain("sibling");
+    expect(skill).toContain("ensure-gitleaks.py");
+    expect(skill).toContain("Missing only; invalid blocks");
+    expect(ccc).toContain("ensure-gitleaks.py");
+    expect(ccc).toContain("Missing only; invalid blocks");
+    expect(ccc).toContain("ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f");
+    expect(agents).toContain("ensure-gitleaks.py");
+    expect(agents).toContain("Missing only; invalid blocks");
+    expect(skill).not.toContain("missing or invalid");
+    expect(ccc).not.toContain("missing or invalid");
+    expect(agents).not.toContain("missing or invalid");
+
+    for (const contract of [skill, ccc, agents]) {
       expect(contract).toContain("post-settings/");
       expect(contract).toContain("index-candidate regular files");
       expect(contract).toContain("check-ignore --no-index");

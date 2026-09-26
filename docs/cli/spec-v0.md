@@ -183,6 +183,9 @@ Name resolution rule:
 
 - If an item matches a bundle name, install the bundle-defined skills and commands.
 - If an item matches a skill name, install that skill.
+- Selecting `cocoindex-rules-init` also installs the packaged `ccc` skill. When the adapter copies commands, it installs the `ccc` command too. Installing `ccc` alone does not install `cocoindex-rules-init`. Dependency planning uses source skill names. Adapter naming, including Agy `mh-*`, is applied when the target path is built.
+- A destination path that is a symlink is replaced as a link. The installer unlinks that path and does not modify the symlink target. A real file or directory at the destination remains a collision unless `--overwrite` is set. Uninstall uses the same unlink-only rule for a symlink.
+- Uninstalling only `ccc` while receipt-managed `cocoindex-rules-init` remains installed is skipped. The dependency reason is explicit, and both the installed targets and the receipt stay intact. Uninstalling `ccc` and `cocoindex-rules-init` together removes both. Uninstalling only `cocoindex-rules-init` leaves `ccc` in place. Uninstalling all receipt items removes both.
 - If the same name also exists under `commands/` and the adapter supports commands, install the same-named command as part of the same request.
 - If an item matches only a command name, install that command only.
 - If an item matches nothing, fail planning with an explicit unknown-item error.

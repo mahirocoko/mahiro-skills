@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
 import { install } from "../src/install";
@@ -149,6 +149,73 @@ describe("uninstall", () => {
       const after = JSON.parse(readFileSync(receiptPath, "utf8")) as { installedAt: string };
 
       expect(after.installedAt).toBe(before.installedAt);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("blocks uninstall of ccc while rules-init remains and removes both together", () => {
+    const temp = makeTempEnv();
+
+    try {
+      install("opencode", "local", ["cocoindex-rules-init"], false, temp.env);
+      const root = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode");
+      const receiptPath = join(root, ".mahiro-skills", "receipts", "local-opencode.json");
+      const before = readFileSync(receiptPath, "utf8");
+
+      const blocked = uninstall("opencode", "local", ["ccc"], temp.env);
+      expect(blocked.status).toBe("skipped");
+      expect(blocked.uninstalled).toEqual([]);
+      expect(blocked.receiptRemoved).toBe(false);
+      expect(blocked.skipped.map((item) => item.reason).join("\n")).toContain("Cannot uninstall 'ccc' while receipt-managed 'cocoindex-rules-init' remains installed");
+      expect(readFileSync(receiptPath, "utf8")).toBe(before);
+      expect(existsSync(join(root, "skills", "ccc"))).toBe(true);
+      expect(existsSync(join(root, "skills", "cocoindex-rules-init"))).toBe(true);
+      expect(existsSync(join(root, "commands", "ccc.md"))).toBe(true);
+      expect(existsSync(join(root, "commands", "cocoindex-rules-init.md"))).toBe(true);
+
+      const removedRules = uninstall("opencode", "local", ["cocoindex-rules-init"], temp.env);
+      expect(removedRules.uninstalled).toEqual(["cocoindex-rules-init"]);
+      expect(listInstalled("opencode", "local", temp.env)?.installedSkills).toEqual(["ccc"]);
+      expect(existsSync(join(root, "skills", "ccc"))).toBe(true);
+      expect(existsSync(join(root, "skills", "cocoindex-rules-init"))).toBe(false);
+
+      install("opencode", "local", ["cocoindex-rules-init"], true, temp.env);
+      const removedBoth = uninstall("opencode", "local", ["ccc", "cocoindex-rules-init"], temp.env);
+      expect(removedBoth.status).toBe("uninstalled");
+      expect(removedBoth.uninstalled).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(listInstalled("opencode", "local", temp.env)).toBeNull();
+
+      install("opencode", "local", ["cocoindex-rules-init"], false, temp.env);
+      const removedAll = uninstall("opencode", "local", [], temp.env);
+      expect(removedAll.uninstalled).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(listInstalled("opencode", "local", temp.env)).toBeNull();
+      expect(existsSync(join(root, "skills", "ccc"))).toBe(false);
+      expect(existsSync(join(root, "skills", "cocoindex-rules-init"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("unlinks a skill symlink without mutating the legacy target", () => {
+    const temp = makeTempEnv();
+
+    try {
+      install("letta-code", "global", ["ccc"], false, temp.env);
+      const installed = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "ccc");
+      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, ".agents", "skills", "ccc");
+      const marker = join(legacy, "LEGACY.txt");
+      rmSync(installed, { recursive: true, force: true });
+      mkdirSync(legacy, { recursive: true });
+      writeFileSync(marker, "legacy-target\n");
+      symlinkSync(legacy, installed);
+
+      const result = uninstall("letta-code", "global", ["ccc"], temp.env);
+
+      expect(result.uninstalled).toEqual(["ccc"]);
+      expect(existsSync(installed)).toBe(false);
+      expect(lstatSync(legacy).isDirectory()).toBe(true);
+      expect(readFileSync(marker, "utf8")).toBe("legacy-target\n");
     } finally {
       temp.cleanup();
     }

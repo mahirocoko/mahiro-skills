@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { hashPath } from "./content-hash";
@@ -96,6 +96,23 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
   }
 }
 
+function unlinkOwnPath(targetPath: string): "absent" | "symlink" | "present" {
+  try {
+    if (lstatSync(targetPath).isSymbolicLink()) {
+      unlinkSync(targetPath);
+      return "symlink";
+    }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return "absent";
+    }
+    throw error;
+  }
+
+  return "present";
+}
+
 function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgent): void {
   if (target.collision && !overwrite) {
     throw new Error(`Collision detected at '${target.target}'. Re-run with --overwrite to replace it.`);
@@ -103,11 +120,15 @@ function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgen
 
   ensureParent(target.target);
   const stagingPath = `${target.target}.tmp-mahiro-skills`;
-  rmSync(stagingPath, { recursive: true, force: true });
+  const stagingKind = unlinkOwnPath(stagingPath);
+  if (stagingKind === "present") {
+    rmSync(stagingPath, { recursive: true, force: true });
+  }
   cpSync(target.source, stagingPath, { recursive: true });
   rewriteInstalledTarget(stagingPath, agent, target);
 
-  if (overwrite && existsSync(target.target)) {
+  const destinationKind = unlinkOwnPath(target.target);
+  if (destinationKind === "present" && overwrite) {
     rmSync(target.target, { recursive: true, force: true });
   }
 

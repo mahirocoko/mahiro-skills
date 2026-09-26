@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.122 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.123 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.122 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.123 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -175,7 +175,8 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `codex-asset-production` | `/codex-asset-production` | You need Codex imagegen/source-art, Codex-specific provenance, or an explicit Codex dicut fallback/A-B after the asset-designer route. |
 | `control-room-goals` | `/control-room-goals` | You need to draft, apply, or refine a Goal Mode objective, DoD, immediate next action, verification evidence, handoff/reset boundary, optional Execution Run/Code Evidence ownership, or a model-aware execute-to-DoD pilot for non-trivial work. |
 | `creating-character-ip` | `/creating-character-ip` | You need to create a simple mascot/character IP, preserve the same human-selected generated character, move it to another corner, or recompose it for an app icon, avatar, sticker, or layout without silently redesigning it. |
-| `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md semantic-search guidance, portable project settings policy, filename-only preflight, or explicit strict-scan integration with `cocoindex-code` / `ccc`. |
+| `ccc` | `/ccc` | You need day-to-day CocoIndex Code search, index freshness, portable project settings, filename-only preflight, one pinned Gitleaks self-heal, or a strict receipt. |
+| `cocoindex-rules-init` | `/cocoindex-rules-init` | A repo needs AGENTS.md semantic-search guidance. Installing it also installs `ccc`, which owns the portable settings policy, preflight, and strict-scan scripts. |
 | `direct-cli` | `/direct-cli` | You need pane-first Cursor, Antigravity, Codex, or bounded Pi lanes through auto-selected Herdr/tmux backends, including multi-pane fanout or detached Herdr result collection where the lane has named-agent lifecycle. |
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
@@ -198,7 +199,8 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Bundle | Install | Use |
 | --- | --- | --- |
 | Orientation | `bun ./src/cli.ts install recap rrr forward --agent opencode --scope local` | `/recap --now`, `/rrr`, `/forward` |
-| CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch AGENTS.md with semantic routing, portable settings policy, filename-only preflight, and explicit strict-scan guidance |
+| CocoIndex search | `bun ./src/cli.ts install ccc --agent opencode --scope local` | Search, refresh, and gate a repo with the canonical CCC skill |
+| CocoIndex rules | `bun ./src/cli.ts install cocoindex-rules-init --agent opencode --scope local` | Add or patch AGENTS.md with semantic routing. The installer also installs `ccc` for portable settings policy, filename-only preflight, and explicit strict-scan guidance |
 | Project tracking | `bun ./src/cli.ts install project learn --agent opencode --scope local` | `/project learn`, `/project incubate`, `/learn` |
 | Repo doctrine | `bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init cocoindex-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Audit active context contracts, bootstrap docs, add CocoIndex-first search rules, refine guidance from feedback, and apply the Mahiro style lens |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, bounded Pi, supported multi-pane fanout, transcript lanes |

@@ -15,7 +15,7 @@ import { join } from "path";
 import { createHash } from "crypto";
 
 const repoRoot = join(import.meta.dir, "..");
-const scriptsRoot = join(repoRoot, "skills", "cocoindex-rules-init", "scripts");
+const scriptsRoot = join(repoRoot, "skills", "ccc", "scripts");
 const syncScript = join(scriptsRoot, "sync-project-excludes.py");
 const preflightScript = join(scriptsRoot, "preflight.py");
 const strictScript = join(scriptsRoot, "strict-gitleaks-scan.py");
@@ -310,13 +310,15 @@ describe("CocoIndex security V2 package", () => {
       expect(settings).toContain('- "**/.env.sample"');
       expect(settings).toContain('- "**/.env.template"');
       expect(settings).toContain("custom_option: keep");
-      expect(readFileSync(join(repoRoot, "skills", "cocoindex-rules-init", "resources", "portable-credential-deny-baseline.txt"), "utf8")).not.toContain("**/*.json");
+      expect(readFileSync(join(repoRoot, "skills", "ccc", "resources", "portable-credential-deny-baseline.txt"), "utf8")).not.toContain("**/*.json");
     });
   });
 
   test("pins the current Gitleaks config and metadata-only template", () => {
-    const config = readFileSync(join(repoRoot, "skills", "cocoindex-rules-init", "resources", "gitleaks-config.toml"), "utf8");
-    const template = readFileSync(join(repoRoot, "skills", "cocoindex-rules-init", "resources", "gitleaks-metadata-report.tmpl"), "utf8");
+    expect(existsSync(join(repoRoot, "skills", "cocoindex-rules-init", "scripts"))).toBe(false);
+    expect(existsSync(join(repoRoot, "skills", "cocoindex-rules-init", "resources"))).toBe(false);
+    const config = readFileSync(join(repoRoot, "skills", "ccc", "resources", "gitleaks-config.toml"), "utf8");
+    const template = readFileSync(join(repoRoot, "skills", "ccc", "resources", "gitleaks-metadata-report.tmpl"), "utf8");
     expect(config).toContain('minVersion = "v8.30.1"');
     expect(config).toContain("useDefault = true");
     expect(config).toContain("[[allowlists]]");

@@ -1,8 +1,9 @@
-import { existsSync, rmSync, writeFileSync } from "fs";
+import { lstatSync, rmSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
 import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
 import { listInstalled, receiptPath } from "./list";
+import { packagedDependents } from "./skill-dependencies";
 import type { InstallReceipt, InstallScope, InstallUnitKind, ScopedAgent, SkippedItem, UninstalledTarget, UninstallResult, UninstallStatus } from "./types";
 
 function unique<T>(values: T[]): T[] {
@@ -57,20 +58,52 @@ function resolveRequested(receipt: InstallReceipt, items: string[]): { skills: s
   };
 }
 
+function removeInstallPath(target: string): boolean {
+  try {
+    if (lstatSync(target).isSymbolicLink()) {
+      unlinkSync(target);
+      return true;
+    }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+
+  rmSync(target, { recursive: true, force: true });
+  return true;
+}
+
 function removeTarget(root: string, agent: ScopedAgent, kind: InstallUnitKind, item: string): UninstalledTarget {
   const target = resolveTarget(root, agent, kind, item);
-  const exists = existsSync(target);
-
-  if (exists) {
-    rmSync(target, { recursive: true, force: true });
-  }
+  const removed = removeInstallPath(target);
 
   return {
     item,
     kind,
     target,
-    removed: exists,
+    removed,
   };
+}
+
+function dependencyBlock(receipt: InstallReceipt, skills: string[]): SkippedItem | null {
+  const removing = new Set(skills);
+
+  for (const skill of skills) {
+    for (const dependent of packagedDependents(skill)) {
+      if (receipt.installedSkills.includes(dependent) && !removing.has(dependent)) {
+        return {
+          item: skill,
+          kind: "skill",
+          reason: `Cannot uninstall '${skill}' while receipt-managed '${dependent}' remains installed. Uninstall '${dependent}' as well, or uninstall all receipt items.`,
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 function writeNextReceipt(path: string, receipt: InstallReceipt, removedSkills: string[], removedCommands: string[]): boolean {
@@ -127,21 +160,36 @@ export function uninstall(agent: ScopedAgent, scope: InstallScope, items: string
     };
   }
 
-  const resolved = resolveRequested(receipt, items);
+  const requested = resolveRequested(receipt, items);
+  const blocked = dependencyBlock(receipt, requested.skills);
+  if (blocked) {
+    return {
+      status: "skipped",
+      agent,
+      scope,
+      root,
+      uninstalled: [],
+      targets: [],
+      skipped: [...requested.skipped, blocked],
+      receiptPath: path,
+      receiptRemoved: false,
+    };
+  }
+
   const targets = [
-    ...resolved.skills.map((item) => removeTarget(root, agent, "skill", item)),
-    ...resolved.commands.map((item) => removeTarget(root, agent, "command", item)),
+    ...requested.skills.map((item) => removeTarget(root, agent, "skill", item)),
+    ...requested.commands.map((item) => removeTarget(root, agent, "command", item)),
   ];
-  const receiptRemoved = targets.length > 0 ? writeNextReceipt(path, receipt, resolved.skills, resolved.commands) : false;
+  const receiptRemoved = targets.length > 0 ? writeNextReceipt(path, receipt, requested.skills, requested.commands) : false;
 
   return {
-    status: resolveStatus(targets, resolved.skipped),
+    status: resolveStatus(targets, requested.skipped),
     agent,
     scope,
     root,
-    uninstalled: sortNames([...resolved.skills, ...resolved.commands]),
+    uninstalled: sortNames([...requested.skills, ...requested.commands]),
     targets,
-    skipped: resolved.skipped,
+    skipped: requested.skipped,
     receiptPath: path,
     receiptRemoved,
   };

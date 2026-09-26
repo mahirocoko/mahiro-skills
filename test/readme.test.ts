@@ -40,7 +40,7 @@ describe("README", () => {
     expect(content).toContain("a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations");
     expect(content).toContain("## Install");
     expect(content).toContain("### Tagged install without keeping a clone");
-    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.122 -- --agent opencode --scope global");
+    expect(content).toContain("curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.123 -- --agent opencode --scope global");
     expect(content).toContain("### Quick local install");
     expect(content).toContain("bun ./src/cli.ts install --agent opencode --scope local");
     expect(content).toContain("### Standard Agent Skills compatibility");
@@ -105,7 +105,8 @@ describe("README", () => {
     expect(index).toContain("Runtime bundle membership still comes from `../.claude-plugin/marketplace.json`");
     expect(index).toContain("The canonical catalog is default-or-absent");
     expect(index).toContain("`project` — Clone and track external repos for study or development.");
-    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper with a portable project settings boundary (5 MiB cap, chunkers rejection), candidate symlink fail-closed boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
+    expect(index).toContain("`ccc` — Day-to-day CocoIndex Code search, index freshness, portable V2 project settings, filename-only preflight, one pinned Gitleaks v8.30.1 self-heal, and strict receipt checks.");
+    expect(index).toContain("`cocoindex-rules-init` — Repo-local CocoIndex Code rule bootstrapper. Patches `AGENTS.md` and invokes the installed sibling `ccc` skill for the portable project settings boundary (5 MiB cap, chunkers rejection), candidate symlink fail-closed boundary, filename-only preflight, deny/noise policy sync, and explicit Gitleaks strict-scan contract.");
     expect(index).toContain("`mahiro-style` — Mahiro code/review/implementation doctrine and fallback lens; repo-local reality wins before cross-repo taste.");
     expect(index).toContain("`mahiro-docs-rules-init` — Repo-reality-first AGENTS.md and docs-family bootstrapper; layers Mahiro-style only as preferred direction, preserves target-repo mechanics, and adds CocoIndex/`ccc` guidance only when locally proven.");
     expect(index).toContain("`mahiro-guidance-refine` — Session feedback to docs/rules/style guidance proposal workflow with scope classification.");
@@ -113,7 +114,7 @@ describe("README", () => {
     expect(index).toContain("`auditing-context-contracts` — Repository context-contract audit");
     expect(index).toContain("keyword absence is not semantic proof");
     expect(index).toContain("**Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`");
-    expect(index).toContain("**CocoIndex bundle**: `cocoindex-rules-init`, `mahiro-guidance-refine`");
+    expect(index).toContain("**CocoIndex bundle**: `ccc`, `cocoindex-rules-init`, `mahiro-guidance-refine`");
     expect(index).toContain("**Direct execution bundle**: `direct-cli`, `gemini`, `watch`");
     expect(examples).toContain("# mahiro-skills examples");
     expect(examples).toContain("[`tui-session.md`](./tui-session.md)");

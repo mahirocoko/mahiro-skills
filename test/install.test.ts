@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, readdirSync, mkdirSync, statSync, writeFileSync } from "fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, symlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { hashPath } from "../src/content-hash";
@@ -68,7 +68,7 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(result.installed).toEqual(["asset-designer", "auditing-context-contracts", "cocoindex-rules-init", "codex-asset-production", "control-room-goals", "creating-character-ip", "direct-cli", "fable", "forward", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "project", "recap", "rrr", "studying-codrops", "web-asset-prompts", "watch"]);
+      expect(result.installed).toEqual(["asset-designer", "auditing-context-contracts", "ccc", "cocoindex-rules-init", "codex-asset-production", "control-room-goals", "creating-character-ip", "direct-cli", "fable", "forward", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "project", "recap", "rrr", "studying-codrops", "web-asset-prompts", "watch"]);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "auditing-context-contracts", "scripts", "scan-context-contracts.ts"))).toBe(true);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
@@ -496,6 +496,91 @@ describe("install", () => {
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "commands", "project.md"))).toBe(true);
       expect(readFileSync(join(target, "SKILL.md"), "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development.");
       expect(readFileSync(commandTarget, "utf8")).toContain("description: Mahiro Skill | Clone and track external repos for study or development with ghq plus .agent-state-backed tracking.");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("replaces a legacy symlink at the resolved adapter root without mutating its target", () => {
+    const temp = makeTempEnv();
+    try {
+      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, ".agents", "skills", "ccc");
+      const marker = join(legacy, "LEGACY.txt");
+      mkdirSync(legacy, { recursive: true });
+      writeFileSync(marker, "legacy-target\n");
+      const lettaSkill = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "ccc");
+      mkdirSync(join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills"), { recursive: true });
+      symlinkSync(legacy, lettaSkill);
+
+      const result = install("letta-code", "global", ["ccc"], false, temp.env);
+
+      expect(result.status).toBe("installed");
+      expect(lstatSync(lettaSkill).isSymbolicLink()).toBe(false);
+      expect(lstatSync(lettaSkill).isDirectory()).toBe(true);
+      expect(existsSync(join(lettaSkill, "SKILL.md"))).toBe(true);
+      expect(readFileSync(marker, "utf8")).toBe("legacy-target\n");
+      expect(existsSync(join(legacy, "SKILL.md"))).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("replaces a legacy letta symlink on overwrite without mutating the old target", () => {
+    const temp = makeTempEnv();
+    try {
+      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, "legacy-ccc-target");
+      const marker = join(legacy, "LEGACY.txt");
+      mkdirSync(legacy, { recursive: true });
+      writeFileSync(marker, "legacy-target\n");
+      const lettaRoot = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta");
+      const lettaSkill = join(lettaRoot, "skills", "ccc");
+      const rulesSkill = join(lettaRoot, "skills", "cocoindex-rules-init");
+      mkdirSync(join(lettaRoot, "skills"), { recursive: true });
+      symlinkSync(legacy, lettaSkill);
+
+      const result = install("letta-code", "global", ["cocoindex-rules-init"], true, temp.env);
+      const receiptPath = join(lettaRoot, ".mahiro-skills", "receipts", "global-letta-code.json");
+      const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
+        installedSkills: string[];
+        targetStates: { name: string; kind: string; sourceHash: string; installedHash: string }[];
+      };
+      const states = Object.fromEntries(receipt.targetStates.map((state) => [`${state.kind}:${state.name}`, state]));
+
+      expect(result.status).toBe("installed");
+      expect(result.installed).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(lstatSync(lettaSkill).isSymbolicLink()).toBe(false);
+      expect(lstatSync(lettaSkill).isDirectory()).toBe(true);
+      expect(existsSync(join(lettaSkill, "SKILL.md"))).toBe(true);
+      expect(lstatSync(rulesSkill).isDirectory()).toBe(true);
+      expect(lstatSync(legacy).isDirectory()).toBe(true);
+      expect(readFileSync(marker, "utf8")).toBe("legacy-target\n");
+      expect(existsSync(join(legacy, "SKILL.md"))).toBe(false);
+      const cccHash = hashPath(lettaSkill);
+      const rulesHash = hashPath(rulesSkill);
+      if (!cccHash || !rulesHash) {
+        throw new Error("installed skill hash was missing");
+      }
+      expect(receipt.installedSkills).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(states["skill:ccc"]?.installedHash).toBe(cccHash);
+      expect(states["skill:cocoindex-rules-init"]?.installedHash).toBe(rulesHash);
+      expect(states["skill:ccc"]?.sourceHash).toHaveLength(64);
+      expect(states["skill:cocoindex-rules-init"]?.sourceHash).toHaveLength(64);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("keeps Agy dependency planning on source skill names", () => {
+    const temp = makeTempEnv();
+    try {
+      const result = install("agy", "local", ["cocoindex-rules-init"], false, temp.env);
+      const root = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills");
+
+      expect(result.installed).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(lstatSync(join(root, "mh-ccc")).isDirectory()).toBe(true);
+      expect(lstatSync(join(root, "mh-cocoindex-rules-init")).isDirectory()).toBe(true);
+      expect(existsSync(join(root, "ccc"))).toBe(false);
+      expect(existsSync(join(root, "cocoindex-rules-init"))).toBe(false);
     } finally {
       temp.cleanup();
     }

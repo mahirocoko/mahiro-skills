@@ -1,10 +1,23 @@
-import { existsSync } from "fs";
+import { existsSync, lstatSync } from "fs";
 import { join } from "path";
 
 import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact, supportsCommands } from "./adapters";
 import { getRepoInventory } from "./repo";
+import { packagedSkillDependencies } from "./skill-dependencies";
 import { hasRetiredGeminiReceipt, retiredGeminiReceiptPath } from "./retired-gemini";
 import type { InstallPlan, InstallScope, InstallTarget, RepoInventory, ScopedAgent, SkippedItem } from "./types";
+
+function hasNonLinkCollision(target: string): boolean {
+  try {
+    return !lstatSync(target).isSymbolicLink();
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
 
 function makeTarget(root: string, name: string, kind: "skill" | "command", sourceRoot: string, agent: ScopedAgent): InstallTarget {
   const source = kind === "skill"
@@ -24,12 +37,37 @@ function makeTarget(root: string, name: string, kind: "skill" | "command", sourc
     source,
     target,
     action: "copy",
-    collision: existsSync(target),
+    collision: hasNonLinkCollision(target),
   };
 }
 
 function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
+}
+
+// Dependency keys are packaged source identities. Adapter naming, including Agy `mh-*`, is applied by makeTarget.
+function expandPackagedSkillDependencies(skills: readonly string[], inventory: RepoInventory): string[] {
+  const expanded: string[] = [];
+  const seen = new Set<string>();
+
+  const visit = (name: string): void => {
+    if (seen.has(name)) {
+      return;
+    }
+    seen.add(name);
+    for (const dependency of packagedSkillDependencies[name] ?? []) {
+      if (!inventory.skills.includes(dependency)) {
+        throw new Error(`Packaged skill '${name}' depends on missing skill '${dependency}'.`);
+      }
+      visit(dependency);
+    }
+    expanded.push(name);
+  };
+
+  for (const name of skills) {
+    visit(name);
+  }
+  return expanded;
 }
 
 function adaptDescriptionForAgent(description: string | undefined, agent: ScopedAgent): string | undefined {
@@ -59,13 +97,7 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
       resolvedCommands.push(...inventory.commands);
     }
 
-    return {
-      skills: unique(resolvedSkills),
-      commands: unique(resolvedCommands),
-      skipped,
-      warnings,
-      description,
-    };
+    return finishResolved(inventory, agent, resolvedSkills, resolvedCommands, skipped, warnings, description);
   }
 
   const requestedItems = items.length > 0 ? items : [inventory.defaultBundle?.name ?? "fallback-all"];
@@ -114,9 +146,31 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
 
     throw new Error(`Unknown install item '${item}'.`);
   }
+  return finishResolved(inventory, agent, resolvedSkills, resolvedCommands, skipped, warnings, description);
+}
+
+function finishResolved(
+  inventory: RepoInventory,
+  agent: ScopedAgent,
+  resolvedSkills: string[],
+  resolvedCommands: string[],
+  skipped: SkippedItem[],
+  warnings: string[],
+  description: string | undefined,
+): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[]; description?: string } {
+  const skills = expandPackagedSkillDependencies(resolvedSkills, inventory);
+  const commands = [...resolvedCommands];
+  if (supportsCommands(agent)) {
+    for (const skill of skills) {
+      if (inventory.commands.includes(skill)) {
+        commands.push(skill);
+      }
+    }
+  }
+
   return {
-    skills: unique(resolvedSkills),
-    commands: unique(resolvedCommands),
+    skills,
+    commands: unique(commands),
     skipped,
     warnings,
     description,

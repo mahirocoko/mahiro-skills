@@ -120,7 +120,7 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Prefer semantic search for questions like "where is this implemented?", "how does this flow work?", or "find related code" when the repo has a maintained index.
 - Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and project settings without opening suspected secret contents. Never chain initialization and indexing before that check; fail closed until targeted credential/provider paths are excluded and the required strict content scan is current.
-- Materialize separate portable security and noise policy into project `.cocoindex_code/settings.yml` before doctor/index. Preserve unrelated settings and do not assume a wrapper, hook, installed patch, or external parity.
+- Materialize separate portable security and noise policy into project `.cocoindex_code/settings.yml` before doctor/index by invoking the installed `ccc` skill. Preserve unrelated settings and do not assume a wrapper, hook, installed patch, or external parity. Run pinned Gitleaks `ensure` only when the managed binary is missing; invalid state blocks. Then require a fresh strict receipt.
 - A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before trusting search results.
 - Keep filename-only preflight explicit and non-equivalent to strict content scanning.
 - Prefer `rg` for exact symbols, file names, strings, and verification that a literal pattern is absent.

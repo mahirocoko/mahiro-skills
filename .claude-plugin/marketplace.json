@@ -10,6 +10,7 @@
       "skills": [
         "asset-designer",
         "auditing-context-contracts",
+        "ccc",
         "cocoindex-rules-init",
         "codex-asset-production",
         "control-room-goals",
@@ -34,6 +35,7 @@
       "commands": [
         "asset-designer",
         "auditing-context-contracts",
+        "ccc",
         "cocoindex-rules-init",
         "codex-asset-production",
         "control-room-goals",

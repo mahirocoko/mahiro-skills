@@ -10,11 +10,13 @@ has crossed the explicit scanner/content boundary.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
 import stat
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,7 +26,6 @@ from typing import Iterable, Sequence
 SCHEMA_VERSION = "mahiro-ccc-security-v2"
 GITLEAKS_VERSION = "8.30.1"
 GITLEAKS_LICENSE = "MIT"
-GITLEAKS_ARCHIVE_SHA256 = "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5"
 MAX_POLICY_BYTES = 2 * 1024 * 1024
 MAX_FILE_SIZE_CAP = 5 * 1024 * 1024
 MAX_SOURCE_FILE_BYTES = MAX_FILE_SIZE_CAP
@@ -1256,6 +1257,39 @@ def validate_metadata_findings(raw: object, scan_root: Path, candidate_paths: se
     return findings
 
 
+def _ensure_gitleaks_module():
+    cached = getattr(_ensure_gitleaks_module, "module", None)
+    if cached is not None:
+        return cached
+    helper = Path(__file__).resolve().parent / "ensure-gitleaks.py"
+    spec = importlib.util.spec_from_file_location("mahiro_ccc_ensure_gitleaks", helper)
+    if spec is None or spec.loader is None:
+        raise PolicyError("pinned Gitleaks helper is missing")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        raise PolicyError("pinned Gitleaks helper could not be loaded") from exc
+    setattr(_ensure_gitleaks_module, "module", module)
+    return module
+
+
+def managed_gitleaks_dest() -> Path:
+    try:
+        return Path(_ensure_gitleaks_module().default_dest())
+    except Exception as exc:
+        raise PolicyError("pinned Gitleaks destination is unavailable") from exc
+
+
+def pinned_gitleaks_archive_sha256() -> str:
+    """Archive pin for this platform, owned by ensure-gitleaks.py."""
+    try:
+        return str(_ensure_gitleaks_module().current_target().archive_sha256)
+    except Exception as exc:
+        raise PolicyError("pinned Gitleaks target is not supported on this platform") from exc
+
+
 def scanner_contract_metadata(
     config_sha256: str,
     template_sha256: str,
@@ -1267,7 +1301,7 @@ def scanner_contract_metadata(
         "name": "gitleaks",
         "version": GITLEAKS_VERSION,
         "license": GITLEAKS_LICENSE,
-        "archive_sha256": GITLEAKS_ARCHIVE_SHA256,
+        "archive_sha256": pinned_gitleaks_archive_sha256(),
         "binary_sha256": binary_sha256,
         "signed_provenance_established": False,
         "config_sha256": config_sha256,
