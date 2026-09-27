@@ -6,7 +6,7 @@ The intended model is simple:
 
 - Mahiro Code / the main agent stays the conversation owner.
 - Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor.
-- Herdr-managed panes are preferred when the invocation already runs inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
+- Orca terminals are preferred when the caller is provably inside a live writable Orca terminal for the current worktree; Herdr-managed panes are next when the caller is inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
 - The selected backend's pane output is treated as the nearest source of execution truth.
 - For production-ish asset work, route through `asset-designer` first; direct-cli owns pane execution, not the asset workflow. Add `codex-asset-production` only when the contract needs Codex source/imagegen or an explicit Codex dicut fallback/A-B.
 
@@ -37,7 +37,7 @@ On return, collect the exact report promptly and ask whether its evidence answer
 
 ## Core operator rules
 
-- Prefer a **fresh Herdr tab or tmux session** when an old job container looks unhealthy.
+- Prefer a **fresh container in the already-selected Orca, Herdr, or tmux backend** when an old job container looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
 - Use `agent models`, `agy models`, `codex debug models`, and `pi --list-models` for current catalogs. Use each CLI's help/doctor surface when launch flags, features, or local health need validation.
 - Keep the lane **interactive in the selected pane backend**. Do not default to Cursor headless mode such as `agent -p`.
@@ -51,7 +51,7 @@ On return, collect the exact report promptly and ask whether its evidence answer
 - If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
 - Launch Cursor, Antigravity, Codex, and Pi in the selected backend without the task prompt inline.
-- Confirm readiness through Herdr's `agent start` plus pane/agent reads, or through `tmux capture-pane`, before sending the real task prompt.
+- Confirm readiness through Orca `terminal wait --for tui-idle`, Herdr `agent start` plus pane/agent reads, or `tmux capture-pane` before sending the real task prompt.
 - Cursor's default `--trust` should bypass its separate workspace trust prompt for the intended repo. If another CLI still presents a trust gate, accept it only for that intended worktree before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
 - Tell the executor to **continue from the current worktree only**.
@@ -61,20 +61,26 @@ On return, collect the exact report promptly and ask whether its evidence answer
 
 ## Backend contract
 
-`/direct-cli` accepts `--backend auto|herdr|tmux`. Omission means `auto`.
+`/direct-cli` accepts `--backend auto|orca|herdr|tmux`. Omission means `auto`.
 
 ### Selection rules
 
 1. Parse an explicit backend before creating any lane.
-2. `auto` selects Herdr only when all of these are true:
+2. `auto` first selects Orca only when all of these are true:
+   - `orca` is on `PATH`
+   - `ORCA_TERMINAL_HANDLE`, `ORCA_WORKTREE_ID`, `ORCA_TAB_ID`, and `ORCA_PANE_KEY` are non-empty
+   - `orca status --json` reports a ready, reachable, connected runtime
+   - `orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json` returns the exact handle/worktree/tab/pane binding, with `connected: true`, `writable: true`, and `orphaned: false`
+   - `orca worktree show --worktree "path:$(pwd -P)" --json` returns a non-archived worktree whose real path matches the current working directory
+3. If Orca fails, `auto` selects Herdr only when all of these are true:
    - `herdr` is on `PATH`
    - `HERDR_ENV=1`
    - `HERDR_PANE_ID` is non-empty
    - `herdr status --json` reports `server.running: true` and `server.compatible: true`
    - `herdr pane get "$HERDR_PANE_ID"` resolves a live pane; Herdr may return a new public ID when the launch-time value is a retained move alias
-3. If any Herdr auto check fails, select tmux only when tmux is on `PATH`; otherwise fail before creating state.
-4. Explicit `herdr` fails clearly when its preflight fails; explicit `tmux` always keeps the historical tmux path.
-5. Print the selected backend and why. Never create state in one backend and silently retry in the other.
+4. If Orca and Herdr fail, select tmux only when tmux is on `PATH`; otherwise fail before creating state.
+5. Explicit `orca` and `herdr` fail clearly when their identity preflight fails; explicit `tmux` always keeps the historical tmux path.
+6. Print the selected backend and why. Never create state in one backend and silently retry elsewhere.
 
 Use the packaged executable selector rather than copying a weaker marker-only check. Resolve `DIRECT_CLI_SKILL_ROOT` as the directory containing the loaded `SKILL.md`, and pass the parsed skill argument directly:
 
@@ -88,7 +94,155 @@ printf '%s\n' "$backend_report"
 DIRECT_BACKEND="$(printf '%s\n' "$backend_report" | sed -n 's/^backend=//p')"
 ```
 
-The selector validates both backend availability, Herdr status JSON, and a live pane binding. It prints the selected backend plus selection evidence. Do not use binary presence alone for `auto`; Herdr may be installed while the user works in an ordinary terminal. Do not hard-code protocol numbers. Herdr integrations are optional enhancements and must never be installed without explicit user approval because they edit other CLI configuration.
+The selector validates Orca runtime, exact caller-terminal identity, and the tracked target current directory before checking Herdr status and live pane binding, then tmux availability. It prints the selected backend plus selection evidence. Do not use binary presence alone for `auto`; Orca or Herdr may be installed while the user works in an ordinary terminal. Orca and Herdr checks are bounded independently by `DIRECT_CLI_ORCA_TIMEOUT_SECONDS` and `DIRECT_CLI_HERDR_TIMEOUT_SECONDS`, both defaulting to five seconds. Do not hard-code protocol numbers. Herdr integrations are optional enhancements and must never be installed without explicit user approval because they edit other CLI configuration.
+
+The caller and target are separate receipts. The main agent may start in Orca worktree A and `cd` into another tracked Orca worktree B; that is a valid Orca route. `ORCA_WORKTREE_ID` proves A as part of the caller identity, while `orca worktree show --worktree "path:$(pwd -P)"` resolves B as the target. Never require A and B to match, and never let `active` silently redirect a B task into A.
+
+### Orca lane lifecycle
+
+Load the installed Orca version's guide before issuing terminal commands:
+
+```bash
+orca skills get orca-cli
+```
+
+One direct job maps to one visible background terminal tab in the target Orca worktree resolved from the current cwd; it does not implicitly target the caller terminal's worktree. This is direct terminal control, not an Orca orchestration Run. When the job needs task DAGs, ask/reply, durable `worker_done`, federation, or supervised release, stop and use the separate Orca `orchestration` skill instead.
+
+Create the agent interactively without embedding the task prompt, parse every runtime-issued identity field, and keep the tab unfocused unless Mahiro explicitly asks to reveal it:
+
+```bash
+JOB="direct-<job-slug>"
+PROMPT_FILE="/tmp/$JOB.prompt.txt"
+TARGET_CWD="$(pwd -P)"
+LAUNCH_COMMAND='agent --model "<verified-model>" --yolo --approve-mcps --trust'
+
+target_json="$(orca worktree show --worktree "path:$TARGET_CWD" --json)" || exit $?
+ORCA_TARGET_WORKTREE="$(printf '%s' "$target_json" | python3 -c '
+import json,sys
+print(json.load(sys.stdin)["result"]["worktree"]["id"])
+')"
+
+create_json="$(orca terminal create \
+  --worktree "path:$TARGET_CWD" \
+  --title "$JOB" \
+  --command "$LAUNCH_COMMAND" \
+  --json)" || exit $?
+
+ORCA_JOB_HANDLE="$(printf '%s' "$create_json" | python3 -c '
+import json,sys
+print(json.load(sys.stdin)["result"]["terminal"]["handle"])
+')"
+ORCA_JOB_WORKTREE="$(printf '%s' "$create_json" | python3 -c '
+import json,sys
+print(json.load(sys.stdin)["result"]["terminal"]["worktreeId"])
+')"
+ORCA_JOB_INCARNATION="$(printf '%s' "$create_json" | python3 -c '
+import json,sys
+print(json.load(sys.stdin)["result"]["terminal"]["incarnationId"])
+')"
+[ "$ORCA_JOB_WORKTREE" = "$ORCA_TARGET_WORKTREE" ] || {
+  orca terminal close --terminal "$ORCA_JOB_HANDLE" --tab --json >/dev/null ||
+    echo "direct-cli: failed to close the newly created mismatched Orca lane" >&2
+  echo "direct-cli: Orca created the lane in a different worktree; stopped before prompting" >&2
+  exit 1
+}
+```
+
+For Agy use its verified interactive launch flags and exact stable model, and compact ordinary follow-up prompts to one line before `terminal send`; do not assume Orca removes Agy's multiline-input caveat. For Codex and Pi use their verified interactive commands from this playbook. Map an explicit direct-cli `--focus` to `orca terminal create --focus`; omission remains background/no-focus.
+
+Revalidate the exact receipt before prompting, interrupting, splitting, or closing:
+
+```bash
+verify_orca_job_terminal() {
+  terminal_json="$(orca terminal show --terminal "$ORCA_JOB_HANDLE" --json)" || return 1
+  printf '%s' "$terminal_json" | python3 -c '
+import json
+import sys
+
+terminal = json.load(sys.stdin)["result"]["terminal"]
+expected_handle, expected_worktree, expected_incarnation = sys.argv[1:]
+valid = (
+    terminal.get("handle") == expected_handle
+    and terminal.get("worktreeId") == expected_worktree
+    and terminal.get("incarnationId") == expected_incarnation
+    and terminal.get("connected") is True
+    and terminal.get("writable") is True
+    and terminal.get("orphaned") is False
+)
+raise SystemExit(0 if valid else 1)
+' "$ORCA_JOB_HANDLE" "$ORCA_JOB_WORKTREE" "$ORCA_JOB_INCARNATION"
+}
+```
+
+Wait for actual TUI readiness before sending. A wait command can return successfully with `satisfied: false`, so inspect the result rather than treating output or exit zero as readiness. Stop without sending if readiness remains unsatisfied:
+
+```bash
+ready_json="$(orca terminal wait \
+  --terminal "$ORCA_JOB_HANDLE" \
+  --for tui-idle \
+  --timeout-ms 60000 \
+  --json)" || exit $?
+printf '%s' "$ready_json" | python3 -c '
+import json
+import sys
+
+wait = json.load(sys.stdin)["result"]["wait"]
+raise SystemExit(0 if wait.get("satisfied") is True else 1)
+' || {
+  echo "direct-cli: Orca agent did not become TUI-idle; task prompt was not sent" >&2
+  exit 1
+}
+```
+
+Read before send, preserve the returned cursor, then send the exact prompt once. Pass `--wait-submit`; require the additive receipt to include `turn_started`. `input_accepted` alone is queued truth, not proof of a started model turn, and silence never authorizes resending:
+
+```bash
+baseline_json="$(orca terminal read --terminal "$ORCA_JOB_HANDLE" --json)" || exit $?
+BASELINE_CURSOR="$(printf '%s' "$baseline_json" | python3 -c '
+import json,sys
+cursor = json.load(sys.stdin)["result"]["terminal"].get("nextCursor")
+if cursor is None:
+    raise SystemExit(1)
+print(cursor)
+')"
+
+verify_orca_job_terminal || exit 1
+send_json="$(orca terminal send \
+  --terminal "$ORCA_JOB_HANDLE" \
+  --text "$(cat "$PROMPT_FILE")" \
+  --enter \
+  --wait-submit 10 \
+  --json)" || exit $?
+
+printf '%s' "$send_json" | python3 -c '
+import json
+import sys
+
+payload = json.load(sys.stdin)
+prompt = payload.get("result", {}).get("send", {}).get("prompt") or {}
+stages = prompt.get("stages", [])
+raise SystemExit(0 if "turn_started" in stages else 1)
+' || {
+  echo "direct-cli: Orca accepted input but did not prove turn_started; use only the returned retry-request ID, never a new send" >&2
+  exit 1
+}
+```
+
+After the started turn, wait for `tui-idle`, then read only output after the baseline cursor and audit the executor report. Idle is a wake signal, not acceptance evidence; a lane that launched child/background work still needs its exact report and postconditions checked. If the send reports an ambiguous transport failure, retry only with the same payload and its returned `--retry-request` ID.
+
+For multiple direct lanes, create one root terminal and split it with `orca terminal split --terminal "$ORCA_JOB_HANDLE" --direction horizontal|vertical --command '<interactive-agent-command>' --json`. Record every returned child handle/worktree/incarnation separately. Orca direct fanout has no packaged byte-identity helper yet; do not claim same-prompt equality unless the prompt bytes and each send receipt are independently recorded.
+
+Cleanup is exact and fail-closed. For a split job, apply the same handle/worktree/incarnation/connected/writable/non-orphaned check to every recorded child before closing the tab; a match on the root alone is insufficient:
+
+```bash
+verify_orca_job_terminal || {
+  echo "direct-cli: Orca cleanup receipt mismatch; leaving the terminal untouched" >&2
+  exit 1
+}
+orca terminal close --terminal "$ORCA_JOB_HANDLE" --tab --json
+```
+
+Never use worktree-wide `terminal close --all` for ordinary direct-cli cleanup. Direct-cli `--detach` remains Herdr-only until an Orca direct-lane callback/return contract is explicitly proven; use Orca orchestration for supervised long work rather than inventing one here.
 
 ### Herdr lane lifecycle
 
@@ -506,13 +660,13 @@ Capture each available `*_SESSION_ID` from the matching receipt-bound `herdr pan
 
 ### tmux fallback lifecycle
 
-The existing tmux launch, fanout, capture, recovery, and cleanup commands below remain authoritative when `DIRECT_BACKEND=tmux`. Running inside Herdr with `--backend tmux` intentionally creates a nested multiplexer; expect Herdr to see the foreground process as `tmux`, not the agents inside it.
+The existing tmux launch, fanout, capture, recovery, and cleanup commands below remain authoritative when `DIRECT_BACKEND=tmux`. Running inside Orca or Herdr with `--backend tmux` intentionally creates a nested multiplexer; expect the host pane to see the foreground process as `tmux`, not the agents inside it.
 
 ## Multi-pane job sessions
 
 Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Opus for critique, or Cursor for alternatives.
 
-The goal is one job, one Herdr tab or tmux session, many panes — not scattered containers that lose the shared context.
+The goal is one job, one receipt-bound Orca tab, Herdr tab, or tmux session with many panes — not scattered containers that lose shared context.
 
 Pi remains single-lane in the initial contract. Do not place Pi in role fanout, same-prompt fanout, or detached jobs until the packaged helpers are extended and lifecycle-proven for Pi.
 
@@ -526,7 +680,7 @@ Pi remains single-lane in the initial contract. Do not place Pi in role fanout, 
 
 ### Job naming and lane registry
 
-For Herdr, use the tab and pane IDs returned by the lifecycle above. For tmux, name the session for the job:
+For Orca, record the root and every split terminal handle/worktree/incarnation returned by the runtime. For Herdr, use the tab and pane IDs returned by the lifecycle above. For tmux, name the session for the job:
 
 ```bash
 JOB="direct-<job-slug>"
@@ -727,7 +881,7 @@ Example asset lane registry:
 | 3 | `codex-dicut-fallback` | Codex current verified fallback | optional same-input fallback/A-B after a named trigger | write only to `generated-images/codex/dicut-fallback/` |
 | 4 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
 
-- Put all panes in one `direct-<asset-job>` Herdr tab or tmux session.
+- Put all panes in one receipt-bound `direct-<asset-job>` Orca or Herdr tab, or one tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
 - Use role fanout for pipeline speed: `codex-source-a`, `codex-source-b`, `agy-dicut`, optional `codex-dicut-fallback`, `asset-qa`, and optional read-only review.
 - Record each pane's output folder plus exact session/call result identity, and collect only its exact provider-returned generated-output path when the lane leaves images in provider-managed storage. Never substitute the globally newest generated file or assume a directory shape.
@@ -1198,7 +1352,7 @@ tmux capture-pane -p -t "codex-task" -S -120
 
 ### Fresh session
 
-Treat `use Pi` / `ใช้ Pi` as lane selection. Resolve and preflight the command before creating a Herdr tab or tmux session. Launch interactively without the task prompt, then inspect the pane for Pi version, provider/model, loaded context, trust state, and tool availability.
+Treat `use Pi` / `ใช้ Pi` as lane selection. Resolve and preflight the command before creating an Orca or Herdr tab, or a tmux session. Launch interactively without the task prompt, then inspect the pane for Pi version, provider/model, loaded context, trust state, and tool availability.
 
 Use `--approve` only for the intended current worktree. Keep `--no-extensions --no-prompt-templates` as the default code-execution boundary; leave context files and skills enabled unless Mahiro explicitly asks for a raw-model baseline. Use `--no-session` so direct lanes remain fresh and ephemeral.
 
@@ -1216,6 +1370,8 @@ Use named Herdr `--kind pi` only when current help exposes it and the target pan
 ### Check current pane output
 
 ```bash
+orca terminal read --terminal <pi-handle> --json
+# or Herdr named Pi:
 herdr agent read <named-pi-agent> --source recent-unwrapped --lines 120
 # or custom-wrapper Pi:
 herdr pane read <pi-pane> --source recent-unwrapped --lines 120
@@ -1223,7 +1379,7 @@ herdr pane read <pi-pane> --source recent-unwrapped --lines 120
 tmux capture-pane -p -t "pi-task" -S -120
 ```
 
-For Herdr, revalidate the receipt-bound Pi pane plus its agent session when available before `ctrl+d` or `ctrl+c`, inspect the pane, then close only through `close_herdr_job_tab_if_owned`. For tmux, interrupt the exact session target and close that session explicitly.
+For Orca, revalidate the handle/worktree/incarnation receipt before interrupting or closing. For Herdr, revalidate the receipt-bound Pi pane plus its agent session when available before `ctrl+d` or `ctrl+c`, inspect the pane, then close only through `close_herdr_job_tab_if_owned`. For tmux, interrupt the exact session target and close that session explicitly.
 
 ---
 
@@ -1327,7 +1483,7 @@ Symptoms:
 Mitigation:
 
 - abandon the session
-- create a fresh Herdr job tab when `DIRECT_BACKEND=herdr`, or a fresh tmux session when `DIRECT_BACKEND=tmux`
+- create a fresh Orca terminal when `DIRECT_BACKEND=orca`, Herdr job tab when `DIRECT_BACKEND=herdr`, or tmux session when `DIRECT_BACKEND=tmux`
 - resend a shorter prompt with narrower scope
 - never recover by switching Codex to `codex exec` unless the user explicitly asked for headless/script output
 
@@ -1341,7 +1497,8 @@ Symptoms:
 Mitigation:
 
 - inspect the pane
-- if the message still appears unsent in the inbox or input area, send `enter` once through `herdr agent send-keys <target> enter` or the matching tmux pane before assuming the session is stuck
+- for Orca, follow the durable send receipt: if it stopped at `input_accepted`, reuse the exact payload with its `--retry-request` ID and never send a second unbound Enter
+- for Herdr or tmux, if the message still appears unsent in the input area, send `enter` once through `herdr agent send-keys <target> enter` or the matching tmux pane before assuming the session is stuck
 - if needed, send `Enter` again explicitly
 - if the prompt was not submitted, resend the real task prompt only after the pane is ready
 
@@ -1381,6 +1538,16 @@ orphan candidate and do nothing.
 ---
 
 ## Minimal backend command cheatsheet
+
+Orca jobs:
+
+```bash
+orca terminal show --terminal "$ORCA_JOB_HANDLE" --json
+orca terminal read --terminal "$ORCA_JOB_HANDLE" --cursor "$BASELINE_CURSOR" --limit 1000 --json
+orca terminal wait --terminal "$ORCA_JOB_HANDLE" --for tui-idle --timeout-ms 300000 --json
+verify_orca_job_terminal || exit 1
+orca terminal close --terminal "$ORCA_JOB_HANDLE" --tab --json
+```
 
 Herdr jobs:
 
@@ -1444,11 +1611,11 @@ tmux new-session -d -s "pi-task-fresh"
 
 Before launching Codex:
 
-1. Did the packaged selector choose and report a usable Herdr or tmux backend?
+1. Did the packaged selector choose and report a usable Orca, Herdr, or tmux backend?
 2. Am I launching `codex`, not `codex exec`?
 3. Is `--dangerously-bypass-approvals-and-sandbox` present unless Mahiro explicitly requested a safer sandboxed lane?
 4. If this is an explicit safe lane, is `--sandbox workspace-write --ask-for-approval never` present instead?
-5. Will I verify readiness with `herdr agent start` plus `agent read`, or with `tmux capture-pane`, before prompting?
+5. Will I verify readiness with Orca `terminal wait --for tui-idle`, Herdr `agent start` plus `agent read`, or `tmux capture-pane` before prompting?
 
 If any answer is no, do not launch Codex yet.
 
@@ -1458,7 +1625,7 @@ When a direct CLI lane looks stuck:
 
 1. Check the pane.
 2. Decide whether it is thinking, blocked on approval, or unhealthy.
-3. If unhealthy, abandon the old Herdr tab or tmux session without silently changing backends.
+3. If unhealthy, abandon the old receipt-bound Orca tab, Herdr tab, or tmux session without silently changing backends.
 4. Start a fresh interactive job container in the already selected backend.
 5. Confirm the launch is ready, then send a shorter, narrower prompt.
 6. Confirm the new prompt was actually submitted.

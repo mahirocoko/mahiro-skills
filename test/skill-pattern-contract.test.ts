@@ -285,7 +285,15 @@ describe("skill pattern adaptation phase a", () => {
 
     expect(skill).toContain("## Multi-pane Job Sessions");
     expect(skill).toContain("## Backend Selection");
-    expect(skill).toContain("`--backend auto|herdr|tmux`");
+    expect(skill).toContain("`--backend auto|orca|herdr|tmux`");
+    expect(skill).toContain("`ORCA_TERMINAL_HANDLE`");
+    expect(skill).toContain("`ORCA_WORKTREE_ID`");
+    expect(skill).toContain("`ORCA_TAB_ID`");
+    expect(skill).toContain("`ORCA_PANE_KEY`");
+    expect(skill).toContain("`orca status --json`");
+    expect(skill).toContain("`orca terminal show`");
+    expect(skill).toContain("`orca worktree show`");
+    expect(skill).toContain("Never require their IDs to match");
     expect(skill).toContain("`HERDR_ENV=1`");
     expect(skill).toContain("`HERDR_PANE_ID`");
     expect(skill).toContain("`herdr status --json`");
@@ -296,6 +304,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Treat `--focus` as an explicit opt-in");
     expect(playbook).toContain('TAB_FOCUS_FLAG="--no-focus"');
     expect(playbook).toContain('  "$TAB_FOCUS_FLAG")"');
+    expect(playbook).toContain("The caller and target are separate receipts");
+    expect(playbook).toContain('[ "$ORCA_JOB_WORKTREE" = "$ORCA_TARGET_WORKTREE" ]');
     expect(skill).toContain("`herdr agent start`");
     expect(skill).toContain("`herdr agent prompt`");
     expect(skill).toContain("same-prompt fanout");
@@ -315,7 +325,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("one atomic single-line metadata-only `pane.run`");
     expect(skill).toContain("accepted delivery is not receipt or proof");
     expect(skill).toContain("report_ready");
-    expect(skill).toContain("reject `--backend tmux --detach`");
+    expect(skill).toContain("reject `--backend orca --detach`");
+    expect(skill).toContain("`--backend tmux --detach`");
     expect(skill).toContain("does not inject a new message into the current Letta conversation");
     expect(skill).toContain("herdr-jobs.py\" receive \"$JOB_ID\"");
     expect(skill).toContain("herdr-jobs.py\" retry \"$JOB_ID\"");
@@ -427,7 +438,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("DIRECT_CLI_SHELL_READY_");
     expect(playbook).toContain("herdr pane process-info --pane");
     expect(playbook).toContain("agent_pane_busy");
-    expect(playbook).toContain("Running inside Herdr with `--backend tmux` intentionally creates a nested multiplexer");
+    expect(playbook).toContain("Running inside Orca or Herdr with `--backend tmux` intentionally creates a nested multiplexer");
     expect(playbook).toContain("byte-identical input at the Herdr CLI argument boundary");
     expect(playbook).toContain("A naive `agent prompt` followed immediately by `agent wait` is unsafe");
     expect(playbook).toContain("### Callback-primary detached Herdr jobs");
@@ -514,6 +525,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("bounded synchronous output capture");
     expect(readme).toContain("defers terminalization while work is active, state changed, or a final callback already exists");
     expect(readme).toContain("`--backend auto`");
+    expect(readme).toContain("`--backend orca`");
     expect(readme).toContain("`--backend herdr`");
     expect(readme).toContain("`--backend tmux`");
     expect(readme).toContain("binary presence alone is not enough");
@@ -527,10 +539,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).not.toContain("/direct-cli gemini");
 
     for (const wrapper of [command]) {
-      expect(wrapper).toContain("`--backend auto|herdr|tmux`");
+      expect(wrapper).toContain("`--backend auto|orca|herdr|tmux`");
       expect(wrapper).toContain("`--workspace ID`");
       expect(wrapper).toContain("`--detach`");
-      expect(wrapper).toContain("Reject tmux detach");
+      expect(wrapper).toContain("Reject Orca and tmux detach");
       expect(wrapper).toContain("never silently switch after creating state");
       expect(wrapper).toContain("current curated role/model choices");
       expect(wrapper).toContain("live CLI catalog");
@@ -556,8 +568,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("one atomic metadata-only `pane.run`");
     expect(rootReadme).toContain("there is no tmux fallback");
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
-    expect(rootReadme).toContain("auto-selected Herdr/tmux backends");
-    expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane");
+    expect(rootReadme).toContain("auto-selected Orca/Herdr/tmux backends");
+    expect(rootReadme).toContain("Auto uses Orca only from an exact live caller-terminal receipt plus a tracked current path");
+    expect(rootReadme).toContain("then Herdr only from a healthy compatible managed pane");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
     expect(rootReadme).toContain("`use Pi` / `ใช้ Pi`");
     expect(rootReadme).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
