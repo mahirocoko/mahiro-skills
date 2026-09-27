@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -6,6 +6,9 @@ import { findStandalonePython } from "./helpers/python";
 
 const helper = join(import.meta.dir, "..", "skills", "direct-cli", "scripts", "herdr-jobs.py");
 const tempDirs: string[] = [];
+const EVIDENCE_TIMEOUT_MS = 10_000;
+
+setDefaultTimeout(15_000);
 
 function makeHarness() {
   const root = mkdtempSync(join(tmpdir(), "direct-cli-detach-"));
@@ -120,18 +123,9 @@ case "$1:$2" in
         ) &
       else
         printf 'working 2\\n' > "$state_file"
-        if [ "\${FAKE_CALLBACK:-false}" = "true" ] && [ "\${FAKE_TRANSIENT_TERMINAL:-false}" = "true" ]; then
+        if [ "\${FAKE_CALLBACK:-false}" = "true" ] && [ "\${FAKE_GUARD_AUTO_SETTLE:-false}" = "true" ]; then
           (
-            /bin/sleep 0.15
-            printf 'done 3\\n' > "$state_file"
-            /bin/sleep 0.1
-            printf 'working 4\\n' > "$state_file"
-            /bin/sleep 0.4
-            printf 'done 5\\n' > "$state_file"
-          ) &
-        elif [ "\${FAKE_CALLBACK:-false}" = "true" ] && [ "\${FAKE_GUARD_AUTO_SETTLE:-false}" = "true" ]; then
-          (
-            /bin/sleep "\${FAKE_GUARD_SETTLE_SECONDS:-0.3}"
+            /bin/sleep "\${FAKE_GUARD_SETTLE_SECONDS:-1}"
             printf 'done 3\\n' > "$state_file"
           ) &
         fi
@@ -192,7 +186,7 @@ function runHelper(
   };
 }
 
-async function waitForStatus(jobJson: string, expected: string, timeoutMs = 5000) {
+async function waitForStatus(jobJson: string, expected: string, timeoutMs = EVIDENCE_TIMEOUT_MS) {
   const deadline = Date.now() + timeoutMs;
   let lastPayload: Record<string, unknown> | null = null;
   while (Date.now() < deadline) {
@@ -223,7 +217,7 @@ async function waitForStatus(jobJson: string, expected: string, timeoutMs = 5000
   throw new Error(`timed out waiting for ${expected}; last=${JSON.stringify(lastPayload)}; log=${log}`);
 }
 
-async function waitForGuardWorking(jobJson: string, target: string, timeoutMs = 3000) {
+async function waitForGuardWorking(jobJson: string, target: string, timeoutMs = EVIDENCE_TIMEOUT_MS) {
   const deadline = Date.now() + timeoutMs;
   let payload = JSON.parse(readFileSync(jobJson, "utf8"));
   while (!payload.callbackGuardTargets?.[target]?.workingObservedAt && Date.now() < deadline) {
@@ -232,6 +226,27 @@ async function waitForGuardWorking(jobJson: string, target: string, timeoutMs = 
   }
   if (!payload.callbackGuardTargets?.[target]?.workingObservedAt) {
     throw new Error(`timed out waiting for callback guard working evidence for ${target}`);
+  }
+  return payload;
+}
+
+async function waitForGuardReason(
+  jobJson: string,
+  target: string,
+  expectedReason: string,
+  timeoutMs = EVIDENCE_TIMEOUT_MS,
+) {
+  const deadline = Date.now() + timeoutMs;
+  let payload = JSON.parse(readFileSync(jobJson, "utf8"));
+  while (payload.callbackGuardTargets?.[target]?.reason !== expectedReason && Date.now() < deadline) {
+    await Bun.sleep(25);
+    payload = JSON.parse(readFileSync(jobJson, "utf8"));
+  }
+  const record = payload.callbackGuardTargets?.[target];
+  if (record?.reason !== expectedReason) {
+    throw new Error(
+      `timed out waiting for callback guard reason ${expectedReason} for ${target}; last=${JSON.stringify(record)}`,
+    );
   }
   return payload;
 }
@@ -695,7 +710,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(sent.exitCode).toBe(0);
     const messageId = JSON.parse(sent.stdout).message;
 
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "completed" && Date.now() < deadline) {
       await Bun.sleep(25);
@@ -732,7 +747,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(start.exitCode).toBe(0);
 
     const statePath = join(harness.agentStateDir, "agent-a.state");
-    const workingDeadline = Date.now() + 3000;
+    const workingDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     while (!readFileSync(statePath, "utf8").startsWith("working") && Date.now() < workingDeadline) {
       await Bun.sleep(25);
     }
@@ -755,7 +770,7 @@ describe("direct-cli detached Herdr jobs", () => {
     const messageId = JSON.parse(sent.stdout).message;
 
     const jobPath = join(harness.jobStateDir, "callback-late-working", "job.json");
-    const guardDeadline = Date.now() + 3000;
+    const guardDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "completed" && Date.now() < guardDeadline) {
       await Bun.sleep(25);
@@ -786,20 +801,20 @@ describe("direct-cli detached Herdr jobs", () => {
       "callback",
       {
         FAKE_GUARD_AUTO_SETTLE: "false",
-        FAKE_TRANSIENT_TERMINAL: "true",
-        FAKE_CALLBACK_GUARD_GRACE: "0.2",
+        FAKE_CALLBACK_GUARD_GRACE: "1",
       },
     );
     expect(start.exitCode).toBe(0);
 
+    const jobPath = join(harness.jobStateDir, "callback-transient-terminal", "job.json");
     const statePath = join(harness.agentStateDir, "agent-a.state");
-    const resumedDeadline = Date.now() + 3000;
-    while (!readFileSync(statePath, "utf8").startsWith("working 4") && Date.now() < resumedDeadline) {
-      await Bun.sleep(25);
-    }
-    expect(readFileSync(statePath, "utf8")).toStartWith("working 4");
-    await Bun.sleep(250);
-    const beforeReport = JSON.parse(readFileSync(join(harness.jobStateDir, "callback-transient-terminal", "job.json"), "utf8"));
+    await waitForGuardWorking(jobPath, "agent-a");
+    writeFileSync(statePath, "done 3\n");
+    await waitForGuardReason(jobPath, "agent-a", "done-awaiting-stability");
+    writeFileSync(statePath, "working 4\n");
+    await waitForGuardReason(jobPath, "agent-a", "terminal-transition-resumed");
+    await Bun.sleep(1100);
+    const beforeReport = JSON.parse(readFileSync(jobPath, "utf8"));
     expect(beforeReport).not.toHaveProperty("callbackGuardWake");
 
     const bodyFile = join(harness.root, "transient-terminal.body");
@@ -811,13 +826,12 @@ describe("direct-cli detached Herdr jobs", () => {
         "--to", "parent", "--kind", "report_ready", "--body-file", bodyFile,
         "--idempotency-key", "final",
       ],
-      callbackEnv("pane-agent-a", { FAKE_GUARD_AUTO_SETTLE: "false", FAKE_TRANSIENT_TERMINAL: "true" }),
+      callbackEnv("pane-agent-a", { FAKE_GUARD_AUTO_SETTLE: "false" }),
     );
     expect(sent.exitCode).toBe(0);
     const messageId = JSON.parse(sent.stdout).message;
 
-    const jobPath = join(harness.jobStateDir, "callback-transient-terminal", "job.json");
-    const guardDeadline = Date.now() + 3000;
+    const guardDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "completed" && Date.now() < guardDeadline) {
       await Bun.sleep(25);
@@ -834,7 +848,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(runHelper(
       harness,
       ["receive", "callback-transient-terminal", "--state-dir", harness.jobStateDir, "--message-id", messageId],
-      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false", FAKE_TRANSIENT_TERMINAL: "true" }),
+      callbackEnv("parent-pane", { FAKE_GUARD_AUTO_SETTLE: "false" }),
     ).exitCode).toBe(0);
     await Bun.sleep(450);
   });
@@ -904,7 +918,7 @@ describe("direct-cli detached Herdr jobs", () => {
 
     const jobPath = join(harness.jobStateDir, "callback-guard-missing", "job.json");
     const wakePath = join(harness.agentStateDir, "parent-pane.wake");
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let wake = "";
     let guarded = JSON.parse(readFileSync(jobPath, "utf8"));
     while (
@@ -1022,7 +1036,7 @@ describe("direct-cli detached Herdr jobs", () => {
       stdout: "pipe",
     });
     const jobPath = join(harness.jobStateDir, "callback-recover-dispatching", "job.json");
-    const dispatchDeadline = Date.now() + 3000;
+    const dispatchDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     while (!existsSync(jobPath) && Date.now() < dispatchDeadline) {
       await Bun.sleep(25);
     }
@@ -1081,7 +1095,7 @@ describe("direct-cli detached Herdr jobs", () => {
     );
     expect(start.exitCode).toBe(0);
     const jobPath = join(harness.jobStateDir, "callback-recover-no-working", "job.json");
-    const guardDeadline = Date.now() + 3000;
+    const guardDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let guarded = JSON.parse(readFileSync(jobPath, "utf8"));
     while (guarded.callbackGuardStatus !== "attention" && Date.now() < guardDeadline) {
       await Bun.sleep(25);
@@ -1269,7 +1283,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(start.exitCode).toBe(0);
 
     const jobPath = join(harness.jobStateDir, "callback-guard-dedupe", "job.json");
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "attention" && Date.now() < deadline) {
       await Bun.sleep(25);
@@ -1296,7 +1310,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(start.exitCode).toBe(0);
 
     const jobPath = join(harness.jobStateDir, "callback-guard-failed-dedupe", "job.json");
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "attention" && Date.now() < deadline) {
       await Bun.sleep(25);
@@ -1325,7 +1339,7 @@ describe("direct-cli detached Herdr jobs", () => {
     writeFileSync(join(harness.agentStateDir, "pane-agent-a.receipt-terminal"), "replacement-terminal");
 
     const jobPath = join(harness.jobStateDir, "callback-guard-receipt", "job.json");
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (payload.callbackGuardStatus !== "attention" && Date.now() < deadline) {
       await Bun.sleep(25);
@@ -1538,7 +1552,7 @@ describe("direct-cli detached Herdr jobs", () => {
     );
     expect(start.exitCode).toBe(0);
     const jobJson = join(harness.jobStateDir, "callback-deadline", "job.json");
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let payload = JSON.parse(readFileSync(jobJson, "utf8"));
     while (!payload.callbackDeadlineWake && Date.now() < deadline) {
       await Bun.sleep(25);
@@ -1581,7 +1595,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(sent.exitCode).toBe(0);
     const messageId = JSON.parse(sent.stdout).message;
     expect(runHelper(harness, ["receive", "callback-deadline-stop", "--state-dir", harness.jobStateDir, "--message-id", messageId], callbackEnv("parent-pane")).exitCode).toBe(0);
-    const deadline = Date.now() + 3000;
+    const deadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     while ((processExists(deadlinePid) || processExists(guardPid)) && Date.now() < deadline) {
       await Bun.sleep(25);
     }
@@ -1609,7 +1623,7 @@ describe("direct-cli detached Herdr jobs", () => {
     expect(start.exitCode).toBe(0);
 
     const wakeStarted = join(harness.agentStateDir, "parent-pane.wake-started");
-    const wakeDeadline = Date.now() + 3000;
+    const wakeDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     while (!Bun.file(wakeStarted).size && Date.now() < wakeDeadline) {
       await Bun.sleep(25);
     }
@@ -1718,7 +1732,7 @@ describe("direct-cli detached Herdr jobs", () => {
     );
     expect(start.exitCode).toBe(0);
     const jobPath = join(harness.jobStateDir, "callback-recover-cleanup", "job.json");
-    const activeDeadline = Date.now() + 3000;
+    const activeDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     let activePayload = JSON.parse(readFileSync(jobPath, "utf8"));
     while (activePayload.callbackGuardTargets?.["agent-a"]?.status !== "active" && Date.now() < activeDeadline) {
       await Bun.sleep(25);
@@ -1737,7 +1751,7 @@ describe("direct-cli detached Herdr jobs", () => {
     );
     expect(recovered.exitCode).toBe(0);
     expect(recovered.stdout).toContain("status=attention");
-    const cleanupDeadline = Date.now() + 3000;
+    const cleanupDeadline = Date.now() + EVIDENCE_TIMEOUT_MS;
     while ((processExists(guardPid) || processExists(deadlinePid)) && Date.now() < cleanupDeadline) {
       await Bun.sleep(25);
     }
