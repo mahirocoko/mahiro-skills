@@ -1,5 +1,4 @@
 export const packagedSkillDependencies: Readonly<Record<string, readonly string[]>> = {
-  "cocoindex-rules-init": ["ccc"],
 };
 
 export function packagedDependents(skillName: string): string[] {

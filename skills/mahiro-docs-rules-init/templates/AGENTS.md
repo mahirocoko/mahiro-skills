@@ -112,18 +112,12 @@ Prefer the command shape contributors should actually run in this repo today.
 ### Current Reality
 
 - Document the repo's real search tools here.
-- If CocoIndex/`ccc` is initialized or repo-local docs already require it, say to use semantic search for broad/fuzzy codebase exploration and `rg` for exact strings.
-- Record whether the filename-only preflight and project `.cocoindex_code/settings.yml` policy are established before broad indexing; do not present an unsafe or unverified index as Current Reality.
-- If semantic search is not established, say so directly instead of inventing a `ccc` workflow.
+- Record the repo's real filename and exact-search commands. Distinguish path discovery from source verification.
 
 ### Preferred Direction
 
-- Prefer semantic search for questions like "where is this implemented?", "how does this flow work?", or "find related code" when the repo has a maintained index.
-- Before `ccc init`, `ccc index`, `ccc search --refresh`, or equivalent MCP indexing, inspect filenames and project settings without opening suspected secret contents. Never chain initialization and indexing before that check; fail closed until targeted credential/provider paths are excluded and the required strict content scan is current.
-- Materialize separate portable security and noise policy into project `.cocoindex_code/settings.yml` before doctor/index by invoking the installed `ccc` skill. Preserve unrelated settings and do not assume a wrapper, hook, installed patch, or external parity. Run pinned Gitleaks `ensure` only when the managed binary is missing; invalid state blocks. Then require a fresh strict receipt.
-- A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before trusting search results.
-- Keep filename-only preflight explicit and non-equivalent to strict content scanning.
-- Prefer `rg` for exact symbols, file names, strings, and verification that a literal pattern is absent.
+- Start with the most concrete anchor (path, symbol, route, or behavior) and use filename search plus `rg` to narrow the owner. Read the selected source before making implementation claims.
+- Inspect filenames and ignore rules without opening suspected secret contents. An exact-string search establishes only literal coverage; broaden the hypothesis when ownership remains unclear.
 
 ## How To Change This Repo Safely
 

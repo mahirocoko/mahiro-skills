@@ -17,7 +17,7 @@ These rules control how the skill writes each page.
 - Keep docs-init repo-reality-first even when the target repo is young. For data ownership, prefer service-forward wording in REST/API repos and hook-owned wording in Supabase-direct repos.
 - Do not force a shared service layer into repos whose real pattern is route-local or hook-owned direct SDK access.
 - Do not default to folder paths the target repo does not prove.
-- If the target repo has CocoIndex/`ccc` guidance or `.cocoindex_code/`, include a short code-search rule in generated `AGENTS.md`: semantic search for broad/fuzzy repo exploration, `rg` for exact strings, and a filename-only preflight before index or refresh. Never generate `ccc init && ccc index` as one unchecked step. Require the portable security and noise policy to be materialized into the target project's `.cocoindex_code/settings.yml` while preserving unrelated settings. Point the operational sync, preflight, missing-only pinned Gitleaks ensure (invalid state blocks), and strict receipt at the installed `ccc` skill. Do not tell the target repo to vendor a second copy of those scripts. State that local embeddings do not authorize secret reads and require stale indexes to be reset or safely rebuilt after exclusion-policy changes. If CocoIndex is not present, omit or label it as future-facing instead of pretending the tool exists.
+- Include a short code-search rule grounded in the target repo's working commands: filename discovery, exact string/symbol search, and bounded source reads. Do not invent an index or external search service. Inspect filenames and ignore rules before exploring broadly without opening suspected secret contents.
 
 ## Template Posture Rules
 
@@ -112,7 +112,6 @@ Use `Current Reality` only for claims proven by the target repo. Use the other l
 - do not replace template grammar with a new improvised summary format
 - do not state that a repo uses Mahiro-style service, store, i18n, or route boundaries unless local evidence proves it
 - do not state that a repo uses another Mahiro repo's package manager, primitive style, translation source language, service pattern, or test command unless local evidence proves it
-- do not add CocoIndex/`ccc` as a current command unless the target repo or environment proves it is available for that repo
-- do not describe local embeddings as permission to read secrets or claim an index is safe until effective exclusions are verified without opening suspected secret contents
-- do not treat an unseen search filter as complete project configuration; generated rules must require the portable security/noise policy to be visible in project `.cocoindex_code/settings.yml`
+- do not add a search command or external service as current reality unless the target repo proves it
+- do not describe a local tool as permission to read suspected secrets
 - do not treat section comments or section dividers as mandatory everywhere; they are a pattern, not a law

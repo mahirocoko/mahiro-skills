@@ -38,7 +38,8 @@ describe("install.sh", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(decode(result.stdout)).toContain("v0.1.124");
+    const version = (JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { version: string }).version;
+    expect(decode(result.stdout)).toContain(`v${version}`);
   });
 
   test("installs one skill and paired command from a provided repo root", () => {

@@ -73,7 +73,7 @@ Before writing anything, inspect these inputs:
 - `package.json`, workspace config, and script/task runner files
 - framework, router, styling, i18n, state, and data-fetching signals
 - existing code structure, naming, and boundary patterns
-- semantic-search or code-search tooling signals such as `.cocoindex_code/`, `ccc`, or existing `AGENTS.md` search guidance
+- existing `AGENTS.md` search guidance, filename conventions, and the repo's working exact-search commands
 
 Do not generate files from template assumptions alone.
 
@@ -82,10 +82,8 @@ Do not generate files from template assumptions alone.
 This skill is a local boilerplate generator, not a research task.
 
 - Stay inside the target repo only.
-- Use local repo search only. Prefer `ccc search` / `ccc search --refresh` when CocoIndex is available and the project's `.cocoindex_code/settings.yml` boundary has passed filename-only preflight; use `rg` for exact strings.
-- Never chain `ccc init && ccc index`. Before broad indexing, inspect filenames and project settings without opening suspected secret contents; fail closed until targeted credential/provider paths are excluded and the required strict content scan is current.
-- The target project's `.cocoindex_code/settings.yml` is the portable enforcement boundary. Resolve the installed `ccc` skill and use its `scripts/sync-project-excludes.py` to materialize security and noise policy atomically; preserve unrelated settings and do not assume a wrapper, hook, installed patch, or external parity. `cocoindex-rules-init` only bootstraps repo guidance and invokes that sibling.
-- A local embedding backend does not make unintended secret reads acceptable. After exclusion-policy changes, reset or safely rebuild stale indexes before relying on semantic results.
+- Use local repo search only: start with filenames or the most concrete symbol, use `rg` for exact strings, and verify selected matches with bounded source reads. Broaden only when the first hypothesis fails.
+- Inspect filenames and ignore rules before broad exploration without opening suspected secret contents. Do not present exact-string absence as proof that an unnamed behavior does not exist.
 - Do not use web search, GitHub search, Context7, subagents, or any external documentation lookup.
 - Do not use unsupported local commands such as `sg`.
 - Do not run the dev server, preview server, or long-running app processes.

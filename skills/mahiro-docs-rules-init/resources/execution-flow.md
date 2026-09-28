@@ -8,11 +8,9 @@ Use this flow for `init` mode.
 - find `AGENTS.md`, `README.md`, `docs/`, and toolchain files
 - detect framework, package manager, state, data, styling, and i18n signals
 - do this with local target-repo tools only
-- before any CocoIndex index or refresh, inventory filenames and project `.cocoindex_code/settings.yml` without opening suspected secret contents
-- never chain `ccc init && ccc index`; fail closed until targeted credential/provider paths are handled by filename-only policy and the required strict content scan is current
-- materialize the portable security and noise policy into project `.cocoindex_code/settings.yml` before doctor/index while preserving unrelated settings
-- treat local embeddings as a transport boundary, not authorization to read secrets; after exclusion-policy changes, reset or safely rebuild stale indexes before semantic search
-- keep filename-only preflight explicit and non-equivalent to the pinned strict scanner contract
+- inventory filenames and ignore rules without opening suspected secret contents
+- search from a concrete path, symbol, route, or behavior; read only the selected source and expand when the hypothesis fails
+- treat a missing exact-string match as bounded literal evidence, not proof that a behavior is absent
 
 ## 2. Read Local Truth
 
@@ -76,8 +74,7 @@ When the repo is Next App Router plus REST/API, let the generated docs lean serv
 - verify the tone feels like one docs family
 - verify no external-research assumptions leaked into the docs
 - verify no unsupported folder-path example snuck in
-- if CocoIndex guidance was generated, verify the filename-only preflight, unchecked-init/index prohibition, local-embedding boundary, and stale-index handling all remain explicit
-- verify generated CocoIndex guidance requires the portable project `settings.yml` security/noise boundary and preserves unrelated settings
+- verify generated search guidance names only commands proven in the target repo and does not mistake literal-search absence for behavioral absence
 
 ## 10. Report Outcome
 

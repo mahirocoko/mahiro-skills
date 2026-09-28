@@ -68,7 +68,7 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(result.installed).toEqual(["asset-designer", "auditing-context-contracts", "ccc", "cocoindex-rules-init", "codex-asset-production", "control-room-goals", "creating-character-ip", "direct-cli", "fable", "forward", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "project", "recap", "rrr", "studying-codrops", "web-asset-prompts", "watch"]);
+      expect(result.installed).toEqual(["asset-designer", "auditing-context-contracts", "codex-asset-production", "control-room-goals", "creating-character-ip", "direct-cli", "fable", "forward", "gemini", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "project", "recap", "rrr", "studying-codrops", "web-asset-prompts", "watch"]);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "auditing-context-contracts", "scripts", "scan-context-contracts.ts"))).toBe(true);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
@@ -504,15 +504,15 @@ describe("install", () => {
   test("replaces a legacy symlink at the resolved adapter root without mutating its target", () => {
     const temp = makeTempEnv();
     try {
-      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, ".agents", "skills", "ccc");
+      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, ".agents", "skills", "project");
       const marker = join(legacy, "LEGACY.txt");
       mkdirSync(legacy, { recursive: true });
       writeFileSync(marker, "legacy-target\n");
-      const lettaSkill = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "ccc");
+      const lettaSkill = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "project");
       mkdirSync(join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills"), { recursive: true });
       symlinkSync(legacy, lettaSkill);
 
-      const result = install("letta-code", "global", ["ccc"], false, temp.env);
+      const result = install("letta-code", "global", ["project"], false, temp.env);
 
       expect(result.status).toBe("installed");
       expect(lstatSync(lettaSkill).isSymbolicLink()).toBe(false);
@@ -528,17 +528,17 @@ describe("install", () => {
   test("replaces a legacy letta symlink on overwrite without mutating the old target", () => {
     const temp = makeTempEnv();
     try {
-      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, "legacy-ccc-target");
+      const legacy = join(temp.env.MAHIRO_SKILLS_HOME!, "legacy-project-target");
       const marker = join(legacy, "LEGACY.txt");
       mkdirSync(legacy, { recursive: true });
       writeFileSync(marker, "legacy-target\n");
       const lettaRoot = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta");
-      const lettaSkill = join(lettaRoot, "skills", "ccc");
-      const rulesSkill = join(lettaRoot, "skills", "cocoindex-rules-init");
+      const lettaSkill = join(lettaRoot, "skills", "project");
+      const pairedSkill = join(lettaRoot, "skills", "learn");
       mkdirSync(join(lettaRoot, "skills"), { recursive: true });
       symlinkSync(legacy, lettaSkill);
 
-      const result = install("letta-code", "global", ["cocoindex-rules-init"], true, temp.env);
+      const result = install("letta-code", "global", ["project", "learn"], true, temp.env);
       const receiptPath = join(lettaRoot, ".mahiro-skills", "receipts", "global-letta-code.json");
       const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as {
         installedSkills: string[];
@@ -547,40 +547,38 @@ describe("install", () => {
       const states = Object.fromEntries(receipt.targetStates.map((state) => [`${state.kind}:${state.name}`, state]));
 
       expect(result.status).toBe("installed");
-      expect(result.installed).toEqual(["ccc", "cocoindex-rules-init"]);
+      expect(result.installed).toEqual(["project", "learn"]);
       expect(lstatSync(lettaSkill).isSymbolicLink()).toBe(false);
       expect(lstatSync(lettaSkill).isDirectory()).toBe(true);
       expect(existsSync(join(lettaSkill, "SKILL.md"))).toBe(true);
-      expect(lstatSync(rulesSkill).isDirectory()).toBe(true);
+      expect(lstatSync(pairedSkill).isDirectory()).toBe(true);
       expect(lstatSync(legacy).isDirectory()).toBe(true);
       expect(readFileSync(marker, "utf8")).toBe("legacy-target\n");
       expect(existsSync(join(legacy, "SKILL.md"))).toBe(false);
-      const cccHash = hashPath(lettaSkill);
-      const rulesHash = hashPath(rulesSkill);
-      if (!cccHash || !rulesHash) {
+      const projectHash = hashPath(lettaSkill);
+      const pairedHash = hashPath(pairedSkill);
+      if (!projectHash || !pairedHash) {
         throw new Error("installed skill hash was missing");
       }
-      expect(receipt.installedSkills).toEqual(["ccc", "cocoindex-rules-init"]);
-      expect(states["skill:ccc"]?.installedHash).toBe(cccHash);
-      expect(states["skill:cocoindex-rules-init"]?.installedHash).toBe(rulesHash);
-      expect(states["skill:ccc"]?.sourceHash).toHaveLength(64);
-      expect(states["skill:cocoindex-rules-init"]?.sourceHash).toHaveLength(64);
+      expect(receipt.installedSkills).toEqual(["project", "learn"]);
+      expect(states["skill:project"]?.installedHash).toBe(projectHash);
+      expect(states["skill:learn"]?.installedHash).toBe(pairedHash);
+      expect(states["skill:project"]?.sourceHash).toHaveLength(64);
+      expect(states["skill:learn"]?.sourceHash).toHaveLength(64);
     } finally {
       temp.cleanup();
     }
   });
 
-  test("keeps Agy dependency planning on source skill names", () => {
+  test("keeps Agy skill naming adapter-specific", () => {
     const temp = makeTempEnv();
     try {
-      const result = install("agy", "local", ["cocoindex-rules-init"], false, temp.env);
+      const result = install("agy", "local", ["project"], false, temp.env);
       const root = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills");
 
-      expect(result.installed).toEqual(["ccc", "cocoindex-rules-init"]);
-      expect(lstatSync(join(root, "mh-ccc")).isDirectory()).toBe(true);
-      expect(lstatSync(join(root, "mh-cocoindex-rules-init")).isDirectory()).toBe(true);
-      expect(existsSync(join(root, "ccc"))).toBe(false);
-      expect(existsSync(join(root, "cocoindex-rules-init"))).toBe(false);
+      expect(result.installed).toEqual(["project"]);
+      expect(lstatSync(join(root, "mh-project")).isDirectory()).toBe(true);
+      expect(existsSync(join(root, "project"))).toBe(false);
     } finally {
       temp.cleanup();
     }

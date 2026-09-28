@@ -10,11 +10,8 @@ Use this before declaring the init pass complete.
 - Are Mahiro-style preferences kept out of `Current Reality` unless the repo proves them?
 - Are fallback rules labeled as `Preferred Direction`, `Not Established Yet`, or `Adoption Triggers`?
 - Did every package manager, i18n source-locale, primitive/style, service/data, state, commit, and test command claim come from this target repo rather than another Mahiro repo?
-- If generated docs mention CocoIndex/`ccc`, did the target repo or local environment prove that guidance is valid here?
-- Before any index or refresh, did a filename-only preflight verify project settings and candidate paths without opening suspected secret contents?
-- Do the generated rules forbid unchecked `ccc init && ccc index`, target credential/provider paths without blanket structured-file exclusions, and require a current strict content scan?
-- Do the generated rules materialize separate portable security and noise policy into project `.cocoindex_code/settings.yml` while preserving unrelated settings?
-- Do the generated rules state that local embeddings are not authorization to read secrets, keep filename-only explicit/non-equivalent, and require stale indexes to be reset or safely rebuilt after exclusion-policy changes?
+- Do generated search commands work in this target repo, rather than being inherited from another project?
+- Do generated rules avoid suspected secret paths during discovery and distinguish filename/exact-match evidence from source verification?
 
 ## Family Check
 
