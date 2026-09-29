@@ -248,7 +248,7 @@ function decodeTuiInputBuffer(text: string, flush: boolean): { keys: TuiKey[]; p
   return { keys, pending: "" };
 }
 
-class TuiInputDecoder {
+export class TuiInputDecoder {
   private pending = "";
 
   push(data: TerminalData): TuiKey[] {

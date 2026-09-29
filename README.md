@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.125 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.126 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.125 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.126 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -218,6 +218,33 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `creating-character-ip` | An image-generation provider; Adapt additionally requires direct reference-image input and a transferable local source file |
 | `rrr`, `recap`, `forward` | Repo-local `.agent-state` conventions |
 | `studying-codrops` | Public Codrops/Tympanus pages and APIs; optional browser automation and GitHub access for live demo/source evidence. Generated metadata stays session-only unless project retention is explicitly approved. |
+
+## Separate global skill manager (local pilot)
+
+`bun run skills:global` opens a separate interactive TUI (TTY at least 72×18) from the `mahiro-skills` bundle CLI. It manages **external, official-CLI-installed global skills** under `~/.agents/skills/` and can link selected skills into Letta Code's `~/.letta/skills/`. It does not install this repository's default bundle or change its receipts. The list immediately shows local ownership, Letta link, and whether a source is missing; update status stays **Not checked** until requested. Use **s check all** once to inspect every installed skill (not just search results), with per-row progress, available/current/blocked outcomes, and cached results. This performs read-only file and upstream checks, never a skill install or receipt write; Esc stops after the current check, and s again refreshes results. Use ↑/↓ or j/k to select, Enter for a selected skill's details, / to search, i to install from GitHub, and q to quit. Merely opening or moving in the list never hashes files or checks the network. Details show the source, file health, upstream status, Letta link, and one next action; only valid secondary actions appear there (`l` link, `x` unlink a manager-owned link, or `d` remove a manager-installed skill). Esc returns to the list.
+
+Selecting **Update** shows one Review of every planned change before a single y/N confirmation. An existing skill with an exact, unpinned official GitHub lock match is recorded for **updates only** and then updated in that one flow; its original install and any pre-existing Letta link stay external, while a link this manager already owns remains manager-owned. When there is **no official lock**, Enter requests a GitHub default-branch skill-folder URL (or conventional `owner/repo`), checks at most 20 recent folder commits for an exact whole-tree match **without writing**, then offers the same Review. A version already current can remember its source without reinstalling. Missing provenance, local edits, pinned refs, another occupant at the Letta path, or unverifiable upstream blocks Update rather than offering a risky confirmation.
+
+Even after Review, the manager rechecks files, source and links before each write. If recording the source succeeds but the official update fails, the result says the skill is now tracked but not updated; it does not pretend to roll back. The TUI buffers split arrow keys; a standalone Esc does not quit the list, and `NO_COLOR` disables status colors. The lower-level `check`, `adopt`, and `recover` CLI commands remain available for explicit automation.
+
+```bash
+bun run skills:global                             # interactive TUI
+bun run skills:global list
+bun run skills:global check [name]                  # read-only upstream folder-hash check
+bun run skills:global install owner/repo skill-name # official skills add + Letta link
+bun run skills:global adopt skill-name              # verify existing install, allow update only
+bun run skills:global recover skill-name 'https://github.com/owner/repo/tree/main/skills/skill-name'
+bun run skills:global link skill-name               # existing canonical skill, link only
+bun run skills:global update skill-name             # explicit, manager-installed or update-only tracked skill
+bun run skills:global uninstall skill-name          # explicit, manager-installed only
+bun run skills:global unlink skill-name             # remove only its owned Letta link
+```
+
+The official `skills` CLI owns GitHub acquisition and the global `.skill-lock.json` provenance; this manager's separate receipt at `~/.agents/mahiro-global-skill-manager.json` records which installs/Letta links **it** owns. `install` targets the official CLI's `cline` adapter so its canonical global copy lands in `~/.agents/skills/`; it then links the exact canonical directory into Letta. A pre-existing canonical skill, Letta path, or unowned Letta link is never overwritten. `link` can adopt a *new* Letta link for an existing canonical skill, but `uninstall` will not delete that adopted skill; use `unlink` for it. Existing manually made Letta links remain untouched.
+
+`check` compares each GitHub-locked skill's recorded 40-character **skill-folder tree hash** with the same folder in the upstream GitHub tree, not the whole repository commit. Missing/unsupported provenance, unavailable API, truncated tree and moved skill paths report `unknown`, not “up to date.” `update` only runs after an explicit request and a verified `available` result. It refuses if the canonical installed directory differs from its manager-recorded snapshot, preserving local edits. It uses a scoped official `skills add` rather than the official bulk `skills update -g` path, which may install to unrelated agent roots. Non-GitHub and pinned-ref updates are not automatic. `uninstall` also refuses local drift and symlinks from common other agent roots, then asks the official CLI to remove its global install; it removes the manager-owned Letta link only after the canonical skill **and** global lock entry are gone. If another agent still needs the canonical copy, it keeps the link/receipt and reports the blocked completion instead of claiming success. Arbitrary custom roots outside the checked locations cannot be discovered reliably; inspect such links before an explicit uninstall.
+
+Mutations require the official CLI: set `SKILLS_CLI_BIN` to an installed `skills` binary or allow `npx --yes skills` to resolve it. `check` may use `GITHUB_TOKEN` or `GH_TOKEN` for API rate limits; tokens are not stored. Neither listing nor checking runs an installer. Tests exercise a disposable HOME and a scoped official-CLI smoke; those checks do not establish that every mutation path has been exercised on a live installation. Inspect the exact canonical/link paths and source receipt before managing important skills. This command does not add external skills to the default bundle.
 
 ## Repo map
 
