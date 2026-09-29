@@ -940,7 +940,7 @@ Herdr compatibility is capability-based: require managed-pane markers, a compati
 This is the single owner of direct-cli's role-to-model choices. Replace superseded entries here instead of appending catalog snapshots elsewhere. Intersect these choices with the live CLI catalog before every launch; a listed role is preference, not availability proof.
 
 - Cursor ordinary implementation / cleanup model: `composer-2.5`
-- Cursor long-horizon agentic model: `grok-4.7-high`
+- Cursor long-horizon agentic model: Grok 4.7 with `context=500k`, `effort=high`, and non-Fast by default
 - Cursor balanced Anthropic reasoning model: `claude-sonnet-5-thinking-high`
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
@@ -966,12 +966,13 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5` — recommended for ordinary Cursor direct-lane work: implementation, cleanup, narrow refactors, and follow-up fixes using the non-Fast model ID.
-  2. `grok-4.7-high` — long-horizon agentic coding and complex tool-driven work using the non-Fast model ID.
+  2. Grok 4.7 (`grok-4.7-high` in the catalog) — long-horizon agentic coding with 500k context, high effort, and non-Fast by default.
   3. `claude-sonnet-5-thinking-high` — balanced Anthropic reasoning lane for implementation and review.
   4. `claude-fable-5-1-thinking-high` — Fable 5.1 reasoning lane; use this when Mahiro says “Fable 5.1” unless he asks for another Fable variant.
   5. `claude-fable-5-1-thinking-xhigh` — Fable 5.1 extra-high lane for heavier review.
   6. `claude-opus-5-5-high` — Opus heavy review / deep reasoning lane.
 - Do not offer a Fast-tier Cursor model in the default picker. Use a live-catalog-verified Fast model only when Mahiro explicitly requests Fast or delegates a speed-over-cost choice.
+- For a Grok 4.7 direct lane, pass the complete requested selection at launch: `--model 'grok-4.7[context=500k,effort=high,fast=false]'`. An explicit user context, effort, or Fast choice overrides only that dimension. Do not rely on Cursor's persisted model parameters or launch the bare `grok-4.7-high` slug for this default. Verify the visible context, effort, and Fast state before sending work; if the installed CLI rejects 500k or silently changes the selection, stop and report the mismatch instead of falling back to 256k. The live catalog confirms the Grok family, not that this context override is accepted.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5.1” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
   1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
@@ -1105,7 +1106,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a long-horizon agentic pass without the Fast variant:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "grok-4.7-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task "agent --model 'grok-4.7[context=500k,effort=high,fast=false]' --yolo --approve-mcps --trust" Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
