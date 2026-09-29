@@ -150,7 +150,8 @@ describe("packaged skill context freshness", () => {
     expect(skill).toContain("`playbook.md` is the single owner");
     expect(playbook).toContain("## Curated routing policy");
     expect(playbook).toContain("Cursor ordinary implementation / cleanup model: `composer-2.5`");
-    expect(playbook).toContain("Cursor long-horizon agentic model: `grok-4.7-high`");
+    expect(playbook).toContain("Cursor long-horizon agentic model: Grok 4.7 with `context=500k`, `effort=high`, and non-Fast by default");
+    expect(playbook).toContain("if the installed CLI rejects 500k or silently changes the selection, stop and report the mismatch");
     expect(playbook).toContain("Cursor balanced Anthropic reasoning model: `claude-sonnet-5-thinking-high`");
     expect(playbook).toContain("Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`");
     expect(playbook).toContain("Cursor heavy Opus review model: `claude-opus-5-5-high`");
