@@ -38,7 +38,7 @@ export class GlobalSkillTui {
   private source = ''
   private name = ''
   private query = ''
-  private message = 'Select a skill and press Enter to see what you can do.'
+  private message = ''
   private busy = false
   private scanning = false
   private scanCancelled = false
@@ -67,7 +67,7 @@ export class GlobalSkillTui {
     const checked = this.inspections.get(item.name)
     if (!checked) return this.scanErrors.has(item.name) ? 'Check failed' : item.source ? 'Not checked' : 'Needs source'
     if (checked.fileHealth === 'modified') return 'Local edits'
-    if (checked.lettaHealth === 'foreign' || checked.lettaHealth === 'drifted') return 'Link conflict'
+    if (checked.lettaHealth === 'foreign' || checked.lettaHealth === 'drifted' || checked.agyHealth === 'foreign' || checked.agyHealth === 'drifted') return 'Link conflict'
     if (checked.primaryAction === 'recover-only') return 'Source verified'
     if (checked.primaryAction !== 'none') return 'Update available'
     if (checked.upstream === 'current') return 'Up to date'
@@ -93,7 +93,7 @@ export class GlobalSkillTui {
     if (this.mode === 'list' || this.mode === 'search' || this.mode === 'source' || this.mode === 'name') {
       lines.push(
         { text: `${this.visible().length}/${this.items.length} skills · ↑↓ move · Enter details · s check all`, tone: 'muted' },
-        { text: '/ search · i install · q quit', tone: 'muted' },
+        { text: '/ search · i install · l link · x unlink · d remove · q quit', tone: 'muted' },
         { text: '' },
       )
       const inputOpen = this.mode === 'search' || this.mode === 'source' || this.mode === 'name'
@@ -106,10 +106,11 @@ export class GlobalSkillTui {
         const status = this.listStatus(item)
         const owner = item.installedByManager ? 'Installed' : item.adoptedForUpdate ? 'Tracked' : 'External'
         const letta = item.letta === 'linked' ? 'Letta ✓' : item.letta === 'other' ? 'Letta ?' : 'Letta —'
-        const nameWidth = Math.max(12, Math.min(25, width - 46))
+        const agy = item.agy === 'linked' ? 'Agy ✓' : item.agy === 'other' ? 'Agy ?' : 'Agy —'
+        const nameWidth = Math.max(12, Math.min(25, width - 55))
         const name = item.name.length > nameWidth ? `${item.name.slice(0, nameWidth - 1)}…` : item.name.padEnd(nameWidth)
         lines.push({
-          text: `${start + offset === this.selection ? '›' : ' '} ${name} ${owner.padEnd(9)} ${letta.padEnd(8)} ${status}`,
+          text: `${start + offset === this.selection ? '›' : ' '} ${name} ${owner.padEnd(9)} ${letta.padEnd(8)} ${agy.padEnd(6)} ${status}`,
           tone: start + offset === this.selection ? 'selected' : status === 'Update available' ? 'available'
             : status === 'Up to date' ? 'current' : checked?.upstream === 'unknown' || this.scanErrors.has(item.name) ? 'unknown' : undefined,
         })
@@ -132,6 +133,7 @@ export class GlobalSkillTui {
           { text: `Files: ${inspection.fileHealthDetail}`, tone: inspection.fileHealth === 'modified' ? 'error' : undefined },
           { text: `Upstream: ${inspection.upstream === 'available' ? 'New version available' : inspection.upstream === 'current' ? 'Up to date' : inspection.upstreamReason ?? 'Not verified'}` },
           { text: `Letta: ${inspection.lettaHealthDetail}` },
+          { text: `Agy: ${inspection.agyHealthDetail}` },
           { text: '' },
         )
         if (inspection.primaryAction !== 'none') lines.push({ text: `Enter  ${inspection.primaryActionLabel}`, tone: 'available' })
@@ -141,7 +143,7 @@ export class GlobalSkillTui {
         if (inspection.ownership === 'external-lockless' && inspection.primaryAction !== 'none') {
           lines.push({ text: 's change source URL', tone: 'muted' })
         }
-        const secondary = inspection.eligibleSecondaryActions.map((action) => ({ link: 'l link to Letta', unlink: 'x unlink Letta', uninstall: 'd remove' })[action])
+        const secondary = inspection.eligibleSecondaryActions.map((action) => ({ link: 'l link Letta and Agy', unlink: 'x unlink', uninstall: 'd remove' })[action])
         if (secondary.length) lines.push({ text: secondary.join(' · '), tone: 'muted' })
       }
       if (this.mode === 'recover-source') {
@@ -164,11 +166,15 @@ export class GlobalSkillTui {
     }).join('\n')}`)
   }
 
-  private async inspect(name: string, sourceUrl?: string): Promise<void> {
-    if (!sourceUrl && this.inspections.has(name)) { this.mode = 'detail'; this.render(); return }
+  private async inspect(name: string, sourceUrl?: string, openDetail = true): Promise<ISkillInspection | undefined> {
+    if (!sourceUrl && this.inspections.has(name)) {
+      if (openDetail) this.mode = 'detail'
+      this.render()
+      return this.inspections.get(name)
+    }
     if (sourceUrl) { this.inspections.delete(name); this.sourceUrls.delete(name) }
     this.busy = true
-    this.mode = 'detail'
+    if (openDetail) this.mode = 'detail'
     this.message = `Checking ${name}…`
     this.render()
     try {
@@ -177,12 +183,32 @@ export class GlobalSkillTui {
       this.scanErrors.delete(name)
       if (sourceUrl && result.matchedCommit) this.sourceUrls.set(name, sourceUrl)
       this.message = ''
+      return result
     } catch (error) {
       this.message = `Cannot inspect ${name}: ${safe(error instanceof Error ? error.message : String(error))}`
+      return undefined
     } finally {
       this.busy = false
       this.render()
     }
+  }
+
+  private async offerSecondary(action: 'link' | 'unlink' | 'uninstall'): Promise<void> {
+    const item = this.selected()
+    if (!item) { this.message = 'No skill selected.'; this.render(); return }
+    this.name = item.name
+    const inspection = this.inspections.get(item.name) ?? await this.inspect(item.name, undefined, false)
+    if (!inspection) return
+    if (!inspection.eligibleSecondaryActions.includes(action)) {
+      this.message = action === 'uninstall' ? 'Remove is only for a skill installed here.'
+        : action === 'unlink' ? 'No manager-owned link to remove.' : 'Link is not available for this skill.'
+      this.render()
+      return
+    }
+    const details = action === 'uninstall'
+      ? ['Remove this manager-installed skill with the official CLI', 'Remove its manager-owned Letta and Agy links']
+      : [action === 'link' ? 'Create manager-owned Letta and Agy links without changing skill files' : 'Remove the manager-owned Letta and Agy links']
+    this.confirm([action], inspection.name, details)
   }
 
   private async scanAll(): Promise<void> {
@@ -344,7 +370,7 @@ export class GlobalSkillTui {
           this.source = this.input.trim(); this.input = ''; await this.inspect(this.name, this.source); return
         } else {
           const name = this.input.trim(); this.input = ''
-          this.confirm(['install'], name, [`Install ${name} from ${this.source} through the official CLI`, 'Create a manager-owned Letta link'], this.source)
+          this.confirm(['install'], name, [`Install ${name} from ${this.source} through the official CLI`, 'Create a manager-owned Letta link and an Agy link'], this.source)
           return
         }
       } else if (/^[\x20-\x7e]+$/.test(text) && this.input.length + text.length <= 240) this.input += text
@@ -370,12 +396,7 @@ export class GlobalSkillTui {
         }
       } else {
         const action = ({ l: 'link', x: 'unlink', d: 'uninstall' } as const)[text as 'l' | 'x' | 'd']
-        if (action && inspection.eligibleSecondaryActions.includes(action)) {
-          const details = action === 'uninstall'
-            ? ['Remove this manager-installed skill with the official CLI', 'Remove only its manager-owned Letta link']
-            : [action === 'link' ? 'Create a manager-owned Letta link without changing skill files' : 'Remove only the manager-owned Letta link']
-          this.confirm([action], inspection.name, details)
-        }
+        if (action) { await this.offerSecondary(action); return }
       }
       this.render()
       return
@@ -393,6 +414,10 @@ export class GlobalSkillTui {
       return
     }
     else if (text === 'i') { this.mode = 'source'; this.input = ''; this.message = 'Enter the GitHub source to install; Esc cancels.' }
+    else if (text === 'l' || text === 'x' || text === 'd') {
+      await this.offerSecondary(({ l: 'link', x: 'unlink', d: 'uninstall' } as const)[text])
+      return
+    }
     else if (text === '\r' || text === '\n') {
       const item = this.selected()
       if (item) { this.name = item.name; this.source = this.sourceUrls.get(item.name) ?? ''; await this.inspect(item.name); return }

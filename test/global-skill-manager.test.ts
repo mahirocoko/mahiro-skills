@@ -51,11 +51,14 @@ describe('global skill manager with disposable HOME', () => {
     fixture.manager.install('owner/repo', 'good-skill')
     expect(fixture.calls[0]).toEqual(['add', 'owner/repo', '--skill', 'good-skill', '-g', '-a', 'cline', '-y'])
     expect(readlinkSync(fixture.letta)).toBe(fixture.canonical)
-    expect(fixture.manager.list()[0]).toMatchObject({ installedByManager: true, lettaOwned: true, letta: 'linked', source: 'owner/repo' })
+    const agy = join(fixture.home, '.gemini', 'antigravity-cli', 'skills', 'good-skill')
+    expect(readlinkSync(agy)).toBe(fixture.canonical)
+    expect(fixture.manager.list()[0]).toMatchObject({ installedByManager: true, lettaOwned: true, letta: 'linked', agyOwned: true, agy: 'linked', source: 'owner/repo' })
     fixture.manager.uninstall('good-skill')
     expect(fixture.calls[1]).toEqual(['remove', 'good-skill', '-g', '-a', 'cline', '-y'])
     expect(existsSync(fixture.canonical)).toBe(false)
     expect(existsSync(fixture.letta)).toBe(false)
+    expect(existsSync(agy)).toBe(false)
     expect(JSON.parse(readFileSync(fixture.manager.receiptPath, 'utf8')).skills).toEqual({})
   })
 
@@ -393,6 +396,50 @@ describe('global skill manager with disposable HOME', () => {
     writeFileSync(fixture.manager.receiptPath, '{}')
     expect(() => fixture.manager.install('owner/repo', 'good-skill')).toThrow('Invalid manager receipt')
     expect(fixture.calls).toEqual([])
+  })
+
+  test('link adds an Agy symlink without claiming an existing Letta link', () => {
+    const fixture = create()
+    fixture.source()
+    mkdirSync(join(fixture.home, '.letta', 'skills'), { recursive: true })
+    symlinkSync(fixture.canonical, fixture.letta)
+    fixture.manager.link('good-skill')
+    const agy = join(fixture.home, '.gemini', 'antigravity-cli', 'skills', 'good-skill')
+    expect(readlinkSync(agy)).toBe(fixture.canonical)
+    expect(fixture.manager.list()[0]).toMatchObject({ lettaOwned: false, letta: 'linked', agyOwned: true, agy: 'linked' })
+    fixture.manager.unlink('good-skill')
+    expect(existsSync(agy)).toBe(false)
+    expect(readlinkSync(fixture.letta)).toBe(fixture.canonical)
+  })
+
+  test('link records an exact Agy symlink and refuses a different occupant', () => {
+    const fixture = create()
+    fixture.source()
+    const agy = join(fixture.home, '.gemini', 'antigravity-cli', 'skills', 'good-skill')
+    mkdirSync(join(fixture.home, '.gemini', 'antigravity-cli', 'skills'), { recursive: true })
+    symlinkSync(fixture.canonical, agy)
+    fixture.manager.link('good-skill')
+    expect(readlinkSync(agy)).toBe(fixture.canonical)
+    expect(readlinkSync(fixture.letta)).toBe(fixture.canonical)
+    expect(fixture.manager.list()[0]).toMatchObject({ agyOwned: true, agy: 'linked', lettaOwned: true })
+    rmSync(agy)
+    mkdirSync(agy)
+    expect(() => fixture.manager.link('good-skill')).toThrow('Agy path already belongs')
+    expect(lstatSync(agy).isSymbolicLink()).toBe(false)
+    expect(readlinkSync(fixture.letta)).toBe(fixture.canonical)
+  })
+
+  test('an unowned Agy symlink blocks canonical removal', () => {
+    const fixture = create()
+    fixture.manager.install('owner/repo', 'good-skill')
+    const agy = join(fixture.home, '.gemini', 'antigravity-cli', 'skills', 'good-skill')
+    rmSync(agy)
+    symlinkSync(fixture.canonical, agy)
+    const receipt = JSON.parse(readFileSync(fixture.manager.receiptPath, 'utf8')) as { skills: Record<string, { agy?: boolean }> }
+    receipt.skills['good-skill']!.agy = false
+    writeFileSync(fixture.manager.receiptPath, JSON.stringify(receipt))
+    expect(() => fixture.manager.uninstall('good-skill')).toThrow('Another agent links')
+    expect(lstatSync(agy).isSymbolicLink()).toBe(true)
   })
 
   test('refuses symlinked skill roots before a mutation', () => {

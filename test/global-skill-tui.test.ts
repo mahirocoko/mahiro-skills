@@ -27,7 +27,7 @@ class FakeTerminal {
 
 const item = (name: string, managed = false, source: string | null = 'owner/repo'): IManagedSkill => ({
   name, source, installedByManager: managed, adoptedForUpdate: false, lettaOwned: managed,
-  letta: managed ? 'linked' : 'absent', update: 'not-checked',
+  letta: managed ? 'linked' : 'absent', agyOwned: managed, agy: managed ? 'linked' : 'absent', update: 'not-checked',
 })
 
 const inspection = (skill: IManagedSkill, action: ISkillInspection['primaryAction'] = 'update'): ISkillInspection => ({
@@ -36,6 +36,7 @@ const inspection = (skill: IManagedSkill, action: ISkillInspection['primaryActio
   ownershipLabel: skill.installedByManager ? 'Installed here' : 'Installed elsewhere',
   fileHealth: 'clean', fileHealthDetail: 'Files match the installed version',
   lettaHealth: skill.lettaOwned ? 'linked-managed' : 'absent', lettaHealthDetail: skill.lettaOwned ? 'Linked by this manager' : 'Not linked to Letta',
+  agyHealth: skill.agyOwned ? 'linked-managed' : 'absent', agyHealthDetail: skill.agyOwned ? 'Linked by this manager' : 'Not linked to Agy',
   upstream: 'available', primaryAction: action, primaryActionLabel: action === 'none' ? '' : 'Update',
   eligibleSecondaryActions: skill.installedByManager ? ['uninstall', 'unlink'] : ['link'],
   plannedWrites: ['Remember source if needed', 'Install latest through the official CLI', 'Leave existing Letta links untouched'],
@@ -68,8 +69,9 @@ describe('global skill TUI', () => {
     const { tui, calls, terminal } = setup()
     tui.render()
     expect(terminal.frames.at(-1)).toContain('Enter details · s check all')
-    expect(terminal.frames.at(-1)).toContain('alpha                     Installed Letta ✓  Not checked')
-    expect(terminal.frames.at(-1)).toContain('beta                      External  Letta —  Not checked')
+    expect(terminal.frames.at(-1)).toContain('l link · x unlink · d remove · q quit')
+    expect(terminal.frames.at(-1)).toContain('alpha                     Installed Letta ✓  Agy ✓  Not checked')
+    expect(terminal.frames.at(-1)).toContain('beta                      External  Letta —  Agy —  Not checked')
     expect(calls).toEqual([])
     expect(terminal.frames.at(-1)).not.toContain('adopt · r recover')
     await tui.handleInput('\x1b[B')
@@ -358,6 +360,20 @@ describe('global skill TUI', () => {
     expect(terminal.frames.at(-1)).toContain('Blocked: Canonical skill changed')
   })
 
+  test('list remove key reviews the selected manager-installed skill', async () => {
+    const { tui, calls, terminal } = setup()
+    await tui.handleInput('d')
+    expect(calls).toEqual(['inspect:alpha'])
+    expect(terminal.frames.at(-1)).toContain('Remove this manager-installed skill')
+    await tui.handleInput('\x1b')
+    await Bun.sleep(135)
+    await tui.handleInput('\x1b')
+    await Bun.sleep(135)
+    await tui.handleInput('j')
+    await tui.handleInput('d')
+    expect(terminal.frames.at(-1)).toContain('Remove is only for a skill installed here.')
+  })
+
   test('remove is secondary, confirmed, and manager-owned only', async () => {
     const { tui, calls, terminal } = setup()
     await tui.handleInput('\r')
@@ -373,7 +389,7 @@ describe('global skill TUI', () => {
     const { tui, calls, terminal } = setup()
     await tui.handleInput('iowner/repo\rgood-skill\r')
     expect(calls).toEqual([])
-    expect(terminal.frames.at(-1)).toContain('Create a manager-owned Letta link')
+    expect(terminal.frames.at(-1)).toContain('Create a manager-owned Letta link and an Agy link')
     await tui.handleInput('y')
     expect(calls).toEqual(['install:owner/repo:good-skill'])
   })
@@ -381,7 +397,7 @@ describe('global skill TUI', () => {
   test('run requires an interactive terminal and restores it on quit', async () => {
     const { tui, terminal } = setup()
     terminal.isInteractive = false
-    expect(tui.run()).rejects.toThrow('interactive terminal')
+    await expect(tui.run()).rejects.toThrow('interactive terminal')
     terminal.isInteractive = true
     const running = tui.run()
     await tui.handleInput('\x03')

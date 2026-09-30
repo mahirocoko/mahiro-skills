@@ -17,6 +17,7 @@ type LockEntry = {
 type ManagedEntry = {
   source: string
   link: boolean
+  agy?: boolean
   installedHash?: string
   ownership?: 'installed' | 'adopted'
   observedLetta?: 'linked' | 'absent'
@@ -39,6 +40,8 @@ export interface ISkillInspection {
   fileHealthDetail: string
   lettaHealth: LettaLinkHealth
   lettaHealthDetail: string
+  agyHealth: LettaLinkHealth
+  agyHealthDetail: string
   upstream: UpdateState
   upstreamReason?: string
   primaryAction: PrimaryActionKind
@@ -56,6 +59,8 @@ export interface IManagedSkill {
   adoptedForUpdate: boolean
   lettaOwned: boolean
   letta: 'linked' | 'absent' | 'other'
+  agyOwned: boolean
+  agy: 'linked' | 'absent' | 'other'
   update: UpdateState
   reason?: string
 }
@@ -106,12 +111,14 @@ const writeReceipt = (path: string, receipt: Receipt): void => {
 export class GlobalSkillManager {
   readonly canonicalRoot: string
   readonly lettaRoot: string
+  readonly agyRoot: string
   readonly receiptPath: string
   readonly lockPath: string
 
   constructor(readonly home: string, private readonly deps: IManagerDependencies) {
     this.canonicalRoot = join(home, '.agents', 'skills')
     this.lettaRoot = join(home, '.letta', 'skills')
+    this.agyRoot = join(home, '.gemini', 'antigravity-cli', 'skills')
     this.receiptPath = join(home, '.agents', 'mahiro-global-skill-manager.json')
     this.lockPath = join(home, '.agents', '.skill-lock.json')
   }
@@ -136,19 +143,30 @@ export class GlobalSkillManager {
 
   private canonical(name: string): string { assertName(name); return join(this.canonicalRoot, name) }
   private linkPath(name: string): string { assertName(name); return join(this.lettaRoot, name) }
+  private agyLinkPath(name: string): string { assertName(name); return join(this.agyRoot, name) }
 
   private assertWriteRoots(): void {
-    for (const path of [join(this.home, '.agents'), this.canonicalRoot, join(this.home, '.letta'), this.lettaRoot]) {
+    for (const path of [
+      join(this.home, '.agents'), this.canonicalRoot, join(this.home, '.letta'), this.lettaRoot,
+      join(this.home, '.gemini'), join(this.home, '.gemini', 'antigravity-cli'), this.agyRoot,
+    ]) {
       const state = lstat(path)
       if (state && !state.isDirectory()) throw new Error(`Skill root is not a regular directory: ${path}`)
     }
   }
 
-  private linkState(name: string): IManagedSkill['letta'] {
-    const path = this.linkPath(name)
+  private slotState(path: string, name: string): IManagedSkill['letta'] {
     const state = lstat(path)
     if (!state) return 'absent'
     return state.isSymbolicLink() && resolve(dirname(path), readlinkSync(path)) === this.canonical(name) ? 'linked' : 'other'
+  }
+
+  private linkState(name: string): IManagedSkill['letta'] {
+    return this.slotState(this.linkPath(name), name)
+  }
+
+  private agyState(name: string): IManagedSkill['agy'] {
+    return this.slotState(this.agyLinkPath(name), name)
   }
 
   private assertCanonical(name: string): void {
@@ -180,10 +198,12 @@ export class GlobalSkillManager {
     const roots = new Set<string>([
       join(this.home, '.claude', 'skills'), join(this.home, '.codex', 'skills'),
       join(this.home, '.cursor', 'skills'), join(this.home, '.cline', 'skills'),
-      join(this.home, '.gemini', 'skills'), join(this.home, '.opencode', 'skills'),
+      join(this.home, '.gemini', 'skills'), this.agyRoot, join(this.home, '.opencode', 'skills'),
       join(this.home, '.config', 'opencode', 'skills'),
     ])
+    const ownedAgy = this.receipt().skills[name]?.agy && this.agyState(name) === 'linked'
     for (const root of roots) {
+      if (ownedAgy && root === this.agyRoot) continue
       const path = join(root, name)
       const state = lstat(path)
       if (state && resolve(dirname(path), state.isSymbolicLink() ? readlinkSync(path) : '.') === this.canonical(name)) {
@@ -211,6 +231,8 @@ export class GlobalSkillManager {
         adoptedForUpdate: receipt.skills[name]?.ownership === 'adopted',
         lettaOwned: !!receipt.skills[name]?.link,
         letta: this.linkState(name),
+        agyOwned: !!receipt.skills[name]?.agy,
+        agy: this.agyState(name),
         update: 'not-checked' as const,
         reason: entry ? undefined : 'No official global lock entry',
       }
@@ -254,9 +276,13 @@ export class GlobalSkillManager {
     const ownership: OwnershipKind = item.installedByManager ? 'installed' : item.adoptedForUpdate ? 'adopted'
       : locked ? 'external-locked' : 'external-lockless'
     const state = this.linkState(name)
+    const agyState = this.agyState(name)
     const lettaHealth: LettaLinkHealth = state === 'other' ? 'foreign'
       : managed?.link && state !== 'linked' ? 'drifted'
       : managed?.link ? 'linked-managed' : state === 'linked' ? 'linked-external' : 'absent'
+    const agyHealth: LettaLinkHealth = agyState === 'other' ? 'foreign'
+      : managed?.agy && agyState !== 'linked' ? 'drifted'
+      : managed?.agy ? 'linked-managed' : agyState === 'linked' ? 'linked-external' : 'absent'
     const result: ISkillInspection = {
       name, source: item.source, ownership,
       ownershipLabel: ownership === 'installed' ? 'Installed here' : ownership === 'adopted' ? 'Tracked for updates'
@@ -266,6 +292,11 @@ export class GlobalSkillManager {
         : lettaHealth === 'drifted' ? 'The Letta link changed since installation'
           : lettaHealth === 'linked-managed' ? 'Linked by this manager'
             : lettaHealth === 'linked-external' ? 'Existing link remains yours' : 'Not linked to Letta',
+      agyHealth,
+      agyHealthDetail: agyHealth === 'foreign' ? 'Another item occupies the Agy path'
+        : agyHealth === 'drifted' ? 'The Agy link changed since installation'
+          : agyHealth === 'linked-managed' ? 'Linked by this manager'
+            : agyHealth === 'linked-external' ? 'Existing link remains yours' : 'Not linked to Agy',
       upstream: 'not-checked', primaryAction: 'none', primaryActionLabel: '',
       eligibleSecondaryActions: [], plannedWrites: [],
     }
@@ -277,8 +308,11 @@ export class GlobalSkillManager {
     }
     try { this.assertCanonical(name) } catch { return block('Skill files are missing or not a regular folder', 'missing') }
     if (lettaHealth === 'foreign' || lettaHealth === 'drifted') return block(result.lettaHealthDetail)
-    if (state === 'absent') result.eligibleSecondaryActions.push('link')
-    if (managed?.link && state === 'linked') result.eligibleSecondaryActions.push('unlink')
+    if (agyHealth === 'foreign' || agyHealth === 'drifted') return block(result.agyHealthDetail)
+    if (state !== 'other' && agyState !== 'other' && (state === 'absent' || !managed?.agy)) {
+      result.eligibleSecondaryActions.push('link')
+    }
+    if ((managed?.link && state === 'linked') || (managed?.agy && agyState === 'linked')) result.eligibleSecondaryActions.push('unlink')
     if (managed?.ownership === 'adopted' && !managed.link && state !== managed.observedLetta) {
       return block('The existing Letta link changed since it was recorded')
     }
@@ -350,15 +384,21 @@ export class GlobalSkillManager {
     this.assertCanonical(name)
     const receipt = this.receipt()
     const state = this.linkState(name)
+    const agy = this.agyState(name)
     if (state === 'other') throw new Error(`Letta path already belongs to something else: ${name}`)
-    if (state === 'linked' && !receipt.skills[name]?.link) {
-      throw new Error(`Existing Letta link is not manager-owned: ${name}`)
-    }
+    if (agy === 'other') throw new Error(`Agy path already belongs to something else: ${name}`)
+    const claimLetta = state === 'absent' || !!receipt.skills[name]?.link
     if (state === 'absent') {
       mkdirSync(this.lettaRoot, { recursive: true })
       symlinkSync(this.canonical(name), this.linkPath(name), 'dir')
     }
-    receipt.skills[name] = { ...receipt.skills[name], source: receipt.skills[name]?.source ?? '', link: true }
+    if (agy === 'absent') {
+      mkdirSync(this.agyRoot, { recursive: true })
+      symlinkSync(this.canonical(name), this.agyLinkPath(name), 'dir')
+    }
+    receipt.skills[name] = {
+      ...receipt.skills[name], source: receipt.skills[name]?.source ?? '', link: claimLetta, agy: true,
+    }
     writeReceipt(this.receiptPath, receipt)
   }
 
@@ -373,6 +413,7 @@ export class GlobalSkillManager {
       throw new Error(`Canonical skill or receipt already exists: ${name}`)
     }
     if (withLetta && this.linkState(name) !== 'absent') throw new Error(`Letta path already exists: ${name}`)
+    if (withLetta && this.agyState(name) !== 'absent') throw new Error(`Agy path already exists: ${name}`)
     this.deps.run(['add', source, '--skill', name, '-g', '-a', 'cline', '-y'], this.home)
     this.assertCanonical(name)
     const lock = this.lock()[name]
@@ -401,7 +442,7 @@ export class GlobalSkillManager {
       throw new Error(`Installed ${name} differs from its official lock tree; preserve local edits before adoption`)
     }
     receipt.skills[name] = {
-      source: entry.source!, ownership: 'adopted', link: !!existing?.link,
+      source: entry.source!, ownership: 'adopted', link: !!existing?.link, agy: !!existing?.agy,
       observedLetta: existing?.link ? undefined : state,
       installedHash: hashPath(this.canonical(name)) ?? undefined,
     }
@@ -462,7 +503,7 @@ export class GlobalSkillManager {
     }
     const receipt = this.receipt()
     receipt.skills[name] = {
-      source: verified.ownerRepo, ownership: 'adopted', link: !!existing?.link,
+      source: verified.ownerRepo, ownership: 'adopted', link: !!existing?.link, agy: !!existing?.agy,
       observedLetta: existing?.link ? undefined : state === 'linked' ? 'linked' : 'absent',
       installedHash: installedHash ?? undefined,
       historical: { skillPath: verified.skillPath, folderHash: verified.folderHash, commitSha: verified.commitSha },
@@ -482,6 +523,7 @@ export class GlobalSkillManager {
     }
     if (locked?.ref) throw new Error(`Pinned ref requires explicit source review before updating: ${name}`)
     if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
     this.assertObservedLetta(name, managed)
     this.assertUnchanged(name, managed)
     const status = await this.check(name)
@@ -495,6 +537,7 @@ export class GlobalSkillManager {
     this.assertWriteRoots()
     this.assertCanonical(name)
     if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
     this.assertObservedLetta(name, managed)
     this.assertUnchanged(name, managed)
     if (status.update === 'current') return 'current'
@@ -504,6 +547,7 @@ export class GlobalSkillManager {
     this.assertCanonical(name)
     if (this.lock()[name]?.source !== managed.source) throw new Error(`Official source drifted after update: ${name}`)
     if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted after update: ${name}`)
+    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted after update: ${name}`)
     this.assertObservedLetta(name, managed)
     const receipt = this.receipt()
     receipt.skills[name] = { ...managed, installedHash: hashPath(this.canonical(name)) ?? undefined, historical: undefined }
@@ -520,6 +564,7 @@ export class GlobalSkillManager {
     if (managed.ownership === 'adopted') throw new Error(`Adopted skill is update-only; original install and Letta link remain external: ${name}`)
     if (this.lock()[name]?.source !== managed.source) throw new Error(`Official source changed for ${name}`)
     if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
     this.assertUnchanged(name, managed)
     this.assertNoForeignLinks(name)
     this.deps.run(['remove', name, '-g', '-a', 'cline', '-y'], this.home)
@@ -530,6 +575,10 @@ export class GlobalSkillManager {
       if (this.linkState(name) !== 'linked') throw new Error(`Letta link changed during removal: ${name}`)
       unlinkSync(this.linkPath(name))
     }
+    if (managed.agy) {
+      if (this.agyState(name) !== 'linked') throw new Error(`Agy link changed during removal: ${name}`)
+      unlinkSync(this.agyLinkPath(name))
+    }
     delete receipt.skills[name]
     writeReceipt(this.receiptPath, receipt)
   }
@@ -538,12 +587,19 @@ export class GlobalSkillManager {
     this.assertWriteRoots()
     assertName(name)
     const receipt = this.receipt()
-    if (!receipt.skills[name]?.link || this.linkState(name) !== 'linked') throw new Error(`No manager-owned Letta link: ${name}`)
-    unlinkSync(this.linkPath(name))
-    if (!receipt.skills[name].source) delete receipt.skills[name]
+    const entry = receipt.skills[name]
+    const ownsLetta = !!entry?.link && this.linkState(name) === 'linked'
+    const ownsAgy = !!entry?.agy && this.agyState(name) === 'linked'
+    if (!ownsLetta && !ownsAgy) throw new Error(`No manager-owned Letta link: ${name}`)
+    if (ownsLetta) unlinkSync(this.linkPath(name))
+    if (ownsAgy) unlinkSync(this.agyLinkPath(name))
+    if (!entry?.source) delete receipt.skills[name]
     else {
-      receipt.skills[name].link = false
-      if (receipt.skills[name].ownership === 'adopted') receipt.skills[name].observedLetta = 'absent'
+      if (ownsLetta) {
+        entry.link = false
+        if (entry.ownership === 'adopted') entry.observedLetta = 'absent'
+      }
+      if (ownsAgy) entry.agy = false
     }
     writeReceipt(this.receiptPath, receipt)
   }

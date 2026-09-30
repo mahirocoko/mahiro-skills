@@ -9,15 +9,15 @@ import { createTerminal } from '../src/terminal'
 
 const usage = `Usage: bun run skills:global [command] [arguments]
   (no command), tui             Open interactive global skills manager
-  list                          Inventory global canonical skills and Letta links (read-only)
+  list                          Inventory global canonical skills and Letta/Agy links (read-only)
   check [name]                  Check one/all GitHub skill-folder hashes (read-only)
-  install <owner/repo> <name>   Install globally via official skills CLI, then link Letta
+  install <owner/repo> <name>   Install globally via official skills CLI, then link Letta and Agy
   adopt <name>                 Verify an existing GitHub install; enable update only
   recover <name> <source-url>  Match an old upstream tree with no lock; enable update only
-  link <name>                   Link an existing canonical skill to Letta (no install)
+  link <name>                   Link an existing canonical skill to Letta and Agy (no install)
   update <name>                 Update a manager-installed skill via official CLI
-  uninstall <name>              Uninstall a manager-installed skill from both roots
-  unlink <name>                 Remove only a manager-owned Letta link
+  uninstall <name>              Uninstall a manager-installed skill from its roots
+  unlink <name>                 Remove manager-owned Letta and Agy links
 
 No install/update/uninstall is inferred from list or check. Mutations use the
 official skills CLI via SKILLS_CLI_BIN or npx --yes skills and require an
