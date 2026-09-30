@@ -21,6 +21,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - `motion-design` — Explicit UI/product motion-system and audit lane for motion personality, semantic properties, timing, easing, springs, stagger, choreography, interaction states, reduced motion, and performance constraints. Trigger on: motion-design brief/system/tokens, animation choreography, timing/easing/spring decisions, interaction-state motion, or rendered motion audit. Do not auto-load for ordinary frontend implementation, tiny incidental transitions, static visual design, game VFX, or Codrops study without a named motion decision.
 - `project` — Clone and track external repos for study or development. Trigger on: project learn, project incubate, find tracked repo, list tracked projects, ghq symlink tracking.
 - `recap` — Session orientation and awareness. Trigger on: recap, status now, resume context, what happened today, current focus.
+- `review-comment` — Concise Mahiro-voice PR review comments, with read-only simulation and explicit pending-review posting gates. Trigger on: draft review comments, รีวิว PR, comment wording, or a pending GitHub review.
 - `rrr` — Session retrospective with an optional gated non-canonical reference learning. Trigger on: retrospective, end of session, lessons learned, or review of whether a session contains a transferable decision.
 - `studying-codrops` — Explicit Codrops/Tympanus learning lane for mapping the site, studying article + live demo + source/case-study evidence, comparing creative-web techniques, and producing project-fit adaptation guidance. Trigger only when Codrops/Tympanus is named or `/studying-codrops` is invoked; do not auto-load for ordinary frontend work or use Codrops as universal taste.
 - `web-asset-prompts` — Per-asset prompt writer for production-ready website image assets. Trigger on: transparent cutouts, chroma-key sources, overlay-safe hero/card images, aspect ratios, crop-safe web-ready prompts.
@@ -33,6 +34,7 @@ Use this file as a compact discovery map. Runtime bundle membership still comes 
 - **Direct execution bundle**: `direct-cli`, `gemini`, `watch`
 - **Hard-task orchestration bundle**: `fable`, `control-room-goals`, `direct-cli`, `recap`, `rrr`
 - **Repo doctrine bundle**: `auditing-context-contracts`, `mahiro-style`, `mahiro-docs-rules-init`, `mahiro-guidance-refine`
+- **PR review-writing bundle**: `mahiro-style`, `review-comment`
 - **Character IP bundle**: `creating-character-ip`
 - **Web assets bundle**: `web-asset-prompts`, `asset-designer`, `codex-asset-production`
 - **Creative web study bundle**: `studying-codrops`, `learn`
