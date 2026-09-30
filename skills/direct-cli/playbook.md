@@ -885,7 +885,7 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 
 - Cursor ordinary implementation / cleanup model: `composer-2.5`
 - Cursor long-horizon agentic model: Grok 4.7 with `context=500k`, `effort=high`, and non-Fast by default
-- Cursor balanced Anthropic reasoning model: `claude-sonnet-5-thinking-high`
+- Cursor balanced Anthropic reasoning model: `claude-sonnet-5-5-high`
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-5-high`
@@ -893,11 +893,11 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Antigravity balanced model: `claude-sonnet-4-6`
 - Antigravity fast model: `gemini-3.8-flash-high` (`gemini-3.8-flash-medium`, then `gemini-3.8-flash-low` fallback)
 - Codex flagship model/effort: `gpt-6-astra` + `high`
-- Codex balanced everyday model/effort: `gpt-6-sol` + `high`
-- Codex deep/value escalation model/effort: `gpt-6-sol` + `max` before Astra when the task benefits from more reasoning
+- Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`
+- Codex deep/value escalation model/effort: `gpt-6.1-sol` + `max` before Astra when the task benefits from more reasoning
 - Codex fast/cost-efficient model/effort: `gpt-6-luna` + `medium`
 - Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra` for large parallelizable jobs
-- Codex fallback model/effort: `gpt-6-sol` + `high` when Astra is unavailable in the live catalog
+- Codex fallback model/effort: `gpt-6.1-sol` + `high` when Astra is unavailable in the live catalog
 - Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps --trust`, then send the prompt after readiness
 - Antigravity launch style: interactive selected-backend lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
 - Codex launch style: interactive selected-backend lane with `--dangerously-bypass-approvals-and-sandbox`, then send the prompt after readiness
@@ -909,7 +909,7 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - If `/direct-cli cursor ...` has no explicit model, ask the user to choose from this curated set:
   1. `composer-2.5` — recommended for ordinary Cursor direct-lane work: implementation, cleanup, narrow refactors, and follow-up fixes using the non-Fast model ID.
   2. Grok 4.7 (`grok-4.7-high` in the catalog) — long-horizon agentic coding with 500k context, high effort, and non-Fast by default.
-  3. `claude-sonnet-5-thinking-high` — balanced Anthropic reasoning lane for implementation and review.
+  3. `claude-sonnet-5-5-high` — balanced Anthropic reasoning lane for implementation and review. Sonnet 5.5 has no separate thinking slug in the live catalog; launch this exact ID.
   4. `claude-fable-5-1-thinking-high` — Fable 5.1 reasoning lane; use this when Mahiro says “Fable 5.1” unless he asks for another Fable variant.
   5. `claude-fable-5-1-thinking-xhigh` — Fable 5.1 extra-high lane for heavier review.
   6. `claude-opus-5-5-high` — Opus heavy review / deep reasoning lane.
@@ -923,14 +923,15 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-6-astra` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
-  2. `gpt-6-sol` + `high` — balanced everyday coding and follow-up work.
-  3. `gpt-6-sol` + `max` — deeper value escalation for difficult coding/research before Astra.
+  2. `gpt-6.1-sol` + `high` — balanced everyday coding and follow-up work.
+  3. `gpt-6.1-sol` + `max` — deeper value escalation for difficult coding/research before Astra.
   4. `gpt-6-luna` + `medium` — fast/cost-efficient scoped work.
   5. `gpt-6-astra` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
-- If Astra is absent from the live catalog, offer `gpt-6-sol` + `high` as the flagship fallback instead of silently choosing it.
+- If Astra is absent from the live catalog, offer `gpt-6.1-sol` + `high` as the flagship fallback instead of silently choosing it.
+- Codex's live catalog default for `gpt-6.1-sol` is `low`. Launch the everyday and fallback roles at `high` with an explicit effort setting; do not inherit that catalog default.
 - Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent effort-suffixed model IDs.
 - Verify supported effort levels from the current Codex catalog before launch. Never infer that a model supports `ultra` from an older catalog snapshot.
-- `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When `gpt-6-astra` or `gpt-6-luna` is explicit but effort is omitted, use `medium`; when `gpt-6-sol` is explicit, use `high`; for an explicitly selected GPT-5.6 model, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
+- `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When `gpt-6-astra` or `gpt-6-luna` is explicit but effort is omitted, use `medium`; when `gpt-6.1-sol` is explicit, use `high`; for an explicitly selected GPT-5.6 model, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
 - Antigravity effort support is model-specific. Prefer an exact slug from the current `agy models` output, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
@@ -1009,7 +1010,7 @@ tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not r
 For a balanced Anthropic reasoning pass:
 
 ```bash
-tmux send-keys -t cursor-task 'agent --model "claude-sonnet-5-thinking-high" --yolo --approve-mcps --trust' Enter
+tmux send-keys -t cursor-task 'agent --model "claude-sonnet-5-5-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -1160,7 +1161,7 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 For a balanced everyday pass:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
@@ -1173,18 +1174,18 @@ tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-For a deeper Sol pass before Astra:
+For a deeper GPT-6.1 Sol pass before Astra:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-6-sol" -c model_reasoning_effort=max --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=max --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
-If Astra is unavailable, use the foreground-verified flagship fallback:
+If Astra is unavailable, use the flagship fallback:
 
 ```bash
-tmux send-keys -t codex-task 'codex --model "gpt-6-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
+tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```

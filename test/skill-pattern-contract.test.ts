@@ -416,7 +416,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-high\" --yolo --approve-mcps --trust");
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-xhigh\" --yolo --approve-mcps --trust");
     expect(playbook).toContain("agent --model 'grok-4.7[context=500k,effort=high,fast=false]' --yolo --approve-mcps --trust");
-    expect(playbook).toContain("agent --model \"claude-sonnet-5-thinking-high\" --yolo --approve-mcps --trust");
+    expect(playbook).toContain("agent --model \"claude-sonnet-5-5-high\" --yolo --approve-mcps --trust");
+    expect(playbook).not.toContain("claude-sonnet-5-thinking-high");
     expect(playbook).toContain("agent --model \"claude-opus-5-5-high\" --yolo --approve-mcps --trust");
     expect(playbook).not.toContain("agent --model \"claude-opus-5-thinking-high\"");
     expect(playbook).not.toContain("cursor-grok-4.6-high");
@@ -424,9 +425,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("--dangerously-bypass-approvals-and-sandbox");
     expect(playbook).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
     expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=high');
-    expect(playbook).toContain('codex --model "gpt-6-sol" -c model_reasoning_effort=high');
-    expect(playbook).toContain('codex --model "gpt-6-sol" -c model_reasoning_effort=max');
-    expect(playbook).not.toContain('codex --model "gpt-6-sol" -c model_reasoning_effort=medium');
+    expect(playbook).toContain('codex --model "gpt-6.1-sol" -c model_reasoning_effort=high');
+    expect(playbook).toContain('codex --model "gpt-6.1-sol" -c model_reasoning_effort=max');
+    expect(playbook).not.toContain('codex --model "gpt-6-sol" -c model_reasoning_effort=high');
+    expect(playbook).not.toContain('codex --model "gpt-6.1-sol" -c model_reasoning_effort=medium');
     expect(playbook).toContain('codex --model "gpt-6-luna" -c model_reasoning_effort=medium');
     expect(playbook).not.toContain('codex --model "gpt-5.6-luna"');
     expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=ultra');
