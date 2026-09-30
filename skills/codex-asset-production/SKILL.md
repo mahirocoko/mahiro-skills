@@ -19,7 +19,7 @@ Use this workflow when Mahiro wants Codex to generate production-ish source art 
 | Sprite sheets, animation frames, raster bodies, and bounded candidate QA | The target repo owns the runtime contract; this skill owns only Codex source or explicitly assigned fallback candidates |
 | Runtime VFX design, timing, emitters, shaders, collision truth, and integration | The target repo's gameplay/VFX owner |
 | Codex-generated source textures, fallback dicut candidates, atlases, and bounded composite QA for game VFX | `codex-asset-production` under the target repo's contract |
-| Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
+| Open panes for Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
 
 
 ## Steps
@@ -116,4 +116,4 @@ Use this workflow when Mahiro wants Codex to generate production-ish source art 
 - Scaling large source/clean UI assets directly in production CSS after the runtime size is known, which can hide blurry edges or reveal unbalanced transparent padding later.
 - Leaving manifests with stale `pending` or overconfident status after a cleanup/QA pass.
 
-Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, and `direct-cli` when opening bounded Cursor/Agy/Codex/Pi lanes. Keep runtime sprite/VFX assembly, gameplay semantics, and production promotion with the target repo's current owners.
+Related skills: pair with `asset-designer` for cleanup/alpha/edge QA, `web-asset-prompts` for per-asset prompt wording, and `direct-cli` when opening bounded Cursor/Agy/Codex lanes. Keep runtime sprite/VFX assembly, gameplay semantics, and production promotion with the target repo's current owners.

@@ -70,8 +70,6 @@ describe("README", () => {
     expect(content).toContain("`current`, `outdated`, `modified`, `missing`, and `legacy`");
     expect(content).toContain("bun ./src/cli.ts uninstall --agent all --scope local");
     expect(content).toContain("backend-specific same-prompt fanout");
-    expect(content).toContain("`use Pi` / `ใช้ Pi` selects the Pi lane");
-    expect(content).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
     expect(content).toContain("bun ./src/cli.ts audit --agent-id \"$AGENT_ID\" --start-date 2026-06-01");

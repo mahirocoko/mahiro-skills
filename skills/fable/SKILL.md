@@ -229,7 +229,7 @@ Avoid narrating every file read, patch hunk, or passing micro-check.
 ## Integration with related skills
 
 - `control-room-goals` owns approved mission/DoD state and human criteria.
-- `direct-cli` owns pane-first Cursor/Antigravity/Codex/Pi execution and Cursor
+- `direct-cli` owns pane-first Cursor/Antigravity/Codex execution and Cursor
   Fable model selection.
 - Repo-local filename and exact source search owns code discovery; verify selected matches with bounded reads.
 - `recap` owns orientation; `rrr` owns retrospectives and optional gated non-canonical reference learnings.

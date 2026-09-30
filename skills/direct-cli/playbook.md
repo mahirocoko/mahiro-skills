@@ -1,11 +1,11 @@
 # Direct CLI Playbook
 
-This playbook is for using Cursor CLI, Antigravity CLI (`agy`), Codex CLI (`codex`), and Pi (`pi`) directly, without going through the usual orchestration runtime.
+This playbook is for using Cursor CLI, Antigravity CLI (`agy`), and Codex CLI (`codex`) directly, without going through the usual orchestration runtime.
 
 The intended model is simple:
 
 - Mahiro Code / the main agent stays the conversation owner.
-- Cursor CLI, Antigravity CLI, Codex CLI, or Pi acts as the direct executor.
+- Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
 - Orca terminals are preferred when the caller is provably inside a live writable Orca terminal for the current worktree; Herdr-managed panes are next when the caller is inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
 - The selected backend's pane output is treated as the nearest source of execution truth.
 - For production-ish asset work, route through `asset-designer` first; direct-cli owns pane execution, not the asset workflow. Add `codex-asset-production` only when the contract needs Codex source/imagegen or an explicit Codex dicut fallback/A-B.
@@ -39,18 +39,16 @@ On return, collect the exact report promptly and ask whether its evidence answer
 
 - Prefer a **fresh container in the already-selected Orca, Herdr, or tmux backend** when an old job container looks unhealthy.
 - Start with the known-good launch commands in this playbook. Do not burn the first step on discovery by default.
-- Use `agent models`, `agy models`, `codex debug models`, and `pi --list-models` for current catalogs. Use each CLI's help/doctor surface when launch flags, features, or local health need validation.
+- Use `agent models`, `agy models`, and `codex debug models` for current catalogs. Use each CLI's help/doctor surface when launch flags, features, or local health need validation.
 - Keep the lane **interactive in the selected pane backend**. Do not default to Cursor headless mode such as `agent -p`.
 - Do not default to Antigravity headless/print mode such as `agy -p`, `agy --print`, or `agy --prompt` unless the user explicitly asks for script-style output.
 - Do not default to Codex non-interactive mode such as `codex exec`; use it only when the user explicitly asks for script/headless output.
-- Do not default to Pi print mode (`pi -p` / `pi --print`); keep Pi interactive in the selected pane.
-- Default intended current-worktree lanes to uninterrupted execution: Cursor `--yolo --approve-mcps --trust`, Antigravity `--dangerously-skip-permissions`, Codex `--dangerously-bypass-approvals-and-sandbox`, and Pi `--approve` with `read,bash,edit,write,grep,find,ls`.
+- Default intended current-worktree lanes to uninterrupted execution: Cursor `--yolo --approve-mcps --trust`, Antigravity `--dangerously-skip-permissions`, and Codex `--dangerously-bypass-approvals-and-sandbox`.
 - Treat autonomy as approval policy, not expanded scope. Destructive operations, secret handling, commits, pushes, releases, installs, and work outside the assigned worktree keep their normal explicit-authorization boundaries.
 - Opt down to safe/read-only/sandboxed behavior only when Mahiro explicitly requests it. For a safe Codex lane, use `--sandbox workspace-write --ask-for-approval never`.
-- Treat `/direct-cli pi`, `use Pi`, and `ใช้ Pi` as equivalent Pi-lane requests. If Pi provider/model are omitted, run `--list-models` before creating backend state; announce and use the only configured model, or ask when several choices exist.
 - If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
-- Launch Cursor, Antigravity, Codex, and Pi in the selected backend without the task prompt inline.
+- Launch Cursor, Antigravity, and Codex in the selected backend without the task prompt inline.
 - Confirm readiness through Orca `terminal wait --for tui-idle`, Herdr `agent start` plus pane/agent reads, or `tmux capture-pane` before sending the real task prompt.
 - Cursor's default `--trust` should bypass its separate workspace trust prompt for the intended repo. If another CLI still presents a trust gate, accept it only for that intended worktree before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
@@ -148,7 +146,7 @@ print(json.load(sys.stdin)["result"]["terminal"]["incarnationId"])
 }
 ```
 
-For Agy use its verified interactive launch flags and exact stable model, and compact ordinary follow-up prompts to one line before `terminal send`; do not assume Orca removes Agy's multiline-input caveat. For Codex and Pi use their verified interactive commands from this playbook. Map an explicit direct-cli `--focus` to `orca terminal create --focus`; omission remains background/no-focus.
+For Agy use its verified interactive launch flags and exact stable model, and compact ordinary follow-up prompts to one line before `terminal send`; do not assume Orca removes Agy's multiline-input caveat. For Codex use its verified interactive commands from this playbook. Map an explicit direct-cli `--focus` to `orca terminal create --focus`; omission remains background/no-focus.
 
 Revalidate the exact receipt before prompting, interrupting, splitting, or closing:
 
@@ -543,7 +541,7 @@ elif [ "$collision_status" -ne 0 ]; then
 fi
 ```
 
-Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Immediately before each start, prove the receipt-bound pane is still unclaimed. Use `--kind pi` only when current Herdr help exposes it and the target pane proves it resolves the same Pi executable/provider environment that passed preflight:
+Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Immediately before each start, prove the receipt-bound pane is still unclaimed:
 
 ```bash
 verify_herdr_unclaimed_pane_receipt "$CURSOR_PANE" || exit 1
@@ -564,21 +562,8 @@ herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
   --model claude-opus-4-6-thinking \
   --dangerously-skip-permissions
 
-# PI_PANE must be a separately created shell-ready pane and PI_AGENT must be
-# a unique pane-derived name following the same collision checks above.
-verify_herdr_unclaimed_pane_receipt "$PI_PANE" || exit 1
-herdr agent start "$PI_AGENT" --kind pi --pane "$PI_PANE" -- \
-  --provider "$PI_PROVIDER" \
-  --model "$PI_MODEL" \
-  --tools "$PI_TOOLS" \
-  --no-session \
-  --no-extensions \
-  --no-prompt-templates \
-  --approve
-
 CODEX_SESSION_ID="$(capture_herdr_agent_session "$ROOT_PANE" codex "$CODEX_AGENT")" || exit 1
 AGY_SESSION_ID="$(capture_herdr_agent_session "$REVIEW_PANE" agy "$AGY_AGENT")" || exit 1
-PI_SESSION_ID="$(capture_herdr_agent_session "$PI_PANE" pi "$PI_AGENT")" || exit 1
 ```
 
 Then use agent names as stable lane targets:
@@ -605,28 +590,6 @@ If `agent start` still reports `agent_name_taken` because another process won th
 
 For a fresh exact multiline Agy prompt, preserve the existing `agy --prompt-interactive "$(cat prompt.txt)"` path through `herdr pane run`; Herdr multiline prompt behavior is not yet foreground-proven. Ordinary Agy follow-ups should remain one line.
 
-If the target pane cannot prove that named `agent start --kind pi` resolves the exact executable and provider environment that passed preflight—for example, the selected command is an isolated wrapper—do not use named lifecycle. After the same shell-readiness gate, launch the exact command and control the generic pane:
-
-Require current Herdr help to confirm `pane run <PANE_ID> <COMMAND>...`; then pass the executable and every Pi flag as separate argv values as shown below. This avoids shell-string credential/quoting hazards.
-
-```bash
-herdr pane run "$PI_PANE" "$PI_COMMAND" \
-  --provider "$PI_PROVIDER" \
-  --model "$PI_MODEL" \
-  --tools "$PI_TOOLS" \
-  --no-session \
-  --no-extensions \
-  --no-prompt-templates \
-  --approve
-
-PI_PROCESS_GROUP_ID="$(capture_herdr_generic_process_receipt "$PI_PANE")" || exit 1
-herdr pane read "$PI_PANE" --source recent-unwrapped --lines 120
-herdr pane send-text "$PI_PANE" 'Continue from the current worktree only. Do not restart from scratch. <TASK>'
-herdr pane send-keys "$PI_PANE" enter
-```
-
-Confirm a real model/tool activity transition after dispatch. A requested completion marker appears once in the echoed user prompt, so do not count that first occurrence as completion. Generic-pane Pi has no named-agent lifecycle: do not send it through `prompt-fanout.py`, `herdr-jobs.py`, `agent wait`, or `--detach`.
-
 Cleanup is explicit and destructive to the executor process:
 
 ```bash
@@ -634,29 +597,12 @@ verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID"
 herdr agent send-keys "$CODEX_AGENT" ctrl+c
 verify_herdr_agent_receipt "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" || exit 1
 herdr agent send-keys "$AGY_AGENT" ctrl+c
-
-if [ -n "${PI_SESSION_ID:-}" ]; then
-  verify_herdr_agent_receipt "$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID" || exit 1
-  herdr agent send-keys "$PI_AGENT" ctrl+c
-  close_herdr_job_tab_if_owned \
-    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
-    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" \
-    "$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID"
-elif [ -n "${PI_PROCESS_GROUP_ID:-}" ]; then
-  verify_herdr_generic_process_receipt "$PI_PANE" "$PI_PROCESS_GROUP_ID" || exit 1
-  herdr pane send-keys "$PI_PANE" ctrl+c
-  close_herdr_job_tab_if_owned \
-    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
-    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID" \
-    "$PI_PANE" generic "" "$PI_PROCESS_GROUP_ID"
-else
-  close_herdr_job_tab_if_owned \
-    "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
-    "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID"
-fi
+close_herdr_job_tab_if_owned \
+  "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" \
+  "$REVIEW_PANE" agy "$AGY_AGENT" "$AGY_SESSION_ID"
 ```
 
-Capture each available `*_SESSION_ID` from the matching receipt-bound `herdr pane get` result immediately after `agent start`. Do not close a job tab merely because one lane finishes; inspect every registered lane first. Include every created pane in `close_herdr_job_tab_if_owned`, including a Pi pane when the job has one.
+Capture each available `*_SESSION_ID` from the matching receipt-bound `herdr pane get` result immediately after `agent start`. Do not close a job tab merely because one lane finishes; inspect every registered lane first. Include every created pane in `close_herdr_job_tab_if_owned`.
 
 ### tmux fallback lifecycle
 
@@ -667,8 +613,6 @@ The existing tmux launch, fanout, capture, recovery, and cleanup commands below 
 Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Opus for critique, or Cursor for alternatives.
 
 The goal is one job, one receipt-bound Orca tab, Herdr tab, or tmux session with many panes — not scattered containers that lose shared context.
-
-Pi remains single-lane in the initial contract. Do not place Pi in role fanout, same-prompt fanout, or detached jobs until the packaged helpers are extended and lifecycle-proven for Pi.
 
 ### When to use
 
@@ -954,8 +898,6 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Codex fast/cost-efficient model/effort: `gpt-6-luna` + `medium`
 - Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra` for large parallelizable jobs
 - Codex fallback model/effort: `gpt-6-sol` + `high` when Astra is unavailable in the live catalog
-- Pi default autonomous implementation allowlist: `read,bash,edit,write,grep,find,ls`
-- Pi safe/read-only review allowlist: `read,grep,find,ls`, only when Mahiro explicitly requests the opt-down
 - Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps --trust`, then send the prompt after readiness
 - Antigravity launch style: interactive selected-backend lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
 - Codex launch style: interactive selected-backend lane with `--dangerously-bypass-approvals-and-sandbox`, then send the prompt after readiness
@@ -990,10 +932,6 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - Verify supported effort levels from the current Codex catalog before launch. Never infer that a model supports `ultra` from an older catalog snapshot.
 - `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When `gpt-6-astra` or `gpt-6-luna` is explicit but effort is omitted, use `medium`; when `gpt-6-sol` is explicit, use `high`; for an explicitly selected GPT-5.6 model, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
-- If `/direct-cli pi ...` omits provider/model, resolve the Pi command and run its read-only `--list-models` check before backend mutation. Use the single configured provider/model after announcing it; ask when the command exposes multiple choices. Do not silently use a stale 9Router model slug.
-- Resolve Pi command in order: executable `DIRECT_PI_COMMAND`, `pi` on `PATH`, executable `~/.9router-free/pi-pilot/run-pi.sh`. The skills adapter does not install that executable or a PATH launcher. Fail before creating backend state when none exists; never install Pi or rewrite provider configuration implicitly.
-- Require current help output to expose every selected launch flag before mutation. Until a fresh capability check proves stronger per-tool approval semantics, the default Pi implementation lane passes `--tools read,bash,edit,write,grep,find,ls`; use `read,grep,find,ls` only for an explicitly requested safe/read-only review lane.
-- Do not place `--api-key <literal>` in the launch command. Use a configured provider or environment-backed wrapper so pane output and process arguments never expose the key.
 - Antigravity effort support is model-specific. Prefer an exact slug from the current `agy models` output, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Model catalogs can change independently of binary versions. Use `agent models`, `agy models`, and `codex debug models` before changing model names or when a preferred launch fails.
@@ -1022,47 +960,6 @@ tmux send-keys -t codex-task 'Continue from the current worktree only. Do not re
 tmux capture-pane -p -t "codex-task" -S -120
 ```
 
-### Pi interactive lane
-
-```bash
-PI_COMMAND="${DIRECT_PI_COMMAND:-}"
-if [ -z "$PI_COMMAND" ] && command -v pi >/dev/null 2>&1; then
-  PI_COMMAND="$(command -v pi)"
-fi
-if [ -z "$PI_COMMAND" ] && [ -x "$HOME/.9router-free/pi-pilot/run-pi.sh" ]; then
-  PI_COMMAND="$HOME/.9router-free/pi-pilot/run-pi.sh"
-fi
-[ -n "$PI_COMMAND" ] && [ -x "$PI_COMMAND" ] || {
-  echo "direct-cli: Pi command is unavailable" >&2
-  exit 1
-}
-
-"$PI_COMMAND" --version
-PI_HELP="$("$PI_COMMAND" --help)"
-for flag in --tools --no-session --no-extensions --no-prompt-templates --approve; do
-  printf '%s\n' "$PI_HELP" | grep -F -- "$flag" >/dev/null || {
-    echo "direct-cli: Pi does not expose required flag $flag" >&2
-    exit 1
-  }
-done
-"$PI_COMMAND" --list-models
-
-# Set both values from the live --list-models result above. The skill may do
-# this automatically only when exactly one configured row exists; otherwise
-# ask Mahiro before creating the session.
-PI_PROVIDER="${PI_PROVIDER:?Select PI_PROVIDER from the live Pi model list}"
-PI_MODEL="${PI_MODEL:?Select PI_MODEL from the live Pi model list}"
-PI_TOOLS="read,bash,edit,write,grep,find,ls"
-
-tmux new-session -d -s "pi-task" -c "$(pwd)"
-tmux send-keys -t pi-task "\"$PI_COMMAND\" --provider \"$PI_PROVIDER\" --model \"$PI_MODEL\" --tools \"$PI_TOOLS\" --no-session --no-extensions --no-prompt-templates --approve" Enter
-tmux capture-pane -p -t pi-task -S -120
-tmux send-keys -t pi-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
-tmux capture-pane -p -t pi-task -S -120
-```
-
-Use the live preflight result; never revive a model/provider pair from an older document. If Mahiro explicitly requests a safe/read-only review lane, opt down `PI_TOOLS` to `read,grep,find,ls`.
-
 ### Safe discovery examples
 
 Use these when you need to validate local behavior rather than guessing:
@@ -1077,8 +974,6 @@ codex debug models
 codex --help
 codex features list
 codex doctor
-pi --list-models
-pi --help
 ```
 
 ---
@@ -1343,47 +1238,6 @@ tmux capture-pane -p -t "codex-task" -S -120
 
 ---
 
-## Pi direct playbook
-
-### Best for
-
-- bounded coding/review through a configured Pi provider
-- custom OpenAI-compatible gateways such as 9Router
-- raw model/tool-loop comparison without changing Cursor/Agy/Codex configuration
-
-### Fresh session
-
-Treat `use Pi` / `ใช้ Pi` as lane selection. Resolve and preflight the command before creating an Orca or Herdr tab, or a tmux session. Launch interactively without the task prompt, then inspect the pane for Pi version, provider/model, loaded context, trust state, and tool availability.
-
-Use `--approve` only for the intended current worktree. Keep `--no-extensions --no-prompt-templates` as the default code-execution boundary; leave context files and skills enabled unless Mahiro explicitly asks for a raw-model baseline. Use `--no-session` so direct lanes remain fresh and ephemeral.
-
-### Tool boundary
-
-- default autonomous implementation: `--tools read,bash,edit,write,grep,find,ls`
-- explicitly requested safe/read-only review: `--tools read,grep,find,ls`
-
-Until the current Pi runtime proves a stronger per-tool approval contract, never omit `--tools` or rely on the unrestricted built-in default. Never pass literal credentials on the command line.
-
-### Herdr lifecycle
-
-Use named Herdr `--kind pi` only when current help exposes it and the target pane proves it resolves the same executable/provider environment that passed preflight. PATH presence alone is insufficient because `pi` may be a launcher or wrapper. Otherwise use generic `pane run`, then `pane read`, `pane send-text`, and `pane send-keys enter`. Generic Pi is intentionally excluded from detached jobs and packaged same-prompt fanout.
-
-### Check current pane output
-
-```bash
-orca terminal read --terminal <pi-handle> --json
-# or Herdr named Pi:
-herdr agent read <named-pi-agent> --source recent-unwrapped --lines 120
-# or custom-wrapper Pi:
-herdr pane read <pi-pane> --source recent-unwrapped --lines 120
-# tmux:
-tmux capture-pane -p -t "pi-task" -S -120
-```
-
-For Orca, revalidate the handle/worktree/incarnation receipt before interrupting or closing. For Herdr, revalidate the receipt-bound Pi pane plus its agent session when available before `ctrl+d` or `ctrl+c`, inspect the pane, then close only through `close_herdr_job_tab_if_owned`. For tmux, interrupt the exact session target and close that session explicitly.
-
----
-
 ## Recommended combined flow
 
 ### Choose executors by role and verified capability
@@ -1403,8 +1257,6 @@ Use Antigravity CLI when its current verified model and tool capabilities fit th
 Use Codex CLI when you want OpenAI's local coding agent directly in the pane, especially for implementation/review tasks or image-aware workflows. Keep image generation requests inside the interactive lane; do not switch to `codex exec` only because the task mentions images.
 
 The default direct path is still interactive for all tools. Do not switch Cursor into headless `-p` mode unless the user explicitly asks for a script-style capture. Do not switch Antigravity into `agy -p` / `--print` / `--prompt` mode by default. Do not switch Codex into `codex exec` by default. Launch first, check readiness, then send the task prompt.
-
-Keep Pi interactive too; do not switch to `pi -p` / `--print` merely for convenience.
 
 ---
 
@@ -1452,7 +1304,6 @@ Mitigation:
 - require `--yolo --approve-mcps --trust` for default Cursor direct runs
 - require `--dangerously-skip-permissions` for default Antigravity direct runs
 - require `--dangerously-bypass-approvals-and-sandbox` for default Codex direct runs
-- require `--approve --tools read,bash,edit,write,grep,find,ls` for default Pi direct runs
 - inspect pane output directly before assuming the executor is still progressing normally
 
 ### Workspace trust prompt
@@ -1492,7 +1343,7 @@ Mitigation:
 
 Symptoms:
 
-- text appears in the input box but Cursor, Antigravity, Codex, or Pi has not entered thinking
+- text appears in the input box but Cursor, Antigravity, or Codex has not entered thinking
 - text you sent is still sitting in the inbox / input area
 
 Mitigation:
@@ -1576,7 +1427,6 @@ Capture pane output:
 tmux capture-pane -p -t "cursor-task" -S -120
 tmux capture-pane -p -t "agy-task" -S -120
 tmux capture-pane -p -t "codex-task" -S -120
-tmux capture-pane -p -t "pi-task" -S -120
 ```
 
 Interrupt current task:
@@ -1585,7 +1435,6 @@ Interrupt current task:
 tmux send-keys -t cursor-task C-c
 tmux send-keys -t agy-task C-c
 tmux send-keys -t codex-task C-c
-tmux send-keys -t pi-task C-c
 ```
 
 Kill session:
@@ -1594,7 +1443,6 @@ Kill session:
 tmux kill-session -t cursor-task
 tmux kill-session -t agy-task
 tmux kill-session -t codex-task
-tmux kill-session -t pi-task
 ```
 
 Create fresh session:
@@ -1603,7 +1451,6 @@ Create fresh session:
 tmux new-session -d -s "cursor-task-fresh"
 tmux new-session -d -s "agy-task-fresh"
 tmux new-session -d -s "codex-task-fresh"
-tmux new-session -d -s "pi-task-fresh"
 ```
 
 ---
@@ -1632,6 +1479,5 @@ When a direct CLI lane looks stuck:
 6. Confirm the new prompt was actually submitted.
 7. Keep Antigravity pane-first unless the user explicitly asks for print/headless output.
 8. Keep Codex pane-first unless the user explicitly asks for `codex exec` or script/headless output.
-9. Keep Pi pane-first with an explicit tool allowlist; do not use print mode, stale provider/model assumptions, or generic-pane detach/fanout.
 
 The key rule is simple: **fresh backend container, narrow scope, pane-first truth**.

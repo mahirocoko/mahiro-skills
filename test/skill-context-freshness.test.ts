@@ -139,7 +139,7 @@ describe("packaged skill context freshness", () => {
     expect(research.indexOf('"select_tool"')).toBeLessThan(research.indexOf('"chat"'));
   });
 
-  test("direct-cli keeps volatile routing in one owner and gates Pi capabilities", () => {
+  test("direct-cli keeps volatile routing in one owner", () => {
     const skill = read("skills", "direct-cli", "SKILL.md");
     const readme = read("skills", "direct-cli", "README.md");
     const playbook = read("skills", "direct-cli", "playbook.md");
@@ -172,8 +172,6 @@ describe("packaged skill context freshness", () => {
     expect(activeSurfaces).not.toMatch(/--provider\s+(?!<provider>)\S+\s+--model\s+(?!<model>)\S+/);
     expect(allDirectDocs).not.toMatch(/Current Freshness Notes|Current freshness checkpoints/);
     expect(allDirectDocs).not.toMatch(/2026\.07\.23-e383d2b|agy 1\.1\.6|0\.144\.6|0\.145\.0|Pi `0\.83\.0`|global `pi` was not on `PATH`/);
-    expect(skill).toContain("require the current help output to expose every launch flag");
-    expect(skill).toContain("PATH presence or the basename `pi` is not enough");
     expect(skill).toContain("lane's cleanup receipt");
     expect(skill).toContain("Never use global `pgrep`, `pkill`");
     expect(playbook).toContain("verify_herdr_pane_receipt");
@@ -192,7 +190,6 @@ describe("packaged skill context freshness", () => {
     expect(playbook).toContain(
       'verify_herdr_agent_receipt "$PANE_ID" "$AGENT_KIND" "$AGENT_TARGET" "$AGENT_SESSION_ID" || exit 1',
     );
-    expect(playbook).toContain('"$PI_PANE" pi "$PI_AGENT" "$PI_SESSION_ID"');
     expect(playbook.match(/herdr tab close \"\$TAB_ID\"/g)).toHaveLength(1);
     expect(read("README.md")).toContain("does not install the `pi` executable");
   });

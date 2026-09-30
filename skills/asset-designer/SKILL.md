@@ -25,7 +25,7 @@ Phase role: `asset-designer` is the asset director. It answers **what assets sho
 | Have Codex generate/source production-ish asset families | `codex-asset-production`; hand selected sources back to this workflow for dicut routing |
 | Run a Codex dicut fallback or same-input A/B | `codex-asset-production` after the fallback trigger is named |
 | Generate/source/clean sprite-like raster assets | Let the target repo own the runtime contract; use this skill for asset roles and dicut QA, with `codex-asset-production` only for Codex source or fallback lanes |
-| Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
+| Open panes for Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
 
 
 Recommended chain:

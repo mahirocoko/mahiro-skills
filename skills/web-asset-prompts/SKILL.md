@@ -24,7 +24,7 @@ Phase role: `web-asset-prompts` is the per-asset prompt writer. It answers **how
 | Dicut, remove backgrounds, clean edges, or separate layers | `asset-designer`; it routes Agy/Gemini first and keeps Codex as an explicit fallback/A-B lane |
 | Have Codex generate/source production-ish asset families | `codex-asset-production`; route selected sources back through `asset-designer` for dicut |
 | Generate/source/clean sprite-like raster assets | Let the target repo own the runtime contract; use `asset-designer` for asset/dicut direction and `codex-asset-production` only for Codex source or fallback lanes |
-| Open panes for Cursor/Agy/Codex/Pi execution | `direct-cli` as executor layer only |
+| Open panes for Cursor/Agy/Codex execution | `direct-cli` as executor layer only |
 
 
 Recommended chain:

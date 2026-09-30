@@ -1,12 +1,10 @@
 # direct-cli skill
 
-`/direct-cli` is the packaged playbook for running Cursor CLI, Antigravity CLI, Codex CLI, and Pi directly through verified Orca or Herdr managed terminals with a portable tmux fallback. Natural requests such as `use Pi` or `ใช้ Pi` select the same Pi lane as `/direct-cli pi`.
+`/direct-cli` is the packaged playbook for running Cursor CLI, Antigravity CLI, and Codex CLI directly through verified Orca or Herdr managed terminals with a portable tmux fallback.
 
 It is for situations where you want to bypass the usual orchestration runtime but still keep good operator posture: narrow scope, current-worktree continuation, pane-first verification, launch first then send the task prompt, and fresh-session recovery when the lane looks unhealthy.
 
-The default posture is explicit: `--backend auto` first selects Orca only when the invocation already runs inside an exact live writable Orca terminal bound to the current worktree, then Herdr only from a healthy compatible managed pane, then tmux. `--backend orca`, `--backend herdr`, and `--backend tmux` are explicit fail-closed overrides. Launch interactively, verify readiness from the selected pane backend, then send the real prompt. Intended current-worktree lanes default to uninterrupted execution: Cursor `--yolo --approve-mcps --trust`, Antigravity `--dangerously-skip-permissions`, Codex `--dangerously-bypass-approvals-and-sandbox`, and Pi `--approve` with `read,bash,edit,write,grep,find,ls`. These flags remove routine approval blocking; they do not authorize destructive or out-of-scope work. Opt down only when Mahiro explicitly requests a safe/read-only/sandboxed lane. Avoid Cursor, Antigravity, Codex, and Pi headless modes by default. Antigravity is the exception for exact multiline initial prompts: `agy --prompt-interactive "$(cat prompt.txt)"` keeps the pane interactive and avoids the known tmux multiline split; Herdr exact multiline delivery is still treated as unproven. Model catalogs can change independently of binary versions; use `agent models`, `agy models`, `codex debug models`, and `pi --list-models` for current catalog truth, and use each CLI's help/doctor commands for flags and health.
-
-Pi is deliberately bounded. The mahiro-skills Pi adapter installs skill trees only—it does not install Pi, create a PATH launcher, or configure a provider. The direct lane resolves `DIRECT_PI_COMMAND`, then `pi` on `PATH`, then Mahiro's isolated wrapper; it must verify the executable, live models, and every required launch flag before creating pane state. Use an explicit tool allowlist and never expose literal API keys. PATH presence alone does not prove a canonical binary because `pi` may resolve to a wrapper; use named Herdr lifecycle only when the target pane proves it will launch the same executable and provider environment that passed preflight.
+The default posture is explicit: `--backend auto` first selects Orca only when the invocation already runs inside an exact live writable Orca terminal bound to the current worktree, then Herdr only from a healthy compatible managed pane, then tmux. `--backend orca`, `--backend herdr`, and `--backend tmux` are explicit fail-closed overrides. Launch interactively, verify readiness from the selected pane backend, then send the real prompt. Intended current-worktree lanes default to uninterrupted execution: Cursor `--yolo --approve-mcps --trust`, Antigravity `--dangerously-skip-permissions`, and Codex `--dangerously-bypass-approvals-and-sandbox`. These flags remove routine approval blocking; they do not authorize destructive or out-of-scope work. Opt down only when Mahiro explicitly requests a safe/read-only/sandboxed lane. Avoid Cursor, Antigravity, and Codex headless modes by default. Antigravity is the exception for exact multiline initial prompts: `agy --prompt-interactive "$(cat prompt.txt)"` keeps the pane interactive and avoids the known tmux multiline split; Herdr exact multiline delivery is still treated as unproven. Model catalogs can change independently of binary versions; use `agent models`, `agy models`, and `codex debug models` for current catalog truth, and use each CLI's help/doctor commands for flags and health.
 
 For production-ish asset work, use `/asset-designer` as the front door; it routes Agy/Gemini dicut first and keeps Codex as an explicit fallback/A-B. Use `/direct-cli` only as the executor layer and `/codex-asset-production` for Codex source/imagegen or assigned fallback work.
 
@@ -24,7 +22,7 @@ The Orca backend loads the installed version's `orca-cli` guide, creates a direc
 
 Herdr topology creation is not shell readiness. After creating a tab or split, direct-cli submits and waits for an exact shell-ready marker, then checks that the shell is the only foreground process before `agent start`; this avoids the foreground-proven `agent_pane_busy` startup race.
 
-The curated role-to-model mapping has one owner: `playbook.md`. This README and the command wrappers intentionally do not copy the model catalog. Before launch, intersect the current playbook choices with the live CLI catalog; if the requested/default route is unavailable, report that fact rather than reviving an older catalog entry. For Pi, announce and use the model only when `--list-models` returns one configured choice; otherwise ask for provider/model.
+The curated role-to-model mapping has one owner: `playbook.md`. This README and the command wrappers intentionally do not copy the model catalog. Before launch, intersect the current playbook choices with the live CLI catalog; if the requested/default route is unavailable, report that fact rather than reviving an older catalog entry.
 
 `--effort` in `/direct-cli` is lane-aware. Pass it through natively to `agy --effort` only when that selected model supports the requested effort; otherwise stop rather than accepting Agy's silent fallback to its default model. Translate it to Codex `-c model_reasoning_effort=<level>`; for Cursor, choose an exact effort-bearing model ID or supported parameterized model expression. If effort is omitted, use the current role default from `playbook.md` after catalog verification; never turn on ultra implicitly.
 
@@ -38,7 +36,6 @@ Use it when you want AI to:
 - run receipt-bound Orca splits, multi-pane Herdr tabs, or tmux sessions with a lane registry and clear write policy
 - recover cleanly from approval blocking, session corruption, or unsent prompts
 - launch Cursor with `--yolo --approve-mcps --trust`, Antigravity with `--dangerously-skip-permissions`, and Codex with `--dangerously-bypass-approvals-and-sandbox`, then send the task prompt after readiness
-- launch Pi interactively with `--approve` and the explicit autonomous implementation allowlist `read,bash,edit,write,grep,find,ls`, using named Herdr lifecycle only when the target pane proves it resolves the same executable/provider environment that passed preflight
 
 ## What this skill is not
 
@@ -58,8 +55,6 @@ Use it when you want AI to:
 /direct-cli cursor "fresh session for current-worktree-only cleanup"
 /direct-cli agy "pre-release verification pass"
 /direct-cli codex "OpenAI-native implementation pass"
-/direct-cli pi "bounded Pi implementation pass"
-/direct-cli pi --provider <provider> --model <model> "bounded Pi provider pass"
 /direct-cli cursor --model <model> "reasoning pass"
 /direct-cli agy --model <model> "inspect this repo"
 /direct-cli codex --model <model> --effort <level> "image-aware coding pass"
@@ -72,4 +67,4 @@ Use it when you want AI to:
 
 ## Working rule
 
-Keep the executor lane narrow, current-worktree-only, pane-verified, and interactive. Select and announce the backend before creating anything, use its known-good launch commands in `playbook.md`, wait for pane readiness, then send the task prompt. Pi `--detach` and Pi fanout remain unsupported because the packaged detached helpers require named Herdr-agent lifecycle. If a lane becomes unhealthy, prefer a fresh container in the already-selected backend over heroic recovery.
+Keep the executor lane narrow, current-worktree-only, pane-verified, and interactive. Select and announce the backend before creating anything, use its known-good launch commands in `playbook.md`, wait for pane readiness, then send the task prompt. If a lane becomes unhealthy, prefer a fresh container in the already-selected backend over heroic recovery.

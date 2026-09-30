@@ -313,25 +313,14 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Cursor uses `--yolo --approve-mcps --trust`");
     expect(skill).toContain("Antigravity uses `--dangerously-skip-permissions`");
     expect(skill).toContain("Codex uses `--dangerously-bypass-approvals-and-sandbox`");
-    expect(skill).toContain("Pi uses `--approve` with the full implementation allowlist `read,bash,edit,write,grep,find,ls`");
     expect(skill).toContain("Treat those autonomy flags as approval policy, not expanded scope");
     expect(command).toContain("Cursor `--yolo --approve-mcps --trust`");
     expect(command).toContain("Antigravity `--dangerously-skip-permissions`");
     expect(command).toContain("Codex `--dangerously-bypass-approvals-and-sandbox`");
-    expect(command).toContain("Pi `--approve` with `read,bash,edit,write,grep,find,ls`");
     expect(command).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
     expect(skill).not.toContain("Current Freshness Notes");
     expect(skill).not.toContain("2026.07.23-e383d2b");
     expect(skill).not.toContain("`kimi-k3-high`");
-    expect(skill).toContain("## Pi Lane Contract");
-    expect(skill).toContain("`/direct-cli pi`, \"use Pi\", and `ใช้ Pi`");
-    expect(skill).toContain("`pi --list-models`");
-    expect(skill).toContain("`~/.9router-free/pi-pilot/run-pi.sh`");
-    expect(skill).toContain("`read,bash,edit,write,grep,find,ls`");
-    expect(skill).toContain("The mahiro-skills `pi` adapter installs Agent Skills only");
-    expect(skill).toContain("require the current help output to expose every launch flag");
-    expect(skill).toContain("PATH presence or the basename `pi` is not enough");
-    expect(skill).toContain("Pi detach and Pi same-prompt fanout");
     expect(skill).not.toContain("gpt-5.3-codex-high");
     expect(skill).not.toContain("gpt-5.3-codex-high-fast");
     expect(skill).not.toContain("Gemini CLI");
@@ -433,7 +422,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("cursor-grok-4.6-high");
     expect(playbook).toContain('herdr agent start "$CURSOR_AGENT" --kind cursor');
     expect(playbook).toContain("--dangerously-bypass-approvals-and-sandbox");
-    expect(playbook).toContain('PI_TOOLS="read,bash,edit,write,grep,find,ls"');
     expect(playbook).not.toContain("Do not use `--dangerously-bypass-approvals-and-sandbox` by default");
     expect(playbook).toContain('codex --model "gpt-6-astra" -c model_reasoning_effort=high');
     expect(playbook).toContain('codex --model "gpt-6-sol" -c model_reasoning_effort=high');
@@ -450,19 +438,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("gpt-5.3-codex-spark");
     expect(playbook).not.toContain("Current freshness checkpoints");
     expect(playbook).not.toContain("`kimi-k3-high`");
-    expect(playbook).toContain("## Pi direct playbook");
-    expect(playbook).toContain('herdr agent start "$PI_AGENT" --kind pi');
-    expect(playbook).toContain('herdr pane run "$PI_PANE" "$PI_COMMAND"');
-    expect(playbook).toContain("confirm `pane run <PANE_ID> <COMMAND>...`");
-    expect(playbook).toContain('herdr pane send-text "$PI_PANE"');
-    expect(playbook).toContain("Generic-pane Pi has no named-agent lifecycle");
-    expect(playbook).toContain("The skills adapter does not install that executable or a PATH launcher");
-    expect(playbook).toContain("Require current help output to expose every selected launch flag");
-    expect(playbook).toContain("Never pass literal credentials on the command line");
-    expect(playbook).toContain('PI_PROVIDER="${PI_PROVIDER:?Select PI_PROVIDER from the live Pi model list}"');
-    expect(playbook).toContain('PI_MODEL="${PI_MODEL:?Select PI_MODEL from the live Pi model list}"');
-    expect(playbook).not.toContain('PI_PROVIDER="9router-free"');
-    expect(playbook).not.toContain('PI_MODEL="ollama/minimax-m3"');
     expect(playbook).not.toContain("gpt-5.3-codex-high");
     expect(playbook).not.toContain("gpt-5.3-codex-high-fast");
     expect(playbook).not.toContain("Gemini CLI");
@@ -485,8 +460,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("Agy specifically");
     expect(readme).toContain("The curated role-to-model mapping has one owner: `playbook.md`");
     expect(readme).not.toContain("`kimi-k3-high`");
-    expect(readme).toContain("`use Pi` or `ใช้ Pi`");
-    expect(readme).toContain("installs skill trees only");
     expect(readme).not.toContain("Gemini CLI");
     expect(readme).not.toContain("/direct-cli gemini");
 
@@ -499,13 +472,6 @@ describe("skill pattern adaptation phase a", () => {
       expect(wrapper).toContain("current curated role/model choices");
       expect(wrapper).toContain("live CLI catalog");
       expect(wrapper).not.toContain("`kimi-k3-high`");
-      expect(wrapper).toContain("`~/.9router-free/pi-pilot/run-pi.sh`");
-      expect(wrapper).toContain("first positional lane token is `pi`");
-      expect(wrapper).toContain("Do not substring-match words such as `pipeline`");
-      expect(wrapper).not.toContain("containing `pi`");
-      expect(wrapper).toContain("Reject Pi `--detach` and Pi fanout");
-      expect(wrapper).toContain("Pi adapter installs skills only");
-      expect(wrapper).toContain("PATH presence alone is insufficient");
       expect(wrapper).toContain("reject any fallback warning or visible model mismatch");
       expect(wrapper).toContain("continuously stable `idle`/`done` window");
       expect(wrapper).toContain("not authorization for blind fallback capture");
@@ -524,8 +490,6 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("Auto uses Orca only from an exact live caller-terminal receipt plus a tracked current path");
     expect(rootReadme).toContain("then Herdr only from a healthy compatible managed pane");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
-    expect(rootReadme).toContain("`use Pi` / `ใช้ Pi`");
-    expect(rootReadme).toContain("Pi requires an explicit tool allowlist and provider/model preflight");
     expect(rootReadme).toContain("does not install the `pi` executable");
     expect(rootReadme).not.toContain("For Agy, prefer exact `--model` labels");
   });
@@ -546,7 +510,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("Treat a provider or tool claim such as `transparent: true` as request/receipt evidence");
     expect(skill).toContain("actual raster mode and alpha extrema/corners");
     expect(skill).toContain("source-ready-normalization-required");
-    expect(skill).toContain("bounded Cursor/Agy/Codex/Pi lanes");
+    expect(skill).toContain("bounded Cursor/Agy/Codex lanes");
     expect(skill).not.toContain("bounded Codex/Gemini/Agy lanes");
   });
 
