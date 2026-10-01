@@ -8,12 +8,13 @@ class FakeTerminal {
   isInteractive = true
   colorEnabled = false
   columns = 90
+  rows = 24
   frames: string[] = []
   closed = 0
   entered = 0
   left = 0
   handler?: TerminalDataHandler
-  getSize() { return { columns: this.columns, rows: 24 } }
+  getSize() { return { columns: this.columns, rows: this.rows } }
   write(text: string) { this.frames.push(text) }
   onData(handler: TerminalDataHandler) { this.handler = handler; return () => { this.handler = undefined } }
   onResize(_handler: TerminalResizeHandler) { return () => {} }
@@ -38,7 +39,7 @@ const inspection = (skill: IManagedSkill, action: ISkillInspection['primaryActio
   lettaHealth: skill.lettaOwned ? 'linked-managed' : 'absent', lettaHealthDetail: skill.lettaOwned ? 'Linked by this manager' : 'Not linked to Letta',
   agyHealth: skill.agyOwned ? 'linked-managed' : 'absent', agyHealthDetail: skill.agyOwned ? 'Linked by this manager' : 'Not linked to Agy',
   upstream: 'available', primaryAction: action, primaryActionLabel: action === 'none' ? '' : 'Update',
-  eligibleSecondaryActions: skill.installedByManager ? ['uninstall', 'unlink'] : ['link'],
+  eligibleSecondaryActions: skill.installedByManager ? ['uninstall', 'unlink'] : skill.source ? ['link', 'uninstall'] : ['link'],
   plannedWrites: ['Remember source if needed', 'Install latest through the official CLI', 'Leave existing Letta links untouched'],
 })
 
@@ -57,7 +58,7 @@ const setup = () => {
     recover: async (name, source) => { calls.push(`recover:${name}:${source}`); items.find((value) => value.name === name)!.adoptedForUpdate = true; return 'c'.repeat(40) },
     link: (name) => { calls.push(`link:${name}`) },
     update: async (name) => { calls.push(`update:${name}`); return 'updated' },
-    uninstall: (name) => { calls.push(`uninstall:${name}`) },
+    uninstall: (name, options) => { calls.push(`uninstall:${name}:${!!options?.includeExistingLinks}`) },
     unlink: (name) => { calls.push(`unlink:${name}`) },
   }
   const terminal = new FakeTerminal()
@@ -259,7 +260,7 @@ describe('global skill TUI', () => {
     expect(terminal.frames.at(-1)).toContain('Update completed')
   })
 
-  test('external locked Update tracks source and updates after one y; never offers remove', async () => {
+  test('external locked Update tracks source and also offers verified uninstall', async () => {
     const { tui, calls, terminal } = setup()
     await tui.handleInput('j\r\r')
     expect(terminal.frames.at(-1)).toContain('Remember source if needed')
@@ -267,7 +268,7 @@ describe('global skill TUI', () => {
     await tui.handleInput('y')
     expect(calls).toEqual(['inspect:beta', 'adopt:beta', 'update:beta'])
     await tui.handleInput('\r\r')
-    expect(terminal.frames.at(-1)).not.toContain('d remove')
+    expect(terminal.frames.at(-1)).toContain('d remove')
   })
 
   test('lockless URL is checked read-only before Recover + Update is reviewed', async () => {
@@ -364,14 +365,14 @@ describe('global skill TUI', () => {
     const { tui, calls, terminal } = setup()
     await tui.handleInput('d')
     expect(calls).toEqual(['inspect:alpha'])
-    expect(terminal.frames.at(-1)).toContain('Remove this manager-installed skill')
+    expect(terminal.frames.at(-1)).toContain('Remove this verified global skill')
     await tui.handleInput('\x1b')
     await Bun.sleep(135)
     await tui.handleInput('\x1b')
     await Bun.sleep(135)
     await tui.handleInput('j')
     await tui.handleInput('d')
-    expect(terminal.frames.at(-1)).toContain('Remove is only for a skill installed here.')
+    expect(terminal.frames.at(-1)).toContain('Remove this verified global skill')
   })
 
   test('remove is secondary, confirmed, and manager-owned only', async () => {
@@ -381,8 +382,51 @@ describe('global skill TUI', () => {
     await tui.handleInput('d')
     expect(calls).toEqual(['inspect:alpha'])
     await tui.handleInput('y')
-    expect(calls).toEqual(['inspect:alpha', 'uninstall:alpha'])
+    expect(calls).toEqual(['inspect:alpha', 'uninstall:alpha:false'])
     expect(terminal.left).toBe(1)
+  })
+
+  test('confirms removal of an exact existing Agy link before uninstall', async () => {
+    const { tui, calls, findings, items, terminal } = setup()
+    findings.set('alpha', {
+      ...inspection(items[0]!), agyHealth: 'linked-external', agyHealthDetail: 'Existing link remains yours',
+    })
+    await tui.handleInput('d')
+    expect(terminal.frames.at(-1)).toContain('Remove exact Agy link ~/.gemini/antigravity-cli/skills/alpha')
+    expect(calls).toEqual(['inspect:alpha'])
+    await tui.handleInput('n')
+    expect(calls).toEqual(['inspect:alpha'])
+    await tui.handleInput('d')
+    await tui.handleInput('y')
+    expect(calls).toEqual(['inspect:alpha', 'uninstall:alpha:true'])
+  })
+
+  test('external locked skill names both existing links before a single confirmed uninstall', async () => {
+    const { tui, calls, findings, items, terminal } = setup()
+    terminal.columns = 72
+    terminal.rows = 18
+    findings.set('beta', {
+      ...inspection(items[1]!), lettaHealth: 'linked-external', agyHealth: 'linked-external',
+    })
+    await tui.handleInput('j')
+    await tui.handleInput('d')
+    expect(terminal.frames.at(-1)).toContain('Remove exact Letta link ~/.letta/skills/beta')
+    expect(terminal.frames.at(-1)).toContain('Remove exact Agy link ~/.gemini/antigravity-cli/skills/beta')
+    expect(terminal.frames.at(-1)).toContain('Confirm all steps? y/N')
+    expect(calls).toEqual(['inspect:beta'])
+    await tui.handleInput('y')
+    expect(calls).toEqual(['inspect:beta', 'uninstall:beta:true'])
+  })
+
+  test('reports the actual blocker for a manager-installed skill instead of claiming it is external', async () => {
+    const { tui, findings, items, terminal } = setup()
+    findings.set('alpha', {
+      ...inspection(items[0]!), eligibleSecondaryActions: ['unlink'],
+      uninstallBlockedReason: 'Another agent links to alpha: /other/skills/alpha',
+    })
+    await tui.handleInput('d')
+    expect(terminal.frames.at(-1)).toContain('Another agent links to alpha')
+    expect(terminal.frames.at(-1)).not.toContain('Remove is only for a skill installed here.')
   })
 
   test('install collects source and name before its only confirmation', async () => {

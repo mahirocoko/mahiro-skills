@@ -16,7 +16,9 @@ const usage = `Usage: bun run skills:global [command] [arguments]
   recover <name> <source-url>  Match an old upstream tree with no lock; enable update only
   link <name>                   Link an existing canonical skill to Letta and Agy (no install)
   update <name>                 Update a manager-installed skill via official CLI
-  uninstall <name>              Uninstall a manager-installed skill from its roots
+  uninstall <name> [--include-existing-links]
+                                Uninstall a verified global skill; flag explicitly includes exact existing Letta/Agy symlinks
+  recover-uninstall <name>      Restore a failed/interrupted guarded uninstall from its journal
   unlink <name>                 Remove manager-owned Letta and Agy links
 
 No install/update/uninstall is inferred from list or check. Mutations use the
@@ -111,11 +113,20 @@ const main = async (): Promise<void> => {
       break
     case 'link':
     case 'adopt':
-    case 'uninstall':
     case 'unlink':
       if (args.length !== 1) failUsage()
       manager[command](args[0]!)
       console.log(`${command} completed for ${args[0]}`)
+      break
+    case 'uninstall':
+      if (args.length !== 1 && !(args.length === 2 && args[1] === '--include-existing-links')) failUsage()
+      manager.uninstall(args[0]!, { includeExistingLinks: args[1] === '--include-existing-links' })
+      console.log(`uninstall completed for ${args[0]}`)
+      break
+    case 'recover-uninstall':
+      if (args.length !== 1) failUsage()
+      manager.recoverUninstall(args[0]!)
+      console.log(`uninstall restored for ${args[0]}`)
       break
     case 'update':
       if (args.length !== 1) failUsage()

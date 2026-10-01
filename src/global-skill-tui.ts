@@ -20,7 +20,7 @@ export interface IGlobalSkillTuiManager {
   recover(name: string, sourceUrl: string): Promise<string>
   link(name: string): void
   update(name: string): Promise<'current' | 'updated'>
-  uninstall(name: string): void
+  uninstall(name: string, options?: { includeExistingLinks?: boolean }): void
   unlink(name: string): void
 }
 
@@ -34,6 +34,7 @@ export class GlobalSkillTui {
   private mode: Mode = 'list'
   private steps: Action[] = []
   private review: string[] = []
+  private includeExistingLinks = false
   private input = ''
   private source = ''
   private name = ''
@@ -200,15 +201,21 @@ export class GlobalSkillTui {
     const inspection = this.inspections.get(item.name) ?? await this.inspect(item.name, undefined, false)
     if (!inspection) return
     if (!inspection.eligibleSecondaryActions.includes(action)) {
-      this.message = action === 'uninstall' ? 'Remove is only for a skill installed here.'
+      this.message = action === 'uninstall'
+        ? `Cannot remove ${item.name}: ${safe(inspection.uninstallBlockedReason ?? inspection.primaryActionDisabledReason ?? 'a verified official lock and unchanged files are required')}`
         : action === 'unlink' ? 'No manager-owned link to remove.' : 'Link is not available for this skill.'
       this.render()
       return
     }
     const details = action === 'uninstall'
-      ? ['Remove this manager-installed skill with the official CLI', 'Remove its manager-owned Letta and Agy links']
+      ? ['Remove this verified global skill and its official lock entry',
+        ...(inspection.lettaHealth === 'linked-managed' || inspection.agyHealth === 'linked-managed'
+          ? ['Remove its manager-owned Letta and Agy links'] : []),
+        ...(inspection.lettaHealth === 'linked-external' ? [`Remove exact Letta link ~/.letta/skills/${inspection.name}`] : []),
+        ...(inspection.agyHealth === 'linked-external' ? [`Remove exact Agy link ~/.gemini/antigravity-cli/skills/${inspection.name}`] : [])]
       : [action === 'link' ? 'Create manager-owned Letta and Agy links without changing skill files' : 'Remove the manager-owned Letta and Agy links']
-    this.confirm([action], inspection.name, details)
+    this.confirm([action], inspection.name, details, '', action === 'uninstall'
+      && (inspection.lettaHealth === 'linked-external' || inspection.agyHealth === 'linked-external'))
   }
 
   private async scanAll(): Promise<void> {
@@ -247,11 +254,12 @@ export class GlobalSkillTui {
     }
   }
 
-  private confirm(steps: Action[], name: string, details: string[], source = ''): void {
+  private confirm(steps: Action[], name: string, details: string[], source = '', includeExistingLinks = false): void {
     this.steps = steps
     this.name = name
     this.review = details
     this.source = source
+    this.includeExistingLinks = includeExistingLinks
     this.mode = 'confirm'
     this.message = ''
     this.render()
@@ -282,7 +290,7 @@ export class GlobalSkillTui {
             case 'recover': await this.manager.recover(this.name, this.source); break
             case 'link': this.manager.link(this.name); break
             case 'update': alreadyCurrent = await this.manager.update(this.name) === 'current'; break
-            case 'uninstall': this.manager.uninstall(this.name); break
+            case 'uninstall': this.manager.uninstall(this.name, { includeExistingLinks: this.includeExistingLinks }); break
             case 'unlink': this.manager.unlink(this.name); break
           }
           completed.push(action)

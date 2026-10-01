@@ -1,4 +1,5 @@
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
@@ -24,6 +25,19 @@ type ManagedEntry = {
   historical?: { skillPath: string; folderHash: string; commitSha: string }
 }
 type Receipt = { version: 1; skills: Record<string, ManagedEntry> }
+type LockDocument = { version: 3; skills: Record<string, LockEntry>; [key: string]: unknown }
+type RemovalJournal = {
+  version: 1
+  name: string
+  stage: string
+  canonical: string
+  canonicalIdentity: string
+  links: Array<{ path: string; staged: string; target: string; identity: string }>
+  lockBefore: string
+  lockAfter: string
+  receiptBefore: string | null
+  receiptAfter: string | null
+}
 type UpdateState = 'not-checked' | 'current' | 'available' | 'unknown'
 
 export type OwnershipKind = 'installed' | 'adopted' | 'external-locked' | 'external-lockless'
@@ -48,6 +62,7 @@ export interface ISkillInspection {
   primaryActionLabel: string
   primaryActionDisabledReason?: string
   eligibleSecondaryActions: Array<'link' | 'unlink' | 'uninstall'>
+  uninstallBlockedReason?: string
   plannedWrites: string[]
   matchedCommit?: string
 }
@@ -92,6 +107,8 @@ const lstat = (path: string): ReturnType<typeof lstatSync> | null => {
   }
 }
 
+const identity = (state: NonNullable<ReturnType<typeof lstatSync>>): string => `${state.dev}:${state.ino}`
+
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'))
 
 const writeReceipt = (path: string, receipt: Receipt): void => {
@@ -104,6 +121,17 @@ const writeReceipt = (path: string, receipt: Receipt): void => {
     renameSync(temporary, path)
   } catch (error) {
     if (created && lstat(temporary)) unlinkSync(temporary)
+    throw error
+  }
+}
+
+const writeAtomic = (path: string, contents: string): void => {
+  const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`
+  try {
+    writeFileSync(temporary, contents, { flag: 'wx', mode: 0o600 })
+    renameSync(temporary, path)
+  } catch (error) {
+    if (lstat(temporary)) unlinkSync(temporary)
     throw error
   }
 }
@@ -134,11 +162,18 @@ export class GlobalSkillManager {
 
   private lock(): Record<string, LockEntry> {
     if (!existsSync(this.lockPath)) return {}
-    const value = readJson(this.lockPath) as { version?: number; skills?: Record<string, LockEntry> }
-    if (value.version !== 3 || !value.skills || typeof value.skills !== 'object') {
+    return this.lockDocument().value.skills
+  }
+
+  private lockDocument(): { raw: string; value: LockDocument } {
+    const state = lstat(this.lockPath)
+    if (!state?.isFile() || state.nlink !== 1) throw new Error('Official global lock is missing or not a regular private file')
+    const raw = readFileSync(this.lockPath, 'utf8')
+    const value = JSON.parse(raw) as LockDocument
+    if (value?.version !== 3 || !value.skills || typeof value.skills !== 'object' || Array.isArray(value.skills)) {
       throw new Error('Invalid official global lock; refusing to infer skill provenance')
     }
-    return value.skills
+    return { raw, value }
   }
 
   private canonical(name: string): string { assertName(name); return join(this.canonicalRoot, name) }
@@ -192,7 +227,7 @@ export class GlobalSkillManager {
     return !!entry && !entry.source && !entry.ownership && entry.link && this.linkState(name) === 'linked'
   }
 
-  private assertNoForeignLinks(name: string): void {
+  private assertNoForeignLinks(name: string, includeExistingAgyLink = false): void {
     // Inspect only skill-named slots in common agent roots, never scan file
     // contents or recurse into unrelated HOME directories.
     const roots = new Set<string>([
@@ -201,12 +236,21 @@ export class GlobalSkillManager {
       join(this.home, '.gemini', 'skills'), this.agyRoot, join(this.home, '.opencode', 'skills'),
       join(this.home, '.config', 'opencode', 'skills'),
     ])
-    const ownedAgy = this.receipt().skills[name]?.agy && this.agyState(name) === 'linked'
+    const agyState = this.agyState(name)
+    const ownedAgy = this.receipt().skills[name]?.agy && agyState === 'linked'
+    const canonical = this.canonical(name)
+    const canonicalReal = realpathSync(canonical)
     for (const root of roots) {
-      if (ownedAgy && root === this.agyRoot) continue
+      if ((ownedAgy || (includeExistingAgyLink && agyState === 'linked')) && root === this.agyRoot) continue
       const path = join(root, name)
       const state = lstat(path)
-      if (state && resolve(dirname(path), state.isSymbolicLink() ? readlinkSync(path) : '.') === this.canonical(name)) {
+      if (!state) continue
+      const direct = state.isSymbolicLink() && resolve(dirname(path), readlinkSync(path)) === canonical
+      let resolved = false
+      try { resolved = realpathSync(path) === canonicalReal } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      }
+      if (direct || resolved) {
         throw new Error(`Another agent links to ${name}: ${path}; remove that dependency before uninstall`)
       }
     }
@@ -352,8 +396,18 @@ export class GlobalSkillManager {
         return block(`Could not match this source: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
-    if (ownership === 'installed' && locked?.source === managed?.source) {
-      try { this.assertNoForeignLinks(name); result.eligibleSecondaryActions.push('uninstall') } catch { /* removal stays unavailable */ }
+    if (locked?.source && locked.sourceType === 'github' && locked.skillPath
+      && /^[0-9a-f]{40}$/i.test(locked.skillFolderHash ?? '') && result.fileHealth === 'clean'
+      && (!managed?.source || locked.source === managed.source)) {
+      try {
+        if (gitTreeHash(this.canonical(name)) !== locked.skillFolderHash) {
+          throw new Error(`Canonical skill differs from official lock: ${name}`)
+        }
+        this.assertNoForeignLinks(name, agyHealth === 'linked-external')
+        result.eligibleSecondaryActions.push('uninstall')
+      } catch (error) {
+        result.uninstallBlockedReason = error instanceof Error ? error.message : String(error)
+      }
     }
     if (result.upstream === 'not-checked') {
       const checked = await this.check(name)
@@ -522,8 +576,8 @@ export class GlobalSkillManager {
       throw new Error(`Official source changed or historical provenance missing for ${name}`)
     }
     if (locked?.ref) throw new Error(`Pinned ref requires explicit source review before updating: ${name}`)
-    if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
-    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
+    if (managed?.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed?.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
     this.assertObservedLetta(name, managed)
     this.assertUnchanged(name, managed)
     const status = await this.check(name)
@@ -536,8 +590,8 @@ export class GlobalSkillManager {
     }
     this.assertWriteRoots()
     this.assertCanonical(name)
-    if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
-    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
+    if (managed?.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed?.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
     this.assertObservedLetta(name, managed)
     this.assertUnchanged(name, managed)
     if (status.update === 'current') return 'current'
@@ -555,32 +609,184 @@ export class GlobalSkillManager {
     return 'updated'
   }
 
-  uninstall(name: string): void {
+  uninstall(name: string, options: { includeExistingLinks?: boolean } = {}): void {
     this.assertWriteRoots()
     assertName(name)
+    if (process.env.XDG_STATE_HOME) throw new Error('Custom XDG_STATE_HOME is not supported for global uninstall')
+    const journalPath = join(this.home, '.agents', `.mahiro-global-uninstall-${name}.json`)
+    if (lstat(journalPath)) throw new Error(`An unfinished uninstall journal exists for ${name}; recover it before retrying`)
     const receipt = this.receipt()
     const managed = receipt.skills[name]
-    if (!managed?.source) throw new Error(`Not installed by this manager: ${name}; use unlink for adopted skills`)
-    if (managed.ownership === 'adopted') throw new Error(`Adopted skill is update-only; original install and Letta link remain external: ${name}`)
-    if (this.lock()[name]?.source !== managed.source) throw new Error(`Official source changed for ${name}`)
-    if (managed.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
-    if (managed.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
-    this.assertUnchanged(name, managed)
-    this.assertNoForeignLinks(name)
-    this.deps.run(['remove', name, '-g', '-a', 'cline', '-y'], this.home)
-    if (lstat(this.canonical(name)) || this.lock()[name]) {
-      throw new Error(`Official removal retained ${name} (possibly in use by another agent); Letta link and receipt were kept`)
+    const { raw: lockBefore, value: lock } = this.lockDocument()
+    const lockIdentity = identity(lstatSync(this.lockPath))
+    const entry = lock.skills[name]
+    if (!entry?.source || entry.sourceType !== 'github' || !entry.skillPath
+      || !/^[0-9a-f]{40}$/i.test(entry.skillFolderHash ?? '')) {
+      throw new Error(`No supported GitHub lock provenance for ${name}; refusing to uninstall`)
     }
-    if (managed.link) {
-      if (this.linkState(name) !== 'linked') throw new Error(`Letta link changed during removal: ${name}`)
-      unlinkSync(this.linkPath(name))
+    if (managed?.source && managed.source !== entry.source) throw new Error(`Official source changed for ${name}`)
+    this.assertCanonical(name)
+    if (managed?.link && this.linkState(name) !== 'linked') throw new Error(`Letta link drifted for ${name}`)
+    if (managed?.agy && this.agyState(name) !== 'linked') throw new Error(`Agy link drifted for ${name}`)
+    if (this.linkState(name) === 'other') throw new Error(`Letta path belongs to another target: ${name}`)
+    if (this.agyState(name) === 'other') throw new Error(`Agy path belongs to another target: ${name}`)
+    const existingLettaLink = !managed?.link && this.linkState(name) === 'linked'
+    const existingAgyLink = !managed?.agy && this.agyState(name) === 'linked'
+    if (existingLettaLink && !options.includeExistingLinks) {
+      throw new Error(`Unowned existing Letta link for ${name}; confirm its removal explicitly before uninstall`)
     }
-    if (managed.agy) {
-      if (this.agyState(name) !== 'linked') throw new Error(`Agy link changed during removal: ${name}`)
-      unlinkSync(this.agyLinkPath(name))
+    if (existingAgyLink && !options.includeExistingLinks) {
+      throw new Error(`Unowned existing Agy link for ${name}; confirm its removal explicitly before uninstall`)
     }
-    delete receipt.skills[name]
-    writeReceipt(this.receiptPath, receipt)
+    if (managed?.source && managed.ownership !== 'adopted') this.assertUnchanged(name, managed)
+    if (gitTreeHash(this.canonical(name)) !== entry.skillFolderHash) {
+      throw new Error(`Canonical skill differs from official lock: ${name}; refusing to remove local changes`)
+    }
+    this.assertNoForeignLinks(name, existingAgyLink && options.includeExistingLinks)
+
+    const receiptState = lstat(this.receiptPath)
+    if (receiptState && (!receiptState.isFile() || receiptState.nlink !== 1)) throw new Error('Manager receipt is not a regular file')
+    const receiptIdentity = receiptState ? identity(receiptState) : null
+    const receiptBefore = receiptState ? readFileSync(this.receiptPath, 'utf8') : null
+    const nextReceipt = managed ? { ...receipt, skills: { ...receipt.skills } } : null
+    if (nextReceipt) delete nextReceipt.skills[name]
+    const receiptAfter = nextReceipt ? `${JSON.stringify(nextReceipt, null, 2)}\n` : null
+    const nextLock: LockDocument = { ...lock, skills: { ...lock.skills } }
+    delete nextLock.skills[name]
+    const lockAfter = `${JSON.stringify(nextLock, null, 2)}\n`
+    const canonical = this.canonical(name)
+    const stage = join(this.home, '.agents', `.mahiro-global-uninstall-${name}-${randomUUID()}`)
+    const links = [this.linkPath(name), this.agyLinkPath(name)]
+      .filter((path) => lstat(path)?.isSymbolicLink())
+      .map((path, index) => ({ path, staged: join(stage, `link-${index}`),
+        target: readlinkSync(path), identity: identity(lstatSync(path)) }))
+    const journal: RemovalJournal = {
+      version: 1, name, stage, canonical, canonicalIdentity: identity(lstatSync(canonical)),
+      links, lockBefore, lockAfter, receiptBefore, receiptAfter,
+    }
+    writeFileSync(journalPath, `${JSON.stringify(journal)}\n`, { flag: 'wx', mode: 0o600 })
+    let cleanupStarted = false
+    try {
+      mkdirSync(stage, { mode: 0o700 })
+      if (!lstat(this.lockPath)?.isFile() || identity(lstatSync(this.lockPath)) !== lockIdentity
+        || readFileSync(this.lockPath, 'utf8') !== lockBefore
+        || (receiptBefore !== null && (!lstat(this.receiptPath)?.isFile()
+          || identity(lstatSync(this.receiptPath)) !== receiptIdentity
+          || readFileSync(this.receiptPath, 'utf8') !== receiptBefore))) {
+        throw new Error('Global lock or receipt changed before uninstall; retry after inspecting the concurrent edit')
+      }
+      if (managed?.source && managed.ownership !== 'adopted') this.assertUnchanged(name, managed)
+      if (gitTreeHash(canonical) !== entry.skillFolderHash) throw new Error(`Canonical skill changed before removal: ${name}`)
+      this.assertNoForeignLinks(name, existingAgyLink && options.includeExistingLinks)
+      renameSync(canonical, join(stage, 'canonical'))
+      for (const link of links) {
+        if (!lstat(link.path)?.isSymbolicLink() || readlinkSync(link.path) !== link.target) {
+          throw new Error(`Link changed during uninstall: ${link.path}`)
+        }
+        renameSync(link.path, link.staged)
+      }
+      if (!lstat(this.lockPath)?.isFile() || identity(lstatSync(this.lockPath)) !== lockIdentity
+        || readFileSync(this.lockPath, 'utf8') !== lockBefore) throw new Error('Global lock changed during uninstall')
+      writeAtomic(this.lockPath, lockAfter)
+      if (nextReceipt) {
+        if (readFileSync(this.receiptPath, 'utf8') !== receiptBefore) throw new Error('Manager receipt changed during uninstall')
+        writeReceipt(this.receiptPath, nextReceipt)
+      }
+      cleanupStarted = true
+      rmSync(stage, { recursive: true })
+      unlinkSync(journalPath)
+    } catch (error) {
+      if (cleanupStarted) throw new Error(`Uninstall needs recovery for ${name}; journal retained at ${journalPath}`, { cause: error })
+      try {
+        this.recoverUninstall(name)
+      } catch (rollbackError) {
+        throw new Error(`Uninstall needs recovery for ${name}; journal retained at ${journalPath}: ${String(rollbackError)}`, { cause: error })
+      }
+      throw error
+    }
+  }
+
+  recoverUninstall(name: string): void {
+    this.assertWriteRoots()
+    assertName(name)
+    const journalPath = join(this.home, '.agents', `.mahiro-global-uninstall-${name}.json`)
+    const state = lstat(journalPath)
+    if (!state?.isFile() || state.nlink !== 1) throw new Error(`No regular uninstall journal for ${name}`)
+    const journal = readJson(journalPath) as RemovalJournal
+    const prefix = join(this.home, '.agents', `.mahiro-global-uninstall-${name}-`)
+    if (journal?.version !== 1 || journal.name !== name || typeof journal.stage !== 'string'
+      || !journal.stage.startsWith(prefix) || dirname(journal.stage) !== join(this.home, '.agents')
+      || journal.canonical !== this.canonical(name)
+      || typeof journal.canonicalIdentity !== 'string'
+      || !Array.isArray(journal.links) || typeof journal.lockBefore !== 'string'
+      || typeof journal.lockAfter !== 'string'
+      || !(journal.receiptBefore === null || typeof journal.receiptBefore === 'string')
+      || !(journal.receiptAfter === null || typeof journal.receiptAfter === 'string')) {
+      throw new Error('Untrusted uninstall journal; refusing recovery')
+    }
+    const allowedLinks = new Set([this.linkPath(name), this.agyLinkPath(name)])
+    if (journal.links.some((link, index) => !allowedLinks.has(link.path)
+      || link.staged !== join(journal.stage, `link-${index}`)
+      || typeof link.target !== 'string' || typeof link.identity !== 'string')
+      || new Set(journal.links.map((link) => link.path)).size !== journal.links.length) {
+      throw new Error('Untrusted uninstall link paths; refusing recovery')
+    }
+    const stagedCanonical = join(journal.stage, 'canonical')
+    if (lstat(journal.stage) && !lstat(journal.stage)?.isDirectory()) throw new Error('Uninstall stage changed; refusing recovery')
+    const lockState = lstat(this.lockPath)
+    if (!lockState?.isFile() || lockState.nlink !== 1) throw new Error('Global lock changed; refusing recovery')
+    const currentLock = readFileSync(this.lockPath, 'utf8')
+    if (currentLock !== journal.lockBefore && currentLock !== journal.lockAfter) {
+      throw new Error('Global lock diverged; refusing automatic rollback')
+    }
+    const receiptState = lstat(this.receiptPath)
+    if (receiptState && (!receiptState.isFile() || receiptState.nlink !== 1)) throw new Error('Manager receipt changed; refusing recovery')
+    const currentReceipt = receiptState ? readFileSync(this.receiptPath, 'utf8') : null
+    if (currentReceipt !== journal.receiptBefore && currentReceipt !== journal.receiptAfter) {
+      throw new Error('Manager receipt diverged; refusing automatic rollback')
+    }
+    const payload = lstat(stagedCanonical)
+    const original = lstat(journal.canonical)
+    if ((payload && original) || (!payload && !original)
+      || (payload && (!payload.isDirectory() || identity(payload) !== journal.canonicalIdentity))
+      || (original && (!original.isDirectory() || identity(original) !== journal.canonicalIdentity))) {
+      throw new Error('Canonical payload or path changed; refusing recovery')
+    }
+    const beforeLock = JSON.parse(journal.lockBefore) as LockDocument
+    const expectedHash = beforeLock?.version === 3 && beforeLock.skills?.[name]?.skillFolderHash
+    if (!expectedHash || gitTreeHash(payload ? stagedCanonical : journal.canonical) !== expectedHash) {
+      throw new Error('Canonical payload no longer matches the official lock; refusing recovery')
+    }
+    for (const link of journal.links) {
+      const staged = lstat(link.staged)
+      const current = lstat(link.path)
+      if ((staged && current) || (!staged && !current)
+        || (staged && (!staged.isSymbolicLink() || identity(staged) !== link.identity || readlinkSync(link.staged) !== link.target))
+        || (current && (!current.isSymbolicLink() || identity(current) !== link.identity || readlinkSync(link.path) !== link.target))) {
+        throw new Error(`Link payload or path changed; refusing recovery: ${link.path}`)
+      }
+    }
+    if (lstat(journal.stage)) {
+      const expected = [payload ? 'canonical' : '', ...journal.links.map((link, i) => lstat(link.staged) ? `link-${i}` : '')].filter(Boolean).sort()
+      if (JSON.stringify(readdirSync(journal.stage).sort()) !== JSON.stringify(expected)) {
+        throw new Error('Unexpected files in uninstall stage; refusing recovery')
+      }
+    }
+    if (payload) {
+      renameSync(stagedCanonical, journal.canonical)
+    }
+    for (const link of journal.links) {
+      if (lstat(link.staged)) renameSync(link.staged, link.path)
+    }
+    if (currentReceipt === journal.receiptAfter && journal.receiptBefore !== null && currentReceipt !== journal.receiptBefore) {
+      writeAtomic(this.receiptPath, journal.receiptBefore)
+    }
+    if (currentLock === journal.lockAfter) writeAtomic(this.lockPath, journal.lockBefore)
+    if (lstat(journal.stage)) {
+      if (readdirSync(journal.stage).length) throw new Error('Unexpected files in uninstall stage; refusing cleanup')
+      rmdirSync(journal.stage)
+    }
+    unlinkSync(journalPath)
   }
 
   unlink(name: string): void {
