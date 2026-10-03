@@ -19,6 +19,18 @@ These rules control how the skill writes each page.
 - Do not default to folder paths the target repo does not prove.
 - Include a short code-search rule grounded in the target repo's working commands: filename discovery, exact string/symbol search, and bounded source reads. Do not invent an index or external search service. Inspect filenames and ignore rules before exploring broadly without opening suspected secret contents.
 
+## Frontend Ownership and Evidence
+
+When the target repo has frontend signals, use the ownership inputs from `input-manifest.md` and the existing styling/component templates. A small static page without a design system should not acquire token, variant, primitive, or registry layers through documentation.
+
+- Establish owners from current source and real consumers, not folder names alone. Resolve competing owners or mark the topic partial before stating a current rule.
+- Separate canonical source from generated/registry output and record the locally proven edit/regeneration path.
+- Do not invent semantic classes, variant APIs, primitive contracts, or QA commands. Map named classes to existing rules before describing them as current behavior.
+- Adapt fallback examples to the local naming, exports, framework, and API surface. Local conventions win; label repo-silent Mahiro syntax as preferred direction.
+- Keep the detailed styling owner map in the styling page and component shape in the component page. AGENTS links to those owners instead of duplicating their full rules.
+- A command's existence is not an executed verification result. Record available checks separately from checks run and limitations observed during init.
+- Do not run dev servers or browsers for this initializer. Source inspection cannot establish hydration, resolved paint, or human visual acceptance; say when those layers were not checked.
+
 ## Template Posture Rules
 
 Not every page in this skill has the same job.

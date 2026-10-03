@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "fs";
 import { join } from "path";
+import ts from "typescript";
 
 function readRepoFile(...segments: string[]) {
   return readFileSync(join(import.meta.dir, "..", ...segments), "utf8");
@@ -199,6 +200,149 @@ describe("skill pattern adaptation phase a", () => {
     expect(bestPractices).toContain("Do not copy file placement, state boundaries, primitive APIs, i18n posture, or test commands from another Mahiro repo");
     expect(sharedUi).toContain("Let reusable primitives own their shell contract");
     expect(constantsI18n).toContain("Preserve the repo's source-locale reality before changing copy");
+  });
+
+  test("React fallback examples declare typed arrow components before public exports", () => {
+    const examples = [
+      { path: ["skills", "mahiro-style", "foundations", "code-style.md"], name: "UserCard" },
+      { path: ["skills", "mahiro-style", "patterns", "components.md"], name: "StatusBadge" },
+      { path: ["skills", "mahiro-style", "patterns", "components.md"], name: "ApprovalStatusCell" },
+      { path: ["skills", "mahiro-style", "patterns", "components.md"], name: "DashboardMetricCard" },
+      { path: ["skills", "mahiro-style", "patterns", "components.md"], name: "OrderSummarySection" },
+      { path: ["skills", "mahiro-docs-rules-init", "templates", "patterns", "component-conventions.md"], name: "ProfileCard" },
+      { path: ["skills", "mahiro-docs-rules-init", "templates", "code-style", "typescript.md"], name: "Button" },
+    ];
+
+    // Parse the teaching snippets, not merely the surrounding prose. These checks
+    // establish source shape only, not runtime behavior or generated-doc quality.
+    for (const example of examples) {
+      const document = readRepoFile(...example.path).split("## Anti-Examples")[0];
+      const blocks = [...document.matchAll(/```tsx\n([\s\S]*?)\n```/g)].map((match) => match[1]);
+      const block = blocks.find((code) => code.includes(`const ${example.name} =`));
+      expect(block).toBeDefined();
+      if (!block) throw new Error(`Missing teaching example: ${example.name}`);
+
+      const source = ts.createSourceFile("example.tsx", block, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const statement = source.statements.find((node): node is ts.VariableStatement =>
+        ts.isVariableStatement(node) && node.declarationList.declarations.some((declaration) =>
+          ts.isIdentifier(declaration.name) && declaration.name.text === example.name));
+      expect(statement).toBeDefined();
+      if (!statement) throw new Error(`Missing component declaration: ${example.name}`);
+      expect(statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false).toBe(false);
+
+      const declaration = statement.declarationList.declarations.find((node) =>
+        ts.isIdentifier(node.name) && node.name.text === example.name);
+      const initializer = declaration?.initializer;
+      expect(initializer && ts.isArrowFunction(initializer)).toBe(true);
+      if (!initializer || !ts.isArrowFunction(initializer)) throw new Error(`Expected arrow: ${example.name}`);
+      const propsType = initializer.parameters[0]?.type;
+      expect(propsType && ts.isTypeReferenceNode(propsType)).toBe(true);
+      if (!propsType || !ts.isTypeReferenceNode(propsType)) throw new Error(`Missing props contract: ${example.name}`);
+      const propsName = propsType.typeName.getText(source);
+      expect(propsName).toMatch(/^I[A-Z].*Props$/);
+      expect(source.statements.some((node) => ts.isInterfaceDeclaration(node) && node.name.text === propsName)).toBe(true);
+
+      const publicExport = source.statements.find((node): node is ts.ExportDeclaration =>
+        ts.isExportDeclaration(node) && !!node.exportClause && ts.isNamedExports(node.exportClause) &&
+        node.exportClause.elements.some((element) => element.name.text === example.name));
+      expect(publicExport).toBeDefined();
+      expect(publicExport?.getStart(source) ?? -1).toBeGreaterThan(statement.end);
+    }
+
+    const components = readRepoFile("skills", "mahiro-style", "patterns", "components.md").split("## Anti-Examples")[0];
+    expect(components).not.toMatch(/(?:bg-white|border-zinc-\d+|text-zinc-\d+|shadow-sm)/);
+    const componentTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "patterns", "component-conventions.md");
+    const profileBlock = [...componentTemplate.matchAll(/```tsx\n([\s\S]*?)\n```/g)]
+      .find((match) => match[1].includes("const ProfileCard ="))?.[1];
+    expect(profileBlock).not.toContain("// _Memo");
+    expect(profileBlock).not.toContain("useMemo");
+  });
+
+  test("fallback guidance preserves local winners and avoids automatic architecture", () => {
+    const codeStyle = readRepoFile("skills", "mahiro-style", "foundations", "code-style.md");
+    const componentTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "patterns", "component-conventions.md");
+    const typescriptTemplate = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "code-style", "typescript.md");
+
+    expect(codeStyle).toContain("When the repo is silent, prefer arrow functions");
+    expect(codeStyle).toContain("`I` prefixes for app-owned interfaces");
+    expect(codeStyle).toContain("leave type aliases unprefixed");
+    expect(codeStyle).toContain("Utilities, constants, and hooks may use inline exports");
+    expect(codeStyle).toContain("Framework-required syntax, generated code, and established local function conventions win first");
+    expect(codeStyle).toContain("then rerun the relevant checks");
+    expect(codeStyle).toContain("If no formatter is available, report that limitation");
+    expect(componentTemplate).toContain("If the repo has established non-`I` or inline-export conventions, preserve them instead");
+    expect(componentTemplate).toContain("Label that as preferred direction, not observed reality");
+    expect(componentTemplate).toContain("do not force a new section or service layer");
+    expect(typescriptTemplate).toContain("Preserve established inline exports, framework requirements, and generated code");
+    expect(typescriptTemplate).toContain("Barrels are not a mandatory baseline");
+    expect(typescriptTemplate).toContain("do not export every local type automatically");
+    expect(componentTemplate).not.toContain("export const ProfileCard =");
+    expect(typescriptTemplate).not.toContain("export const Button =");
+  });
+
+  test("frontend ownership and evidence gates do not grant redesign authority", () => {
+    const sharedUi = readRepoFile("skills", "mahiro-style", "patterns", "shared-ui-boundaries.md");
+    const review = readRepoFile("skills", "mahiro-style", "foundations", "review-checklist.md");
+
+    expect(sharedUi).toContain("nearest accepted usage");
+    expect(sharedUi).toContain("app-level CSS and theme overrides");
+    expect(sharedUi).toContain("map a semantic class to its current rule");
+    expect(sharedUi).toContain("An import or class name alone does not prove");
+    expect(sharedUi).toContain("inspect the primitive for an injected chevron");
+    expect(sharedUi).toContain("not a universal geometry mandate");
+    expect(sharedUi).toContain("Do not create a token, variant, or primitive layer");
+
+    for (const gate of ["Ownership", "Propagation", "Rendered correctness", "Human acceptance"]) {
+      expect(review).toContain(`| ${gate} |`);
+    }
+    expect(review).toContain("Source tests do not prove runtime integration");
+    expect(review).toContain("Computed styles do not prove visual coherence");
+    expect(review).toContain("no lower gate substitutes for human acceptance");
+    expect(review).toContain("not a whole-product PASS");
+    expect(review).toContain("writer's self-check is not independent acceptance evidence");
+    expect(review).toContain("`A → B → A` on one mounted consumer");
+    expect(review).toContain("a closed screenshot does not establish the open state");
+    expect(review).toContain("a build PASS alone cannot establish it");
+    expect(review).toContain("after load and after interactions");
+    expect(review).toContain("A named paint correction preserves geometry and content");
+    expect(review).toContain("a content-only request does not authorize redesign");
+    expect(review).toContain("must not disable controls");
+    expect(review).toContain("a naming-only change with no runtime or visual effect");
+  });
+
+  test("docs-init carries frontend owners through inputs, generation, templates and checks", () => {
+    const resource = (name: string) => readRepoFile("skills", "mahiro-docs-rules-init", "resources", name);
+    const input = resource("input-manifest.md");
+    const generation = resource("generation-rules.md");
+    const checklist = resource("checklist.md");
+    const styling = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "styling.md");
+    const agents = readRepoFile("skills", "mahiro-docs-rules-init", "templates", "AGENTS.md");
+
+    expect(input).toContain("primitive source and public import surface");
+    expect(input).toContain("browser/server runtime boundaries");
+    expect(input).toContain("what was not executed during this init pass");
+    expect(generation).toContain("Separate canonical source from generated/registry output");
+    expect(generation).toContain("AGENTS links to those owners instead of duplicating");
+    expect(styling).toContain("name the source path, a real consumer");
+    expect(styling).toContain("Map documented semantic classes to real current rules");
+    expect(agents).toContain("Include this subsection only when the repo proves a mixed browser/server runtime");
+    expect(agents).toContain("Change canonical source rather than hand-editing generated output");
+    expect(agents).toContain("paint-only correction does not reopen geometry or content");
+    expect(checklist).toContain("source/generator and avoid recommending hand-edits");
+    expect(checklist).toContain("component and TypeScript examples agree");
+
+    // Explicit no-design-system and not-executed cases across the propagation chain.
+    expect(input).toContain("For a static page without tokens, variants, or generated outputs, omit those layers");
+    expect(generation).toContain("A small static page without a design system should not acquire");
+    expect(styling).toContain("do not generate a fictional token or primitive system");
+    expect(checklist).toContain("small static repo remain small");
+    expect(generation).toContain("A command's existence is not an executed verification result");
+    expect(styling).toContain("Distinguish an available command from a check executed");
+    expect(agents).toContain("checks actually executed");
+    expect(checklist).toContain("available commands distinguished from executed checks");
+    expect(generation).toContain("Do not run dev servers or browsers for this initializer");
+    expect(styling).toContain("Do not run a dev server or browser");
+    expect(checklist).toContain("avoid dev/browser execution and invented QA commands");
   });
 
   test("mahiro-docs-rules-init teaches bounded source search without invented tooling", () => {

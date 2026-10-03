@@ -83,6 +83,15 @@ Prefer the command shape contributors should actually run in this repo today.
 
 - Keep styling close to the owner unless repeated cross-owner reuse already exists.
 - Shared styling is a payoff, not a default.
+- Name the repo's canonical primitive, token/theme, and recipe sources when present; separate primitive shell from caller layout and domain mapping.
+- Identify generated styling or registry output and the source/generator contributors should edit instead.
+- Link to `docs/styling.md` and component-convention docs only if those pages were actually generated. Keep this map brief rather than copying their doctrine here.
+
+### Runtime ownership
+
+- Include this subsection only when the repo proves a mixed browser/server runtime.
+- Identify browser entry points and shared helpers they import; keep Node-only dependencies in the server owner.
+- State the locally proven boundary without claiming hydration or browser behavior that the init pass did not execute.
 
 ## Working Rules
 
@@ -127,6 +136,9 @@ Prefer the command shape contributors should actually run in this repo today.
 - Keep constants, placeholder data, and copy with the owner when they are used in one place.
 - When confidence is low, choose the simpler local pattern and document uncertainty.
 - If a file starts needing several local-only dividers beyond the repo's established section labels, that is a sign to split it, not a sign to invent new labels everywhere.
+- Change canonical source rather than hand-editing generated output; document the actual regeneration command only when the repo proves it.
+- Preserve the accepted edit layer: a paint-only correction does not reopen geometry or content, and a content-only request does not authorize redesign.
+- Distinguish commands verified from scripts/config from checks actually executed. Name untested runtime or visual claims instead of implying a pass.
 
 This section should read like practical review guidance. Every bullet should help answer "what should I do when editing this repo?"
 

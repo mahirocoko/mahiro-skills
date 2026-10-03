@@ -8,6 +8,18 @@
 - where global styles, presets, theme config, or token definitions live
 - whether the repo mixes utility classes with a component library such as Ant Design, Base UI, Radix, or local primitives
 
+### Ownership Map
+
+Include only owners proven by the target repo. For each, name the source path, a real consumer, and the responsibility it owns:
+
+- token/theme definitions and app-level overrides
+- primitive shell and reusable variant/recipe definitions
+- app composition for placement and sibling spacing
+- domain wrappers for labels, status mapping, and workflow behavior
+- generated/registry outputs and their source or generator, when present
+
+Describe the edit path from consumer to canonical source. Map documented semantic classes to real current rules rather than treating their names as proof. Remove absent layers; do not generate a fictional token or primitive system for a small static page.
+
 ## Preferred Direction
 
 - how new styling work should be shaped
@@ -28,3 +40,12 @@
 - where token definitions live, if the repo has Tailwind, CSS variables, Ant Design/Base UI/CVA, or another token system
 - which raw palette or one-off classes are discouraged by local doctrine
 - how shared primitives should encode reusable visual meaning before app code repeats low-level styling
+
+Use the ownership map to state which caller overrides are supported and which shell changes belong in the primitive or recipe. Prefer the nearest accepted usage before adding a local style or shared variant; repeated cross-owner need and a stable boundary must justify a new shared contract. Fix generated styling through its source owner instead of hand-editing the output.
+
+## Verification
+
+- List only scripts or checks supported by this repo, with the property each can establish.
+- Distinguish an available command from a check executed during this init pass.
+- Link to existing rendered evidence only when present; state when runtime, resolved paint, or visual acceptance was not checked.
+- Do not run a dev server or browser to make this document appear verified. Do not invent QA commands or claim that a build establishes rendered correctness.

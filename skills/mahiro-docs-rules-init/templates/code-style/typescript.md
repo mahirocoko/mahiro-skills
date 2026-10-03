@@ -55,7 +55,7 @@ type IButtonVariant = 'primary' | 'secondary'
 
 ### Type Exports
 
-Always export types alongside implementations when the repo does so.
+Follow established local type-export conventions. Otherwise, export a props or payload contract only when it is part of the public API or another owner needs it; do not export every local type automatically.
 
 If the repo follows Mahiro-style export posture, keep exported interface names explicit:
 
@@ -66,6 +66,8 @@ export { Button, type IButtonProps }
 ### Barrels (`index.ts`)
 
 Use barrel files to re-export when the repo actually uses them.
+
+Barrels are not a mandatory baseline. Introduce one only for an established public surface or a locally proven need, not to shorten every import.
 
 ## Type Imports
 
@@ -91,10 +93,14 @@ interface IButtonProps extends ComponentProps<'button'> {
   variant?: ButtonVariant
 }
 
-export const Button = ({ variant = 'primary', ...props }: IButtonProps) => {
+const Button = ({ variant = 'primary', ...props }: IButtonProps) => {
   return <button data-variant={variant} {...props} />
 }
+
+export { Button }
 ```
+
+This is the repo-silent fallback: declare the component locally and export its public surface at the bottom. Preserve established inline exports, framework requirements, and generated code when they are the local winner. Utilities, constants, and hooks may use inline exports.
 
 ### Store State / Service Response / Domain Payload
 

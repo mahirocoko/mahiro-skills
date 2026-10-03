@@ -36,6 +36,22 @@ Every item below refers to the target repo being initialized, not the repo that 
 - i18n usage
 - section comment or divider posture, if any
 
+### Frontend Ownership Chain
+
+When frontend signals exist, inspect the real consumers and record the owners that the repo actually proves:
+
+- primitive source and public import surface, including current APIs and variants
+- token/theme definitions, recipes, and app-level CSS overrides
+- nearest accepted consumer usages for the relevant control or surface
+- generated or registry outputs and the source/generator that owns them
+- caller layout versus primitive shell versus domain mapping responsibilities
+- browser/server runtime boundaries when the app mixes them, including helpers imported by browser routes
+- existing verification scripts, what each can establish, and what was not executed during this init pass
+
+For each material claim, retain a source path or consumer example that supports it. Folder names, imports, and semantic class names alone are not proof of resolved behavior. Map claimed classes to current rules; if owners compete, resolve them from source and consumers before writing a current-state rule. Mark unresolved ownership as partial instead of inventing another layer.
+
+This is conditional inspection, not a requirement to add a design system. For a static page without tokens, variants, or generated outputs, omit those layers. Stay with bounded local reads and preserve the existing secret-path guard.
+
 ## State and Data Signals
 
 - route ownership for data loading

@@ -18,6 +18,9 @@ If the repo follows Mahiro-style component structure, keep that posture visible 
    - hooks initialization
    - section comments
    - return JSX
+6. Public exports, at the bottom when using the Mahiro-style fallback for components
+
+Record the observed local order separately from this preferred blueprint. Preserve established local or framework-required export syntax; utilities, constants, and hooks may use inline exports. Small components do not need section comments merely to fill this outline.
 
 ### Section Comments
 
@@ -43,7 +46,7 @@ If the repo follows Mahiro-style component structure, keep that posture visible 
 
 ## Template
 
-If props are typed with interfaces in the target repo, keep the `I` prefix visible in the template rather than flattening it into a generic props alias.
+Adapt the example to the target repo's real conventions. When the repo is silent, the Mahiro-style fallback uses explicit `I`-prefixed props interfaces, arrow-function components, and bottom public exports. Label that as preferred direction, not observed reality. If the repo has established non-`I` or inline-export conventions, preserve them instead.
 
 ```tsx
 interface IProfileCardProps {
@@ -51,8 +54,7 @@ interface IProfileCardProps {
   description?: string
 }
 
-export const ProfileCard = ({ name, description }: IProfileCardProps) => {
-  // _Memo
+const ProfileCard = ({ name, description }: IProfileCardProps) => {
   const title = name.trim()
 
   return (
@@ -62,11 +64,15 @@ export const ProfileCard = ({ name, description }: IProfileCardProps) => {
     </article>
   )
 }
+
+export { ProfileCard }
 ```
+
+Export the props interface only when it is part of the public API or local convention requires it. This small example intentionally has no section comments or memoization.
 
 ## Route Components
 
-- Route files should stay thin and primarily connect URL structure to layout or domain/module partials.
+- Keep route files thin when the target repo assigns them orchestration and composition. Preserve framework-required loaders/actions and locally proven ownership; do not force a new section or service layer from this template.
 
 ## Domain or Module Partials
 

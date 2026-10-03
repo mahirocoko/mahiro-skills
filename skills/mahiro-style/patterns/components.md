@@ -50,6 +50,8 @@ Mahiro-style components should make ownership visible.
 - A multi-app repo can keep package-level shared UI while app-level components still own product wording and domain composition.
 - Local snippet, formatter, and export conventions are repo-owned concerns. Follow those locally, then shape the component boundary with this doctrine.
 
+Examples below teach component ownership, not a portable visual recipe. Apply the target repo's actual primitives and styling APIs when implementing them; do not invent a primitive API from these sketches. For repo-silent React syntax and exports, use `../foundations/code-style.md` as the owner.
+
 ## Examples
 
 - A route hands shaped props to a domain section instead of mixing card config, status mapping, and JSX layout in the route file.
@@ -78,10 +80,16 @@ interface IStatusBadgeProps {
 const StatusBadge = ({ label, tone }: IStatusBadgeProps) => {
   return <span data-tone={tone}>{label}</span>
 }
+
+export { StatusBadge }
 ```
 
 ```tsx
-const ApprovalStatusCell = ({ status }: { status: ApprovalStatus }) => {
+interface IApprovalStatusCellProps {
+  status: ApprovalStatus
+}
+
+const ApprovalStatusCell = ({ status }: IApprovalStatusCellProps) => {
   const { t } = useLingui()
   return (
     <StatusBadge
@@ -90,6 +98,8 @@ const ApprovalStatusCell = ({ status }: { status: ApprovalStatus }) => {
     />
   )
 }
+
+export { ApprovalStatusCell }
 ```
 
 - A domain-aware section component owns its own query wiring and layout while the route stays thin.
@@ -111,32 +121,40 @@ const DashboardMetricsSection = () => {
     </div>
   )
 }
+
+export { DashboardMetricsSection }
 ```
 
 - A compact presentational component keeps only the layers that actually carry layout or semantics.
 
 ```tsx
+interface IDashboardMetricCardProps {
+  label: string
+  value: string
+  trend: string
+}
+
 const DashboardMetricCard = ({ label, value, trend }: IDashboardMetricCardProps) => {
   return (
-    <article className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <article>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-zinc-500">{label}</p>
-          <strong className="mt-1 block text-2xl font-semibold text-zinc-900">
-            {value}
-          </strong>
+          <p>{label}</p>
+          <strong>{value}</strong>
         </div>
         <TrendBadge trend={trend} />
       </div>
     </article>
   )
 }
+
+export { DashboardMetricCard }
 ```
 
 - A presentational section can accept several props when they still form one clear render contract.
 
 ```tsx
-type OrderSummarySectionProps = {
+interface IOrderSummarySectionProps {
   items: OrderItem[]
   subtotal: number
   discount: number
@@ -158,9 +176,11 @@ const OrderSummarySection = ({
   onApplyDiscount,
   onRemoveItem,
   onUpdateQuantity,
-}: OrderSummarySectionProps) => {
+}: IOrderSummarySectionProps) => {
   return <section>{/* render only */}</section>
 }
+
+export { OrderSummarySection }
 ```
 
 - A route should usually compose real section owners directly instead of hiding the page behind pass-through wrappers.

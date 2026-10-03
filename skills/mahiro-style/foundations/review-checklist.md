@@ -33,6 +33,25 @@ Before writing a review comment, label the claim:
 
 Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how style reviews become fiction.
 
+## Frontend Evidence and Accepted Scope
+
+Choose the gates required by the claim; do not require a full browser or product pass for a naming-only change with no runtime or visual effect.
+
+| Gate | Required evidence |
+| --- | --- |
+| Ownership | Canonical source, primitive API, token or recipe rule, and real consumer imports; use `../patterns/shared-ui-boundaries.md` for the preflight |
+| Propagation | The changed contract reaches relevant state, runtime consumers, persistence, exports, and generated outputs |
+| Rendered correctness | Relevant open/closed, selected, disabled, loading and error states; resolved paint, geometry, interaction, and console evidence |
+| Human acceptance | The designated human product owner accepts the visual/product outcome |
+
+Source tests do not prove runtime integration. Computed styles do not prove visual coherence. A typography or interaction PASS is not a whole-product PASS, and no lower gate substitutes for human acceptance. Report the checked gates and unresolved ones explicitly; do not claim a gate that the task did not test. A reviewer may run focused self-checks, but a writer's self-check is not independent acceptance evidence.
+
+For stateful visual configuration, map the actual lifecycle before reporting integration: draft and baseline, modified detection, Reset, navigation/history, persistence, export, runtime projection, and real-consumer visibility where applicable. Test sequential transitions such as `A → B → A` on one mounted consumer so stale or omitted values cannot hide. Open the actual overlay or disclosure state when its paint or affordance is part of the claim; a closed screenshot does not establish the open state.
+
+When a browser route imports a helper, treat that runtime dependency as browser code even if the helper sits beside server-oriented modules. Check for Node-only imports or globals at the boundary, and require hydration/runtime evidence for a browser-safety claim; a build PASS alone cannot establish it. In rendered checks, inspect console errors and relevant warnings after load and after interactions, rather than ignoring a runtime failure because pixels appear correct.
+
+Keep accepted direction and the requested edit layer intact. A named paint correction preserves geometry and content; a content-only request does not authorize redesign. Reviewers can report no-op handlers, accessibility defects, collisions, or paint drift, but must not disable controls, add explanatory UI, or change product semantics on their own. Route those decisions back to the product owner. Keep literal micro-position corrections in the existing rule below rather than reinterpreting them as a broader redesign.
+
 ## Non-negotiable
 
 - Check the diff against the exact four-level precedence order: `AGENTS.md` -> other repo-local instruction files -> established repo patterns -> Mahiro fallback doctrine.

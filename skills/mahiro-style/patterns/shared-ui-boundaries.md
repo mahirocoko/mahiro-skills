@@ -18,6 +18,30 @@ Use it when the question is whether something belongs in shared UI, in a domain 
 
 Shared UI should stay broad enough to serve multiple domains without importing one domain's business rules into every caller.
 
+## Before Changing an Existing UI Contract
+
+Use this preflight when the repo already has primitives, recipes, or a design system:
+
+1. Find the primitive used by the real consumer, not just a similarly named file.
+2. Read its public API, variants, and semantic token owners.
+3. Inspect the nearest accepted usage for the same control or surface job.
+4. Check app-level CSS and theme overrides that may change the primitive's resolved paint.
+5. Reuse the existing contract before adding an owner-local recipe or shared variant. A single local paint need does not establish a reusable variant.
+
+Keep the edit at the owner responsible for the change:
+
+| Owner | Responsibility |
+| --- | --- |
+| Primitive | Intrinsic shell, baseline geometry, focus and disabled states |
+| Composition | Placement, sibling spacing, section layout |
+| Domain wrapper | Product labels, status mapping, workflow behavior |
+
+These are default boundaries, not proof that every native element is a duplicate. A route-owned composition may intentionally use native elements and local layout rules. Do not create a token, variant, or primitive layer merely to satisfy this preflight when the repo has none.
+
+Verify provenance as well as naming: map a semantic class to its current rule and the rule to its source owner. An import or class name alone does not prove the consumer uses the canonical shell; caller overrides can still replace it. Compare resolved paint and relevant rendered states when the claim depends on those properties. Evidence scope belongs to `../foundations/review-checklist.md`.
+
+Before adding a trailing icon, inspect the primitive for an injected chevron, check, or other affordance. In compact rows, give the label and metadata explicit space ownership rather than letting two trailing owners compete. Default control size is a fallback, not a universal geometry mandate: preserve justified compact toolbars and icon overlays through the repo's existing size/variant contract.
+
 ## Non-negotiable
 
 - Keep shared UI generic in vocabulary, inputs, and output responsibilities.

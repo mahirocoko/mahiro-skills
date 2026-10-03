@@ -38,3 +38,16 @@ Use this before declaring the init pass complete.
 - Are section comments or dividers described as a shortcut for long files, not a rule for every file?
 - Did any example accidentally introduce a folder path the repo does not use?
 - Did any example accidentally copy a convention from a recently touched repo instead of using target-repo evidence?
+
+## Frontend Ownership and Evidence Check
+
+Apply this only to frontend topics the target repo actually establishes:
+
+- Can the generated docs point from a real consumer to the canonical primitive, token/theme, or recipe source?
+- Does each claimed primitive, semantic class, and variant have a current source/rule owner rather than an invented API or a plausible name?
+- If generated or registry outputs exist, do the docs identify their source/generator and avoid recommending hand-edits to the output?
+- Do examples follow local conventions, or clearly label repo-silent Mahiro fallback as preferred direction? Do component and TypeScript examples agree?
+- Do AGENTS and detailed pages preserve local precedence and link to one owner rather than restating conflicting rules?
+- Are available commands distinguished from executed checks, with untested runtime, resolved paint, and visual acceptance stated honestly?
+- Did the initializer avoid dev/browser execution and invented QA commands?
+- Did a small static repo remain small, without fictional token, variant, primitive, or shared architecture layers?

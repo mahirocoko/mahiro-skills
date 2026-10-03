@@ -26,6 +26,8 @@ Formatting is repo-owned first. `mahiro-style` supplies fallback posture, not an
 - If the repo has package scripts for formatting or linting, use those scripts instead of hand-formatting files into a personal style.
 - If local docs say a formatter command writes files, treat that as part of the repo workflow and do not describe it as a read-only check.
 
+After implementation, run the repo's formatter on touched files before final verification, then rerun the relevant checks. Prefer an existing format script or installed formatter; do not format the entire repo or change formatter configuration for an unrelated task. If no formatter is available, report that limitation rather than claiming a formatting pass.
+
 ### Preferred Direction
 
 When the repo is silent, Mahiro-style prefers:
@@ -93,6 +95,7 @@ When the repo is silent, Mahiro-style prefers:
 
 - `interface` for stable object contracts such as component props, service payloads, domain records, and store shapes.
 - `type` for unions, utility compositions, mapped types, derived shapes, and values computed from constants.
+- `I` prefixes for app-owned interfaces, such as `IUserCardProps`; leave type aliases unprefixed. Preserve established local and generated/external naming instead of converting it to this fallback.
 - Explicit props and payload names that include domain context, such as `IInviteEmployeeParams` instead of `IParams`.
 - Reusable value lists in constants owners, with derived union types exported from the appropriate type owner.
 - Owner-local types staying near the owner until another route, hook, service, or component genuinely reuses the contract.
@@ -123,6 +126,10 @@ Type placement follows ownership, not file-size anxiety.
 
 The promotion question is: who would be surprised if this type changed? Keep the type near that owner.
 
+## Function Shape
+
+When the repo is silent, prefer arrow functions for app-owned React components, hooks, and helpers. Give components explicit props interfaces when they have a stable object contract. Framework-required syntax, generated code, and established local function conventions win first; do not rewrite unrelated functions during a focused change.
+
 ## Export Posture
 
 Exports should reveal which symbols are stable public surface and which ones are local implementation detail.
@@ -138,7 +145,8 @@ Exports should reveal which symbols are stable public surface and which ones are
 When the repo is silent, Mahiro-style prefers:
 
 - Named exports for reusable components, hooks, services, stores, constants, and utilities.
-- Exporting reusable component prop interfaces/types beside the component, such as `export { UserCard, type IUserCardProps }`.
+- Declare React components locally, then export the public component surface at the bottom of the file. Utilities, constants, and hooks may use inline exports; framework-required exports keep their required shape.
+- Exporting component prop interfaces/types beside the component when they are part of its public API or reused by another owner, such as `export { UserCard, type IUserCardProps }`; keep implementation-local contracts private unless local convention requires otherwise.
 - Keeping route entrypoint exports aligned with the router/framework even if shared building blocks prefer named exports.
 - Keeping owner-local helpers, maps, schemas, and small event utilities unexported until another owner needs them.
 - Direct public exports from the canonical owner instead of barrels that blur ownership.
@@ -250,6 +258,20 @@ interface IEmployeeRecord {
 
 type EmployeeRecordMap = Record<string, IEmployeeRecord>
 type EmployeeRecordStatus = 'active' | 'inactive'
+```
+
+- A repo-silent React component uses an explicit props interface and a bottom public export. Export the props contract only when it is part of the public API or local convention requires it.
+
+```tsx
+interface IUserCardProps {
+  name: string
+}
+
+const UserCard = ({ name }: IUserCardProps) => {
+  return <article>{name}</article>
+}
+
+export { UserCard }
 ```
 
 - A Biome repo keeps import ordering and formatting aligned with Biome output instead of preserving hand-grouped imports, and keeps `import type` when the import is type-only.
