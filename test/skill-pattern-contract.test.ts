@@ -547,8 +547,11 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).not.toContain("$CODEX_HOME/generated-images");
     expect(readme).toContain("Multi-pane output collection is receipt-bound rather than recency-based");
     expect(playbook).toContain("Antigravity multiline prompt caveat");
-    expect(playbook).toContain("agy --model claude-opus-4-6-thinking --dangerously-skip-permissions");
-    expect(playbook).toContain("`claude-sonnet-4-6`");
+    expect(playbook).toContain("agy --model claude-opus-5-5-high --dangerously-skip-permissions");
+    expect(playbook).toContain("Antigravity balanced model: `claude-sonnet-5-5-medium`");
+    expect(playbook).toContain("catalog-confirmed, not foreground-launch-verified");
+    expect(playbook).not.toContain("claude-opus-4-6-thinking");
+    expect(playbook).not.toContain("claude-sonnet-4-6");
     expect(playbook).toContain("`gemini-3.8-flash-high`");
     expect(playbook).toContain("`gemini-3.8-flash-medium`");
     expect(playbook).toContain("`gemini-3.8-flash-low` fallback");

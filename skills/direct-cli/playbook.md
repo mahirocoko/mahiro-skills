@@ -559,7 +559,7 @@ herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
 
 verify_herdr_unclaimed_pane_receipt "$REVIEW_PANE" || exit 1
 herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
-  --model claude-opus-4-6-thinking \
+  --model claude-opus-5-5-high \
   --dangerously-skip-permissions
 
 CODEX_SESSION_ID="$(capture_herdr_agent_session "$ROOT_PANE" codex "$CODEX_AGENT")" || exit 1
@@ -842,7 +842,7 @@ For several Agy models in one job:
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Current foreground-verified choices are `claude-opus-4-6-thinking` for heavy review and `claude-sonnet-4-6` for balanced work. The live Agy catalog confirms `gemini-3.8-flash-high` for the faster lane; keep `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, as fast fallbacks. Although `agy models` lists `gemini-3.1-pro-high`, a foreground launch reported it was no longer available, so it is excluded from the curated picker.
+Use the curated Agy roles below after a fresh `agy models` check. The Opus and Sonnet 5.5 choices are catalog-confirmed, not foreground-launch-verified; require the exact visible model before sending work. Their catalog IDs encode Low, Medium, or High effort; use the exact ID for the requested tier rather than assuming a separate thinking slug or an additional effort override is needed. Gemini Pro remains outside the curated picker; catalog presence alone does not establish foreground availability.
 
 ### Antigravity multiline prompt caveat
 
@@ -860,7 +860,7 @@ tmux send-keys -t "$JOB:0.$pane" Enter
 herdr agent prompt agy-review "$prompt"
 
 # fresh lane needing exact multiline initial prompt: interactive, not print/headless
-agy --model claude-opus-4-6-thinking --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
+agy --model claude-opus-5-5-high --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
 ```
 
 For Herdr, run the exact multiline initial command through `herdr pane run <pane-id> <command>...`, then inspect with `pane read`; this shell-shaped exception does not get `agent start` readiness, so detection and visible model verification remain mandatory. Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
@@ -889,8 +889,8 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-5-high`
-- Antigravity heavy review model: `claude-opus-4-6-thinking`
-- Antigravity balanced model: `claude-sonnet-4-6`
+- Antigravity heavy review model: `claude-opus-5-5-high`
+- Antigravity balanced model: `claude-sonnet-5-5-medium`
 - Antigravity fast model: `gemini-3.8-flash-high` (`gemini-3.8-flash-medium`, then `gemini-3.8-flash-low` fallback)
 - Codex flagship model/effort: `gpt-6-astra` + `high`
 - Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`
@@ -917,8 +917,8 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - For a Grok 4.7 direct lane, pass the complete requested selection at launch: `--model 'grok-4.7[context=500k,effort=high,fast=false]'`. An explicit user context, effort, or Fast choice overrides only that dimension. Do not rely on Cursor's persisted model parameters or launch the bare `grok-4.7-high` slug for this default. Verify the visible context, effort, and Fast state before sending work; if the installed CLI rejects 500k or silently changes the selection, stop and report the mismatch instead of falling back to 256k. The live catalog confirms the Grok family, not that this context override is accepted.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5.1” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
-  1. `claude-opus-4-6-thinking` — recommended heavy reasoning/review lane; do not add `--effort high` because this slug does not support effort selection.
-  2. `claude-sonnet-4-6` — balanced reasoning lane.
+  1. `claude-opus-5-5-high` — heavy reasoning/review lane; High is encoded in the catalog ID.
+  2. `claude-sonnet-5-5-medium` — balanced reasoning lane; Medium is encoded in the catalog ID.
   3. `gemini-3.8-flash-high` — faster scoped lane; fall back to `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only if High fails.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
@@ -1078,11 +1078,11 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ### Fresh session
 
-Use the known-good Antigravity defaults first. Prefer exact stable `--model` slugs and add native `--effort` only for models that support it, then verify the visible model/effort and reject fallback warnings. Use `/model` or `/effort` TUI switching only as a fallback.
+Use the curated Antigravity choices after live catalog preflight. Prefer exact stable `--model` slugs and add native `--effort` only for models that support it, then verify the visible model/effort and reject fallback warnings. Catalog confirmation is not a successful foreground launch. Use `/model` or `/effort` TUI switching only as a fallback.
 
 ```bash
 tmux new-session -d -s "agy-task"
-tmux send-keys -t agy-task 'agy --model claude-opus-4-6-thinking --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-task 'agy --model claude-opus-5-5-high --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-task -S -120
 tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
 ```
@@ -1093,7 +1093,7 @@ If a non-current Antigravity model is required, launch with its exact stable slu
 
 ```bash
 tmux new-session -d -s "agy-opus"
-tmux send-keys -t agy-opus 'agy --model claude-opus-4-6-thinking --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-opus 'agy --model claude-opus-5-5-high --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-opus -S -120
 ```
 
@@ -1104,11 +1104,7 @@ tmux send-keys -t agy-task '/model' Enter
 tmux capture-pane -p -t agy-task -S -120
 ```
 
-Then choose the skill-defined model/effort in the TUI:
-
-- `claude-opus-4-6-thinking` — heavy reasoning/review; no separate effort flag.
-- `claude-sonnet-4-6` — balanced reasoning.
-- `gemini-3.8-flash-high` — faster scoped lane; use `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only as fallbacks.
+Then choose the model/effort from the curated routing policy above in the TUI and recheck the visible selection before sending work.
 
 ### Prompt template
 
