@@ -198,7 +198,10 @@ export interface DoctorResult {
 }
 
 export interface SkillUsageAuditOptions {
-  dataDir?: string;
+  /** Explicit consent; metadata/date filters alone never authorize transcript IO. */
+  allowTranscriptRead?: boolean;
+  /** Exact regular JSONL files, never a recursively enumerated directory. */
+  transcriptFiles?: string[];
   agentId?: string;
   startDate?: string;
   endDate?: string;
@@ -216,7 +219,10 @@ export interface SkillUsageAuditSkill {
 export interface SkillUsageAuditResult {
   type: "skill-usage-audit";
   source: {
-    dataRoot: string;
+    transcriptFiles: string[];
+    maxFiles: number;
+    maxBytes: number;
+    bytesRead: number;
     transcriptFilesScanned: number;
     linesRead: number;
     malformedLines: number;
@@ -242,8 +248,5 @@ export interface CliOptions {
   copyTemplate: boolean;
   mode?: "plan" | "install" | "uninstall" | "list" | "update";
   yes: boolean;
-  dataDir?: string;
-  agentId?: string;
-  startDate?: string;
-  endDate?: string;
+  auditOptions?: SkillUsageAuditOptions;
 }

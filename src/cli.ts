@@ -5,7 +5,7 @@ import { createSkillFromTemplate } from "./new-skill";
 import { uninstall } from "./uninstall";
 import { listInstalled } from "./list";
 import { doctor } from "./doctor";
-import { auditSkillUsage } from "./audit";
+import { AUDIT_USAGE, auditSkillUsage, parseUsageAuditArgs } from "./audit";
 import { runGuided } from "./guided";
 import { getRepoGaps, getRepoManifest, searchSkillCatalog } from "./repo";
 import { createPromptIO, isPromptCancelError } from "./prompt";
@@ -71,6 +71,12 @@ function parseArgs(argv: string[]): CliOptions {
   if (!["plan", "install", "uninstall", "list", "doctor", "audit", "guided", "tui", "manifest", "search", "gaps", "new"].includes(commandRaw)) {
     throw new Error(`Unsupported command '${commandRaw}'.`);
   }
+  if (commandRaw === "audit") {
+    return {
+      command: "audit", items: [], agents: [], overwrite: false,
+      copyTemplate: false, yes: false, auditOptions: parseUsageAuditArgs(rest),
+    };
+  }
 
   const agents: ScopedAgent[] = [];
   let scope: InstallScope | undefined;
@@ -78,10 +84,6 @@ function parseArgs(argv: string[]): CliOptions {
   let copyTemplate = false;
   let mode: CliOptions["mode"];
   let yes = false;
-  let dataDir: string | undefined;
-  let agentId: string | undefined;
-  let startDate: string | undefined;
-  let endDate: string | undefined;
   const items: string[] = [];
 
   for (let i = 0; i < rest.length; i += 1) {
@@ -98,18 +100,6 @@ function parseArgs(argv: string[]): CliOptions {
     }
     if (token === "--scope") {
       scope = rest[i + 1] as InstallScope;
-      i += 1;
-      continue;
-    }
-    if (token === "--data-dir" || token === "--agent-id" || token === "--start-date" || token === "--end-date") {
-      const value = rest[i + 1];
-      if (value === undefined) {
-        throw new Error(`Missing value for ${token}.`);
-      }
-      if (token === "--data-dir") dataDir = value;
-      if (token === "--agent-id") agentId = value;
-      if (token === "--start-date") startDate = value;
-      if (token === "--end-date") endDate = value;
       i += 1;
       continue;
     }
@@ -160,15 +150,20 @@ function parseArgs(argv: string[]): CliOptions {
     copyTemplate,
     mode,
     yes,
-    dataDir,
-    agentId,
-    startDate,
-    endDate,
   };
 }
 
 async function main(): Promise<void> {
-  const options = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv.length === 1 && ["--help", "help", "-h"].includes(argv[0])) {
+    console.log(`Commands: plan, install, uninstall, list, doctor, audit, manifest, search, gaps, new, tui, guided.\n${AUDIT_USAGE}`);
+    return;
+  }
+  if (argv.length === 2 && argv[0] === "audit" && ["--help", "-h"].includes(argv[1])) {
+    console.log(AUDIT_USAGE);
+    return;
+  }
+  const options = parseArgs(argv);
 
   switch (options.command) {
     case "manifest": {
@@ -236,12 +231,7 @@ async function main(): Promise<void> {
       return;
     }
     case "audit": {
-      console.log(JSON.stringify(auditSkillUsage({
-        dataDir: options.dataDir,
-        agentId: options.agentId,
-        startDate: options.startDate,
-        endDate: options.endDate,
-      }), null, 2));
+      console.log(JSON.stringify(auditSkillUsage(options.auditOptions), null, 2));
       return;
     }
     case "guided": {

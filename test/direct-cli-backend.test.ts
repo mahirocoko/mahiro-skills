@@ -4,10 +4,19 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { findStandalonePython } from "./helpers/python";
 
-const selector = join(import.meta.dir, "..", "skills", "direct-cli", "scripts", "select-backend.sh");
+const selector = join(
+  import.meta.dir,
+  "..",
+  "skills",
+  "direct-cli",
+  "scripts",
+  "select-backend.sh",
+);
 const tempDirs: string[] = [];
 
-function makeBinDir(options: { orca?: boolean; herdr?: boolean; tmux?: boolean } = {}) {
+function makeBinDir(
+  options: { orca?: boolean; herdr?: boolean; tmux?: boolean } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "direct-cli-backend-"));
   tempDirs.push(dir);
 
@@ -113,7 +122,7 @@ afterEach(() => {
 });
 
 describe("direct-cli backend selector", () => {
-  test("auto prefers a validated Orca caller with a tracked current target", () => {
+  test("auto prefers healthy Herdr when both backend identities are valid", () => {
     const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
     const result = runSelector(binDir, [], {
       FAKE_ORCA_TARGET_ID: "repo-target::/tracked-current-cwd",
@@ -126,14 +135,35 @@ describe("direct-cli backend selector", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("backend=orca");
-    expect(result.stdout).toContain("reason=validated live Orca caller identity and separately tracked current target");
+    expect(result.stdout).toContain("backend=herdr");
+    expect(result.stdout).toContain(
+      "reason=validated live compatible Herdr pane",
+    );
   });
 
-  test("auto rejects stale Orca identity and falls through to Herdr", () => {
+  test("auto retains verified Orca fallback when the Herdr server is incompatible", () => {
+    const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
+    const result = runSelector(binDir, [], {
+      FAKE_HERDR_COMPATIBLE: "false",
+      ORCA_TERMINAL_HANDLE: "term_current",
+      ORCA_WORKTREE_ID: "repo-caller::/caller-worktree",
+      ORCA_TAB_ID: "tab_current",
+      ORCA_PANE_KEY: "tab_current:leaf_current",
+      HERDR_ENV: "1",
+      HERDR_PANE_ID: "w1:p2",
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("backend=orca");
+    expect(result.stdout).toContain(
+      "reason=validated live Orca caller identity and separately tracked current target",
+    );
+  });
+
+  test("auto rejects stale Orca identity after Herdr fails and falls through to tmux", () => {
     const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
     const result = runSelector(binDir, [], {
       FAKE_ORCA_RESOLVED_WORKTREE: "repo::/other",
+      FAKE_HERDR_COMPATIBLE: "false",
       ORCA_TERMINAL_HANDLE: "term_current",
       ORCA_WORKTREE_ID: "repo::/worktree",
       ORCA_TAB_ID: "tab_current",
@@ -143,13 +173,14 @@ describe("direct-cli backend selector", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("backend=herdr");
+    expect(result.stdout).toContain("backend=tmux");
   });
 
-  test("auto rejects an Orca caller whose current directory is not the tracked target", () => {
+  test("auto rejects an untracked Orca target after Herdr fails", () => {
     const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
     const result = runSelector(binDir, [], {
       FAKE_ORCA_TARGET_PATH: "/tmp/not-the-current-worktree",
+      FAKE_HERDR_COMPATIBLE: "false",
       ORCA_TERMINAL_HANDLE: "term_current",
       ORCA_WORKTREE_ID: "repo::/caller-worktree",
       ORCA_TAB_ID: "tab_current",
@@ -159,7 +190,7 @@ describe("direct-cli backend selector", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("backend=herdr");
+    expect(result.stdout).toContain("backend=tmux");
   });
 
   for (const [condition, failedEnv] of [
@@ -173,6 +204,7 @@ describe("direct-cli backend selector", () => {
       const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
       const result = runSelector(binDir, [], {
         ...failedEnv,
+        FAKE_HERDR_COMPATIBLE: "false",
         ORCA_TERMINAL_HANDLE: "term_current",
         ORCA_WORKTREE_ID: "repo::/worktree",
         ORCA_TAB_ID: "tab_current",
@@ -182,7 +214,7 @@ describe("direct-cli backend selector", () => {
       });
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("backend=herdr");
+      expect(result.stdout).toContain("backend=tmux");
     });
   }
 
@@ -207,14 +239,17 @@ describe("direct-cli backend selector", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("backend=tmux");
-    expect(result.stdout).toContain("reason=Orca and Herdr preflights failed; tmux is available");
+    expect(result.stdout).toContain(
+      "reason=Orca and Herdr preflights failed; tmux is available",
+    );
   });
 
-  test("auto bounds a hung Orca preflight and falls through to Herdr", () => {
+  test("auto bounds a hung Orca fallback after Herdr fails", () => {
     const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
     const result = runSelector(binDir, [], {
       DIRECT_CLI_ORCA_TIMEOUT_SECONDS: "0.1",
       FAKE_ORCA_HANG: "true",
+      FAKE_HERDR_COMPATIBLE: "false",
       ORCA_TERMINAL_HANDLE: "term_current",
       ORCA_WORKTREE_ID: "repo::/worktree",
       ORCA_TAB_ID: "tab_current",
@@ -224,7 +259,7 @@ describe("direct-cli backend selector", () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("backend=herdr");
+    expect(result.stdout).toContain("backend=tmux");
   });
 
   test("auto selects a validated live compatible Herdr pane", () => {
@@ -236,7 +271,9 @@ describe("direct-cli backend selector", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("backend=herdr");
-    expect(result.stdout).toContain("reason=validated live compatible Herdr pane");
+    expect(result.stdout).toContain(
+      "reason=validated live compatible Herdr pane",
+    );
   });
 
   test("auto rejects forged or stale Herdr pane markers and uses tmux", () => {
@@ -249,7 +286,9 @@ describe("direct-cli backend selector", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("backend=tmux");
-    expect(result.stdout).toContain("reason=Orca and Herdr preflights failed; tmux is available");
+    expect(result.stdout).toContain(
+      "reason=Orca and Herdr preflights failed; tmux is available",
+    );
   });
 
   test("auto accepts a launch-time pane id retained as a live move alias", () => {
@@ -332,14 +371,21 @@ describe("direct-cli backend selector", () => {
     expect(missing.exitCode).toBe(1);
     expect(missing.stderr).toContain("tmux backend unavailable");
 
-    const available = runSelector(makeBinDir({ tmux: true }), ["--backend=tmux"]);
+    const available = runSelector(makeBinDir({ tmux: true }), [
+      "--backend=tmux",
+    ]);
     expect(available.exitCode).toBe(0);
     expect(available.stdout).toContain("backend=tmux");
-    expect(available.stdout).toContain("reason=explicit tmux request passed binary preflight");
+    expect(available.stdout).toContain(
+      "reason=explicit tmux request passed binary preflight",
+    );
   });
 
   test("invalid backend input is a usage error", () => {
-    const result = runSelector(makeBinDir({ tmux: true }), ["--backend", "screen"]);
+    const result = runSelector(makeBinDir({ tmux: true }), [
+      "--backend",
+      "screen",
+    ]);
 
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("expected --backend auto|orca|herdr|tmux");

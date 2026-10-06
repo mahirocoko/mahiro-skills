@@ -1,6 +1,5 @@
-import { existsSync, readdirSync, readFileSync } from "fs";
-import { homedir } from "os";
-import { basename, join, relative } from "path";
+import { closeSync, constants, fstatSync, lstatSync, openSync, readSync } from "fs";
+import { basename, isAbsolute, resolve } from "path";
 
 import { getSkillCatalog } from "./repo";
 import type { SkillUsageAuditOptions, SkillUsageAuditResult, SkillUsageAuditSkill } from "./types";
@@ -22,41 +21,99 @@ interface SkillUsageEvent {
   conversationId?: string;
 }
 
-function resolveDataRoot(options: SkillUsageAuditOptions): string {
-  if (options.dataDir) {
-    return options.dataDir;
-  }
+export const MAX_AUDIT_FILES = 100;
+export const MAX_AUDIT_BYTES = 10 * 1024 * 1024;
+export const AUDIT_USAGE = `audit is transcript usage analysis, NOT installer status.
+Usage: audit --allow-transcript-read --transcript-file <absolute messages.jsonl|transcript.jsonl> [--transcript-file <another-file>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>] [--json]
+Select exact regular files only: at most ${MAX_AUDIT_FILES} files / ${MAX_AUDIT_BYTES} total bytes. No directory recursion or implicit HOME scope.
+For receipt-backed installer status use: list --agent <adapter> --scope <local|global>
+For an exact install preview use: plan <skill...> --agent <adapter> --scope <local|global>`;
 
-  const home = process.env.MAHIRO_SKILLS_HOME || homedir();
-  return join(home, ".letta", "lc-local-backend");
+/** Pure intent/scope validation must precede even transcript metadata IO. */
+export function validateUsageAuditScope(options: SkillUsageAuditOptions): string[] {
+  const allowed = new Set(["allowTranscriptRead", "transcriptFiles", "agentId", "startDate", "endDate"]);
+  for (const key of Object.keys(options)) {
+    if (!allowed.has(key)) throw new Error(`Unsupported usage-audit option '${key}'.\n${AUDIT_USAGE}`);
+  }
+  if (options.allowTranscriptRead !== true) {
+    throw new Error(`Transcript reads require explicit --allow-transcript-read consent.\n${AUDIT_USAGE}`);
+  }
+  const files = options.transcriptFiles;
+  if (!Array.isArray(files) || !files.length || files.length > MAX_AUDIT_FILES) {
+    throw new Error(`Select 1..${MAX_AUDIT_FILES} exact --transcript-file paths.\n${AUDIT_USAGE}`);
+  }
+  for (const file of files) {
+    if (typeof file !== "string" || !isAbsolute(file) || !["messages.jsonl", "transcript.jsonl"].includes(basename(file))) {
+      throw new Error("--transcript-file must name an absolute messages.jsonl or transcript.jsonl file, not a directory or unrelated file.");
+    }
+  }
+  const normalized = files.map((file) => resolve(file));
+  if (new Set(normalized).size !== normalized.length) {
+    throw new Error("Duplicate --transcript-file paths are not allowed.");
+  }
+  return normalized;
 }
 
-function findTranscriptFiles(path: string): string[] {
-  if (!existsSync(path)) {
-    return [];
-  }
-
-  const files: string[] = [];
-  const visit = (directory: string) => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const target = join(directory, entry.name);
-      if (entry.isDirectory()) {
-        visit(target);
-      } else if (entry.isFile() && (entry.name === "messages.jsonl" || entry.name === "transcript.jsonl")) {
-        files.push(target);
-      }
+/** Audit flags have their own parser so installer selectors cannot be ignored. */
+export function parseUsageAuditArgs(args: string[]): SkillUsageAuditOptions {
+  const options: SkillUsageAuditOptions = { transcriptFiles: [] };
+  for (let i = 0; i < args.length; i += 1) {
+    const token = args[i];
+    if (token === "--allow-transcript-read") {
+      options.allowTranscriptRead = true;
+      continue;
     }
-  };
-
-  const roots = basename(path) === "conversations" || basename(path) === "transcripts"
-    ? [path]
-    : [join(path, "conversations"), join(path, "transcripts")].filter(existsSync);
-
-  for (const root of roots) {
-    visit(root);
+    if (token === "--json") continue;
+    if (["--transcript-file", "--agent-id", "--start-date", "--end-date"].includes(token)) {
+      const value = args[++i];
+      if (!value || value.startsWith("--")) throw new Error(`Missing value for ${token}.`);
+      if (token === "--transcript-file") options.transcriptFiles!.push(value);
+      if (token === "--agent-id") options.agentId = value;
+      if (token === "--start-date") options.startDate = value;
+      if (token === "--end-date") options.endDate = value;
+      continue;
+    }
+    throw new Error(`Unsupported audit argument '${token}'. Installer flags and --data-dir are not transcript scope.\n${AUDIT_USAGE}`);
   }
+  validateUsageAuditScope(options);
+  return options;
+}
 
-  return files.sort();
+function readBoundedTranscripts(files: string[]): { file: string; text: string; bytes: number }[] {
+  // Preflight ALL selected file metadata before reading any content. Never enumerate directories.
+  const selected = files.map((file) => {
+    const stats = lstatSync(file);
+    if (!stats.isFile() || stats.isSymbolicLink()) {
+      throw new Error(`Transcript must be a regular non-symlink file: ${file}`);
+    }
+    return { file, stats };
+  });
+  if (selected.reduce((bytes, { stats }) => bytes + stats.size, 0) > MAX_AUDIT_BYTES) {
+    throw new Error(`Selected transcripts exceed the ${MAX_AUDIT_BYTES}-byte audit limit; select fewer/smaller files.`);
+  }
+  return selected.map(({ file, stats }) => {
+    const fd = openSync(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    try {
+      const before = fstatSync(fd);
+      if (!before.isFile() || before.dev !== stats.dev || before.ino !== stats.ino || before.size !== stats.size) {
+        throw new Error(`Transcript changed after scope preflight: ${file}`);
+      }
+      const buffer = Buffer.alloc(before.size);
+      let offset = 0;
+      while (offset < buffer.length) {
+        const bytes = readSync(fd, buffer, offset, buffer.length - offset, offset);
+        if (bytes === 0) throw new Error(`Transcript truncated during read: ${file}`);
+        offset += bytes;
+      }
+      const after = fstatSync(fd);
+      if (after.size !== before.size || after.mtimeMs !== before.mtimeMs) {
+        throw new Error(`Transcript changed during bounded read: ${file}`);
+      }
+      return { file, text: buffer.toString("utf8"), bytes: offset };
+    } finally {
+      closeSync(fd);
+    }
+  });
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -167,7 +224,7 @@ function buildSkill(name: string, events: SkillUsageEvent[], inCurrentCatalog: b
 }
 
 export function auditSkillUsage(options: SkillUsageAuditOptions = {}): SkillUsageAuditResult {
-  const dataRoot = resolveDataRoot(options);
+  const files = validateUsageAuditScope(options);
   const start = parseBoundary(options.startDate, "--start-date");
   const end = parseBoundary(options.endDate, "--end-date");
   if (start !== undefined && end !== undefined && start > end) {
@@ -178,11 +235,11 @@ export function auditSkillUsage(options: SkillUsageAuditOptions = {}): SkillUsag
   const events: SkillUsageEvent[] = [];
   let linesRead = 0;
   let malformedLines = 0;
-  const files = findTranscriptFiles(dataRoot);
+  const transcripts = readBoundedTranscripts(files);
 
-  for (const file of files) {
-    const source = relative(dataRoot, file);
-    for (const line of readFileSync(file, "utf8").split("\n")) {
+  for (const { file, text } of transcripts) {
+    const source = file;
+    for (const line of text.split("\n")) {
       if (!line.trim()) {
         continue;
       }
@@ -222,7 +279,10 @@ export function auditSkillUsage(options: SkillUsageAuditOptions = {}): SkillUsag
   return {
     type: "skill-usage-audit",
     source: {
-      dataRoot,
+      transcriptFiles: files,
+      maxFiles: MAX_AUDIT_FILES,
+      maxBytes: MAX_AUDIT_BYTES,
+      bytesRead: transcripts.reduce((bytes, transcript) => bytes + transcript.bytes, 0),
       transcriptFilesScanned: files.length,
       linesRead,
       malformedLines,

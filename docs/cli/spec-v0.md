@@ -45,14 +45,16 @@ The repo is the canonical package source.
 
 ### Asset handling
 
-Skill directories are copied as opaque trees.
+Skill directories preserve their normal assets, except generated Python bytes:
+`__pycache__` trees and `.pyc`/`.pyo` files are omitted at any depth by the shared
+`src/skill-payload.ts` policy. This is not a broad gitignore filter.
 
 Examples:
 - `skills/project/scripts/`
 - `skills/recap/references/`
 - `skills/gemini/extension/`
 
-The CLI must not reinterpret internal skill files beyond path planning, collision checks, and declared adapter transforms. The Agy adapter is the sole current transform: it copies the complete skill tree to `skills/mh-<name>/`, rewrites only the staged `SKILL.md` frontmatter name to `mh-<name>`, forces `disable-model-invocation: true`, and removes `disable-slash-command` so the alias is user-invocable without duplicating model discovery.
+The CLI must not reinterpret normal internal skill files beyond path planning, collision checks, payload filtering and declared adapter transforms. All installed Markdown descriptions get the existing `Mahiro Skill | ` prefix. The Agy adapter additionally copies the filtered skill payload to `skills/mh-<name>/`, rewrites only the staged `SKILL.md` frontmatter name to `mh-<name>`, forces `disable-model-invocation: true`, and removes `disable-slash-command` so the alias is user-invocable without duplicating model discovery. Ordinary assets and executable permission bits remain intact; command payloads are not Python-filtered.
 
 ## Terminology
 
@@ -128,7 +130,7 @@ mahiro-skills install [items...] --agent <agent> [--agent <agent> ...] --scope <
 mahiro-skills uninstall [items...] --agent <agent|all> [--agent <agent> ...] --scope <global|local>
 mahiro-skills list --agent <agent> [--agent <agent> ...] --scope <global|local>
 mahiro-skills doctor --agent <agent> [--agent <agent> ...] [--scope <global|local>]
-mahiro-skills audit [--data-dir <local-backend-dir>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>] [--json]
+mahiro-skills audit --allow-transcript-read --transcript-file <absolute messages.jsonl|transcript.jsonl> [--transcript-file <another-file>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>] [--json]
 mahiro-skills manifest [--json]
 mahiro-skills search <query> [--json]
 mahiro-skills gaps [--json]
@@ -145,7 +147,9 @@ The CLI also exposes read-only source-catalog commands for agents and authoring 
 - `search <query>` searches skill names and descriptions, returning scored matches with command coverage and default-bundle membership.
 - `gaps` returns the authoring gap report for missing `SKILL.md` files, frontmatter name mismatches, command/skill mismatches, stale bundle references, and default-bundle omissions.
 - `new <skill-name> --copy-template` copies the starter `template/` tree into `skills/<skill-name>/`, materializes `SKILL.md.template` as `SKILL.md`, rewrites minimal frontmatter/title placeholders, refuses collisions, and returns manual next steps for marketplace, command wrappers, `skills/llms.txt`, README, and tests. The source template intentionally does not use the canonical `SKILL.md` filename so third-party Agent Skills discovery cannot expose the authoring scaffold.
-- `audit` reads local Letta JSONL transcripts without modifying them. It counts only explicit `Skill` tool calls, compares observed names against this repo's current source catalog, and returns counts/timestamps/conversation totals plus parse warnings. Names outside the catalog may be built-in, separately installed, or retired; the audit does not classify them further. It never infers calls from prose or returns transcript text. By default it reads `~/.letta/lc-local-backend`; `--data-dir` overrides that root for another local backend or fixture.
+- `audit` is transcript usage analysis, not installer status. Both CLI and `auditSkillUsage` require explicit transcript-read consent plus 1..100 exact absolute `messages.jsonl`/`transcript.jsonl` file paths. There is no HOME default, recursive enumeration, directory input or implicit scope derived from an agent/date filter. The retired `--data-dir`, installer selectors (`--agent`, `--scope`, `--overwrite`, `--yes`, etc.) and unknown arguments fail before transcript IO, with instructions to use receipt-backed `list` or `plan` for install inspection. `audit --help` and root `--help` do not read transcripts.
+- The helper preflights ALL selected regular, non-leaf-symlink files and rejects a total size above 10 MiB before any content read. Reads use bounded descriptors and reject detected replacement/truncation/size or mtime changes instead of returning partial success. Duplicate normalized paths are rejected. This is a bounded cooperative-local reader, not protection against every hostile same-user rewrite or hardlink alias. No caller flag raises these ceilings.
+- The analyzer reads the selected JSONL content but counts only explicit `Skill` tool calls; it never infers calls from prose or returns transcript text. Agent/date filters apply to events AFTER selected-file reads. Output `source` records the exact `transcriptFiles`, fixed `maxFiles`/`maxBytes`, `bytesRead`, scanned-file/line counts and filters, rather than a guessed directory root. Names outside the catalog may be built-in, separately installed, or retired; the audit does not classify them further. Current owners: `src/audit.ts` (scope/parser/reader), `src/cli.ts` (command dispatch), `src/types.ts` (typed options/results). Guided/TUI workflows do not invoke usage analysis.
 
 Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `commands/`, `.claude-plugin/marketplace.json`, `template/`) only. `audit` reads local transcript evidence only; none of these commands modify install targets. The `new` command intentionally does not auto-edit marketplace, command wrappers, README, or discovery indexes in v0.
 
@@ -273,6 +277,17 @@ Fingerprint status rules:
 - `legacy`: the receipt has no complete v2 fingerprint evidence.
 
 Hashes are deterministic SHA-256 fingerprints over sorted path entries, file content, symlink destinations, and permission bits. They are freshness/drift evidence, not signatures or a trust boundary.
+
+Skill `sourceHash` uses the same filtered payload as copying (`hashSkillPayload`);
+command `sourceHash` remains unfiltered. `installedHash` always fingerprints the
+actual installed tree/file (`hashPath`), including unexpected generated bytes.
+Skill Manager compares source freshness under that same source policy, so adding
+only excluded source caches does not mark a current installation outdated, while
+installed drift stays modified. Existing v2 source hashes that included caches
+may become outdated until an explicitly selected update rewrites their receipt;
+there is no silent HOME migration or receipt rewrite. Collision detection,
+selective overwrite, safe uninstall and receipt merging retain their existing
+ownership/installed-fingerprint behavior.
 
 ## Uninstall behavior
 

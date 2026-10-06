@@ -87,7 +87,8 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(7);
-      expect(payload.every((entry) => entry.installedSkills.length === 22)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 23)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("herdr-cli"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("review-comment"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("creating-character-ip"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("auditing-context-contracts"))).toBe(true);
@@ -100,6 +101,7 @@ describe("cli", () => {
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("creating-character-ip"))).toBe(true);
+      expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("herdr-cli"))).toBe(true);
     } finally {
       temp.cleanup();
     }
@@ -263,7 +265,7 @@ describe("cli", () => {
     }
   });
 
-  test("audits local Letta Skill calls without requiring adapter flags", () => {
+  test("audits only consented exact synthetic transcript files without adapter flags", () => {
     const temp = makeTempEnv();
 
     try {
@@ -278,7 +280,7 @@ describe("cli", () => {
         },
       })}\n`);
 
-      const result = runCli(["audit", "--agent-id", "agent-a", "--json"], temp.env);
+      const result = runCli(["audit", "--allow-transcript-read", "--transcript-file", join(transcriptDirectory, "messages.jsonl"), "--agent-id", "agent-a", "--json"], temp.env);
 
       expect(result.exitCode).toBe(0);
       const payload = parseJson(result.stdout) as { type: string; totalInvocations: number; observedSkills: Array<{ name: string }> };
@@ -288,6 +290,25 @@ describe("cli", () => {
     } finally {
       temp.cleanup();
     }
+  });
+
+  test("audit rejects installer selectors and missing consent; help never requests transcript IO", () => {
+    const temp = makeTempEnv();
+    try {
+      for (const args of [["--agent", "letta-code", "--scope", "global"], ["--scope", "local"], ["--data-dir", temp.root], ["--agent-id", "synthetic-agent"]]) {
+        const result = runCli(["audit", ...args], temp.env);
+        expect(result.exitCode).toBe(1);
+        const stderr = new TextDecoder().decode(result.stderr);
+        expect(stderr).toContain("transcript");
+        expect(stderr).toContain("list --agent <adapter> --scope <local|global>");
+        expect(stderr).toContain("plan <skill...> --agent <adapter> --scope <local|global>");
+      }
+      const help = runCli(["audit", "--help"], temp.env);
+      expect(help.exitCode).toBe(0);
+      expect(new TextDecoder().decode(help.stdout)).toContain("No directory recursion or implicit HOME scope");
+      expect(runCli(["list", "--agent", "letta-code", "--scope", "global"], temp.env).exitCode).toBe(0);
+      expect(runCli(["plan", "herdr-cli", "--agent", "letta-code", "--scope", "global"], temp.env).exitCode).toBe(0);
+    } finally { temp.cleanup(); }
   });
 
   test("creates a skill from template without requiring agent or scope", () => {

@@ -72,7 +72,11 @@ describe("README", () => {
     expect(content).toContain("backend-specific same-prompt fanout");
     expect(content).toContain("bun ./src/cli.ts");
     expect(content).toContain("bun ./src/cli.ts doctor --agent opencode --scope local");
-    expect(content).toContain("bun ./src/cli.ts audit --agent-id \"$AGENT_ID\" --start-date 2026-06-01");
+    expect(content).toContain("audit --allow-transcript-read --transcript-file \"/absolute/selected-conversation/messages.jsonl\"");
+    expect(content).toContain("Agent/date filters affect results, not which files are read");
+    expect(content).toContain("list --agent <adapter> --scope <scope>");
+    expect(content).toContain("Source fingerprints use that same payload policy");
+    expect(content).not.toContain("audit [--data-dir");
     expect(content).toContain("bun ./src/cli.ts manifest --json");
     expect(content).toContain("bun ./src/cli.ts gaps --json");
     expect(content).toContain("bun ./src/cli.ts new my-skill --copy-template --json");

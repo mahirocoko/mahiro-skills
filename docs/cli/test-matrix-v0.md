@@ -162,7 +162,8 @@ For successful install:
 - guided install still confirms before writing unless `--yes` is provided, and collision handling still uses the same overwrite rules as direct `install`
 - guided item/agent multiselect, Home soft-cancel, list filtering, receipt detail, and multi-agent batch summaries remain covered independently from the full-screen manager
 - direct CLI plan/install/uninstall/list accept repeated `--agent` flags and return array-shaped JSON results when multiple agents are requested, including `agy`, `letta-code`, and `pi`; direct uninstall also accepts `--agent all`
-- `audit` reads only explicit Letta `Skill` tool-call records, supports agent/date filters, never returns transcript text, and reports unobserved packaged skills separately from names outside the current repo catalog
+- `audit` rejects installer selectors, unknown/directory scope and missing transcript-read consent before any transcript IO (helper/CLI regressions use synthetic inputs only); exact-file consent reads remain functional, bounded at 100 files / 10 MiB, with metadata/byte preflight before content reads and directory/leaf-symlink refusal. It reads selected JSONL content, counts explicit `Skill` calls, filters events by agent/date and never returns transcript prose; filters are not IO scope.
+- Skill copy and source freshness share one Python-generated-byte exclusion policy at any depth; installed hashes remain complete. Fixture tests cover nested caches, ordinary/executable/description payload preservation, collisions, selective overwrite/receipt merge, cache-only source freshness, real source staleness and visible installed drift, without real HOME mutation.
 - non-interactive guided/tui execution fails clearly when required flags are missing
 - non-interactive execution uses the same direct planner, installer, or list-summary behavior when flags are complete
 

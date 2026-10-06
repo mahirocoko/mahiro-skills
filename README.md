@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.132 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.133 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.132 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.133 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -95,6 +95,7 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 - The `agy` adapter is the only Google CLI-family install target. It installs self-contained namespaced skills as `/mh-*` under `~/.gemini/config/skills/` globally or `.agents/skills/` locally and never installs an unprefixed skill copy.
 - When an Agy install finds a v2 receipt from the retired Gemini CLI adapter, it removes only unchanged receipt-managed canonical skills and TOML commands. Modified or invalid targets are preserved with a warning; unrelated `~/.gemini/skills` content is never touched.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
+- Packaged skill copies omit `__pycache__` directory trees and `.pyc`/`.pyo` files at every depth. Source fingerprints use that same payload policy; installed fingerprints still cover the actual complete installed tree so local drift is not hidden. Other assets, executable bits, command wrappers and adapter transforms are preserved.
 
 ## Use
 
@@ -107,7 +108,8 @@ Current workflow highlights:
 - **Step-first full-screen Skill Manager plus guided compatibility flow** — open with `bun ./src/cli.ts` for `Target → Action → Skills → Review → Result`, compact batch review, optional exact safety details, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
-- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first through an exact live Orca caller terminal plus tracked current path first, then a healthy compatible Herdr pane, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, while supervised Orca DAG/ask/reply work routes to Orca's separate orchestration skill.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first through a healthy compatible Herdr pane first, then an exact live Orca caller terminal plus tracked current path, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, while supervised Orca DAG/ask/reply work routes to Orca's separate orchestration skill.
+- **Herdr workspace ownership** — `/herdr-cli` organizes Spaces/Tabs/Panes, transfers full project ownership and coordinates visible prerequisites without duplicating direct-cli callbacks or treating native attention as accepted output. Official Herdr guidance remains the command/readiness authority.
 - **Multi-pane direct jobs** — one job can use one receipt-bound Orca tab, Herdr tab, or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Character/IP creation and adaptation** — `/creating-character-ip` creates simple independent character directions when no identity exists, or preserves one human-selected character through direct reference edits of composition, crop, scale, posture, or target-surface fit. Explore and Adapt remain separated by a human visual lock.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
@@ -133,7 +135,7 @@ bun ./src/cli.ts uninstall --agent all --scope local
 bun ./src/cli.ts doctor --agent opencode --scope local
 
 # Audit actual Letta Skill tool calls from local transcripts (read-only)
-bun ./src/cli.ts audit --agent-id "$AGENT_ID" --start-date 2026-06-01
+bun ./src/cli.ts audit --allow-transcript-read --transcript-file "/absolute/selected-conversation/messages.jsonl" --agent-id "$AGENT_ID" --start-date 2026-06-01
 
 # Inspect the source skill catalog for agents/tooling
 bun ./src/cli.ts manifest --json
@@ -179,6 +181,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
+| `herdr-cli` | `/herdr-cli` | You explicitly want Herdr Space/Tab/Pane organization, full project ownership handoff, visible cross-Space coordination or truthful native workspace presentation—not temporary executor/callback work. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |
@@ -202,6 +205,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Repo doctrine | `bun ./src/cli.ts install auditing-context-contracts mahiro-docs-rules-init mahiro-guidance-refine mahiro-style --agent opencode --scope local` | Audit active context contracts, bootstrap docs, refine guidance from feedback, and apply the Mahiro style lens |
 | PR review writing | `bun ./src/cli.ts install review-comment --agent cursor --scope global` | Draft line-anchored comments; post a pending review only on explicit request |
 | Direct execution | `bun ./src/cli.ts install direct-cli watch --agent opencode --scope local` | Cursor, Antigravity, Codex, supported multi-pane fanout, transcript lanes |
+| Herdr workspaces | `bun ./src/cli.ts install herdr-cli direct-cli --agent opencode --scope local` | Space organization and full ownership handoff; temporary executor work remains direct-cli-owned |
 | Hard-task orchestration | `bun ./src/cli.ts install fable control-room-goals direct-cli recap rrr --agent opencode --scope local` | Mission/DoD framing, causal hypotheses, adaptive lanes, bounded retries, fresh verification, and durable closeout |
 | Creative web study | `bun ./src/cli.ts install studying-codrops learn --agent opencode --scope local` | Codrops evidence study and linked source-repo exploration |
 | Motion design | `bun ./src/cli.ts install motion-design studying-codrops --agent opencode --scope local` | Explicit product-motion systems and audits with optional Codrops evidence |
@@ -214,7 +218,8 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | Workflow | Extra runtime tools |
 | --- | --- |
 | `project`, `learn` | `ghq`, `git`, GitHub network access |
-| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI plus Orca, Herdr, or tmux. Auto uses Orca only from an exact live caller-terminal receipt plus a tracked current path, then Herdr only from a healthy compatible managed pane; otherwise tmux is required. Direct Orca lanes use terminal receipts and defer supervised DAG/ask/reply work to Orca orchestration. Multi-pane jobs use one receipt-bound Orca tab, named Herdr tab, or tmux session. Detached named-agent jobs remain Herdr-only and callback-primary after exact parent-pane receipt capture, with mode-0600 bounded messages/results, explicit receive/retry/audit, a lifecycle guard that requires observed work plus stable termination, one-shot silence deadlines, and exact-parent synchronous recovery after completed dispatch that defers terminalization while work or callback evidence remains active. Named peers wake through `agent.prompt`; the exact parent Letta pane wakes through one atomic metadata-only `pane.run` because it is not a named Herdr agent. Accepted transport is not receipt/proof and there is no tmux fallback. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
+| `herdr-cli` | A Herdr-managed caller (`HERDR_ENV=1`) and compatible CLI/server. Load official `herdr --skill` for commands/readiness. Metadata/schema support does not prove rendered presentation; no browser/DAG/inbox service is supplied. |
+| `direct-cli` | Cursor CLI, Antigravity CLI (`agy`), and/or Codex CLI plus Herdr, Orca, or tmux. Auto uses Herdr only from a healthy compatible managed pane first, then Orca only from an exact live caller-terminal receipt plus a tracked current path; otherwise tmux is required. Direct Orca lanes use terminal receipts and defer supervised DAG/ask/reply work to Orca orchestration. Multi-pane jobs use one receipt-bound Orca tab, named Herdr tab, or tmux session. Detached named-agent jobs remain Herdr-only and callback-primary after exact parent-pane receipt capture, with mode-0600 bounded messages/results, explicit receive/retry/audit, a lifecycle guard that requires observed work plus stable termination, one-shot silence deadlines, and exact-parent synchronous recovery after completed dispatch that defers terminalization while work or callback evidence remains active. Named peers wake through `agent.prompt`; the exact parent Letta pane wakes through one atomic metadata-only `pane.run` because it is not a named Herdr agent. Accepted transport is not receipt/proof and there is no tmux fallback. For Agy, prefer foreground-verified stable `--model` slugs, reject fallback warnings/model mismatches, and use `--prompt-interactive` for fresh multiline prompts. |
 | `gemini`, `watch` | Gemini web/runtime setup; some flows use browser/MQTT extension support |
 | `watch` | YouTube access; transcript availability varies by video |
 | `creating-character-ip` | An image-generation provider; Adapt additionally requires direct reference-image input and a transferable local source file |
@@ -262,7 +267,7 @@ Install and update require the official CLI: set `SKILLS_CLI_BIN` to an installe
 - `template/SKILL.md.template` — authoring-only starter that `new --copy-template` materializes as `SKILL.md`; the non-canonical filename prevents external Agent Skills discovery from treating the scaffold as installable
 - `.claude-plugin/marketplace.json` — default bundle metadata
 - `bun ./src/cli.ts manifest --json` — machine-readable source catalog for skills, command coverage, bundle membership, and inventory gaps
-- `bun ./src/cli.ts audit [--data-dir <local-backend-dir>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>]` — read-only local Letta transcript audit that counts explicit `Skill` tool calls, identifies unobserved packaged skills, and separates names outside this repo's current catalog without exposing transcript text
+- `bun ./src/cli.ts audit --allow-transcript-read --transcript-file <absolute messages.jsonl|transcript.jsonl> [--transcript-file <another-file>] [--agent-id <id>] [--start-date <ISO>] [--end-date <ISO>]` — consented usage analysis of exact selected transcript files, never installer status. Hard limits are 100 files / 10 MiB total; directories, leaf symlinks, unrelated filenames and duplicate paths are rejected. It reads selected JSONL content but returns only counts, metadata and warnings—not transcript prose. Agent/date filters affect results, not which files are read. No recursive HOME fallback; the old directory flag is rejected. Use `audit --help` for scope details, `list --agent <adapter> --scope <scope>` for exact receipt status, and `plan <skill...> --agent <adapter> --scope <scope>` for install preview.
 - `bun ./src/cli.ts gaps --json` — read-only authoring check for missing skill files, stale bundle references, and command/skill mismatches
 - `bun ./src/cli.ts new my-skill --copy-template --json` — copy the starter `template/` into `skills/my-skill/` and report manual bundle/command/index follow-up work
 - `docs/authoring/` — maintainer notes for release, path, inventory, and skill-writing conventions

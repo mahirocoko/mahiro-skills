@@ -244,12 +244,12 @@ selection_reason=""
 
 case "$requested_backend" in
   auto)
-    if orca_ready; then
-      selected_backend="orca"
-      selection_reason="validated live Orca caller identity and separately tracked current target"
-    elif herdr_ready; then
+    if herdr_ready; then
       selected_backend="herdr"
       selection_reason="validated live compatible Herdr pane"
+    elif orca_ready; then
+      selected_backend="orca"
+      selection_reason="validated live Orca caller identity and separately tracked current target"
     elif tmux_ready; then
       selected_backend="tmux"
       selection_reason="Orca and Herdr preflights failed; tmux is available"

@@ -1,6 +1,6 @@
 import { join } from "path";
 
-import { hashPath } from "./content-hash";
+import { hashPath, hashSkillPayload } from "./content-hash";
 import { resolveCommandArtifact, resolveSkillArtifact, supportsCommands } from "./adapters";
 import { install } from "./install";
 import { listInstalled } from "./list";
@@ -193,7 +193,9 @@ function resolveStatus(receipt: InstallReceipt | null, name: string, plan: Insta
     return "modified";
   }
 
-  if (states.some(({ target, receipt: state }) => hashPath(target.source) !== state!.sourceHash)) {
+  if (states.some(({ target, receipt: state }) =>
+    (target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source)) !== state!.sourceHash,
+  )) {
     return "outdated";
   }
 

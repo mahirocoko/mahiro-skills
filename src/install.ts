@@ -1,7 +1,8 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
+import { dirname, join, relative } from "path";
 
-import { hashPath } from "./content-hash";
+import { hashPath, hashSkillPayload } from "./content-hash";
+import { includeSkillPayload } from "./skill-payload";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
 import { cleanupRetiredGeminiInstall } from "./retired-gemini";
@@ -124,7 +125,12 @@ function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgen
   if (stagingKind === "present") {
     rmSync(stagingPath, { recursive: true, force: true });
   }
-  cpSync(target.source, stagingPath, { recursive: true });
+  cpSync(target.source, stagingPath, {
+    recursive: true,
+    filter: target.kind === "skill"
+      ? (source) => includeSkillPayload(relative(target.source, source), lstatSync(source).isDirectory())
+      : undefined,
+  });
   rewriteInstalledTarget(stagingPath, agent, target);
 
   const destinationKind = unlinkOwnPath(target.target);
@@ -148,7 +154,7 @@ function resolveStatus(installedCount: number, skippedCount: number): PlanStatus
 }
 
 function targetState(target: InstallTarget): InstallReceiptTargetState {
-  const sourceHash = hashPath(target.source);
+  const sourceHash = target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source);
   const installedHash = hashPath(target.target);
 
   if (!sourceHash || !installedHash) {

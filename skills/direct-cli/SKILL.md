@@ -5,7 +5,7 @@ description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and
 
 # /direct-cli - Direct CLI Playbook
 
-Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions when you want a fresh executor lane outside the usual orchestration runtime, while still keeping pane-first operator discipline. Prefer Orca when the caller is provably inside a live writable Orca terminal, then Herdr when it is inside a healthy Herdr-managed pane; tmux remains the portable fallback.
+Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions when you want a fresh executor lane outside the usual orchestration runtime, while still keeping pane-first operator discipline. Prefer Herdr when the caller is inside a healthy compatible Herdr-managed pane, then a provably live writable Orca terminal for the tracked current target; tmux remains the portable fallback. Embedded browser availability is not a reason to select the execution backend; browser inspection follows its separately selected browser owner.
 
 ## When to Use
 
@@ -25,7 +25,7 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions 
 
 - Accept `--backend auto|orca|herdr|tmux`; omitting it is equivalent to `--backend auto`.
 - Accept `--focus` or `--no-focus`; default to `--no-focus` so an Orca or Herdr lane does not steal the user's current tab. Treat `--focus` as an explicit opt-in.
-- `auto` first selects Orca only when the packaged selector validates `orca` on `PATH`; non-empty `ORCA_TERMINAL_HANDLE`, `ORCA_WORKTREE_ID`, `ORCA_TAB_ID`, and `ORCA_PANE_KEY`; a ready connected runtime; an exact live writable non-orphaned caller terminal matching handle/worktree/tab/pane; and a non-archived Orca worktree whose real path matches the current `pwd -P`. If Orca fails, select Herdr only when `herdr` is on `PATH`, `HERDR_ENV=1`, `HERDR_PANE_ID` resolves to a live pane, and the server is running and compatible. Otherwise select tmux only if available; fail before mutation when all three fail.
+- `auto` first selects Herdr only when the packaged selector validates `herdr` on `PATH`, `HERDR_ENV=1`, `HERDR_PANE_ID` resolving to a live pane, and a running compatible server. If Herdr fails, select Orca only with `orca` on `PATH`; non-empty `ORCA_TERMINAL_HANDLE`, `ORCA_WORKTREE_ID`, `ORCA_TAB_ID`, and `ORCA_PANE_KEY`; a ready connected runtime; an exact live writable non-orphaned caller terminal matching handle/worktree/tab/pane; and a non-archived Orca worktree whose real path matches the current `pwd -P`. Otherwise select tmux only if available; fail before mutation when all three fail.
 - Announce the selected backend and the evidence used. Never silently change backends after creating a tab, pane, or tmux session.
 - Explicit `--backend orca` and `--backend herdr` must fail clearly if their identity preflight fails. Explicit `--backend tmux` keeps the historical behavior even inside Orca or Herdr.
 - Do not select Orca or Herdr merely because its binary is installed; this avoids surprising users who are working in an ordinary terminal.
@@ -37,13 +37,13 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions 
 
 Backend mapping:
 
-| Direct CLI concept | Orca backend | Herdr backend | tmux backend |
-| --- | --- | --- | --- |
-| One job | One `direct-<job-slug>` terminal tab in the target Orca worktree resolved from the current cwd | One `direct-<job-slug>` tab in the caller or explicitly selected workspace | One `direct-<job-slug>` session |
-| One lane | One runtime-issued Orca terminal handle | One named Herdr pane | One titled tmux pane |
-| Launch/read | `orca terminal create --worktree "path:$TARGET_CWD" --command ...`, then `terminal wait/read` | `herdr agent start`, then `agent read`/`pane read` | CLI launch with `tmux send-keys`, then `capture-pane` |
-| Prompt/wait | `orca terminal send --wait-submit`, then `terminal wait/read` | `herdr agent prompt` / `agent wait` | `tmux send-keys` / `capture-pane` |
-| Stop/cleanup | Revalidate handle, worktree, incarnation, connected/writable state, then close that exact terminal | Revalidate the receipt-bound workspace/tab/pane/agent session, then send `ctrl+c` to that exact target and close only the verified job tab | `tmux send-keys C-c`, then kill pane/session explicitly |
+| Direct CLI concept | Orca backend                                                                                       | Herdr backend                                                                                                                              | tmux backend                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| One job            | One `direct-<job-slug>` terminal tab in the target Orca worktree resolved from the current cwd     | One `direct-<job-slug>` tab in the caller or explicitly selected workspace                                                                 | One `direct-<job-slug>` session                         |
+| One lane           | One runtime-issued Orca terminal handle                                                            | One named Herdr pane                                                                                                                       | One titled tmux pane                                    |
+| Launch/read        | `orca terminal create --worktree "path:$TARGET_CWD" --command ...`, then `terminal wait/read`      | `herdr agent start`, then `agent read`/`pane read`                                                                                         | CLI launch with `tmux send-keys`, then `capture-pane`   |
+| Prompt/wait        | `orca terminal send --wait-submit`, then `terminal wait/read`                                      | `herdr agent prompt` / `agent wait`                                                                                                        | `tmux send-keys` / `capture-pane`                       |
+| Stop/cleanup       | Revalidate handle, worktree, incarnation, connected/writable state, then close that exact terminal | Revalidate the receipt-bound workspace/tab/pane/agent session, then send `ctrl+c` to that exact target and close only the verified job tab | `tmux send-keys C-c`, then kill pane/session explicitly |
 
 For Orca, first load the version-matched guide with `orca skills get orca-cli`; never rely on remembered flags. Resolve `TARGET_CWD="$(pwd -P)"`, use `orca terminal create --worktree "path:$TARGET_CWD"` rather than `worktree create`, parse the returned handle/worktree/incarnation receipt, and require the created worktree to equal the separately resolved target worktree ID. Then wait for `tui-idle`, send the prompt with `--wait-submit`, require a `turn_started` stage before waiting for terminal idle, and read the exact terminal output. A direct Orca lane is not an Orca orchestration Run: when the task needs task DAGs, ask/reply, durable `worker_done`, federation, or supervised release, use Orca's `orchestration` skill instead. `--detach` remains Herdr-only until a receipt-bound Orca direct-lane return contract is proven.
 

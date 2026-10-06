@@ -6,7 +6,7 @@ The intended model is simple:
 
 - Mahiro Code / the main agent stays the conversation owner.
 - Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor.
-- Orca terminals are preferred when the caller is provably inside a live writable Orca terminal for the current worktree; Herdr-managed panes are next when the caller is inside a healthy compatible Herdr runtime; tmux remains the portable fallback.
+- Herdr-managed panes are preferred when the caller is inside a healthy compatible Herdr runtime; a verified live writable Orca terminal remains the next fallback for its tracked current target; tmux remains the portable fallback.
 - The selected backend's pane output is treated as the nearest source of execution truth.
 - For production-ish asset work, route through `asset-designer` first; direct-cli owns pane execution, not the asset workflow. Add `codex-asset-production` only when the contract needs Codex source/imagegen or an explicit Codex dicut fallback/A-B.
 
@@ -64,18 +64,18 @@ On return, collect the exact report promptly and ask whether its evidence answer
 ### Selection rules
 
 1. Parse an explicit backend before creating any lane.
-2. `auto` first selects Orca only when all of these are true:
-   - `orca` is on `PATH`
-   - `ORCA_TERMINAL_HANDLE`, `ORCA_WORKTREE_ID`, `ORCA_TAB_ID`, and `ORCA_PANE_KEY` are non-empty
-   - `orca status --json` reports a ready, reachable, connected runtime
-   - `orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json` returns the exact handle/worktree/tab/pane binding, with `connected: true`, `writable: true`, and `orphaned: false`
-   - `orca worktree show --worktree "path:$(pwd -P)" --json` returns a non-archived worktree whose real path matches the current working directory
-3. If Orca fails, `auto` selects Herdr only when all of these are true:
+2. `auto` first selects Herdr only when all of these are true:
    - `herdr` is on `PATH`
    - `HERDR_ENV=1`
    - `HERDR_PANE_ID` is non-empty
    - `herdr status --json` reports `server.running: true` and `server.compatible: true`
    - `herdr pane get "$HERDR_PANE_ID"` resolves a live pane; Herdr may return a new public ID when the launch-time value is a retained move alias
+3. If Herdr fails, `auto` selects Orca only when all of these are true:
+   - `orca` is on `PATH`
+   - `ORCA_TERMINAL_HANDLE`, `ORCA_WORKTREE_ID`, `ORCA_TAB_ID`, and `ORCA_PANE_KEY` are non-empty
+   - `orca status --json` reports a ready, reachable, connected runtime
+   - `orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json` returns the exact handle/worktree/tab/pane binding, with `connected: true`, `writable: true`, and `orphaned: false`
+   - `orca worktree show --worktree "path:$(pwd -P)" --json` returns a non-archived worktree whose real path matches the current working directory
 4. If Orca and Herdr fail, select tmux only when tmux is on `PATH`; otherwise fail before creating state.
 5. Explicit `orca` and `herdr` fail clearly when their identity preflight fails; explicit `tmux` always keeps the historical tmux path.
 6. Print the selected backend and why. Never create state in one backend and silently retry elsewhere.
@@ -92,7 +92,7 @@ printf '%s\n' "$backend_report"
 DIRECT_BACKEND="$(printf '%s\n' "$backend_report" | sed -n 's/^backend=//p')"
 ```
 
-The selector validates Orca runtime, exact caller-terminal identity, and the tracked target current directory before checking Herdr status and live pane binding, then tmux availability. It prints the selected backend plus selection evidence. Do not use binary presence alone for `auto`; Orca or Herdr may be installed while the user works in an ordinary terminal. Orca and Herdr checks are bounded independently by `DIRECT_CLI_ORCA_TIMEOUT_SECONDS` and `DIRECT_CLI_HERDR_TIMEOUT_SECONDS`, both defaulting to five seconds. Do not hard-code protocol numbers. Herdr integrations are optional enhancements and must never be installed without explicit user approval because they edit other CLI configuration.
+The selector validates Herdr status and live pane binding first, then Orca runtime, exact caller-terminal identity, and the tracked target current directory, then tmux availability. It prints the selected backend plus selection evidence. Do not use binary presence alone for `auto`; Orca or Herdr may be installed while the user works in an ordinary terminal. Orca and Herdr checks are bounded independently by `DIRECT_CLI_ORCA_TIMEOUT_SECONDS` and `DIRECT_CLI_HERDR_TIMEOUT_SECONDS`, both defaulting to five seconds. Do not hard-code protocol numbers. Herdr integrations are optional enhancements and must never be installed without explicit user approval because they edit other CLI configuration.
 
 The caller and target are separate receipts. The main agent may start in Orca worktree A and `cd` into another tracked Orca worktree B; that is a valid Orca route. `ORCA_WORKTREE_ID` proves A as part of the caller identity, while `orca worktree show --worktree "path:$(pwd -P)"` resolves B as the target. Never require A and B to match, and never let `active` silently redirect a B task into A.
 
@@ -640,11 +640,11 @@ tmux list-panes -t "$JOB" -F '#{pane_index}: #{pane_title} #{pane_current_comman
 
 Keep a lane registry before sending real prompts:
 
-| Pane | Title | CLI / model | Role | Write permission |
-| --- | --- | --- | --- | --- |
-| 0 | `implement` | Codex/Cursor | scoped implementation or generation | write only to assigned files/output dir |
-| 1 | `review` | Agy/Cursor | critique / risks / alternatives | read-only / notes |
-| 2 | `verify` | Codex/Cursor/Agy | checks, QA, or reproduction | write only to reports unless assigned |
+| Pane | Title       | CLI / model      | Role                                | Write permission                        |
+| ---- | ----------- | ---------------- | ----------------------------------- | --------------------------------------- |
+| 0    | `implement` | Codex/Cursor     | scoped implementation or generation | write only to assigned files/output dir |
+| 1    | `review`    | Agy/Cursor       | critique / risks / alternatives     | read-only / notes                       |
+| 2    | `verify`    | Codex/Cursor/Agy | checks, QA, or reproduction         | write only to reports unless assigned   |
 
 ### Fanout modes
 
@@ -817,13 +817,13 @@ Keep the current proven source-art route until the selected replacement model is
 
 Example asset lane registry:
 
-| Pane | Title | CLI / model | Role | Write permission |
-| --- | --- | --- | --- | --- |
-| 0 | `codex-source-a` | Codex `gpt-5.6-sol` high | imagegen/source candidate A | write only to `generated-images/codex/source-a/` or Codex generated-images |
-| 1 | `codex-source-b` | Codex `gpt-5.6-sol` high | imagegen/source candidate B | write only to `generated-images/codex/source-b/` or Codex generated-images |
-| 2 | `agy-dicut` | Agy current verified Gemini | first semantic cutout/cleanup candidate after source selection | write only to `generated-images/agy/dicut/` |
-| 3 | `codex-dicut-fallback` | Codex current verified fallback | optional same-input fallback/A-B after a named trigger | write only to `generated-images/codex/dicut-fallback/` |
-| 4 | `review` | Agy/Cursor | critique / visual risks | read-only / notes |
+| Pane | Title                  | CLI / model                     | Role                                                           | Write permission                                                           |
+| ---- | ---------------------- | ------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 0    | `codex-source-a`       | Codex `gpt-5.6-sol` high        | imagegen/source candidate A                                    | write only to `generated-images/codex/source-a/` or Codex generated-images |
+| 1    | `codex-source-b`       | Codex `gpt-5.6-sol` high        | imagegen/source candidate B                                    | write only to `generated-images/codex/source-b/` or Codex generated-images |
+| 2    | `agy-dicut`            | Agy current verified Gemini     | first semantic cutout/cleanup candidate after source selection | write only to `generated-images/agy/dicut/`                                |
+| 3    | `codex-dicut-fallback` | Codex current verified fallback | optional same-input fallback/A-B after a named trigger         | write only to `generated-images/codex/dicut-fallback/`                     |
+| 4    | `review`               | Agy/Cursor                      | critique / visual risks                                        | read-only / notes                                                          |
 
 - Put all panes in one receipt-bound `direct-<asset-job>` Orca or Herdr tab, or one tmux session.
 - Use same-prompt fanout for independent visual diversity: exact same source prompt, separate output folders, no lane sees another lane before responding.
@@ -1380,7 +1380,7 @@ prove ownership. If unexpected process evidence must be diagnosed, enumerate `he
 receipt-bound workspace/tab/pane untouched.
 
 A raw PID signal is a last-resort recovery only when normal Herdr interruption and exact tab close
-failed *and* `pane process-info` on the owned pane proves that exact PID belongs to the receipt.
+failed _and_ `pane process-info` on the owned pane proves that exact PID belongs to the receipt.
 Revalidate the receipt immediately before signaling. If ownership cannot be proven, report the
 orphan candidate and do nothing.
 

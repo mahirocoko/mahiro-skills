@@ -1,9 +1,10 @@
-import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
+import { describe, expect, spyOn, test } from "bun:test";
+import * as fs from "fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, truncateSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-import { auditSkillUsage } from "../src/audit";
+import { auditSkillUsage, MAX_AUDIT_BYTES, MAX_AUDIT_FILES, parseUsageAuditArgs } from "../src/audit";
 
 function makeTranscriptRoot() {
   const root = mkdtempSync(join(tmpdir(), "mahiro-skills-audit-"));
@@ -12,6 +13,7 @@ function makeTranscriptRoot() {
 
   return {
     root,
+    file: join(conversation, "messages.jsonl"),
     write(lines: unknown[]) {
       writeFileSync(join(conversation, "messages.jsonl"), `${lines.map((line) => typeof line === "string" ? line : JSON.stringify(line)).join("\n")}\n`);
     },
@@ -52,7 +54,7 @@ describe("auditSkillUsage", () => {
         },
       ]);
 
-      const result = auditSkillUsage({ dataDir: temp.root });
+      const result = auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: [temp.file] });
 
       expect(result.totalInvocations).toBe(3);
       expect(result.observedSkills).toEqual([
@@ -81,7 +83,7 @@ describe("auditSkillUsage", () => {
     }
   });
 
-  test("supports legacy tool-call records and filters without reading message prose", () => {
+  test("supports legacy tool-call records and filters without returning message prose", () => {
     const temp = makeTranscriptRoot();
     try {
       temp.write([
@@ -110,7 +112,8 @@ describe("auditSkillUsage", () => {
       ]);
 
       const result = auditSkillUsage({
-        dataDir: temp.root,
+        allowTranscriptRead: true,
+        transcriptFiles: [temp.file],
         agentId: "agent-a",
         startDate: "2026-07-04T00:00:00.000Z",
         endDate: "2026-07-04T23:59:59.999Z",
@@ -118,7 +121,7 @@ describe("auditSkillUsage", () => {
 
       expect(result.totalInvocations).toBe(1);
       expect(result.observedSkills[0]?.name).toBe("rrr");
-      expect(result.warnings).toEqual(["Ignored Skill call with malformed argsText in conversations/sample-conversation/messages.jsonl."]);
+      expect(result.warnings).toEqual([`Ignored Skill call with malformed argsText in ${temp.file}.`]);
     } finally {
       temp.cleanup();
     }
@@ -126,9 +129,74 @@ describe("auditSkillUsage", () => {
 
   test("rejects inverted date filters", () => {
     expect(() => auditSkillUsage({
-      dataDir: "/does/not/matter",
+      allowTranscriptRead: true,
+      transcriptFiles: ["/does/not/matter/messages.jsonl"],
       startDate: "2026-07-02T00:00:00.000Z",
       endDate: "2026-07-01T00:00:00.000Z",
     })).toThrow("--start-date must be before --end-date.");
+  });
+
+  test("rejects misleading CLI intent and missing/unbounded helper consent before ANY transcript IO", () => {
+    const spies = ["lstatSync", "openSync", "readSync", "readFileSync", "readdirSync"].map((name) =>
+      spyOn(fs, name as "lstatSync").mockImplementation(() => { throw new Error("unexpected transcript IO"); }),
+    );
+    try {
+      // Calibrate the spy at the actual helper boundary, not merely on fs itself.
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: ["/synthetic/messages.jsonl"] })).toThrow("unexpected transcript IO");
+      expect(spies[0]).toHaveBeenCalledTimes(1);
+      for (const spy of spies) spy.mockClear();
+      for (const flag of ["--agent", "--agent=letta-code", "--scope", "--overwrite", "--yes", "--data-dir", "typo"]) {
+        expect(() => parseUsageAuditArgs(["--allow-transcript-read", "--transcript-file", "/synthetic/messages.jsonl", flag])).toThrow("Unsupported audit argument");
+      }
+      expect(() => auditSkillUsage()).toThrow("--allow-transcript-read");
+      expect(() => auditSkillUsage({ transcriptFiles: ["/synthetic/messages.jsonl"] })).toThrow("--allow-transcript-read");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true })).toThrow("exact --transcript-file");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: ["/synthetic/messages.jsonl"], dataDir: "/synthetic" } as Parameters<typeof auditSkillUsage>[0])).toThrow("Unsupported usage-audit option");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: Array(MAX_AUDIT_FILES + 1).fill("/synthetic/messages.jsonl") })).toThrow("exact --transcript-file");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: ["messages.jsonl"] })).toThrow("absolute");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: ["/synthetic/.env"] })).toThrow("unrelated file");
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: ["/synthetic/messages.jsonl", "/synthetic/messages.jsonl"] })).toThrow("Duplicate");
+      for (const spy of spies) expect(spy).not.toHaveBeenCalled();
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+  });
+
+  test("reads only the positively selected synthetic file, not its sibling", () => {
+    const temp = makeTranscriptRoot();
+    try {
+      temp.write([{ kind: "tool_call", name: "Skill", argsText: '{"skill":"recap"}' }]);
+      const sibling = join(temp.root, "conversations", "must-not-read");
+      mkdirSync(sibling);
+      writeFileSync(join(sibling, "messages.jsonl"), JSON.stringify({ kind: "tool_call", name: "Skill", argsText: '{"skill":"trap-sibling"}' }));
+      const result = auditSkillUsage(parseUsageAuditArgs(["--allow-transcript-read", "--transcript-file", temp.file]));
+      expect(result.source.transcriptFiles).toEqual([temp.file]);
+      expect(result.source.transcriptFilesScanned).toBe(1);
+      expect(result.source.bytesRead).toBe(fs.statSync(temp.file).size);
+      expect(result.totalInvocations).toBe(1);
+      expect(result.observedSkills.map((entry) => entry.name)).toEqual(["recap"]);
+      expect(JSON.stringify(result)).not.toContain("trap-sibling");
+    } finally { temp.cleanup(); }
+  });
+
+  test("preflights all selected byte sizes before any content read; rejects directories/symlinks", () => {
+    const temp = makeTranscriptRoot();
+    try {
+      temp.write([]);
+      const extra = join(temp.root, "transcript.jsonl");
+      writeFileSync(extra, "");
+      truncateSync(extra, MAX_AUDIT_BYTES + 1);
+      const read = spyOn(fs, "readSync");
+      try {
+        expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: [temp.file, extra] })).toThrow("byte audit limit");
+        expect(read).not.toHaveBeenCalled();
+      } finally { read.mockRestore(); }
+      fs.unlinkSync(extra);
+      symlinkSync(temp.file, extra);
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: [extra] })).toThrow("non-symlink");
+      fs.unlinkSync(extra);
+      mkdirSync(extra);
+      expect(() => auditSkillUsage({ allowTranscriptRead: true, transcriptFiles: [extra] })).toThrow("regular");
+    } finally { temp.cleanup(); }
   });
 });

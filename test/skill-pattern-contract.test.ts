@@ -636,8 +636,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("there is no tmux fallback");
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
     expect(rootReadme).toContain("auto-selected Orca/Herdr/tmux backends");
-    expect(rootReadme).toContain("Auto uses Orca only from an exact live caller-terminal receipt plus a tracked current path");
-    expect(rootReadme).toContain("then Herdr only from a healthy compatible managed pane");
+    expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane first");
+    expect(rootReadme).toContain("then Orca only from an exact live caller-terminal receipt plus a tracked current path");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
     expect(rootReadme).toContain("does not install the `pi` executable");
     expect(rootReadme).not.toContain("For Agy, prefer exact `--model` labels");
