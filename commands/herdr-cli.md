@@ -1,5 +1,5 @@
 ---
-description: Organize Herdr Spaces, Tabs and Panes, transfer full project ownership, coordinate visible cross-Space prerequisites, and interpret attention versus activity truthfully. Use only for explicit Herdr workspace jobs; direct-cli owns temporary executor/model/callback work.
+description: Organize Herdr Spaces, Tabs and Panes, associate explicitly authorized Git worktrees, transfer full project ownership, coordinate visible cross-Space prerequisites, and interpret attention versus activity truthfully. Use only for explicit Herdr workspace/worktree jobs; direct-cli owns temporary executor/model/callback work.
 allowed-tools:
   - Bash
   - Read

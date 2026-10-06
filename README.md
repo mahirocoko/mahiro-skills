@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.133 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.134 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.133 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.134 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -109,7 +109,7 @@ Current workflow highlights:
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
 - **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex pane-first through a healthy compatible Herdr pane first, then an exact live Orca caller terminal plus tracked current path, with tmux as the portable fallback. Single-lane work remains the default for narrow implementation or recovery; long named-agent Herdr jobs use callback-primary routing after exact parent-pane receipt proof, while supervised Orca DAG/ask/reply work routes to Orca's separate orchestration skill.
-- **Herdr workspace ownership** — `/herdr-cli` organizes Spaces/Tabs/Panes, transfers full project ownership and coordinates visible prerequisites without duplicating direct-cli callbacks or treating native attention as accepted output. Official Herdr guidance remains the command/readiness authority.
+- **Herdr workspace ownership** — `/herdr-cli` organizes Spaces/Tabs/Panes, associates explicitly authorized Git worktrees, transfers full project ownership and coordinates visible prerequisites without duplicating direct-cli callbacks or treating native attention as accepted output. Native create obtains checkout plus Space; a Letta-created checkout is discovered and opened/reused without another create. Opening a Space does not move the current agent process. Official Herdr guidance remains the command/readiness authority.
 - **Multi-pane direct jobs** — one job can use one receipt-bound Orca tab, Herdr tab, or tmux session with several panes, a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Character/IP creation and adaptation** — `/creating-character-ip` creates simple independent character directions when no identity exists, or preserves one human-selected character through direct reference edits of composition, crop, scale, posture, or target-surface fit. Explore and Adapt remain separated by a human visual lock.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
@@ -181,7 +181,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `fable` | `/fable` | You explicitly want Fable-style work, static checks disagree with required runtime behavior, the same hypothesis failed twice, or at least two hard-task signals justify bounded hypotheses, adaptive lanes, and fresh verification—not Cursor Fable model selection. |
 | `forward` | `/forward` | You are wrapping work forward for the next session. |
 | `gemini` | `/gemini` | You need to control Gemini via MQTT WebSocket. |
-| `herdr-cli` | `/herdr-cli` | You explicitly want Herdr Space/Tab/Pane organization, full project ownership handoff, visible cross-Space coordination or truthful native workspace presentation—not temporary executor/callback work. |
+| `herdr-cli` | `/herdr-cli` | You explicitly want Herdr Space/Tab/Pane organization, authorized worktree creation/existing-checkout association, full project ownership handoff, visible cross-Space coordination or truthful native workspace presentation—not temporary executor/callback work. |
 | `learn` | `/learn` | You want to study a repository with parallel agents. |
 | `mac-calendar-booking` | `/mac-calendar-booking` | You need to add a confirmed event to macOS Calendar safely. |
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |

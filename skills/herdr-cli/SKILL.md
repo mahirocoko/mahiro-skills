@@ -1,6 +1,6 @@
 ---
 name: herdr-cli
-description: Organizes Herdr Spaces, Tabs and Panes, transfers full project ownership, coordinates visible cross-Space dependencies, and interprets native attention versus activity truthfully. Use when the user explicitly asks to organize or navigate Herdr workspaces, hand a project to a Herdr Space, coordinate existing Spaces, or inspect native workspace presentation. Do not use for ordinary executor delegation, model selection or callback collection; direct-cli owns those jobs.
+description: Organizes Herdr Spaces, Tabs and Panes, associates explicitly authorized Git worktrees, transfers full project ownership, coordinates visible cross-Space dependencies, and interprets native attention versus activity truthfully. Use for explicit Herdr workspace organization/navigation, worktree creation or opening an existing checkout in a Space, project handoff, cross-Space coordination, or native presentation inspection. Do not use for ordinary executor/model/callback work; direct-cli owns those jobs.
 ---
 
 # Herdr CLI
@@ -66,6 +66,29 @@ topology authorizes it, with explicit project cwd and `--no-focus` unless the
 human requested navigation. Space creation does not authorize a Git worktree.
 Same-checkout conversations do not isolate writers: release overlapping writing
 ownership before starting another writer.
+
+#### Worktree-backed Spaces
+
+Require explicit worktree authorization. In the approved project context, discover
+the exact checkout with native `worktree list`; match canonical path, branch and
+repository identity before deciding to reuse/open or create. Official help owns syntax.
+- **Native create:** only when the approved checkout is absent, use native
+  `worktree create` to obtain a linked checkout plus Space; validate both returned identities.
+- **Letta-created checkout:** use the exact path returned by `EnterWorktree`.
+  Its `.letta/worktrees/` policy is Letta-specific, not a rule for other executors.
+  The agent-internal/foreground cwd can change while the native Space stays old.
+  A missing `open_workspace_id` means no associated open Space, not no checkout.
+  Discover/reuse the matching Space or use native `worktree open` on the exact existing
+  path and unchanged branch; never `create` again to associate it with a Space.
+- **Destination binding:** rebind the returned live Space/Tab/Pane IDs and inspect
+  their cwd/occupant. Old `HERDR_WORKSPACE_ID`, caller pane or focus is not destination
+  authority after a Letta switch; a shared repository key alone is not checkout identity.
+- **Process ownership:** opening a Space does not move the current Letta conversation
+  or process. Agent launch/transfer or pane move needs its own explicit topology/owner
+  decision; keep one writer per checkout and do not start an overlapping replacement.
+Preserve `--no-focus` unless navigation was requested. Cleanup needs separate approval;
+do not remove a checkout or close another owner's Space to tidy an association.
+Native association/readiness is runtime evidence, not screenshot or visual acceptance.
 
 ### 3. Bind the exact destination
 

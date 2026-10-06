@@ -54,4 +54,45 @@ describe("herdr-cli source contract (not live execution proof)", () => {
     expect(skill).toContain("only an authorized live\nhandoff can establish actual submission/readiness behavior");
     expect(skill).not.toMatch(/w7[QST]|mahiro-skills|11:21|picker\/menu is pending/);
   });
+
+  test("separates authorized native creation from existing Letta checkout association", () => {
+    const recipe = skill.split("#### Worktree-backed Spaces")[1]?.split("### 3.")[0]?.replace(/\s+/g, " ") ?? "";
+    const existing = recipe.split("**Letta-created checkout:**")[1]?.split("**Destination binding:**")[0] ?? "";
+    expect(recipe).toContain("Require explicit worktree authorization");
+    expect(recipe).toContain("native `worktree list`");
+    expect(recipe).toContain("match canonical path, branch and repository identity");
+    expect(recipe).toContain("only when the approved checkout is absent");
+    expect(recipe).toContain("`worktree create` to obtain a linked checkout plus Space");
+    expect(existing).toContain("exact path returned by `EnterWorktree`");
+    expect(existing).toContain("Letta-specific, not a rule for other executors");
+    expect(existing).toContain("missing `open_workspace_id` means no associated open Space, not no checkout");
+    expect(existing).toContain("native `worktree open` on the exact existing path and unchanged branch; never `create` again");
+    for (const text of [read("commands", "herdr-cli.md"), read("README.md"), read("skills", "llms.txt")]) {
+      expect(text).toContain("explicitly authorized Git worktrees");
+    }
+  });
+
+  test("rejects duplicate-create and stale-owner recipe mutations (source-only counterexamples)", () => {
+    const accepts = (source: string) => {
+      const recipe = source.split("#### Worktree-backed Spaces")[1]?.split("### 3.")[0]?.replace(/\s+/g, " ") ?? "";
+      return [
+        "native `worktree open` on the exact existing path and unchanged branch; never `create` again",
+        "agent-internal/foreground cwd can change while the native Space stays old",
+        "rebind the returned live Space/Tab/Pane IDs",
+        "Old `HERDR_WORKSPACE_ID`, caller pane or focus is not destination authority",
+        "shared repository key alone is not checkout identity",
+        "opening a Space does not move the current Letta conversation or process",
+        "its own explicit topology/owner decision",
+        "keep one writer per checkout",
+        "Preserve `--no-focus`",
+        "Cleanup needs separate approval",
+        "not screenshot or visual acceptance",
+      ].every((contract) => recipe.includes(contract));
+    };
+    expect(accepts(skill)).toBe(true);
+    expect(accepts(skill.replace("native `worktree open`", "native `worktree create`"))).toBe(false);
+    expect(accepts(skill.replace("rebind the returned live Space/Tab/Pane IDs", "reuse old caller Space/Tab/Pane IDs"))).toBe(false);
+    expect(accepts(skill.replace("opening a Space does not move", "opening a Space automatically moves"))).toBe(false);
+    expect(skill).not.toMatch(/\bw\d+[A-Z]\b|proof\/[a-z0-9-]+|\/Users\/|\b(?:[01]\d|2[0-3]):[0-5]\d\b/);
+  });
 });
