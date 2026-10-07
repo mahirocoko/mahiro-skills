@@ -30,7 +30,8 @@
         "rrr",
         "studying-codrops",
         "web-asset-prompts",
-        "watch"
+        "watch",
+        "working-tasks"
       ],
       "commands": [
         "asset-designer",
@@ -55,7 +56,8 @@
         "rrr",
         "studying-codrops",
         "web-asset-prompts",
-        "watch"
+        "watch",
+        "working-tasks"
       ]
     }
   ]

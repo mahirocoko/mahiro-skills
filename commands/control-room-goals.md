@@ -1,5 +1,5 @@
 ---
-description: Drafts, applies, or refines Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
+description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and tsk status do not authorize Goal creation.
 allowed-tools:
   - Bash
   - Read

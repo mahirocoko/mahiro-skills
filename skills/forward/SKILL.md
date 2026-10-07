@@ -7,6 +7,19 @@ description: Create a handoff and planning bridge for the next session. Use when
 
 Create context for next session, then enter the current agent's planning flow to define next steps.
 
+## Task-backed handoff
+
+When the human adopts a tsk-first workflow and selects a task, read it as JSON
+and preserve its agreed brief. Update progress/evidence, remaining completion
+conditions, next action, blocker and permissions; verify the saved task. Keep
+the task authoritative and reference it from any handoff rather than copying
+the whole brief into another checklist. Do not silently rewrite human decisions.
+Do not mark done without human acceptance or an explicit instruction to close.
+If the CLI is absent, report that the board was not updated. A task ID alone
+does not transfer data to another machine: include approved context needed there.
+The normal artifact and commit/push gates below still apply; handoff does not
+grant execution, installation, publication or automatic Goal creation.
+
 ## Usage
 
 ```
@@ -90,6 +103,10 @@ If the current agent has a `plan` mode or `/plan` command, use it.
 If the current agent has no dedicated planning mode, write the plan directly.
 
 ### Plan Template
+
+For task-backed work, replace the copied Pending and Next Session lists below with
+the task ID and its next action. Keep remaining conditions in the task; include
+only immediate session planning context here, not a parallel task checklist.
 
 ```markdown
 # Plan: [Next Session Focus]

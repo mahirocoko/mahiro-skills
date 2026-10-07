@@ -1,6 +1,6 @@
 ---
 name: control-room-goals
-description: Drafts, applies, or refines Goal Mode objectives, Definition of Done (DoD), immediate next steps, verification evidence, and handoff/reset wording. Use when the user mentions /goal, goal mode, create goal, DoD, next step, verified, safe, handoff, reset, or asks to structure work before execution.
+description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and tsk status do not authorize Goal creation.
 ---
 
 # Goal Mode
@@ -8,6 +8,16 @@ description: Drafts, applies, or refines Goal Mode objectives, Definition of Don
 Use Goal Mode as lightweight management of one human-owned living mission. The
 mission normally belongs to the current conversation, but Mahiro may explicitly
 move the same mission to another empty conversation owned by the same agent.
+
+## Task-backed work
+
+When the human adopts a tsk-first workflow, the task owns the execution brief and
+ordinary completion conditions. Do not create a structured Goal merely because
+work starts, has multiple steps, or includes a DoD. Apply Goal Mode only after
+explicit Goal approval; keep structured criteria and evidence here and reference
+them from the task rather than maintaining duplicate briefs. A Goal claim or
+completion audit never automatically marks a task done or verifies a human gate.
+Do not clear or migrate an existing Goal as an incidental workflow change.
 
 ## Model
 
@@ -240,9 +250,9 @@ Do not add safety ceremony for pure discussion, small low-risk edits, or simple 
 
 ## Agent behavior
 
-- Pure discussion/recommendation: do not create or replace a goal unless work starts.
+- Pure discussion/recommendation: do not create or replace a goal.
 - Draft Goal Mode packets before applying them during exploratory discussion.
-- Execution starts or user confirms the draft: the agent must set/apply the goal
+- After the user explicitly requests Goal Mode or confirms its draft, the agent must set/apply the goal
   itself with the preferred available tool, then use `UpdatePlan` for step
   progress. Terse approval such as `โอเค`, `ต่อ`, `ทำเลย`, or `continue` counts
   when it clearly approves the proposed packet.

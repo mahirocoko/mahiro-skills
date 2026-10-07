@@ -87,7 +87,8 @@ describe("cli", () => {
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
       const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(7);
-      expect(payload.every((entry) => entry.installedSkills.length === 23)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.length === 24)).toBe(true);
+      expect(payload.every((entry) => entry.installedSkills.includes("working-tasks"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("herdr-cli"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("review-comment"))).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("creating-character-ip"))).toBe(true);

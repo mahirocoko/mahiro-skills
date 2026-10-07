@@ -13,8 +13,9 @@ describe("plan", () => {
       const plan = createPlan("opencode", "local", [], temp.env);
       expect(plan.root.endsWith(".opencode")).toBe(true);
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(23);
-      expect(plan.commands.length).toBe(23);
+      expect(plan.skills.length).toBe(24);
+      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.some((entry) => entry.name === "working-tasks")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "herdr-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "creating-character-ip")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);
@@ -43,8 +44,9 @@ describe("plan", () => {
       const plan = createPlan("cursor", "local", [], temp.env);
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".cursor"));
       expect(plan.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(plan.skills.length).toBe(23);
-      expect(plan.commands.length).toBe(23);
+      expect(plan.skills.length).toBe(24);
+      expect(plan.commands.length).toBe(24);
+      expect(plan.skills.some((entry) => entry.name === "working-tasks")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "herdr-cli")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "creating-character-ip")).toBe(true);
       expect(plan.skills.some((entry) => entry.name === "auditing-context-contracts")).toBe(true);

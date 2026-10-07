@@ -21,6 +21,15 @@ trigger: /recap
 
 ## Retrieval Order
 
+For explicitly task-backed work, read the selected tsk task as JSON first when
+the CLI is available. Recover outcome, scope, completion conditions, progress,
+evidence and next/blocker, then reconcile them with newer human decisions and
+current repo/runtime truth. Task status is not proof of a live writer. Do not
+create a task, install tooling or change status during orientation. If no task
+was selected, inspect the relevant board before claiming there is no pending work;
+if tsk is absent, say that task evidence was unavailable. In `--quick`, report any
+intentionally skipped task read instead of making a whole-board claim.
+
 Use this evidence order every time:
 
 1. **Current session** — what is active in the present thread
