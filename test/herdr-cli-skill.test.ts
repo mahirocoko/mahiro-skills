@@ -18,7 +18,7 @@ describe("herdr-cli source contract (not live execution proof)", () => {
     expect(read("skills", "llms.txt")).toContain("`herdr-cli` — Organize Herdr Spaces/Tabs/Panes");
     expect(readdirSync(join(root, "skills", "herdr-cli"), { withFileTypes: true })
       .filter((entry) => entry.isFile()).map((entry) => entry.name)).toEqual(["SKILL.md"]);
-    expect(skill.split("\n").length).toBeLessThan(200);
+    expect(skill.split("\n").length).toBeLessThan(240);
     expect(skill).not.toContain("TODO");
   });
 
@@ -43,6 +43,28 @@ describe("herdr-cli source contract (not live execution proof)", () => {
       "sender releases writing\nownership and old-controller callbacks do not apply",
       "absence is not failure or exit",
     ]) expect(skill).toContain(contract);
+  });
+
+  test("owns visible service placement without delegating ordinary server startup", () => {
+    const recipe = skill.split("#### Visible app and dev-server terminals")[1]?.split("### 4.")[0]?.replace(/\s+/g, " ") ?? "";
+    for (const contract of [
+      "not a hidden agent background shell",
+      "does not require direct-cli or orchestration",
+      "Reuse a matching running service",
+      "clearly named Tab",
+      "split related services into Panes",
+      "cwd and `--no-focus`",
+      "foreground of that terminal",
+      "`&`, `nohup`, `disown`",
+      "explicit background request are exceptions",
+      "successful submission or a live PID alone does not prove the app is ready",
+      "Revalidate the exact process owner",
+      "Background monitoring/callback metadata is separate",
+      "report the blocker",
+    ]) expect(recipe).toContain(contract);
+    for (const text of [skill, read("commands", "herdr-cli.md"), read("README.md"), read("skills", "llms.txt")]) {
+      expect(text).toContain("app/dev-server startup");
+    }
   });
 
   test("does not promote coordination or presentation proxies into acceptance", () => {

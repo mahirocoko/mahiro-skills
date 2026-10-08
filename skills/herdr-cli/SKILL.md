@@ -1,6 +1,6 @@
 ---
 name: herdr-cli
-description: Organizes Herdr Spaces, Tabs and Panes, associates explicitly authorized Git worktrees, transfers full project ownership, coordinates visible cross-Space dependencies, and interprets native attention versus activity truthfully. Use for explicit Herdr workspace organization/navigation, worktree creation or opening an existing checkout in a Space, project handoff, cross-Space coordination, or native presentation inspection. Do not use for ordinary executor/model/callback work; direct-cli owns those jobs.
+description: Organizes Herdr Spaces, Tabs and Panes, runs authorized apps/dev servers in visible terminals, associates explicitly authorized Git worktrees, transfers full project ownership, coordinates visible cross-Space dependencies, and interprets native attention versus activity truthfully. Use for app/server startup in Herdr, workspace organization/navigation, worktree creation or opening an existing checkout in a Space, project handoff, cross-Space coordination, or native presentation inspection. Do not use for ordinary executor/model/callback work; direct-cli owns those jobs.
 ---
 
 # Herdr CLI
@@ -20,6 +20,7 @@ without promoting terminal lifecycle into accepted work.
 
 - Own Space reuse, terminal selection, full ownership transfer, visible
   cross-Space prerequisite/question handling and truthful state interpretation.
+- Own visible app/server terminal placement; the project owns its startup command.
 - Keep the installed `herdr --skill`, command-group help and compatible public
   schema authoritative for syntax, IDs, lifecycle and readiness. Do not copy a
   version-pinned command catalog into this skill.
@@ -40,6 +41,7 @@ Name the project, allowed change, checkout owner and reporting destination.
 | Request | Relationship | Next owner |
 | --- | --- | --- |
 | Continue this project's work here | Local continuation | Current conversation |
+| Run this project's app/dev server | Visible service terminal | Current conversation; project owns command and readiness |
 | Hand this project to another Space; report there | Full handoff | Receiving conversation; sender stops writing that scope |
 | Ask an executor to do a bounded job and return here | Temporary executor | Current controller through direct-cli |
 | Coordinate a prerequisite between existing Spaces | Cross-Space coordination | Each project retains its owner |
@@ -108,6 +110,30 @@ processes and interactive readiness; do not run over an editor, server or agent.
 Use native readiness mechanics and the existing executor launch owner, not
 invented startup flags. A blocked or unknown agent needs diagnosis; do not answer
 an approval dialog or inject work merely to make progress.
+
+#### Visible app and dev-server terminals
+
+For authorized project app/dev-server startup, keep the actual process in a
+visible Herdr terminal, not a hidden agent background shell. This is terminal
+placement, not executor delegation; it does not require direct-cli or orchestration.
+- Check existing project service records or listening ports plus process cwd first.
+  Reuse a matching running service; do not launch a duplicate for verification.
+- Use a clearly named Tab in the matching project Space; split related services
+  into Panes when useful rather than scattering many Tabs. Keep explicit project
+  cwd and `--no-focus`. Apply the runtime, destination and shell-readiness gates above.
+- Run the repo-owned command in the foreground of that terminal. Do not detach it
+  with `&`, `nohup`, `disown` or an agent background-task launcher by default.
+  Native persistent-service requirements or an explicit background request are exceptions.
+- Record the exact Space/Tab/Pane, command, cwd, process and port where available.
+  Check service-specific readiness and failure output; successful submission or
+  a live PID alone does not prove the app is ready. Keep logs visible so the human
+  can inspect, stop or restart it. Leave a needed service running at handoff.
+- Revalidate the exact process owner before an authorized stop/restart. Do not
+  kill another owner's service or close its terminal as cleanup. Background
+  monitoring/callback metadata is separate from backgrounding the server itself.
+If the verified visible terminal is unavailable, report the blocker rather than
+silently using a hidden background process. In an Orca-owned session, use its
+version-matched terminal guide instead; do not control Herdr from outside Herdr.
 
 ### 4. Transfer ownership once
 
