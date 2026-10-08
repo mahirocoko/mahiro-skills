@@ -34,6 +34,23 @@ const readFrontmatter = (source: string) => {
 };
 
 describe("studying-codrops skill", () => {
+  test("keeps the optional source bundle bounded and portable", () => {
+    const binding = JSON.parse(read("skills", "studying-codrops", "mcp-bindings.json"));
+    const step = binding.steps["source-acquisition"];
+    expect(binding.version).toBe(1);
+    expect(binding.skill).toBe("studying-codrops");
+    expect(step.tools).toEqual([
+      { server: "hirohiro", tool: "control" },
+      { server: "hirohiro", tool: "read" },
+    ]);
+    const reference = readFileSync(join(skillRoot, step.instructions), "utf8");
+    expect(reference).toContain("not independent rendered QA");
+    expect(reference).toContain("untrusted data");
+    const skill = read("skills", "studying-codrops", "SKILL.md");
+    expect(skill).toContain("host's normal MCP route");
+    expect(skill).toContain("Do not load this bundle for article-only research");
+  });
+
   test("ships an explicit Codrops-only study contract and command wrapper", () => {
     const skill = read("skills", "studying-codrops", "SKILL.md");
     const command = read("commands", "studying-codrops.md");

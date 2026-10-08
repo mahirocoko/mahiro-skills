@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skill": "studying-codrops",
+  "steps": {
+    "source-acquisition": {
+      "instructions": "references/source-acquisition.md",
+      "tools": [
+        { "server": "hirohiro", "tool": "control" },
+        { "server": "hirohiro", "tool": "read" }
+      ]
+    }
+  }
+}

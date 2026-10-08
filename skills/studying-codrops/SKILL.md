@@ -106,6 +106,23 @@ Use the smallest level that can change the user's decision.
 
 ## Evidence Workflow
 
+### Optional source-acquisition bundle (Letta)
+
+Only when this job needs live source acquisition through HiroHiro, a supporting
+Mahiro MCP proxy can return the step instructions and selected cached schemas in
+one response:
+
+```text
+mcp_proxy({ action: "skill_bundle", skill: "studying-codrops", step: "source-acquisition" })
+```
+
+This optional integration requires a supporting Mahiro proxy. If the proxy does
+not support this action, read `references/source-acquisition.md` and discover the
+named tools through the host's normal MCP route. The optional binding is owned by
+`mcp-bindings.json`; it does not change the Agent Skills standard or grant tool
+permissions. Do not load this bundle for article-only research. No automatic
+reconnect, browser action or capture is authorized by loading it.
+
 ### 1. Classify the lane
 
 Identify whether the unit is:
