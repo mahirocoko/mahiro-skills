@@ -28,6 +28,7 @@ import {
   type TerminalSize,
 } from "./terminal";
 import { supportedAgents, type InstallScope, type ScopedAgent } from "./types";
+import { InstallFailure, type InstallFailureEvidence } from "./install";
 
 export type AgentSelection = { mode: "all" } | { mode: "custom"; agents: Set<ScopedAgent> };
 
@@ -85,6 +86,7 @@ export interface TuiReviewState {
 }
 
 export interface TuiAgentResult extends SkillManagerAgentResultRenderState {
+  progress?: InstallFailureEvidence;
   status: "Completed" | "Completed with skips" | "Failed" | "Not attempted" | "No changes";
 }
 
@@ -388,6 +390,7 @@ function safetyShape(plans: readonly SkillManagerAgentPlan[], action: SkillManag
       root: plan.root,
       active: plan.active,
       blocked: plan.blocked,
+      reviewedIdentity: plan.reviewedIdentity,
       acknowledgementIds: [...plan.acknowledgementIds].sort(),
       skipped: plan.skipped.map((entry) => ({ item: entry.item, kind: entry.kind, reason: entry.reason })),
       install: [...(plan.installPlan?.skills ?? []), ...(plan.installPlan?.commands ?? [])].map((target) => ({
@@ -1236,7 +1239,11 @@ class SkillManagerTuiController implements TuiController {
         });
       } catch (error) {
         failed = true;
-        results.push({ agent: plan.agent, status: "Failed", error: errorMessage(error) });
+        results.push({
+          agent: plan.agent, status: "Failed", error: errorMessage(error),
+          progress: error instanceof InstallFailure ? error.evidence : undefined,
+          receiptEvidence: error instanceof InstallFailure ? `receipt sync: ${error.evidence.receiptSync}` : undefined,
+        });
       }
     }
 
@@ -1263,7 +1270,8 @@ class SkillManagerTuiController implements TuiController {
   private aggregateResultStatus(results: readonly TuiAgentResult[]): TuiResultState["aggregateStatus"] {
     const failed = results.some((result) => result.status === "Failed");
     const notAttempted = results.some((result) => result.status === "Not attempted");
-    const completed = results.some((result) => ["Completed", "Completed with skips"].includes(result.status));
+    const completed = results.some((result) => ["Completed", "Completed with skips"].includes(result.status)
+      || result.progress?.targets.some((target) => target.status === "changed"));
     if (failed && completed) {
       return "Partially completed";
     }

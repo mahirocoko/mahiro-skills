@@ -1,12 +1,215 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import * as fs from "fs";
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, symlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { hashPath } from "../src/content-hash";
-import { install } from "../src/install";
+import { install, InstallFailure, installReviewIdentity } from "../src/install";
+import { createPlan } from "../src/plan";
 import { makeTempEnv } from "./helpers";
 
+function makeSafetyFixture() {
+  const temp = makeTempEnv();
+  const source = join(temp.root, "source");
+  const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, MAHIRO_SKILLS_REPO_ROOT: source };
+  for (const name of ["alpha", "beta", "gamma"]) {
+    mkdirSync(join(source, "skills", name), { recursive: true });
+    writeFileSync(join(source, "skills", name, "SKILL.md"), `---\nname: ${name}\ndescription: Fixture ${name}\n---\nVersion one\n`);
+  }
+  const initial = install("agy", "local", ["alpha", "beta", "gamma"], false, env);
+  for (const name of ["alpha", "beta", "gamma"]) {
+    const path = join(source, "skills", name, "SKILL.md");
+    writeFileSync(path, readFileSync(path, "utf8").replace("one", "two"));
+  }
+  return { ...temp, env, source, initial };
+}
+
 describe("install", () => {
+  test("failed restoration retains a dangling link and records its missing destination", () => {
+    const temp = makeSafetyFixture();
+    const beta = createPlan("agy", "local", ["beta"], temp.env).skills[0]!.target;
+    const referent = join(temp.root, "absent-referent");
+    fs.rmSync(beta, { recursive: true });
+    symlinkSync(referent, beta);
+    expect(hashPath(beta)).not.toBeNull();
+    const original = fs.renameSync;
+    const rename = spyOn(fs, "renameSync").mockImplementation((from, to) => {
+      if (String(to) === beta && (String(from).endsWith("/payload") || String(from).endsWith("/previous"))) {
+        throw new Error("injected dangling-link replacement/restoration failure");
+      }
+      return original(from, to);
+    });
+    try {
+      let failure: unknown;
+      try { install("agy", "local", ["alpha", "beta"], true, temp.env); } catch (error) { failure = error; }
+      expect(failure).toBeInstanceOf(InstallFailure);
+      const evidence = (failure as InstallFailure).evidence.targets.find((target) => target.name === "beta")!;
+      expect(evidence.status).toBe("changed");
+      expect(evidence.recoveryPath).toBeDefined();
+      const backup = join(evidence.recoveryPath!, "previous");
+      expect(lstatSync(backup).isSymbolicLink()).toBe(true);
+      expect(fs.readlinkSync(backup)).toBe(referent);
+      const receipt = JSON.parse(readFileSync(temp.initial.receiptPath!, "utf8"));
+      expect(receipt.targetStates.some((state: { name: string }) => state.name === "beta")).toBe(false);
+    } finally {
+      rename.mockRestore();
+      temp.cleanup();
+    }
+  });
+
+  test("review still binds exact receipt bytes when its file is a symlink", () => {
+    const temp = makeSafetyFixture();
+    try {
+      const path = temp.initial.receiptPath!;
+      const referent = join(temp.root, "receipt-referent.json");
+      fs.renameSync(path, referent);
+      symlinkSync(referent, path);
+      const plan = createPlan("agy", "local", ["alpha"], temp.env);
+      const identity = installReviewIdentity(plan);
+      const before = hashPath(plan.skills[0]!.target);
+      const receipt = JSON.parse(readFileSync(referent, "utf8"));
+      receipt.installedAt = "changed-after-review";
+      writeFileSync(referent, JSON.stringify(receipt));
+      expect(() => install("agy", "local", ["alpha"], true, temp.env, identity)).toThrow("content changed after review");
+      expect(hashPath(plan.skills[0]!.target)).toBe(before);
+      expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("review fingerprints the symlink itself without reading its referent", () => {
+    const temp = makeSafetyFixture();
+    const plan = createPlan("agy", "local", ["alpha"], temp.env);
+    const target = plan.skills[0]!.target;
+    const referent = join(temp.root, "outside-review-scope");
+    mkdirSync(referent);
+    const externalFile = join(referent, "do-not-read.txt");
+    writeFileSync(externalFile, "synthetic unrelated bytes");
+    fs.rmSync(target, { recursive: true });
+    symlinkSync(referent, target);
+    const read = spyOn(fs, "readFileSync");
+    try {
+      const identity = installReviewIdentity(plan);
+      writeFileSync(externalFile, "different unrelated bytes");
+      expect(installReviewIdentity(plan)).toBe(identity);
+      expect(read.mock.calls.some(([path]) => String(path).startsWith(`${referent}/`))).toBe(false);
+      fs.unlinkSync(target);
+      symlinkSync(`${referent}-retargeted`, target);
+      expect(installReviewIdentity(plan)).not.toBe(identity);
+    } finally {
+      read.mockRestore();
+      temp.cleanup();
+    }
+  });
+  test("reports receipt synchronization failure without hiding completed targets", () => {
+    const temp = makeSafetyFixture();
+    const receiptBefore = readFileSync(temp.initial.receiptPath!, "utf8");
+    const originalRename = fs.renameSync;
+    const rename = spyOn(fs, "renameSync").mockImplementation((from, to) => {
+      if (String(to) === temp.initial.receiptPath) throw new Error("injected receipt rename failure");
+      return originalRename(from, to);
+    });
+    try {
+      let failure: unknown;
+      try { install("agy", "local", ["alpha", "beta"], true, temp.env); } catch (error) { failure = error; }
+      const evidence = (failure as InstallFailure).evidence;
+      expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "changed"]);
+      expect(evidence.receiptSync).toBe("failed");
+      expect(evidence.receiptError).toContain("receipt rename failure");
+      expect(readFileSync(temp.initial.receiptPath!, "utf8")).toBe(receiptBefore);
+    } finally { rename.mockRestore(); temp.cleanup(); }
+  });
+
+  test("retains recovery bytes and removes a stale baseline when target restoration fails", () => {
+    const temp = makeSafetyFixture();
+    const beta = join(temp.initial.root, "skills", "mh-beta");
+    const originalRename = fs.renameSync;
+    const rename = spyOn(fs, "renameSync").mockImplementation((from, to) => {
+      if (String(to) === beta && (String(from).endsWith("/payload") || String(from).endsWith("/previous"))) throw new Error("injected replacement and restore failure");
+      return originalRename(from, to);
+    });
+    try {
+      let failure: unknown;
+      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      const evidence = (failure as InstallFailure).evidence;
+      expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "changed", "not-attempted"]);
+      expect(evidence.receiptSync).toBe("synced");
+      expect(readFileSync(join(evidence.targets[1]!.recoveryPath!, "previous", "SKILL.md"), "utf8")).toContain("Version one");
+      const receipt = JSON.parse(readFileSync(temp.initial.receiptPath!, "utf8"));
+      expect(receipt.targetStates.some((state: { name: string }) => state.name === "beta")).toBe(false);
+      expect(existsSync(beta)).toBe(false);
+    } finally { rename.mockRestore(); temp.cleanup(); }
+  });
+  test("validates the second payload before any selected target or receipt replacement", () => {
+    const temp = makeSafetyFixture();
+    try {
+      const before = hashPath(temp.initial.root);
+      writeFileSync(join(temp.source, "skills", "beta", "SKILL.md"), "malformed Agy payload");
+      let failure: unknown;
+      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      expect(failure).toBeInstanceOf(InstallFailure);
+      expect((failure as InstallFailure).evidence.targets.map((target) => target.status)).toEqual(["not-attempted", "not-attempted", "not-attempted"]);
+      expect((failure as InstallFailure).evidence.receiptSync).toBe("not-needed");
+      expect(hashPath(temp.initial.root)).toBe(before);
+    } finally { temp.cleanup(); }
+  });
+
+  test("reports prior progress, restores a failed replacement, and syncs only completed receipt states", () => {
+    const temp = makeSafetyFixture();
+    const originalRename = fs.renameSync;
+    const beta = join(temp.initial.root, "skills", "mh-beta");
+    const betaBefore = hashPath(beta);
+    const rename = spyOn(fs, "renameSync").mockImplementation((from, to) => {
+      if (String(from).endsWith("/payload") && String(to) === beta) throw new Error("injected second replacement failure");
+      return originalRename(from, to);
+    });
+    try {
+      let failure: unknown;
+      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      expect(failure).toBeInstanceOf(InstallFailure);
+      const evidence = (failure as InstallFailure).evidence;
+      expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "unchanged", "not-attempted"]);
+      expect(evidence.receiptSync).toBe("synced");
+      expect(hashPath(beta)).toBe(betaBefore);
+      expect(readFileSync(join(temp.initial.root, "skills", "mh-alpha", "SKILL.md"), "utf8")).toContain("Version two");
+      const receipt = JSON.parse(readFileSync(temp.initial.receiptPath!, "utf8"));
+      for (const state of receipt.targetStates) {
+        expect(state.installedHash).toBe(hashPath(join(temp.initial.root, "skills", `mh-${state.name}`)));
+      }
+      expect(readdirSync(join(temp.initial.root, "skills")).some((name) => name.startsWith(".mahiro-stage-"))).toBe(false);
+    } finally { rename.mockRestore(); temp.cleanup(); }
+  });
+
+  test("refuses source drift during staging before the first replacement", () => {
+    const temp = makeSafetyFixture();
+    const before = hashPath(temp.initial.root);
+    const plan = createPlan("agy", "local", ["alpha"], temp.env);
+    const identity = installReviewIdentity(plan);
+    const source = join(temp.source, "skills", "alpha", "SKILL.md");
+    const originalCopy = fs.cpSync;
+    const copy = spyOn(fs, "cpSync").mockImplementation((from, to, options) => {
+      originalCopy(from, to, options);
+      writeFileSync(source, readFileSync(source, "utf8").replace("two", "three"));
+    });
+    try {
+      expect(() => install("agy", "local", ["alpha"], true, temp.env, identity)).toThrow("changed during staging");
+      expect(hashPath(temp.initial.root)).toBe(before);
+    } finally { copy.mockRestore(); temp.cleanup(); }
+  });
+
+  test("rechecks reviewed source and receipt at the installer boundary", () => {
+    const temp = makeSafetyFixture();
+    try {
+      const identity = installReviewIdentity(createPlan("agy", "local", ["alpha"], temp.env));
+      const before = hashPath(temp.initial.root);
+      const source = join(temp.source, "skills", "alpha", "SKILL.md");
+      writeFileSync(source, readFileSync(source, "utf8").replace("two", "three"));
+      expect(() => install("agy", "local", ["alpha"], true, temp.env, identity)).toThrow("changed after review");
+      expect(hashPath(temp.initial.root)).toBe(before);
+    } finally { temp.cleanup(); }
+  });
+
   test("copies scripted skill, paired command, and receipt", () => {
     const temp = makeTempEnv();
     try {

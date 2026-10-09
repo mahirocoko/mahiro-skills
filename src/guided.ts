@@ -1,4 +1,6 @@
-import { install } from "./install";
+import { hashPath } from "./content-hash";
+import { install, installReviewIdentity } from "./install";
+import { getSkillManagerSnapshot } from "./skill-manager";
 import { uninstall } from "./uninstall";
 import {
   agentPickOptions,
@@ -216,29 +218,76 @@ function formatReceiptTargets(plan: InstallPlan): string {
 }
 
 async function runUpdateView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliOptions, allowBack: boolean): Promise<InstallResult[] | null> {
-  const summaries = listInstalledSummaries(env);
+  const summaries = filterSummariesByAgents(listInstalledSummaries(env), options.agents)
+    .filter((summary) => options.scope === undefined || summary.scope === options.scope);
   if (summaries.length === 0) {
-    io.note("No install receipts found; skipping update.", "Update installed");
+    io.note(options.agents.length > 0 || options.scope !== undefined || options.items.length > 0
+      ? "No install receipts match the explicit update selection; skipping update."
+      : "No install receipts found; skipping update.", "Update installed");
     return [];
   }
 
-  const updates: { summary: InstalledSummary; items: string[] }[] = [];
+  const updates: { summary: InstalledSummary; items: string[]; identity: string }[] = [];
+  const protectedTargets: string[] = [];
 
   for (const summary of summaries) {
-    const items = sortNames(summary.installed);
+    // Resolve explicit selectors through the existing planner (including packaged
+    // dependencies), then restrict update roots to names recorded in this receipt.
+    const selectionPlan = options.items.length > 0 ? createPlan(summary.agent, summary.scope, options.items, env) : null;
+    const selectedNames = selectionPlan
+      ? new Set([...selectionPlan.skills, ...selectionPlan.commands].map((target) => target.name))
+      : null;
+    const items = sortNames(summary.installed.filter((name) => selectedNames === null || selectedNames.has(name)));
     if (items.length === 0) {
-      io.note(`Install receipt for ${summary.agent} (${summary.scope}) has no recorded skills or commands; skipping update.`, "Update installed");
+      io.note(`No recorded items match the update selection for ${summary.agent} (${summary.scope}); skipping update.`, "Update installed");
       continue;
     }
 
     const plan = createPlan(summary.agent, summary.scope, items, env);
+    const snapshot = getSkillManagerSnapshot(summary.agent, summary.scope, env);
+    if (snapshot.receiptError) {
+      throw new Error(`Unable to read ${summary.agent} (${summary.scope}) receipt: ${snapshot.receiptError}`);
+    }
+
+    // Use the manager's receipt validation and installed-hash baseline. Check
+    // every planned kind: aggregate skill status can hide a modified command
+    // behind a missing sibling, and command-only items are not in its catalog.
+    for (const target of [...plan.skills, ...plan.commands]) {
+      const installedHash = hashPath(target.target);
+      if (installedHash === null) {
+        continue;
+      }
+      const state = snapshot.receipt?.schemaVersion === 2
+        ? snapshot.receipt.targetStates?.find((entry) => entry.name === target.name && entry.kind === target.kind)
+        : undefined;
+      if (!state || installedHash !== state.installedHash) {
+        protectedTargets.push(`${summary.agent} (${summary.scope}) ${target.kind}: ${target.name} [${state ? "modified" : "unverified/legacy"}]\n  ${target.target}`);
+      }
+    }
+    updates.push({ summary, items, identity: installReviewIdentity(plan) });
     writePlanSummary(io, "update", plan);
     writeInstallReview(io, plan);
-    updates.push({ summary, items });
   }
 
   if (updates.length === 0) {
     return [];
+  }
+
+  if (protectedTargets.length > 0) {
+    io.note(protectedTargets.join("\n"), "Modified or unverified update targets");
+    if (!options.overwrite) {
+      if (!io.isInteractive) {
+        throw new Error("Update blocked: modified or unverified targets require explicit --overwrite; --yes does not authorize replacement.");
+      }
+      const approved = await promptConfirm(io, "Overwrite the listed modified or unverified targets?");
+      if (!approved) {
+        if (allowBack) {
+          io.note("Update cancelled (modified targets not approved).", "Home");
+          return null;
+        }
+        throw new Error("Guided update cancelled because modified targets were not approved for overwrite.");
+      }
+    }
   }
 
   if (!options.yes) {
@@ -253,7 +302,26 @@ async function runUpdateView(io: PromptIO, env: NodeJS.ProcessEnv, options: CliO
     }
   }
 
-  const results = updates.map(({ summary, items }) => install(summary.agent, summary.scope, items, true, env));
+  // Check the whole reviewed selection before the first agent mutates. Each
+  // installer also checks at its own staging/execution boundary.
+  for (const { summary, items, identity } of updates) {
+    if (installReviewIdentity(createPlan(summary.agent, summary.scope, items, env)) !== identity) {
+      throw new Error("Update content changed after review; review again before execution.");
+    }
+  }
+  const results: InstallResult[] = [];
+  for (const [index, { summary, items, identity }] of updates.entries()) {
+    try {
+      results.push(install(summary.agent, summary.scope, items, true, env, identity));
+    } catch (error) {
+      const progress = {
+        completed: results,
+        failed: { agent: summary.agent, scope: summary.scope, error },
+        notAttempted: updates.slice(index + 1).map(({ summary: next }) => ({ agent: next.agent, scope: next.scope })),
+      };
+      throw Object.assign(new Error(`${error instanceof Error ? error.message : String(error)}\nUpdate batch progress: ${JSON.stringify({ completed: results, notAttempted: progress.notAttempted })}`), { progress, cause: error });
+    }
+  }
 
   if (results.length > 0) {
     writeBatchInstallSummary(io, results);
@@ -340,6 +408,7 @@ async function runSinglePlanOrInstall(
   softCancelReturnsToHome: boolean,
 ): Promise<InstallPlan | InstallResult | null> {
   const plan = createPlan(agent, scope, items, env);
+  const identity = installReviewIdentity(plan);
   writePlanSummary(io, mode, plan);
 
   if (mode === "plan") {
@@ -375,7 +444,7 @@ async function runSinglePlanOrInstall(
     }
   }
 
-  return install(agent, scope, items, overwrite, env);
+  return install(agent, scope, items, overwrite, env, identity);
 }
 
 function writeUninstallPreview(io: PromptIO, env: NodeJS.ProcessEnv, agent: ScopedAgent, scope: InstallScope, items: string[]): void {
@@ -536,6 +605,7 @@ async function runInteractiveSegment(
   }
 
   const plans = agents.map((agent) => createPlan(agent, scope, items, env));
+  const identities = plans.map(installReviewIdentity);
   for (const plan of plans) {
     writePlanSummary(io, mode, plan);
     writeInstallReview(io, plan);
@@ -568,7 +638,12 @@ async function runInteractiveSegment(
     }
   }
 
-  const results = agents.map((agent) => install(agent, scope, items, overwrite, env));
+  for (const [index, agent] of agents.entries()) {
+    if (installReviewIdentity(createPlan(agent, scope, items, env)) !== identities[index]) {
+      throw new Error("Install content changed after review; review again before execution.");
+    }
+  }
+  const results = agents.map((agent, index) => install(agent, scope, items, overwrite, env, identities[index]));
 
   writeBatchInstallSummary(io, results);
   return results;

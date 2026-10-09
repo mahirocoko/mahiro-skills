@@ -1,4 +1,5 @@
-import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
+import { createHash } from "crypto";
 import { dirname, join, relative } from "path";
 
 import { hashPath, hashSkillPayload } from "./content-hash";
@@ -6,7 +7,68 @@ import { includeSkillPayload } from "./skill-payload";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
 import { cleanupRetiredGeminiInstall } from "./retired-gemini";
-import type { InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
+import type { InstallPlan, InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
+
+function reviewPathIdentity(path: string): unknown {
+  try {
+    const stats = lstatSync(path);
+    if (stats.isSymbolicLink()) {
+      // Replacement owns the link, not its referent; do not read outside that boundary.
+      return { link: readlinkSync(path), mode: stats.mode };
+    }
+    return hashPath(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function reviewReceiptIdentity(path: string): unknown {
+  let stats;
+  try {
+    stats = lstatSync(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+  if (!stats.isFile() && !stats.isSymbolicLink()) {
+    throw new Error("Install receipt must be a readable file.");
+  }
+  // Receipt reading is already required; hash that exact file, never a referent tree.
+  return {
+    link: stats.isSymbolicLink() ? readlinkSync(path) : undefined,
+    mode: stats.mode,
+    contentHash: createHash("sha256").update(readFileSync(path)).digest("hex"),
+  };
+}
+
+/** Review identity includes raw receipt bytes, not merely its parsed policy labels. */
+export function installReviewIdentity(plan: InstallPlan): string {
+  return JSON.stringify({
+    agent: plan.agent, scope: plan.scope, root: plan.root, requested: plan.requested,
+    receipt: reviewReceiptIdentity(join(plan.root, ".mahiro-skills", "receipts", `${plan.scope}-${plan.agent}.json`)),
+    targets: [...plan.skills, ...plan.commands].map((target) => ({
+      ...target,
+      sourceHash: target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source),
+      installedHash: reviewPathIdentity(target.target),
+    })),
+  });
+}
+
+export interface InstallFailureEvidence {
+  agent: ScopedAgent;
+  scope: InstallScope;
+  targets: { name: string; kind: InstallTarget["kind"]; target: string; status: "changed" | "unchanged" | "not-attempted" | "unknown"; inspectionError?: string; recoveryPath?: string }[];
+  receiptSync: "not-needed" | "synced" | "failed";
+  receiptError?: string;
+}
+
+export class InstallFailure extends Error {
+  constructor(message: string, readonly evidence: InstallFailureEvidence) {
+    super(`${message}\nInstall progress: ${JSON.stringify(evidence)}`);
+    this.name = "InstallFailure";
+  }
+}
 
 const installedDescriptionPrefix = "Mahiro Skill | ";
 
@@ -97,48 +159,71 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
   }
 }
 
-function unlinkOwnPath(targetPath: string): "absent" | "symlink" | "present" {
-  try {
-    if (lstatSync(targetPath).isSymbolicLink()) {
-      unlinkSync(targetPath);
-      return "symlink";
-    }
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === "ENOENT") {
-      return "absent";
-    }
-    throw error;
-  }
-
-  return "present";
+interface StagedTarget {
+  target: InstallTarget;
+  directory: string;
+  payload: string;
+  sourceHash: string;
+  installedHash: string;
 }
 
-function copyTarget(target: InstallTarget, overwrite: boolean, agent: ScopedAgent): void {
-  if (target.collision && !overwrite) {
-    throw new Error(`Collision detected at '${target.target}'. Re-run with --overwrite to replace it.`);
-  }
-
+function stageTarget(target: InstallTarget, agent: ScopedAgent, directories: string[]): StagedTarget {
   ensureParent(target.target);
-  const stagingPath = `${target.target}.tmp-mahiro-skills`;
-  const stagingKind = unlinkOwnPath(stagingPath);
-  if (stagingKind === "present") {
-    rmSync(stagingPath, { recursive: true, force: true });
-  }
-  cpSync(target.source, stagingPath, {
+  const directory = mkdtempSync(join(dirname(target.target), ".mahiro-stage-"));
+  directories.push(directory);
+  const payload = join(directory, "payload");
+  const sourceHash = target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source);
+  cpSync(target.source, payload, {
     recursive: true,
     filter: target.kind === "skill"
       ? (source) => includeSkillPayload(relative(target.source, source), lstatSync(source).isDirectory())
       : undefined,
   });
-  rewriteInstalledTarget(stagingPath, agent, target);
-
-  const destinationKind = unlinkOwnPath(target.target);
-  if (destinationKind === "present" && overwrite) {
-    rmSync(target.target, { recursive: true, force: true });
+  if (!sourceHash || hashPath(payload) !== sourceHash) {
+    throw new Error(`Source changed while staging '${target.name}'; review again.`);
   }
+  rewriteInstalledTarget(payload, agent, target);
+  const installedHash = hashPath(payload);
+  if (!installedHash) {
+    throw new Error(`Unable to fingerprint staged target '${target.name}'.`);
+  }
+  return { target, directory, payload, sourceHash, installedHash };
+}
 
-  renameSync(stagingPath, target.target);
+function replaceStaged(entry: StagedTarget): void {
+  const backup = join(entry.directory, "previous");
+  let backedUp = false;
+  try {
+    // Rename the own path, including symlinks; never follow it for deletion.
+    try {
+      lstatSync(entry.target.target);
+      renameSync(entry.target.target, backup);
+      backedUp = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    renameSync(entry.payload, entry.target.target);
+  } catch (error) {
+    if (backedUp) {
+      // If restoration fails, keep the recovery directory and report it.
+      try {
+        renameSync(backup, entry.target.target);
+      } catch (restoreError) {
+        throw new Error(`Replacement failed: ${String(error)}; restoration failed: ${String(restoreError)}`);
+      }
+    }
+    throw error;
+  }
+}
+
+function recoveryBackupMayExist(directory: string): boolean {
+  try {
+    lstatSync(join(directory, "previous"));
+    return true;
+  } catch (error) {
+    // Preserve uncertain recovery bytes as well as dangling links.
+    return (error as NodeJS.ErrnoException).code !== "ENOENT";
+  }
 }
 
 function resolveStatus(installedCount: number, skippedCount: number): PlanStatus {
@@ -151,22 +236,6 @@ function resolveStatus(installedCount: number, skippedCount: number): PlanStatus
   }
 
   return skippedCount > 0 ? "skipped" : "unsupported";
-}
-
-function targetState(target: InstallTarget): InstallReceiptTargetState {
-  const sourceHash = target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source);
-  const installedHash = hashPath(target.target);
-
-  if (!sourceHash || !installedHash) {
-    throw new Error(`Unable to fingerprint installed target '${target.name}' (${target.kind}).`);
-  }
-
-  return {
-    name: target.name,
-    kind: target.kind,
-    sourceHash,
-    installedHash,
-  };
 }
 
 function mergeTargetStates(existing: InstallReceiptTargetState[], current: InstallReceiptTargetState[]): InstallReceiptTargetState[] {
@@ -194,49 +263,121 @@ function writeReceipt(agent: ScopedAgent, scope: InstallScope, root: string, des
     installedAt: new Date().toISOString(),
   };
 
-  writeFileSync(receiptPath, JSON.stringify(receipt, null, 2));
+  const stagingDirectory = mkdtempSync(join(dirname(receiptPath), ".mahiro-receipt-"));
+  try {
+    const stagedReceipt = join(stagingDirectory, "receipt.json");
+    writeFileSync(stagedReceipt, JSON.stringify(receipt, null, 2));
+    renameSync(stagedReceipt, receiptPath);
+  } finally {
+    rmSync(stagingDirectory, { recursive: true, force: true });
+  }
   return receiptPath;
 }
 
-export function install(agent: ScopedAgent, scope: InstallScope, items: string[], overwrite: boolean, env = process.env): InstallResult {
+export function install(agent: ScopedAgent, scope: InstallScope, items: string[], overwrite: boolean, env = process.env, reviewedIdentity?: string): InstallResult {
   const plan = createPlan(agent, scope, items, env);
+  const identity = installReviewIdentity(plan);
+  if (reviewedIdentity !== undefined && identity !== reviewedIdentity) {
+    throw new Error("Install content changed after review; review again before execution.");
+  }
   const sourceRepoPath = env.MAHIRO_SKILLS_REPO_ROOT || readRepoRoot();
   const existingReceipt = listInstalled(agent, scope, env);
   const description = plan.description ?? existingReceipt?.description;
-
+  const targets = [...plan.skills, ...plan.commands];
   if (!overwrite) {
-    const collision = [...plan.skills, ...plan.commands].find((entry) => entry.collision);
+    const collision = targets.find((entry) => entry.collision);
     if (collision) {
       throw new Error(`Collision detected at '${collision.target}'. Re-run with --overwrite to replace it.`);
     }
   }
 
-  for (const target of [...plan.skills, ...plan.commands]) {
-    copyTarget(target, overwrite, agent);
-  }
-
-  const migrationWarnings = agent === "agy"
-    ? cleanupRetiredGeminiInstall(scope, env).warnings
-    : [];
-
-  const installedNowSkills = plan.skills.map((entry) => entry.name);
-  const installedNowCommands = plan.commands.map((entry) => entry.name);
-  const installedSkills = unique([...(existingReceipt?.installedSkills ?? []), ...installedNowSkills]);
-  const installedCommands = unique([...(existingReceipt?.installedCommands ?? []), ...installedNowCommands]);
-  const targetStates = mergeTargetStates(existingReceipt?.targetStates ?? [], [...plan.skills, ...plan.commands].map(targetState));
-  const receiptPath = writeReceipt(agent, scope, plan.root, description, installedSkills, installedCommands, targetStates, sourceRepoPath);
-
-  return {
-    status: resolveStatus(installedNowSkills.length + installedNowCommands.length, plan.skipped.length),
-    agent,
-    scope,
-    root: plan.root,
-    description,
-    installed: unique([...installedNowSkills, ...installedNowCommands]),
-    skipped: plan.skipped,
-    warnings: unique([...plan.warnings, ...migrationWarnings]),
-    receiptPath,
+  const directories: string[] = [];
+  const completed: StagedTarget[] = [];
+  const before = targets.map((target) => hashPath(target.target));
+  const reviewedTargets = targets.map((target) => JSON.stringify(reviewPathIdentity(target.target)));
+  const reviewedReceiptPath = join(plan.root, ".mahiro-skills", "receipts", `${scope}-${agent}.json`);
+  const reviewedReceipt = JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath));
+  let attempted = -1;
+  let receiptPath: string | undefined;
+  const synchronize = (): string => {
+    if (JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath)) !== reviewedReceipt) {
+      throw new Error("Receipt changed during execution; refusing to overwrite concurrent receipt edits.");
+    }
+    return writeReceipt(
+      agent, scope, plan.root, description,
+      unique([...(existingReceipt?.installedSkills ?? []), ...completed.filter((entry) => entry.target.kind === "skill").map((entry) => entry.target.name)]),
+      unique([...(existingReceipt?.installedCommands ?? []), ...completed.filter((entry) => entry.target.kind === "command").map((entry) => entry.target.name)]),
+      mergeTargetStates(
+        // A failed, uncompensated target must not retain a misleading old baseline.
+        (existingReceipt?.targetStates ?? []).filter((state) => !targets.some((target, index) =>
+          index === attempted && hashPath(target.target) !== before[index]
+          && !completed.some((entry) => entry.target === target)
+          && target.name === state.name && target.kind === state.kind)),
+        completed.map((entry) => ({ name: entry.target.name, kind: entry.target.kind, sourceHash: entry.sourceHash, installedHash: entry.installedHash })),
+      ), sourceRepoPath,
+    );
   };
+  try {
+    // Fully copy, adapt and fingerprint every payload before replacing any target.
+    const staged = targets.map((target) => stageTarget(target, agent, directories));
+    if (installReviewIdentity(plan) !== identity) {
+      throw new Error("Install content changed during staging; review again before execution.");
+    }
+    for (const [index, entry] of staged.entries()) {
+      if (JSON.stringify(reviewPathIdentity(entry.target.target)) !== reviewedTargets[index]
+        || JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath)) !== reviewedReceipt) {
+        throw new Error("Target or receipt changed before replacement; review again before execution.");
+      }
+      attempted = index;
+      replaceStaged(entry);
+      completed.push(entry);
+    }
+    receiptPath = synchronize();
+    const migrationWarnings = agent === "agy" ? cleanupRetiredGeminiInstall(scope, env).warnings : [];
+    return {
+      status: resolveStatus(targets.length, plan.skipped.length), agent, scope, root: plan.root, description,
+      installed: unique(targets.map((target) => target.name)), skipped: plan.skipped,
+      warnings: unique([...plan.warnings, ...migrationWarnings]), receiptPath,
+    };
+  } catch (error) {
+    const evidence: InstallFailureEvidence = {
+      agent, scope,
+      targets: targets.map((target, index) => {
+        let status: InstallFailureEvidence["targets"][number]["status"] = "not-attempted";
+        let inspectionError: string | undefined;
+        if (index <= attempted) {
+          try {
+            status = hashPath(target.target) === before[index] ? "unchanged" : "changed";
+          } catch (inspectionFailure) {
+            status = completed.some((entry) => entry.target === target) ? "changed" : "unknown";
+            inspectionError = String(inspectionFailure);
+          }
+        }
+        return {
+          name: target.name, kind: target.kind, target: target.target, status, inspectionError,
+          recoveryPath: directories[index] && recoveryBackupMayExist(directories[index]!)
+            && !completed.some((entry) => entry.target === target) ? directories[index] : undefined,
+        };
+      }),
+      receiptSync: receiptPath ? "synced" : "not-needed",
+    };
+    if (!receiptPath && (completed.length > 0 || evidence.targets.some((target) => target.status === "changed" || target.status === "unknown"))) {
+      try {
+        synchronize();
+        evidence.receiptSync = "synced";
+      } catch (receiptError) {
+        evidence.receiptSync = "failed";
+        evidence.receiptError = String(receiptError);
+      }
+    }
+    throw new InstallFailure(error instanceof Error ? error.message : String(error), evidence);
+  } finally {
+    for (const directory of directories) {
+      // Preserve a failed restoration backup rather than destroying recovery bytes.
+      if (recoveryBackupMayExist(directory) && !completed.some((entry) => entry.directory === directory)) continue;
+      try { rmSync(directory, { recursive: true, force: true }); } catch { /* Target/receipt outcome is already reported; staging cleanup is best effort. */ }
+    }
+  }
 }
 
 export function readRepoRoot(): string {

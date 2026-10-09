@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { existsSync, lstatSync, readFileSync, readdirSync, readlinkSync } from "fs";
+import { lstatSync, readFileSync, readdirSync, readlinkSync } from "fs";
 import { join, relative } from "path";
 import { includeSkillPayload } from "./skill-payload";
 
@@ -9,8 +9,12 @@ function updateString(hash: ReturnType<typeof createHash>, value: string): void 
 }
 
 export function hashPath(path: string, include?: (relativePath: string, isDirectory: boolean) => boolean): string | null {
-  if (!existsSync(path)) {
-    return null;
+  try {
+    // A dangling symlink is an existing owned path, not a missing target.
+    lstatSync(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 
   const hash = createHash("sha256");

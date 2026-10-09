@@ -101,6 +101,38 @@ async function focusSkill(controller: ReturnType<typeof createTuiController>, na
 }
 
 describe("step-first skill manager TUI", () => {
+  for (const drift of ["source", "modified-target", "receipt"] as const) {
+    test(`requires fresh TUI review after ${drift} drift with stable labels`, async () => {
+      const temp = makeTempEnv();
+      try {
+        const source = join(temp.root, "source");
+        const markdown = join(source, "skills", "alpha", "SKILL.md");
+        mkdirSync(join(source, "skills", "alpha"), { recursive: true });
+        writeFileSync(markdown, "---\nname: alpha\ndescription: Alpha fixture\n---\nVersion one\n");
+        const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, MAHIRO_SKILLS_REPO_ROOT: source };
+        const initial = install("agy", "local", ["alpha"], false, env);
+        const target = join(initial.root, "skills", "mh-alpha", "SKILL.md");
+        writeFileSync(markdown, readFileSync(markdown, "utf8").replace("one", "two"));
+        if (drift === "modified-target") writeFileSync(target, "first edit");
+        const controller = createTuiController({ terminal: new FakeTerminal(), env, initialAgents: ["agy"], initialScope: "local", initialItems: ["alpha"] });
+        await enterAction(controller, 1);
+        await controller.handleInput("\r");
+        const review = controller.getState().review!;
+        if (review.acknowledgements.length > 0) await controller.handleInput(" ");
+        if (drift === "source") writeFileSync(markdown, readFileSync(markdown, "utf8").replace("two", "three"));
+        if (drift === "modified-target") writeFileSync(target, "second edit");
+        if (drift === "receipt") writeFileSync(initial.receiptPath!, `${readFileSync(initial.receiptPath!, "utf8")}\n`);
+        await controller.handleInput("\r");
+        const changed = controller.getState().review!;
+        expect(controller.getState().step).toBe("review");
+        expect(changed.error).toContain("plan changed");
+        expect(changed.acknowledgements.map((entry) => entry.id)).toEqual(review.acknowledgements.map((entry) => entry.id));
+        expect(changed.acknowledgements.every((entry) => !entry.checked)).toBe(true);
+        expect(readFileSync(target, "utf8")).toContain(drift === "modified-target" ? "second edit" : "Version one");
+      } finally { temp.cleanup(); }
+    });
+  }
+
   test("uses All/custom exclusivity and preserves targets when backing out", async () => {
     const temp = makeTempEnv();
     try {

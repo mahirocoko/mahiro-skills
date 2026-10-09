@@ -2,7 +2,7 @@ import { join } from "path";
 
 import { hashPath, hashSkillPayload } from "./content-hash";
 import { resolveCommandArtifact, resolveSkillArtifact, supportsCommands } from "./adapters";
-import { install } from "./install";
+import { install, installReviewIdentity } from "./install";
 import { listInstalled } from "./list";
 import { createPlan } from "./plan";
 import { getSkillCatalog } from "./repo";
@@ -83,6 +83,7 @@ export interface SkillManagerAgentPlan {
   warnings: string[];
   blocked?: string;
   installPlan?: InstallPlan;
+  reviewedIdentity?: string;
   uninstallTargets: SkillManagerUninstallTarget[];
   acknowledgementIds: string[];
 }
@@ -576,6 +577,7 @@ export function getSkillManagerAgentPlan(
     skipped,
     warnings,
     installPlan,
+    reviewedIdentity: installPlan ? installReviewIdentity(installPlan) : undefined,
     uninstallTargets,
     acknowledgementIds,
   };
@@ -609,12 +611,8 @@ export async function executeSkillManagerAgentPlan(
     return injected(request);
   }
 
-  if (plan.action === "install") {
-    return installSkillManagerItems(plan.agent, plan.scope, plan.active, overwrite, env);
-  }
-
-  if (plan.action === "update") {
-    return updateSkillManagerItems(plan.agent, plan.scope, plan.active, overwrite, env);
+  if (plan.action === "install" || plan.action === "update") {
+    return install(plan.agent, plan.scope, plan.active, overwrite, env, plan.reviewedIdentity);
   }
 
   return uninstallSkillManagerItems(plan.agent, plan.scope, plan.active, env);

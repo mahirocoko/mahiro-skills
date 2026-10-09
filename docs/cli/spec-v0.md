@@ -155,6 +155,12 @@ Except for `audit`, these commands inspect or scaffold repo source (`skills/`, `
 
 ### Guided / TUI command behavior
 
+For `guided --mode update` (also `tui --mode update`), omitted selectors intentionally update all receipt-recorded items across agents and scopes. Explicit agents and scope filter receipts; explicit items use the existing planner's bundle and packaged-dependency resolution, intersected with recorded names before planning updates. Empty matches skip without writes; unknown items fail without writes. Dependency expansion retains the existing install contract.
+
+Update preflights every planned skill and command against the validated receipt's installed hashes. Existing modified targets, legacy targets without a fingerprint, and unrecorded existing dependency targets are listed explicitly. Interactive users must separately approve replacing that list before any batch mutation (unless `--overwrite` already authorizes replacement); declining either this approval or final update confirmation leaves the whole batch untouched. Noninteractive replacement of these targets requires explicit `--overwrite`: `--yes` alone only skips final confirmation. Unchanged/outdated fingerprinted targets and absent targets need no additional overwrite approval. Receipt-only names without current packaged source cannot be updated; planning fails without batch writes. Guided and fullscreen install/update review bind to exact filtered source payload, installed target identity/content, target paths, and raw receipt content. Drift requires fresh review even when policy labels and acknowledgement IDs stay equal. The installer rechecks the identity after replanning and after staging, and checks each target and receipt immediately before replacement; execution uses the validated staged bytes, not a newly copied source.
+
+Destination symlinks bind their own link text/mode, not the contents of an unrelated referent tree: replacement owns the link only. Dangling symlinks are existing owned paths and receive a content fingerprint; failed restoration retains their backup even when the referent does not exist. Receipts still bind the exact file bytes already required for parsing, including a symlinked receipt file, without recursively reading its referent directory.
+
 - `tui` and `guided` share the same planner, installer, list, and receipt-driven uninstaller core but own different interaction shells.
 - **Full-screen manager:** interactive `tui` without `--mode` uses an alternate screen when the terminal is not `TERM=dumb` and is at least `72x18`. Its fixed flow is `Target → Action → Skills → Review → Result`; it restores raw mode, cursor, alternate screen, and input flow on every exit path and redraws on resize.
 - **Target:** All agents is first and exclusive; selecting an individual changes the model to a custom set. Every supported agent is selectable, one local/global scope radio applies to the batch, scope defaults to `global`, and explicit CLI-supplied agents/scope remain authoritative.
@@ -240,8 +246,11 @@ v0 rules:
 - `install` fails on collisions by default.
 - `install --overwrite` may replace collided targets.
 - Overwrite is file-tree replacement for the planned target only.
-- Each planned target must be staged before replacement so individual target writes are not left half-written.
-- Full multi-target rollback is not required in v0.
+- All selected payloads within one agent/scope install call are copied, adapted, and fingerprinted before any selected target replacement. A malformed second payload leaves all selected targets and receipt untouched; temporary staging directories and missing parent directories may be created during validation.
+- Each destination's own path (including a symlink) is renamed to a same-filesystem backup before staged replacement. A failed replacement attempts restoration of that target, not rollback of previously completed targets. Failed restoration retains its backup path as recovery evidence.
+- `InstallFailure.evidence` records per-target changed/unchanged/not-attempted status (or unknown with an inspection error if failed-target content cannot be read) and receiptSync (not-needed/synced/failed), with recovery paths or receipt errors where applicable. Successful prior replacements remain visible. Their receipt states use staged source/installed hashes; a failed uncompensated target loses its misleading old baseline. Receipt synchronization is attempted after partial progress and replaces a complete staged JSON file by rename; detected concurrent receipt drift is not overwritten.
+- Guided update errors additionally retain completed agent results, the failing agent/error, and later not-attempted agents. Fullscreen results retain the structured failure evidence and show partial completion when an earlier target or agent changed.
+- No atomicity across targets, agents, or adapter roots is promised. Check-to-rename races, concurrent same-user filesystem edits, failed restoration/receipt writes, process interruption, and cleanup failures remain possible. This is cooperative-local safety, not a filesystem lock, crash-recovery journal, or security boundary.
 
 ## Idempotency
 
