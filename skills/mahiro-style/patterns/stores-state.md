@@ -41,6 +41,27 @@ Mahiro's preferred REST/API app shape keeps remote/server state in TanStack Quer
 
 ## State Ownership Modes
 
+### Draft and guard coverage
+
+A reload guard that checks one modal is not proof that all editing is protected.
+Before wiring navigation, refresh, restore or an application update, enumerate
+every unsaved draft owner, including inline notes and secondary forms. For each,
+define whether the draft survives, requires an explicit discard decision, or is
+intentionally disposable under a clear local contract.
+
+Keep each draft at the smallest owner matching that lifetime; do not add a global
+store or mandatory confirmation dialog by default. If shell-level actions need
+dirty state, connect the existing owners rather than checking only the main
+editor flag. Define baseline/reset and any generation or revision guard required
+by the persistence owner, especially when restore can replace same-ID records.
+
+Probe the actual sequence: open a secondary editor, type without saving, trigger
+the relevant route/update/restore action, then return or reload. Check both the
+draft and committed data against the agreed preserve/discard contract. A source
+guard is not a replay of a service-worker update or a restore transaction.
+
+### Choose by lifetime
+
 Use the smallest owner that matches the state lifetime:
 
 1. **Component state** owns single-screen UI details: modal open flags, hover state, dirty flags, local form readiness, temporary selections.
@@ -91,10 +112,10 @@ This keeps the root layout and app provider as the hydration seam, not a place f
 
 ```ts
 interface IAuthState {
-  accessToken: string | null
-  isHydrated: boolean
-  setAccessToken: (accessToken: string | null) => void
-  clear: () => void
+  accessToken: string | null;
+  isHydrated: boolean;
+  setAccessToken: (accessToken: string | null) => void;
+  clear: () => void;
 }
 
 export const useAuthStore = create<IAuthState>((set) => ({
@@ -102,21 +123,21 @@ export const useAuthStore = create<IAuthState>((set) => ({
   isHydrated: false,
   setAccessToken: (accessToken) => set({ accessToken }),
   clear: () => set({ accessToken: null }),
-}))
+}));
 ```
 
 - A sign-out helper can clear client auth state and server-state cache together without making the auth store own query internals.
 
 ```ts
 const useSignOut = () => {
-  const queryClient = useQueryClient()
-  const clearAuth = useAuthStore((state) => state.clear)
+  const queryClient = useQueryClient();
+  const clearAuth = useAuthStore((state) => state.clear);
 
   return () => {
-    clearAuth()
-    queryClient.clear()
-  }
-}
+    clearAuth();
+    queryClient.clear();
+  };
+};
 ```
 
 - Query data for an approval list stays in the server-state layer, while a local filter panel open state stays in the screen component or a small module store.
@@ -127,7 +148,7 @@ const useSignOut = () => {
 - A component can read `isSidebarOpen` through a selector instead of subscribing to the whole layout store.
 
 ```ts
-const isSidebarOpen = useLayoutStore((state) => state.isSidebarOpen)
+const isSidebarOpen = useLayoutStore((state) => state.isSidebarOpen);
 ```
 
 ## Anti-Examples
@@ -137,13 +158,13 @@ const isSidebarOpen = useLayoutStore((state) => state.isSidebarOpen)
 
 ```ts
 export const useAppStore = create((set) => ({
-  accessToken: '',
+  accessToken: "",
   approvalFilters: {},
   isCreateModalOpen: false,
-  hoveredCardId: '',
+  hoveredCardId: "",
   submitApproval: async () => {},
   resetEverything: () => set({}),
-}))
+}));
 ```
 
 - Mounting a global provider for a module concern that is only used by one route subtree.

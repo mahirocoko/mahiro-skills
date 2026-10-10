@@ -4,6 +4,21 @@
 
 It is a human-facing overview for the skill, not the doctrine itself. Use it to understand what the skill does, how it should be read, and where the real topic guidance now lives.
 
+## Start with your goal
+
+Call `/mahiro-style` and describe the file, diff, or outcome in ordinary language.
+You do not need to remember the topic shortcuts. The skill uses your request and
+local repo evidence to choose the relevant guidance, states the scope briefly,
+and asks a focused question only when different goals would change the work.
+If the target and goal are already clear, it proceeds without a selection menu.
+Explicit topic shortcuts remain available; review still means read-only unless
+you separately authorize changes. `SKILL.md` owns the routing procedure.
+
+Frontend jobs also select relevant recurring-pain probes: shared-UI composition
+checks, product/evidence checks, and draft-lifetime checks stay in their topic
+owners. They explain why a mistake slips through and how to challenge it, rather
+than requiring you to memorize another checklist or prescribing a new design.
+
 ## What this skill is for
 
 Use it when you want AI to:

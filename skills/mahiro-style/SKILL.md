@@ -1,6 +1,6 @@
 ---
 name: mahiro-style
-description: Mahiro's code, review, and implementation doctrine. Use as a fallback lens for naming, structure, i18n, boundaries, state, services, UI restraint, and review heuristics when repo-local reality is silent, partial, or drifting.
+description: Mahiro's code, review, and implementation doctrine. Analyzes the requested job, selects relevant guidance, and asks focused scope questions only when needed; users need not remember subcommands. Use for Mahiro-style implementation, refactoring, or review, with repo-local rules first and fallback guidance for naming, structure, i18n, boundaries, state, services, and UI restraint.
 ---
 
 # /mahiro-style - Mahiro Code Style Hub
@@ -33,7 +33,55 @@ It does not answer: "What is this repo's current rule set?" For that, inspect th
 
 If rules conflict, explicit beats implicit, specific beats general, and repeated repo patterns beat isolated examples.
 
-## Quick Commands
+## Start from the job, not a lens name
+
+Calling `/mahiro-style` is enough. Treat the lenses below as internal retrieval
+routes and optional shortcuts, not a menu the user must learn. Keep this entry
+point thin: select existing doctrine rather than duplicating it here.
+
+1. **Recover the target and outcome.** Use the current request, agreed task,
+   recent decisions, and bounded inspection of local instructions and the named
+   file, diff, or surface. Distinguish implementation, refactoring, read-only
+   review, and a specific correction. Do not search other projects to invent a
+   target or ask questions the local evidence already answers.
+2. **Resolve only material ambiguity.** If two plausible goals would change
+   the edit boundary or required proof, ask one short question with concrete
+   alternatives and a recommendation. Ask about the outcome, not which guidance
+   filename or subcommand to load. When context already makes the job clear,
+   proceed without a questionnaire or confirmation gate.
+3. **Select the smallest useful guidance.** Start with one primary lens from
+   the retrieval map and read its canonical page. Add supporting pages only
+   when the task crosses their boundaries. Honor an explicit lens while still
+   respecting the target repo and requested scope; do not load the entire hub.
+   For a UI implementation or review, select the relevant pain probes in
+   `patterns/shared-ui-boundaries.md` and `foundations/review-checklist.md`
+   before writing or judging the surface. For draft/navigation concerns, load
+   `patterns/stores-state.md`. Users do not need a separate checklist command.
+4. **State the selected scope briefly.** For example: “I'll check primitive
+   ownership and form consistency; layout redesign is outside this review.”
+   Name the relevant local owner and observable check before writing or judging
+   a claim. Use the existing shared-UI preflight and review evidence gates rather
+   than inventing another checklist here.
+5. **Stay within the authorized action.** Review does not authorize fixes;
+   fixing paint does not reopen geometry or product direction. Routing chooses
+   guidance, not permission. End with findings or changes, checked evidence, and
+   unresolved decisions appropriate to the requested job.
+
+### Goal-driven routing examples
+
+| Request                                                     | Route and boundary                                                                                                                                     |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| “Make this code feel like mine” with a named component/diff | Inspect local conventions; start with `code-style`, adding `structure` only if ownership is involved. Preserve behavior unless changes were requested. |
+| “Check whether this form really uses our design system”     | Start with `boundaries` and the shared-UI preflight; use `review` evidence gates for consumer/state/geometry claims. An import alone is not proof.     |
+| “Review this diff”                                          | Start with `review`; load domain guidance only for the concrete findings. Report without editing.                                                      |
+| “The locale handling isn't how I normally do it”            | Start with `i18n`, recover the repo's existing locale/macro owner, and avoid a parallel architecture.                                                  |
+| Bare invocation with no recoverable target or outcome       | Ask what file/surface to work on and whether the user wants review or changes; do not present the full lens catalog.                                   |
+
+For genuinely ambiguous scope, ask: “Should I check code structure, design-system
+integration, or both? I'd start with integration because that's the mismatch
+you named.” Do not ask this when the user has already selected the scope.
+
+## Optional shortcuts
 
 ```bash
 /mahiro-style
@@ -81,7 +129,7 @@ If rules conflict, explicit beats implicit, specific beats general, and repeated
 
 ## Working Rule
 
-Start from the matching canonical page, then branch only when the prompt crosses ownership boundaries. Before applying fallback doctrine, define the repo-local acceptance checks that prove the local rule or shape is satisfied. Keep repo-local doctrine first, keep Mahiro doctrine as fallback, and keep this file as the index.
+Analyze the job first, clarify only consequential ambiguity, and select the matching canonical page; users need not choose a lens. Branch only when the prompt crosses ownership boundaries. Before applying fallback doctrine, define the repo-local acceptance checks that prove the local rule or shape is satisfied. Keep repo-local doctrine first, keep Mahiro doctrine as fallback, and keep this file as the index.
 
 Use the docs-init vocabulary when reviewing ambiguous repos:
 

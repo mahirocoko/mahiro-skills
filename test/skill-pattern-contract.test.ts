@@ -280,6 +280,26 @@ describe("skill pattern adaptation phase a", () => {
     expect(typescriptTemplate).not.toContain("export const Button =");
   });
 
+  test("goal-driven style routing selects owner-local pain probes without adding permission", () => {
+    const hub = readRepoFile("skills", "mahiro-style", "SKILL.md");
+    const sharedUi = readRepoFile("skills", "mahiro-style", "patterns", "shared-ui-boundaries.md");
+    const review = readRepoFile("skills", "mahiro-style", "foundations", "review-checklist.md");
+    const state = readRepoFile("skills", "mahiro-style", "patterns", "stores-state.md");
+
+    expect(hub).toContain("Calling `/mahiro-style` is enough");
+    expect(hub).toContain("Resolve only material ambiguity");
+    expect(hub).toContain("Users do not need a separate checklist command");
+    expect(hub).toContain("Routing chooses");
+    expect(sharedUi).toContain("## Composed surface pain checks");
+    expect(sharedUi).toContain("one spacing owner");
+    expect(sharedUi).toContain("different token names may resolve identically");
+    expect(review).toContain("## Selective product and evidence pain checks");
+    expect(review).toContain("Classify each result as a source fact");
+    expect(state).toContain("enumerate");
+    expect(state).toContain("every unsaved draft owner");
+    expect(state).toContain("do not add a global");
+  });
+
   test("frontend ownership and evidence gates do not grant redesign authority", () => {
     const sharedUi = readRepoFile("skills", "mahiro-style", "patterns", "shared-ui-boundaries.md");
     const review = readRepoFile("skills", "mahiro-style", "foundations", "review-checklist.md");
@@ -293,7 +313,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(sharedUi).toContain("Do not create a token, variant, or primitive layer");
 
     for (const gate of ["Ownership", "Propagation", "Rendered correctness", "Human acceptance"]) {
-      expect(review).toContain(`| ${gate} |`);
+      expect(review).toMatch(new RegExp(`\\|\\s+${gate}\\s+\\|`));
     }
     expect(review).toContain("Source tests do not prove runtime integration");
     expect(review).toContain("Computed styles do not prove visual coherence");

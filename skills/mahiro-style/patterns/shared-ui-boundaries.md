@@ -30,17 +30,39 @@ Use this preflight when the repo already has primitives, recipes, or a design sy
 
 Keep the edit at the owner responsible for the change:
 
-| Owner | Responsibility |
-| --- | --- |
-| Primitive | Intrinsic shell, baseline geometry, focus and disabled states |
-| Composition | Placement, sibling spacing, section layout |
-| Domain wrapper | Product labels, status mapping, workflow behavior |
+| Owner          | Responsibility                                                |
+| -------------- | ------------------------------------------------------------- |
+| Primitive      | Intrinsic shell, baseline geometry, focus and disabled states |
+| Composition    | Placement, sibling spacing, section layout                    |
+| Domain wrapper | Product labels, status mapping, workflow behavior             |
 
 These are default boundaries, not proof that every native element is a duplicate. A route-owned composition may intentionally use native elements and local layout rules. Do not create a token, variant, or primitive layer merely to satisfy this preflight when the repo has none.
 
 Verify provenance as well as naming: map a semantic class to its current rule and the rule to its source owner. An import or class name alone does not prove the consumer uses the canonical shell; caller overrides can still replace it. Compare resolved paint and relevant rendered states when the claim depends on those properties. Evidence scope belongs to `../foundations/review-checklist.md`.
 
 Before adding a trailing icon, inspect the primitive for an injected chevron, check, or other affordance. In compact rows, give the label and metadata explicit space ownership rather than letting two trailing owners compete. Default control size is a fallback, not a universal geometry mandate: preserve justified compact toolbars and icon overlays through the repo's existing size/variant contract.
+
+## Composed surface pain checks
+
+Run the relevant rows before writing a shared-UI consumer, then check the actual
+outcome before reporting it. These are failure probes, not a new visual system:
+use the local recipe and accepted density, never turn an example into a universal
+pixel value. Skip unrelated rows; a naming-only change does not need browser QA.
+
+| Recurring pain                                                      | Why it slips through                                            | Before writing                                                                                                                    | Cheap disconfirming check                                                                                                                                            |
+| ------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A real primitive import still produces a copied or overridden shell | Provenance gets mistaken for correct consumption                | Name the primitive, public variant, app override and nearest accepted consumer                                                    | Trace each visible background, border, radius and shadow to its real rule; inspect the composed consumer, not the import alone                                       |
+| Spacing is counted twice or applied to the wrong child              | Each utility looks reasonable in isolation                      | Give each row, label and section one spacing owner; inspect flex/grid gaps, margins and wrapper selectors together                | Measure direct-child distances; challenge `gap` plus sibling margins and inline labels whose vertical margins do not affect flow                                     |
+| Equal control heights still leave fields misaligned                 | Only the height or inner input was checked                      | Map label line boxes, label-to-shell gaps, shell padding and sibling geometry                                                     | Measure label and outer-shell top/bottom on one mounted form; exercise a conditional field and long label                                                            |
+| Input, Select and native exceptions diverge in paint or states      | Default background tokens get treated as the complete recipe    | Map the full field-family recipe, including hover, focus, disabled and invalid; document deliberate native exceptions             | Compare resolved paint and focus geometry in relevant states; different token names may resolve identically, and identical defaults may hide different state recipes |
+| Labels, metadata and trailing affordances collide                   | Each child exists, but no one owns remaining space              | Inspect injected primitive icons; give leading content, flexible label, fixed metadata and trailing affordance explicit ownership | Open the real overlay and stress long labels at the narrow supported width; measure gaps, clipping and submenu reachability                                          |
+| Icons are incomplete or do not follow state                         | A nominal SVG box or plausible selector gets accepted           | Use the complete owned icon and locate the element carrying the state attribute                                                   | Inspect target-size silhouettes together and both open/closed states; a screenshot of one state does not prove state behavior                                        |
+| A reference match preserves the subtree but loses page anatomy      | A cropped capture or token list is treated as the entire source | Establish exact fidelity versus taste evidence; inspect visible ancestors/siblings and freeze accepted edit boundaries            | Compare the relevant rendered source set and current consumer; retain navigation/content outside the crop unless the owner explicitly removed it                     |
+
+Do not force canonical upstream primitives to become visually identical merely
+because they appear in one form. First determine whether the local contract wants
+the same field family or a deliberate hierarchy; report an unresolved choice
+rather than silently forking the primitive or redesigning the page.
 
 ## Non-negotiable
 
@@ -73,21 +95,26 @@ Before adding a trailing icon, inspect the primitive for an injected chevron, ch
 
 ```tsx
 interface IStatusBadgeProps {
-  label: string
-  tone: 'info' | 'warning' | 'success'
+  label: string;
+  tone: "info" | "warning" | "success";
 }
 
 const StatusBadge = ({ label, tone }: IStatusBadgeProps) => {
-  return <span data-tone={tone}>{label}</span>
-}
+  return <span data-tone={tone}>{label}</span>;
+};
 ```
 
 - A domain wrapper keeps business mapping outside the primitive, so the domain owns approval wording and tone rules.
 
 ```tsx
 const ApprovalStatusCell = ({ status }: { status: ApprovalStatus }) => {
-  return <StatusBadge label={getApprovalLabel(status)} tone={getApprovalTone(status)} />
-}
+  return (
+    <StatusBadge
+      label={getApprovalLabel(status)}
+      tone={getApprovalTone(status)}
+    />
+  );
+};
 ```
 
 - A generic table primitive renders columns and slots, while the domain module owns data shaping, empty-state wording, and row actions.
@@ -100,12 +127,12 @@ const ApprovalStatusCell = ({ status }: { status: ApprovalStatus }) => {
 
 ```tsx
 const StatusBadge = ({ status }: { status: ApprovalStatus }) => {
-  if (status === 'pending-payroll-review') {
-    return <span>Pending payroll review</span>
+  if (status === "pending-payroll-review") {
+    return <span>Pending payroll review</span>;
   }
 
-  return <span>Status</span>
-}
+  return <span>Status</span>;
+};
 ```
 
 - A shared form field that imports domain stores or service classes from one domain.

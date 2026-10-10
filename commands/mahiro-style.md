@@ -1,5 +1,5 @@
 ---
-description: Mahiro's code, review, and implementation doctrine. Use as a fallback lens for naming, structure, i18n, boundaries, state, services, UI restraint, and review heuristics when repo-local reality is silent, partial, or drifting.
+description: Mahiro's code, review, and implementation doctrine. Analyzes the requested job, selects relevant guidance, and asks focused scope questions only when needed; users need not remember subcommands. Use for Mahiro-style implementation, refactoring, or review, with repo-local rules first and fallback guidance for naming, structure, i18n, boundaries, state, services, and UI restraint.
 allowed-tools:
   - Bash
   - Read

@@ -37,12 +37,12 @@ Do not phrase `Preferred Direction` as if it were `Current Reality`. That is how
 
 Choose the gates required by the claim; do not require a full browser or product pass for a naming-only change with no runtime or visual effect.
 
-| Gate | Required evidence |
-| --- | --- |
-| Ownership | Canonical source, primitive API, token or recipe rule, and real consumer imports; use `../patterns/shared-ui-boundaries.md` for the preflight |
-| Propagation | The changed contract reaches relevant state, runtime consumers, persistence, exports, and generated outputs |
-| Rendered correctness | Relevant open/closed, selected, disabled, loading and error states; resolved paint, geometry, interaction, and console evidence |
-| Human acceptance | The designated human product owner accepts the visual/product outcome |
+| Gate                 | Required evidence                                                                                                                             |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ownership            | Canonical source, primitive API, token or recipe rule, and real consumer imports; use `../patterns/shared-ui-boundaries.md` for the preflight |
+| Propagation          | The changed contract reaches relevant state, runtime consumers, persistence, exports, and generated outputs                                   |
+| Rendered correctness | Relevant open/closed, selected, disabled, loading and error states; resolved paint, geometry, interaction, and console evidence               |
+| Human acceptance     | The designated human product owner accepts the visual/product outcome                                                                         |
 
 Source tests do not prove runtime integration. Computed styles do not prove visual coherence. A typography or interaction PASS is not a whole-product PASS, and no lower gate substitutes for human acceptance. Report the checked gates and unresolved ones explicitly; do not claim a gate that the task did not test. A reviewer may run focused self-checks, but a writer's self-check is not independent acceptance evidence.
 
@@ -51,6 +51,28 @@ For stateful visual configuration, map the actual lifecycle before reporting int
 When a browser route imports a helper, treat that runtime dependency as browser code even if the helper sits beside server-oriented modules. Check for Node-only imports or globals at the boundary, and require hydration/runtime evidence for a browser-safety claim; a build PASS alone cannot establish it. In rendered checks, inspect console errors and relevant warnings after load and after interactions, rather than ignoring a runtime failure because pixels appear correct.
 
 Keep accepted direction and the requested edit layer intact. A named paint correction preserves geometry and content; a content-only request does not authorize redesign. Reviewers can report no-op handlers, accessibility defects, collisions, or paint drift, but must not disable controls, add explanatory UI, or change product semantics on their own. Route those decisions back to the product owner. Keep literal micro-position corrections in the existing rule below rather than reinterpreting them as a broader redesign.
+
+## Selective product and evidence pain checks
+
+Choose probes from the requested outcome before implementation or review, not
+only at closeout. For component paint, spacing, geometry and icons use the
+**Composed surface pain checks** in `../patterns/shared-ui-boundaries.md`;
+draft lifetime belongs to `../patterns/stores-state.md`. Do not replay every row
+for every edit or copy domain rules into this checklist.
+
+| Recurring pain                                                       | Why it slips through                                              | Before writing                                                                                                           | Cheap disconfirming check                                                                                                                                                                                                             |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Empty components exist, but the empty page repeats useless sections  | Components get checked separately rather than as a page           | Separate first-use empty, empty subsection and filtered no-result; name the useful next action                           | Inspect the whole empty surface and a populated/filter-empty case; a long stack of repeated placeholders is not automatically good empty UX                                                                                           |
+| A mode, template or control exists without a meaningful user outcome | Presence of a button or value replaces the product job            | Name what the user must understand or achieve; preserve the source taxonomy and truthful preview/availability            | Follow the action to its visible/persisted result; text-only choices, identical comparison layers or no-op handlers can pass mechanics while failing the job                                                                          |
+| A label/counter advertises a different limit or unit from runtime    | UI copy and validators have separate owners                       | Recover the actual schema, locale and limit unit; use the existing shared owner where available                          | Exercise boundary values, including multibyte text where relevant, and verify every save/copy/preview action follows the same error state                                                                                             |
+| Extraction or refactoring forgets recurring locale conventions       | A new project is treated as a blank architecture                  | Read the nearest existing locale routing and translation implementation before moving copy                               | Trace real labels through the render boundary and check routing/catalog behavior; do not invent a parallel translation layer merely to extract constants                                                                              |
+| A QA report or screenshot is treated as proof of every state         | Filenames, test activity and reviewer confidence replace evidence | Name the required route, data state, viewport and evidence gate                                                          | Open the actual artifact; verify dimensions and visible state. A closed or one-time editor does not prove an open popup or conditional field; fixed chrome in a full-page capture may be an artifact, not unreachable runtime content |
+| Documentation claims all consumers or full accessibility passed      | A scoped pass gets generalized during summarizing                 | List the actual consumers and distinguish form name, accessible name, keyboard evidence and assistive-technology testing | Check each claimed consumer; `aria-label` can name a control without a visible `label`, and DOM bindings do not prove a real screen-reader pass                                                                                       |
+
+Classify each result as a source fact, runtime/measurement finding, or unresolved
+visual/product choice. Preserve counterexamples that reject a suspected defect.
+Technical positives and unchanged source hashes establish only their own gates;
+they do not grant human acceptance or permission to fix an adjacent concern.
 
 ## Non-negotiable
 
@@ -157,15 +179,15 @@ Apply the same review order everywhere, but let the local repo decide the winnin
 
 ## Examples
 
-- "`AGENTS.md` says routes stay thin, but this diff moves view config, route metadata, and rendering back into the route entry file. Keep orchestration in the route and move owned data back to a domain file." 
-- "The repo already repeats `useLingui` and render-boundary translation. This constants extraction introduces plain string blobs without preserving that posture. Keep the extraction, but preserve the repo's i18n boundary." 
-- "`UserList` and `employeeRows` are clearer than `data` and `items` here because the diff is shaping domain contracts, not generic collections." 
+- "`AGENTS.md` says routes stay thin, but this diff moves view config, route metadata, and rendering back into the route entry file. Keep orchestration in the route and move owned data back to a domain file."
+- "The repo already repeats `useLingui` and render-boundary translation. This constants extraction introduces plain string blobs without preserving that posture. Keep the extraction, but preserve the repo's i18n boundary."
+- "`UserList` and `employeeRows` are clearer than `data` and `items` here because the diff is shaping domain contracts, not generic collections."
 - "This shared component now knows page-specific approval rules. Keep the reusable shell generic and move the approval logic back to the domain-owned layer."
 - "No local doc covers this exact hook split, but the repo repeatedly keeps query hooks near domain services. Review against that repeated pattern before applying Mahiro fallback taste."
-- "This refactor added three wrapper layers, but none of them own layout, semantics, state, or a real boundary. Keep the UI flatter and let the real section or row own the structure directly." 
-- "The filename `profile/sidebar.tsx` is fine, but the export should still carry folder context. Prefer `ProfileSidebar` over `Sidebar` so the component stays searchable outside this folder." 
-- "The route got shorter, but the new hook still owns one-off selection, disclosure, and URL-state logic for a single route. Keep that orchestration inline until a reusable boundary actually appears." 
-- "The prop list is long, but it still reads as one clear component contract. That is acceptable here; the real issue to watch is leaking parent internals, not prop count by itself." 
+- "This refactor added three wrapper layers, but none of them own layout, semantics, state, or a real boundary. Keep the UI flatter and let the real section or row own the structure directly."
+- "The filename `profile/sidebar.tsx` is fine, but the export should still carry folder context. Prefer `ProfileSidebar` over `Sidebar` so the component stays searchable outside this folder."
+- "The route got shorter, but the new hook still owns one-off selection, disclosure, and URL-state logic for a single route. Keep that orchestration inline until a reusable boundary actually appears."
+- "The prop list is long, but it still reads as one clear component contract. That is acceptable here; the real issue to watch is leaking parent internals, not prop count by itself."
 - "This diff adds `getInviteErrorMessage()` inside one hook, but the repo already repeats a shared resolver and stable error codes for this failure family. Keep normalization shared and let the render owner translate the final message."
 - "This screen now looks like a generic AI dashboard: four decorative metric cards, extra pills, and motion that the repo never established. Keep only the controls and feedback that help the user act."
 
