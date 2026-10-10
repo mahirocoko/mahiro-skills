@@ -193,6 +193,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `working-tasks` | `/working-tasks` | You work or resume agreed tsk-backed tasks, maintain the board for the human, and verify completion without automatically creating a Goal. |
 | `review-comment` | `/review-comment` | You need concise Mahiro-voice PR review comments; simulation stays read-only, pending review creation needs an explicit request, and submission needs separate approval. |
 | `rrr` | `/rrr` | You need a retrospective, with an optional gated non-canonical reference learning when a transferable decision exists. |
+| `skill-doctor` | `/skill-doctor` | You want independent evidence-backed diagnosis of an explicitly selected conversation using four preserved Warp rubrics; Letta-first scoped collection, no automatic edits or all-history scan. |
 | `studying-codrops` | `/studying-codrops` | You explicitly want to map or learn from Codrops/Tympanus articles, demos, source repos, showcases, case studies, spotlights, or archives without treating Codrops as a universal frontend style. |
 | `web-asset-prompts` | `/web-asset-prompts` | You need production-ready image-generation prompts for real website assets. |
 | `watch` | `/watch` | You want Gemini transcription plus local captions and learning-note capture for a YouTube video. |

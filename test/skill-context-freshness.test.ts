@@ -208,7 +208,7 @@ describe("packaged skill context freshness", () => {
 
   test("all generic command wrappers avoid source-checkout fallback paths", () => {
     const commandFiles = filesUnder(join(repoRoot, "commands"), ".md");
-    expect(commandFiles.length).toBe(24);
+    expect(commandFiles.length).toBe(25);
 
     for (const file of commandFiles) {
       const command = readFileSync(file, "utf8");
