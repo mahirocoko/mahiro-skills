@@ -16,7 +16,7 @@ It is not the source of truth for a target repo's current state. A repo's `Curre
 
 - Treat this skill as fallback doctrine, not as permission to override repo-local rules.
 - Read local instructions before applying cross-repo defaults.
-- Never transplant a convention from one Mahiro repo into another just because both repos are Mahiro-owned. Haabiz, PaoPlew, Fanarium, Haabiz Landing, eizypay, and mahiro-skills can all have different current realities.
+- Never transplant a convention from one Mahiro repo into another just because both repos are Mahiro-owned. Different projects can have different current realities.
 - Use Foundations for stable doctrine about interpretation, structure, and code-style posture.
 - Keep topic-specific implementation guidance in `patterns/`, not in this page.
 - Ground the doctrine in repeated repo evidence, not one-off taste.

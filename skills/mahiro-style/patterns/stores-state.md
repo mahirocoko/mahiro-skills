@@ -60,6 +60,14 @@ the relevant route/update/restore action, then return or reload. Check both the
 draft and committed data against the agreed preserve/discard contract. A source
 guard is not a replay of a service-worker update or a restore transaction.
 
+On a mounted live-updating editor, type while query data, validation or previews
+change and check control identity, draft value, focus and caret/selection. A
+rerender alone is not a defect; an unintended remount or remote overwrite is.
+Distinguish those from a contractually explicit Reset/discard. Contain a failed
+preview at its render owner so the editing/recovery controls remain available;
+block invalid save/copy actions without freezing unrelated recovery actions.
+Use the shared validation unit for counters, preview and mutation guards.
+
 ### Choose by lifetime
 
 Use the smallest owner that matches the state lifetime:

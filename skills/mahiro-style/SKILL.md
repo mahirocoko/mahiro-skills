@@ -57,6 +57,12 @@ point thin: select existing doctrine rather than duplicating it here.
    `patterns/shared-ui-boundaries.md` and `foundations/review-checklist.md`
    before writing or judging the surface. For draft/navigation concerns, load
    `patterns/stores-state.md`. Users do not need a separate checklist command.
+   When the unresolved question is layout, color, typography, accessibility,
+   asset quality or motion direction, use the project's design owner or an
+   available focused skill; these probes do not replace that expertise. For
+   motion, use `motion-design` when available and the job actually needs it,
+   not for every incidental transition. Do not copy domain systems into this hub
+   or invent unavailable skills as mandatory dependencies.
 4. **State the selected scope briefly.** For example: “I'll check primitive
    ownership and form consistency; layout redesign is outside this review.”
    Name the relevant local owner and observable check before writing or judging

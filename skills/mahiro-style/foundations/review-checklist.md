@@ -46,6 +46,15 @@ Choose the gates required by the claim; do not require a full browser or product
 
 Source tests do not prove runtime integration. Computed styles do not prove visual coherence. A typography or interaction PASS is not a whole-product PASS, and no lower gate substitutes for human acceptance. Report the checked gates and unresolved ones explicitly; do not claim a gate that the task did not test. A reviewer may run focused self-checks, but a writer's self-check is not independent acceptance evidence.
 
+For theme claims, compare resolved role relationships against the local accepted
+mapping in each supported mode: track/selected, card/popup and idle/hover are not
+proved by token names alone. For a shared chart-palette contract, trace the same
+semantic series through sibling plots, legends and tooltip markers to its owned
+slot; unrelated datasets may have independent palettes. Fix an evidenced binding
+or owner mismatch before retuning colors, and preserve authored values unless
+changing them is part of the approved job. Use the project's color owner or
+available focused color guidance for unresolved palette decisions.
+
 For stateful visual configuration, map the actual lifecycle before reporting integration: draft and baseline, modified detection, Reset, navigation/history, persistence, export, runtime projection, and real-consumer visibility where applicable. Test sequential transitions such as `A → B → A` on one mounted consumer so stale or omitted values cannot hide. Open the actual overlay or disclosure state when its paint or affordance is part of the claim; a closed screenshot does not establish the open state.
 
 When a browser route imports a helper, treat that runtime dependency as browser code even if the helper sits beside server-oriented modules. Check for Node-only imports or globals at the boundary, and require hydration/runtime evidence for a browser-safety claim; a build PASS alone cannot establish it. In rendered checks, inspect console errors and relevant warnings after load and after interactions, rather than ignoring a runtime failure because pixels appear correct.
@@ -87,7 +96,7 @@ they do not grant human acceptance or permission to fix an adjacent concern.
 - Flag UI trees that get deeper without earning a real semantic, layout, accessibility, state, or ownership boundary.
 - Flag generic AI-looking UI drift: unexplained metric-card walls, fake-premium gradients, decorative pill overload, gratuitous transitions, verbose helper copy, or styling that ignores the repo's product tone.
 - For a persisted user-owned entity or collection, map the expected lifecycle before calling the surface complete: Create, Read, Update or explicit immutability, Delete or Archive, recovery, and the relevant empty/error/confirmation states. MVP may reduce breadth, but it must not silently omit a primary lifecycle action for data the user owns. Imported catalogs, append-only evidence, audit records, and other intentionally immutable owners are exempt when that boundary is explicit and locally proven.
-- For unresolved or consequential UI/visual-design decisions, consult Agy/Gemini for one implementation-ready recommendation grounded in the exact rendered anatomy and constraints before locking direction. Treat the consultation as advisory: Main retains repo-truth, accessibility, and correctness ownership; preserve accepted visual ownership; Mahiro retains final visual/product acceptance.
+- For unresolved or consequential UI/visual-design decisions, consult the designated visual owner or an adviser allowed by the current project/runtime policy for one grounded recommendation before locking direction. Do not mandate a particular provider from this code-style hub. Main retains repo-truth, accessibility and correctness ownership; preserve accepted visual ownership and keep final visual/product acceptance with Mahiro.
 - Flag refactors that preserve logic but noticeably drift from the established product feel of a screen, such as turning a sparse premium surface into a verbose instructional one.
 - Flag spacing overrides on shared primitives when they appear reflexive rather than driven by a clear visual requirement.
 - Do not approve spacing from utility names or isolated elements. Inspect the full rendered surface and separate row cadence, label-to-row gap, section gap, parent-child gap, and viewport density. Compare those roles with the selected source owner, measure geometry when needed, and audit selector scope after wrappers change. Functional checks and source-class fidelity do not prove readable visual rhythm; final spacing acceptance remains human-owned.

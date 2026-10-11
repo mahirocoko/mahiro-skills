@@ -66,4 +66,4 @@ Use the same winner order in every repo, but let the local evidence change the o
 - Treating an in-progress codebase snapshot as stronger than an explicit local doctrine rule just because the migration is incomplete.
 - Mixing two conflicting layers into a compromise shape for new code.
 - Using one exceptional file as proof of a repo-wide rule.
-- Treating "we did it in PaoPlew/Fanarium/Haabiz" as enough evidence for this repo.
+- Treating "we did it in another project" as enough evidence for this repo.

@@ -42,6 +42,20 @@ Verify provenance as well as naming: map a semantic class to its current rule an
 
 Before adding a trailing icon, inspect the primitive for an injected chevron, check, or other affordance. In compact rows, give the label and metadata explicit space ownership rather than letting two trailing owners compete. Default control size is a fallback, not a universal geometry mandate: preserve justified compact toolbars and icon overlays through the repo's existing size/variant contract.
 
+For stateful affordances, locate the runtime attribute on the actual node that
+owns the selector; do not infer it from a familiar group/peer class. Trace a
+selection's machine value to its displayed label through the primitive's public
+API or domain mapping, then inspect the closed trigger after selection. A
+readable option in the popup does not prove the trigger displays that label.
+Values already intended as human labels do not need a new mapping layer.
+
+For typography mismatches, trace the semantic role through caller classes,
+class-merger output and the winning font family/size, not only a generated CSS
+rule. Keep a logo-only face in its logo role rather than a generic display alias
+that leaks into product UI. Check the relevant hierarchy, wraps and Thai glyph
+clearance at rendered size; use the project's typography owner or available
+focused typography guidance for direction, not universal type sizes or tracking.
+
 ## Composed surface pain checks
 
 Run the relevant rows before writing a shared-UI consumer, then check the actual
@@ -54,21 +68,49 @@ pixel value. Skip unrelated rows; a naming-only change does not need browser QA.
 | A real primitive import still produces a copied or overridden shell | Provenance gets mistaken for correct consumption                | Name the primitive, public variant, app override and nearest accepted consumer                                                    | Trace each visible background, border, radius and shadow to its real rule; inspect the composed consumer, not the import alone                                       |
 | Spacing is counted twice or applied to the wrong child              | Each utility looks reasonable in isolation                      | Give each row, label and section one spacing owner; inspect flex/grid gaps, margins and wrapper selectors together                | Measure direct-child distances; challenge `gap` plus sibling margins and inline labels whose vertical margins do not affect flow                                     |
 | Equal control heights still leave fields misaligned                 | Only the height or inner input was checked                      | Map label line boxes, label-to-shell gaps, shell padding and sibling geometry                                                     | Measure label and outer-shell top/bottom on one mounted form; exercise a conditional field and long label                                                            |
-| Input, Select and native exceptions diverge in paint or states      | Default background tokens get treated as the complete recipe    | Map the full field-family recipe, including hover, focus, disabled and invalid; document deliberate native exceptions             | Compare resolved paint and focus geometry in relevant states; different token names may resolve identically, and identical defaults may hide different state recipes |
+| Input-like controls diverge in border/background                    | Only text inputs or inner elements get checked                  | Inventory the actual field family and each outer paint owner; recover prior local examples and justified contextual variants      | Compare outer-shell border width/style/color and background in matching states; include multiline fields and composed triggers, not just the editor's text input     |
 | Labels, metadata and trailing affordances collide                   | Each child exists, but no one owns remaining space              | Inspect injected primitive icons; give leading content, flexible label, fixed metadata and trailing affordance explicit ownership | Open the real overlay and stress long labels at the narrow supported width; measure gaps, clipping and submenu reachability                                          |
 | Icons are incomplete or do not follow state                         | A nominal SVG box or plausible selector gets accepted           | Use the complete owned icon and locate the element carrying the state attribute                                                   | Inspect target-size silhouettes together and both open/closed states; a screenshot of one state does not prove state behavior                                        |
 | A reference match preserves the subtree but loses page anatomy      | A cropped capture or token list is treated as the entire source | Establish exact fidelity versus taste evidence; inspect visible ancestors/siblings and freeze accepted edit boundaries            | Compare the relevant rendered source set and current consumer; retain navigation/content outside the crop unless the owner explicitly removed it                     |
 
-Do not force canonical upstream primitives to become visually identical merely
-because they appear in one form. First determine whether the local contract wants
-the same field family or a deliberate hierarchy; report an unresolved choice
-rather than silently forking the primitive or redesigning the page.
+### Field family: shared border/background, independent anatomy
+
+Interpret "input style" as consistent border and background across ordinary
+input-like controls, not only the HTML input element. Inventory real consumers:
+Input, Textarea, Select, DatePicker, Combobox and search/value triggers where
+present. Recover the nearest local examples before inventing a new interpretation.
+Keep each control's geometry, anatomy and behavior; this requirement does not
+demand identical radius, shadow or focus mechanics, nor justify withdrawing
+otherwise correct work on those properties.
+
+Compare border width/style/color and background at the **outer paint owner** in
+matching states. A transparent, borderless inner input is valid when InputGroup
+or a composed trigger owns the field surface; do not add a second frame. Inspect
+hover, focus, disabled and invalid when relevant without forcing different
+interaction mechanisms to become identical. Compact inline or quiet controls
+may have deliberately different paint, but establish that role from the local
+or human contract rather than inventing an exemption after finding a mismatch.
+
+Inspect the whole winning paint chain: theme values, surrounding surface such as
+Dialog, primitive, composition overrides and state. Shared field paint is a
+comparison criterion, not a ban on holistic diagnosis or an instruction to paint
+popups/dialogs like fields. Treat suggested causes as hypotheses: identical fill
+alone does not prove Dialog is wrong, and an unchanged canonical primitive does
+not disprove a disappearing field. Test the competing cause with the smallest
+bounded probe and repair the evidenced owner through an existing variant or
+supported composition API. Push back when evidence contradicts a suggestion.
+
+Report the consumers and states actually inspected. Equal heights, valid labels,
+imports and a clean console do not prove border/background parity or a visible
+boundary. Source checks establish only source facts; rendered checks and human
+visual acceptance remain separate. Do not claim the entire family passed while
+an existing member or its shell was omitted.
 
 ## Non-negotiable
 
 - Keep shared UI generic in vocabulary, inputs, and output responsibilities.
 - Let reusable primitives own their shell contract: geometry, focus states, disabled states, border, shadow, intrinsic spacing, and baseline typography unless the target repo documents a different ownership model.
-- Keep business mapping, domain status rules, workflow labels, and module copy outside shared primitives.
+- Keep business mapping, domain status rules, workflow labels, and module copy outside shared primitives. Reuse the canonical entity display mapping and missing-data fallback across sibling consumers unless a proven local surface contract intentionally differs; shared CSS alone does not establish data consistency.
 - Wrap shared primitives with domain components when a domain needs custom mapping or composition.
 - Do not move page-specific logic into shared UI just to reduce lines in a route or screen file.
 - Do not over-customize shared primitives at call sites to chase one screen's local look. Prefer wrapper layout/positioning classes; change the primitive only when the default contract itself is wrong or repeated needs prove a new variant.

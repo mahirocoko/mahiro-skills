@@ -292,7 +292,9 @@ describe("skill pattern adaptation phase a", () => {
     expect(hub).toContain("Routing chooses");
     expect(sharedUi).toContain("## Composed surface pain checks");
     expect(sharedUi).toContain("one spacing owner");
-    expect(sharedUi).toContain("different token names may resolve identically");
+    expect(sharedUi).toContain("Inspect the whole winning paint chain");
+    expect(sharedUi).toContain("Treat suggested causes as hypotheses");
+    expect(sharedUi).toContain("Shared field paint is a");
     expect(review).toContain("## Selective product and evidence pain checks");
     expect(review).toContain("Classify each result as a source fact");
     expect(state).toContain("enumerate");
