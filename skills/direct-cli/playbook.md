@@ -842,7 +842,7 @@ For several Agy models in one job:
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
 4. Only then send either the role-specific prompt or the same shared prompt.
 
-Use the curated Agy roles below after a fresh `agy models` check. The Opus and Sonnet 5.5 choices are catalog-confirmed, not foreground-launch-verified; require the exact visible model before sending work. Their catalog IDs encode Low, Medium, or High effort; use the exact ID for the requested tier rather than assuming a separate thinking slug or an additional effort override is needed. Gemini Pro remains outside the curated picker; catalog presence alone does not establish foreground availability.
+Use the curated Agy roles below after a fresh `agy models` check. The Opus and Sonnet 5.5 choices are catalog-confirmed, not foreground-launch-verified; require the exact visible model before sending work. Their catalog IDs encode Low, Medium, or High effort; use the exact ID for the requested tier rather than assuming a separate thinking slug or an additional effort override is needed. Other catalog entries remain outside the curated picker; catalog presence alone does not establish foreground availability. Agy 1.3.4 and later accept a base model name without `--effort` and choose the server default, otherwise Medium, otherwise the lowest available tier. Keep exact tier IDs for deterministic routing rather than inheriting that selection.
 
 ### Antigravity multiline prompt caveat
 
@@ -882,6 +882,16 @@ Herdr compatibility is capability-based: require managed-pane markers, a compati
 ## Curated routing policy
 
 This is the single owner of direct-cli's role-to-model choices. Replace superseded entries here instead of appending catalog snapshots elsewhere. Intersect these choices with the live CLI catalog before every launch; a listed role is preference, not availability proof.
+
+### Current catalog evidence
+
+Checked **2026-10-14** with `agent models`, `agy models`, and refreshed `codex debug models` (not `--bundled`). This is non-authoritative availability evidence; repeat the target CLI's catalog check before reuse. The curated preferences below are unchanged.
+
+- **Gemini 4 Argon:** Cursor and Agy both list `gemini-4-argon-low`, `gemini-4-argon-medium`, and `gemini-4-argon-high`. These are newly documented here, not new because of a binary upgrade: they were present in the first catalog capture and remained unchanged afterward. They are availability-only choices, outside the default picker. No foreground launch, inference, quality comparison, or account-wide entitlement was verified.
+- **Release versus route:** [Google's Gemini API release notes](https://ai.google.dev/gemini-api/docs/changelog) date Argon's general availability to **2026-10-13**. [Google's model reference](https://ai.google.dev/gemini-api/docs/models) lists the API endpoint `gemini-4-argon` as stable. That API name is not a substitute for either CLI's exact effort-bearing IDs, nor proof of identical provider behavior or context limits.
+- **Codex:** `gpt-6.1-sol` and `gpt-6-astra` advertise `low`, `medium`, `high`, `xhigh`, `max`, and `ultra`; `gpt-6-luna` advertises the same levels except `ultra`. Their catalog defaults are Low, Medium, and Medium respectively. Existing role defaults below deliberately remain explicit. The pre/post check found no model-ID, effort, default, or visibility changes in Codex, and no ID/display-name changes in Cursor or Agy.
+
+### Preferred roles
 
 - Cursor ordinary implementation / cleanup model: `composer-2.5`
 - Cursor long-horizon agentic model: Grok 4.7 with `context=500k`, `effort=high`, and non-Fast by default
@@ -960,6 +970,17 @@ tmux capture-pane -p -t "codex-task" -S -120
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CODEX_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "codex-task" -S -120
 ```
+
+### Explicit CLI maintenance
+
+CLI maintenance is separate from executor dispatch. Routine version, help, and catalog commands need no agent pane and send no task prompt. An upgrade still requires explicit install/update permission; it never authorizes a model/default change, login, integration install, or creative task.
+
+1. Record `command -v`, symlink/install ownership, `--version`, help, and the live catalog before mutation. Some CLIs can self-update while routine discovery runs, so verify the version again rather than attributing every change to the explicit updater.
+2. Inspect `agent update --help`, `agy help update`, and `codex update --help`. Use the supported updater serially, only after confirming it targets the intended installation. Codex's updater selects its package manager from installation ownership; inspect the announced command and do not substitute another package manager or update an imagegen fork.
+3. Run only the authorized item's updater: `agent update`, `agy update`, or `codex update`. Stop that item if it requires sudo, unknown installer changes, login, or foreground approval; continue other safe items. Never interrupt running user sessions to finish an upgrade.
+4. Recheck each binary path/version/help and catalog. Distinguish newly documented IDs, actual dated releases, and this account's catalog visibility. An unchanged catalog is a valid outcome; availability alone does not adopt a route or prove a successful foreground launch.
+
+Non-authoritative maintenance evidence checked **2026-10-14**: Cursor's updater reports `2026.10.12-d47ca18`; Agy reports `1.3.5` and already current; official Codex reports `0.162.1` after its updater selects `bun install -g @openai/codex`. [Codex's official release](https://github.com/openai/codex/releases/tag/rust-v0.162.1) was published **2026-10-09**. `agy changelog` confirms base-model default selection in 1.3.4 and opt-in `--mode auto` in 1.3.5; neither replaces this playbook's exact-ID or autonomous launch preferences. Agy's autonomy flag skips tool permission prompts, not plan/artifact review. Do not change saved Artifact Review settings to bypass that gate.
 
 ### Safe discovery examples
 

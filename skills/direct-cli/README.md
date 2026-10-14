@@ -22,7 +22,9 @@ The Orca backend loads the installed version's `orca-cli` guide, creates a direc
 
 Herdr topology creation is not shell readiness. After creating a tab or split, direct-cli submits and waits for an exact shell-ready marker, then checks that the shell is the only foreground process before `agent start`; this avoids the foreground-proven `agent_pane_busy` startup race.
 
-The curated role-to-model mapping has one owner: `playbook.md`. This README and the command wrappers intentionally do not copy the model catalog. Before launch, intersect the current playbook choices with the live CLI catalog; if the requested/default route is unavailable, report that fact rather than reviving an older catalog entry.
+The curated role-to-model mapping has one owner: `playbook.md`. This README and the command wrappers intentionally do not copy the model catalog. Before launch, intersect the current playbook choices with the live CLI catalog; if the requested/default route is unavailable, report that fact rather than reviving an older catalog entry. The same owner keeps current catalog evidence separate from preferred roles, so a newly available model does not silently become a default.
+
+For explicitly authorized CLI upgrades, follow the playbook's maintenance procedure. Routine version/help/catalog inspection needs no executor lane; upgrades prove install ownership, run supported updaters serially, and verify afterward without changing auth, settings, other forks, or running user sessions.
 
 `--effort` in `/direct-cli` is lane-aware. Pass it through natively to `agy --effort` only when that selected model supports the requested effort; otherwise stop rather than accepting Agy's silent fallback to its default model. Translate it to Codex `-c model_reasoning_effort=<level>`; for Cursor, choose an exact effort-bearing model ID or supported parameterized model expression. If effort is omitted, use the current role default from `playbook.md` after catalog verification; never turn on ultra implicitly.
 
