@@ -123,7 +123,7 @@ describe("list", () => {
       expect(receipt?.root).toBe(isolatedRoot);
       expect(receipt?.sourceRepoPath.length).toBeGreaterThan(0);
       expect(receipt?.installedSkills).toEqual(["project"]);
-      expect(receipt?.installedCommands).toEqual([]);
+      expect(receipt?.installedCommands).toEqual(["project"]);
       expect(receipt?.installedAt.length).toBeGreaterThan(0);
     } finally {
       temp.cleanup();
@@ -192,7 +192,7 @@ describe("list", () => {
           agent: "pi",
           scope: "local",
           installedSkills: ["mahiro-style"],
-          installedCommands: [],
+          installedCommands: ["mahiro-style"],
           installed: ["mahiro-style"],
         },
       ]);

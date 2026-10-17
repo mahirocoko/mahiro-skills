@@ -4,9 +4,40 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, 
 import { dirname, join } from "path";
 
 import { hashPath } from "../src/content-hash";
+import { cleanupPiPromptAliases } from "../src/adapters";
 import { install, InstallFailure, installReviewIdentity } from "../src/install";
 import { createPlan } from "../src/plan";
+import { listInstalled } from "../src/list";
+import { uninstall } from "../src/uninstall";
+import { getSkillManagerSnapshot, installSkillManagerItems } from "../src/skill-manager";
 import { makeTempEnv } from "./helpers";
+
+test("Pi legacy prompt cleanup never follows a symlinked prompt directory", () => {
+  const temp = makeTempEnv();
+  try {
+    const root = join(temp.root, "pi-root");
+    const outside = join(temp.root, "outside-root");
+    mkdirSync(root);
+    mkdirSync(outside);
+    const file = join(outside, "recap.md");
+    writeFileSync(file, "synthetic legacy prompt\n");
+    symlinkSync(outside, join(root, "prompts"));
+    const receipt = {
+      schemaVersion: 2,
+      agent: "pi",
+      root,
+      installedCommands: ["recap"],
+      targetStates: [{ kind: "command", name: "recap", installedHash: hashPath(file) }],
+    } as NonNullable<Parameters<typeof cleanupPiPromptAliases>[1]>;
+    const result = cleanupPiPromptAliases(root, receipt, ["recap"]);
+    expect(result.removed).toEqual([]);
+    expect(result.preserved).toEqual(["recap"]);
+    expect(result.warnings).toHaveLength(1);
+    expect(readFileSync(file, "utf8")).toBe("synthetic legacy prompt\n");
+  } finally {
+    temp.cleanup();
+  }
+});
 
 function makeSafetyFixture() {
   const temp = makeTempEnv();
@@ -25,6 +56,167 @@ function makeSafetyFixture() {
 }
 
 describe("install", () => {
+  const piCore = ["recap", "rrr", "forward", "mahiro-style", "working-tasks"];
+
+  test.skipIf(!process.env.PI_TEST_SDK)("Pi public SDK loads and invokes five extension aliases with raw arguments offline", () => {
+    const temp = makeTempEnv();
+    try {
+      const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
+      install("pi", "global", piCore, false, env);
+      const result = Bun.spawnSync(
+        [
+          process.execPath,
+          "--eval",
+          `
+        const { DefaultResourceLoader, SettingsManager } = await import(process.env.PI_TEST_SDK);
+        const loader = new DefaultResourceLoader({
+          cwd: process.env.MAHIRO_SKILLS_CWD, agentDir: process.env.PI_CODING_AGENT_DIR,
+          settingsManager: SettingsManager.inMemory(),
+          noThemes: true, noContextFiles: true,
+        });
+        await loader.reload();
+        const loaded = loader.getExtensions();
+        const calls = [];
+        loaded.runtime.sendUserMessage = (content, options) => calls.push({ content, options });
+        const commands = loaded.extensions.flatMap(extension => [...extension.commands]);
+        for (const [name, command] of commands) {
+          await command.handler('two words "quoted"  $1 $ARGUMENTS', {});
+          await command.handler('', {});
+        }
+        console.log(JSON.stringify({ skills: loader.getSkills(), errors: loaded.errors, names: commands.map(([name]) => name), calls }));
+      `,
+        ],
+        { cwd: env.MAHIRO_SKILLS_CWD, env },
+      );
+      expect(result.exitCode).toBe(0);
+      const loaded = JSON.parse(result.stdout.toString());
+      expect(loaded.skills.skills.map((skill: { name: string }) => skill.name).sort()).toEqual([...piCore].sort());
+      expect(loaded.names.sort()).toEqual([...piCore].sort());
+      expect(loaded.skills.diagnostics).toEqual([]);
+      expect(loaded.errors).toEqual([]);
+      for (const name of piCore) {
+        expect(loaded.calls).toContainEqual({ content: `/skill:${name} two words "quoted"  $1 $ARGUMENTS`, options: { expandPromptTemplates: true } });
+        expect(loaded.calls).toContainEqual({ content: `/skill:${name}`, options: { expandPromptTemplates: true } });
+      }
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("Pi reserves native commands and removes only installed skill trigger metadata", () => {
+    const temp = makeTempEnv();
+    try {
+      const source = join(temp.root, "source");
+      for (const name of ["resume", "tree", "fork", "model", "safe"]) {
+        mkdirSync(join(source, "skills", name), { recursive: true });
+        mkdirSync(join(source, "commands"), { recursive: true });
+        writeFileSync(join(source, "skills", name, "SKILL.md"), `---\nname: ${name}\ndescription: Fixture\ntrigger: /${name}\nallowed-tools: Read Bash\n---\nKeep body trigger: text\n`);
+        writeFileSync(join(source, "commands", `${name}.md`), "Args: $ARGUMENTS");
+      }
+      const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, MAHIRO_SKILLS_REPO_ROOT: source, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
+      writeFileSync(join(source, "commands", "standalone.md"), "No corresponding skill");
+      const plan = createPlan("pi", "global", [], env);
+      expect(plan.commands.map((target) => target.name)).toEqual(["safe"]);
+      expect(plan.skipped.map((item) => item.item).sort()).toEqual(["fork", "model", "resume", "standalone", "tree"]);
+      install("pi", "global", [], false, env);
+      const installed = readFileSync(join(plan.root, "skills", "safe", "SKILL.md"), "utf8");
+      expect(installed).not.toContain("trigger: /safe");
+      expect(installed).toContain("allowed-tools: Read Bash");
+      expect(installed).toContain("Keep body trigger: text");
+      expect(readFileSync(join(source, "skills", "safe", "SKILL.md"), "utf8")).toContain("trigger: /safe");
+      const cursorPlan = createPlan("cursor", "local", [], env);
+      expect(cursorPlan.commands).toHaveLength(6);
+      install("cursor", "local", ["safe"], false, env);
+      expect(readFileSync(join(cursorPlan.root, "skills", "safe", "SKILL.md"), "utf8")).toContain("trigger: /safe");
+      expect(existsSync(join(cursorPlan.root, "commands", "safe.md"))).toBe(true);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  for (const scope of ["local", "global"] as const) {
+    test(`Pi core skill/extension-alias lifecycle stays isolated (${scope})`, () => {
+      const temp = makeTempEnv();
+      try {
+        const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
+        const plan = createPlan("pi", scope, piCore, env);
+        expect(plan.commands.map((target) => target.name)).toEqual(piCore);
+        install("pi", scope, piCore, false, env);
+        for (const target of plan.commands) {
+          const content = readFileSync(target.target, "utf8");
+          expect(content).toContain(`pi.registerCommand(${JSON.stringify(target.name)}`);
+          expect(content).toContain(JSON.stringify(`/skill:${target.name}`));
+          expect(content).toContain("expandPromptTemplates: true");
+          expect(content).toContain("import type { ExtensionAPI }");
+          expect(target.target).toBe(join(plan.root, "extensions", `mahiro-command-${target.name}.ts`));
+        }
+        for (const target of plan.skills) {
+          const expected = readFileSync(join(target.source, "SKILL.md"), "utf8")
+            .replace("description: ", "description: Mahiro Skill | ")
+            .replace(/^trigger:[^\n]*\n/gm, "");
+          expect(readFileSync(join(target.target, "SKILL.md"), "utf8")).toBe(expected);
+        }
+        const receipt = listInstalled("pi", scope, env)!;
+        expect(receipt.installedCommands).toEqual(piCore);
+        expect(receipt.targetStates?.length).toBe(plan.skills.length + plan.commands.length);
+        const hashes = [...plan.skills, ...plan.commands].map((target) => hashPath(target.target));
+        writeFileSync(plan.commands[0]!.target, "modified prompt");
+        installSkillManagerItems("pi", scope, piCore, true, env);
+        expect([...plan.skills, ...plan.commands].map((target) => hashPath(target.target))).toEqual(hashes);
+        expect(
+          getSkillManagerSnapshot("pi", scope, env)
+            .skills.filter((skill) => piCore.includes(skill.name))
+            .every((skill) => skill.status === "current"),
+        ).toBe(true);
+        install("pi", scope, piCore, true, env);
+        expect([...plan.skills, ...plan.commands].map((target) => hashPath(target.target))).toEqual(hashes);
+        uninstall("pi", scope, [], env);
+        expect([...plan.skills, ...plan.commands].every((target) => !existsSync(target.target))).toBe(true);
+        expect(listInstalled("pi", scope, env)).toBeNull();
+
+        // A legacy Pi skills-only receipt must gain extension aliases through Update, not a second installer.
+        install("pi", scope, piCore, false, env);
+        const receiptPath = join(plan.root, ".mahiro-skills", "receipts", `${scope}-pi.json`);
+        const legacy = listInstalled("pi", scope, env)!;
+        for (const target of plan.commands) fs.rmSync(target.target);
+        legacy.installedCommands = [];
+        legacy.targetStates = legacy.targetStates?.filter((state) => state.kind === "skill");
+        writeFileSync(receiptPath, JSON.stringify(legacy));
+        installSkillManagerItems("pi", scope, piCore, true, env);
+        expect(listInstalled("pi", scope, env)?.installedCommands).toEqual(piCore);
+        expect([...plan.skills, ...plan.commands].map((target) => hashPath(target.target))).toEqual(hashes);
+
+        // Recreate the preceding prompt-adapter receipt without touching any real profile.
+        const makeOldPrompts = () => {
+          const old = listInstalled("pi", scope, env)!;
+          mkdirSync(join(plan.root, "prompts"), { recursive: true });
+          for (const target of plan.commands) {
+            fs.rmSync(target.target, { force: true });
+            const prompt = join(plan.root, "prompts", `${target.name}.md`);
+            writeFileSync(prompt, readFileSync(target.source, "utf8").replace("description: ", "description: Mahiro Skill | "));
+            old.targetStates!.find((state) => state.kind === "command" && state.name === target.name)!.installedHash = hashPath(prompt)!;
+          }
+          writeFileSync(receiptPath, JSON.stringify(old));
+        };
+        makeOldPrompts();
+        writeFileSync(join(plan.root, "prompts", "user-owned.md"), "unrelated");
+        installSkillManagerItems("pi", scope, piCore, true, env);
+        expect(piCore.every((name) => !existsSync(join(plan.root, "prompts", `${name}.md`)))).toBe(true);
+        expect(readFileSync(join(plan.root, "prompts", "user-owned.md"), "utf8")).toBe("unrelated");
+        makeOldPrompts();
+        writeFileSync(join(plan.root, "prompts", "recap.md"), "user modified");
+        const migrated = install("pi", scope, piCore, true, env);
+        expect(migrated.warnings.some((warning) => warning.includes("Preserved modified"))).toBe(true);
+        expect(readFileSync(join(plan.root, "prompts", "recap.md"), "utf8")).toBe("user modified");
+        makeOldPrompts();
+        uninstall("pi", scope, [], env);
+        expect(piCore.every((name) => !existsSync(join(plan.root, "prompts", `${name}.md`)))).toBe(true);
+      } finally {
+        temp.cleanup();
+      }
+    });
+  }
+
   test("failed restoration retains a dangling link and records its missing destination", () => {
     const temp = makeSafetyFixture();
     const beta = createPlan("agy", "local", ["beta"], temp.env).skills[0]!.target;
@@ -41,7 +233,11 @@ describe("install", () => {
     });
     try {
       let failure: unknown;
-      try { install("agy", "local", ["alpha", "beta"], true, temp.env); } catch (error) { failure = error; }
+      try {
+        install("agy", "local", ["alpha", "beta"], true, temp.env);
+      } catch (error) {
+        failure = error;
+      }
       expect(failure).toBeInstanceOf(InstallFailure);
       const evidence = (failure as InstallFailure).evidence.targets.find((target) => target.name === "beta")!;
       expect(evidence.status).toBe("changed");
@@ -112,13 +308,20 @@ describe("install", () => {
     });
     try {
       let failure: unknown;
-      try { install("agy", "local", ["alpha", "beta"], true, temp.env); } catch (error) { failure = error; }
+      try {
+        install("agy", "local", ["alpha", "beta"], true, temp.env);
+      } catch (error) {
+        failure = error;
+      }
       const evidence = (failure as InstallFailure).evidence;
       expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "changed"]);
       expect(evidence.receiptSync).toBe("failed");
       expect(evidence.receiptError).toContain("receipt rename failure");
       expect(readFileSync(temp.initial.receiptPath!, "utf8")).toBe(receiptBefore);
-    } finally { rename.mockRestore(); temp.cleanup(); }
+    } finally {
+      rename.mockRestore();
+      temp.cleanup();
+    }
   });
 
   test("retains recovery bytes and removes a stale baseline when target restoration fails", () => {
@@ -131,7 +334,11 @@ describe("install", () => {
     });
     try {
       let failure: unknown;
-      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      try {
+        install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env);
+      } catch (error) {
+        failure = error;
+      }
       const evidence = (failure as InstallFailure).evidence;
       expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "changed", "not-attempted"]);
       expect(evidence.receiptSync).toBe("synced");
@@ -139,7 +346,10 @@ describe("install", () => {
       const receipt = JSON.parse(readFileSync(temp.initial.receiptPath!, "utf8"));
       expect(receipt.targetStates.some((state: { name: string }) => state.name === "beta")).toBe(false);
       expect(existsSync(beta)).toBe(false);
-    } finally { rename.mockRestore(); temp.cleanup(); }
+    } finally {
+      rename.mockRestore();
+      temp.cleanup();
+    }
   });
   test("validates the second payload before any selected target or receipt replacement", () => {
     const temp = makeSafetyFixture();
@@ -147,12 +357,18 @@ describe("install", () => {
       const before = hashPath(temp.initial.root);
       writeFileSync(join(temp.source, "skills", "beta", "SKILL.md"), "malformed Agy payload");
       let failure: unknown;
-      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      try {
+        install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env);
+      } catch (error) {
+        failure = error;
+      }
       expect(failure).toBeInstanceOf(InstallFailure);
       expect((failure as InstallFailure).evidence.targets.map((target) => target.status)).toEqual(["not-attempted", "not-attempted", "not-attempted"]);
       expect((failure as InstallFailure).evidence.receiptSync).toBe("not-needed");
       expect(hashPath(temp.initial.root)).toBe(before);
-    } finally { temp.cleanup(); }
+    } finally {
+      temp.cleanup();
+    }
   });
 
   test("reports prior progress, restores a failed replacement, and syncs only completed receipt states", () => {
@@ -166,7 +382,11 @@ describe("install", () => {
     });
     try {
       let failure: unknown;
-      try { install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env); } catch (error) { failure = error; }
+      try {
+        install("agy", "local", ["alpha", "beta", "gamma"], true, temp.env);
+      } catch (error) {
+        failure = error;
+      }
       expect(failure).toBeInstanceOf(InstallFailure);
       const evidence = (failure as InstallFailure).evidence;
       expect(evidence.targets.map((target) => target.status)).toEqual(["changed", "unchanged", "not-attempted"]);
@@ -178,7 +398,10 @@ describe("install", () => {
         expect(state.installedHash).toBe(hashPath(join(temp.initial.root, "skills", `mh-${state.name}`)));
       }
       expect(readdirSync(join(temp.initial.root, "skills")).some((name) => name.startsWith(".mahiro-stage-"))).toBe(false);
-    } finally { rename.mockRestore(); temp.cleanup(); }
+    } finally {
+      rename.mockRestore();
+      temp.cleanup();
+    }
   });
 
   test("refuses source drift during staging before the first replacement", () => {
@@ -195,7 +418,10 @@ describe("install", () => {
     try {
       expect(() => install("agy", "local", ["alpha"], true, temp.env, identity)).toThrow("changed during staging");
       expect(hashPath(temp.initial.root)).toBe(before);
-    } finally { copy.mockRestore(); temp.cleanup(); }
+    } finally {
+      copy.mockRestore();
+      temp.cleanup();
+    }
   });
 
   test("rechecks reviewed source and receipt at the installer boundary", () => {
@@ -207,7 +433,9 @@ describe("install", () => {
       writeFileSync(source, readFileSync(source, "utf8").replace("two", "three"));
       expect(() => install("agy", "local", ["alpha"], true, temp.env, identity)).toThrow("changed after review");
       expect(hashPath(temp.initial.root)).toBe(before);
-    } finally { temp.cleanup(); }
+    } finally {
+      temp.cleanup();
+    }
   });
 
   test("copies scripted skill, paired command, and receipt", () => {
@@ -271,7 +499,33 @@ describe("install", () => {
       };
 
       expect(result.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
-      expect(result.installed).toEqual(["asset-designer", "auditing-context-contracts", "codex-asset-production", "control-room-goals", "creating-character-ip", "direct-cli", "fable", "forward", "gemini", "herdr-cli", "learn", "mac-calendar-booking", "mahiro-docs-rules-init", "mahiro-guidance-refine", "mahiro-style", "motion-design", "project", "recap", "review-comment", "rrr", "skill-doctor", "studying-codrops", "web-asset-prompts", "watch", "working-tasks"]);
+      expect(result.installed).toEqual([
+        "asset-designer",
+        "auditing-context-contracts",
+        "codex-asset-production",
+        "control-room-goals",
+        "creating-character-ip",
+        "direct-cli",
+        "fable",
+        "forward",
+        "gemini",
+        "herdr-cli",
+        "learn",
+        "mac-calendar-booking",
+        "mahiro-docs-rules-init",
+        "mahiro-guidance-refine",
+        "mahiro-style",
+        "motion-design",
+        "project",
+        "recap",
+        "review-comment",
+        "rrr",
+        "skill-doctor",
+        "studying-codrops",
+        "web-asset-prompts",
+        "watch",
+        "working-tasks",
+      ]);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "auditing-context-contracts", "scripts", "scan-context-contracts.ts"))).toBe(true);
       expect(receipt.description).toBe("Mahiro Skill | Packaged local skills plus agent-native command entrypoints from the current mahiro-skills bundle.");
     } finally {
@@ -308,12 +562,7 @@ describe("install", () => {
       expect(result.installed).toEqual(["recap"]);
       expect(receipt.installedSkills).toEqual(["project", "recap"]);
       expect(receipt.installedCommands).toEqual(["project", "recap"]);
-      expect(receipt.targetStates.map(({ name, kind }) => `${kind}:${name}`)).toEqual([
-        "skill:project",
-        "command:project",
-        "skill:recap",
-        "command:recap",
-      ]);
+      expect(receipt.targetStates.map(({ name, kind }) => `${kind}:${name}`)).toEqual(["skill:project", "command:project", "skill:recap", "command:recap"]);
     } finally {
       temp.cleanup();
     }
@@ -407,28 +656,31 @@ describe("install", () => {
       writeFileSync(join(skillTarget, "SKILL.md"), "legacy learn\n");
       writeFileSync(commandTarget, "legacy command\n");
       writeFileSync(join(unrelatedTarget, "SKILL.md"), "unrelated\n");
-      writeFileSync(legacyReceiptPath, JSON.stringify({
-        schemaVersion: 2,
-        agent: "gemini",
-        scope: "global",
-        root: legacyRoot,
-        installedSkills: ["learn"],
-        installedCommands: ["learn"],
-        targetStates: [
-          {
-            name: "learn",
-            kind: "skill",
-            sourceHash: "0".repeat(64),
-            installedHash: hashPath(skillTarget),
-          },
-          {
-            name: "learn",
-            kind: "command",
-            sourceHash: "0".repeat(64),
-            installedHash: hashPath(commandTarget),
-          },
-        ],
-      }));
+      writeFileSync(
+        legacyReceiptPath,
+        JSON.stringify({
+          schemaVersion: 2,
+          agent: "gemini",
+          scope: "global",
+          root: legacyRoot,
+          installedSkills: ["learn"],
+          installedCommands: ["learn"],
+          targetStates: [
+            {
+              name: "learn",
+              kind: "skill",
+              sourceHash: "0".repeat(64),
+              installedHash: hashPath(skillTarget),
+            },
+            {
+              name: "learn",
+              kind: "command",
+              sourceHash: "0".repeat(64),
+              installedHash: hashPath(commandTarget),
+            },
+          ],
+        }),
+      );
 
       const result = install("agy", "global", ["learn"], false, temp.env);
 
@@ -452,20 +704,25 @@ describe("install", () => {
       mkdirSync(skillTarget, { recursive: true });
       mkdirSync(dirname(legacyReceiptPath), { recursive: true });
       writeFileSync(join(skillTarget, "SKILL.md"), "modified learn\n");
-      writeFileSync(legacyReceiptPath, JSON.stringify({
-        schemaVersion: 2,
-        agent: "gemini",
-        scope: "global",
-        root: legacyRoot,
-        installedSkills: ["learn"],
-        installedCommands: [],
-        targetStates: [{
-          name: "learn",
-          kind: "skill",
-          sourceHash: "0".repeat(64),
-          installedHash: "f".repeat(64),
-        }],
-      }));
+      writeFileSync(
+        legacyReceiptPath,
+        JSON.stringify({
+          schemaVersion: 2,
+          agent: "gemini",
+          scope: "global",
+          root: legacyRoot,
+          installedSkills: ["learn"],
+          installedCommands: [],
+          targetStates: [
+            {
+              name: "learn",
+              kind: "skill",
+              sourceHash: "0".repeat(64),
+              installedHash: "f".repeat(64),
+            },
+          ],
+        }),
+      );
 
       const result = install("agy", "global", ["learn"], false, temp.env);
 
@@ -486,14 +743,17 @@ describe("install", () => {
       mkdirSync(skillTarget, { recursive: true });
       mkdirSync(dirname(legacyReceiptPath), { recursive: true });
       writeFileSync(join(skillTarget, "SKILL.md"), "legacy learn\n");
-      writeFileSync(legacyReceiptPath, JSON.stringify({
-        schemaVersion: 1,
-        agent: "gemini",
-        scope: "global",
-        root: legacyRoot,
-        installedSkills: ["learn"],
-        installedCommands: [],
-      }));
+      writeFileSync(
+        legacyReceiptPath,
+        JSON.stringify({
+          schemaVersion: 1,
+          agent: "gemini",
+          scope: "global",
+          root: legacyRoot,
+          installedSkills: ["learn"],
+          installedCommands: [],
+        }),
+      );
 
       const result = install("agy", "global", ["learn"], false, temp.env);
 
@@ -536,13 +796,7 @@ describe("install", () => {
   test("installs Agy-first dicut routing for Letta Code", () => {
     const temp = makeTempEnv();
     try {
-      const result = install(
-        "letta-code",
-        "local",
-        ["web-asset-prompts", "asset-designer", "codex-asset-production", "direct-cli"],
-        false,
-        temp.env,
-      );
+      const result = install("letta-code", "local", ["web-asset-prompts", "asset-designer", "codex-asset-production", "direct-cli"], false, temp.env);
       const skillsRoot = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills");
       const assetDesigner = readFileSync(join(skillsRoot, "asset-designer", "SKILL.md"), "utf8");
       const codexAssetProduction = readFileSync(join(skillsRoot, "codex-asset-production", "SKILL.md"), "utf8");
@@ -566,7 +820,7 @@ describe("install", () => {
     }
   });
 
-  test("installs one skill for Pi without command output", () => {
+  test("installs one skill and native extension alias for Pi", () => {
     const temp = makeTempEnv();
     try {
       const isolatedRoot = join(temp.root, "pi-isolated", ".pi", "agent");
@@ -589,7 +843,8 @@ describe("install", () => {
       expect(receipt.scope).toBe("global");
       expect(receipt.root).toBe(isolatedRoot);
       expect(receipt.installedSkills).toEqual(["project"]);
-      expect(receipt.installedCommands).toEqual([]);
+      expect(receipt.installedCommands).toEqual(["project"]);
+      expect(readFileSync(join(isolatedRoot, "extensions", "mahiro-command-project.ts"), "utf8")).toContain("/skill:project");
     } finally {
       temp.cleanup();
     }

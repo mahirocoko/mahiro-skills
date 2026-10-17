@@ -3,9 +3,11 @@ import { createHash } from "crypto";
 import { dirname, join, relative } from "path";
 
 import { hashPath, hashSkillPayload } from "./content-hash";
+import { cleanupPiPromptAliases } from "./adapters";
 import { includeSkillPayload } from "./skill-payload";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
+import { parseSkillFrontmatter } from "./repo";
 import { cleanupRetiredGeminiInstall } from "./retired-gemini";
 import type { InstallPlan, InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
@@ -45,7 +47,10 @@ function reviewReceiptIdentity(path: string): unknown {
 /** Review identity includes raw receipt bytes, not merely its parsed policy labels. */
 export function installReviewIdentity(plan: InstallPlan): string {
   return JSON.stringify({
-    agent: plan.agent, scope: plan.scope, root: plan.root, requested: plan.requested,
+    agent: plan.agent,
+    scope: plan.scope,
+    root: plan.root,
+    requested: plan.requested,
     receipt: reviewReceiptIdentity(join(plan.root, ".mahiro-skills", "receipts", `${plan.scope}-${plan.agent}.json`)),
     targets: [...plan.skills, ...plan.commands].map((target) => ({
       ...target,
@@ -64,7 +69,10 @@ export interface InstallFailureEvidence {
 }
 
 export class InstallFailure extends Error {
-  constructor(message: string, readonly evidence: InstallFailureEvidence) {
+  constructor(
+    message: string,
+    readonly evidence: InstallFailureEvidence,
+  ) {
     super(`${message}\nInstall progress: ${JSON.stringify(evidence)}`);
     this.name = "InstallFailure";
   }
@@ -103,9 +111,7 @@ function rewriteAgySkillFrontmatter(content: string, name: string): string {
     throw new Error(`Agy skill '${name}' is missing YAML frontmatter.`);
   }
 
-  const lines = frontmatterMatch[1]
-    .split("\n")
-    .filter((line) => !/^disable-slash-command\s*:/.test(line));
+  const lines = frontmatterMatch[1].split("\n").filter((line) => !/^disable-slash-command\s*:/.test(line));
   let hasName = false;
   let hasModelInvocation = false;
   const rewritten = lines.map((line) => {
@@ -139,9 +145,13 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
   if (stats.isDirectory()) {
     const markdownPath = join(stagingPath, "SKILL.md");
     const content = readFileSync(markdownPath, "utf8");
-    const adaptedContent = agent === "agy" && target.kind === "skill"
-      ? rewriteAgySkillFrontmatter(content, target.name)
-      : content;
+    const adaptedContent =
+      agent === "agy" && target.kind === "skill"
+        ? rewriteAgySkillFrontmatter(content, target.name)
+        : agent === "pi" && target.kind === "skill"
+          ? // Pi exposes /skill:name and prompts separately; trigger is not a skill field.
+            content.replace(/^---\n([\s\S]*?)\n---/, (frontmatter) => frontmatter.replace(/^trigger:[^\n]*\n/gm, ""))
+          : content;
     const nextContent = prefixFrontmatterDescription(adaptedContent);
 
     if (nextContent !== content) {
@@ -152,7 +162,11 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
   }
 
   const content = readFileSync(stagingPath, "utf8");
-  const nextContent = prefixFrontmatterDescription(content);
+  const description = parseSkillFrontmatter(content).description ?? target.name;
+  const nextContent =
+    agent === "pi" && target.kind === "command"
+      ? `import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";\n\nexport default function (pi: ExtensionAPI) {\n  pi.registerCommand(${JSON.stringify(target.name)}, {\n    description: ${JSON.stringify(description.startsWith(installedDescriptionPrefix) ? description : installedDescriptionPrefix + description)},\n    handler: async (args) => {\n      pi.sendUserMessage(${JSON.stringify(`/skill:${target.name}`)} + (args ? " " + args : ""), { expandPromptTemplates: true });\n    },\n  });\n}\n`
+      : prefixFrontmatterDescription(content);
 
   if (nextContent !== content) {
     writeFileSync(stagingPath, nextContent);
@@ -175,9 +189,7 @@ function stageTarget(target: InstallTarget, agent: ScopedAgent, directories: str
   const sourceHash = target.kind === "skill" ? hashSkillPayload(target.source) : hashPath(target.source);
   cpSync(target.source, payload, {
     recursive: true,
-    filter: target.kind === "skill"
-      ? (source) => includeSkillPayload(relative(target.source, source), lstatSync(source).isDirectory())
-      : undefined,
+    filter: target.kind === "skill" ? (source) => includeSkillPayload(relative(target.source, source), lstatSync(source).isDirectory()) : undefined,
   });
   if (!sourceHash || hashPath(payload) !== sourceHash) {
     throw new Error(`Source changed while staging '${target.name}'; review again.`);
@@ -304,17 +316,18 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
       throw new Error("Receipt changed during execution; refusing to overwrite concurrent receipt edits.");
     }
     return writeReceipt(
-      agent, scope, plan.root, description,
+      agent,
+      scope,
+      plan.root,
+      description,
       unique([...(existingReceipt?.installedSkills ?? []), ...completed.filter((entry) => entry.target.kind === "skill").map((entry) => entry.target.name)]),
       unique([...(existingReceipt?.installedCommands ?? []), ...completed.filter((entry) => entry.target.kind === "command").map((entry) => entry.target.name)]),
       mergeTargetStates(
         // A failed, uncompensated target must not retain a misleading old baseline.
-        (existingReceipt?.targetStates ?? []).filter((state) => !targets.some((target, index) =>
-          index === attempted && hashPath(target.target) !== before[index]
-          && !completed.some((entry) => entry.target === target)
-          && target.name === state.name && target.kind === state.kind)),
+        (existingReceipt?.targetStates ?? []).filter((state) => !targets.some((target, index) => index === attempted && hashPath(target.target) !== before[index] && !completed.some((entry) => entry.target === target) && target.name === state.name && target.kind === state.kind)),
         completed.map((entry) => ({ name: entry.target.name, kind: entry.target.kind, sourceHash: entry.sourceHash, installedHash: entry.installedHash })),
-      ), sourceRepoPath,
+      ),
+      sourceRepoPath,
     );
   };
   try {
@@ -324,8 +337,7 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
       throw new Error("Install content changed during staging; review again before execution.");
     }
     for (const [index, entry] of staged.entries()) {
-      if (JSON.stringify(reviewPathIdentity(entry.target.target)) !== reviewedTargets[index]
-        || JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath)) !== reviewedReceipt) {
+      if (JSON.stringify(reviewPathIdentity(entry.target.target)) !== reviewedTargets[index] || JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath)) !== reviewedReceipt) {
         throw new Error("Target or receipt changed before replacement; review again before execution.");
       }
       attempted = index;
@@ -333,15 +345,31 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
       completed.push(entry);
     }
     receiptPath = synchronize();
-    const migrationWarnings = agent === "agy" ? cleanupRetiredGeminiInstall(scope, env).warnings : [];
+    const migrationWarnings =
+      agent === "agy"
+        ? cleanupRetiredGeminiInstall(scope, env).warnings
+        : agent === "pi"
+          ? cleanupPiPromptAliases(
+              plan.root,
+              existingReceipt,
+              plan.commands.map((target) => target.name),
+            ).warnings
+          : [];
     return {
-      status: resolveStatus(targets.length, plan.skipped.length), agent, scope, root: plan.root, description,
-      installed: unique(targets.map((target) => target.name)), skipped: plan.skipped,
-      warnings: unique([...plan.warnings, ...migrationWarnings]), receiptPath,
+      status: resolveStatus(targets.length, plan.skipped.length),
+      agent,
+      scope,
+      root: plan.root,
+      description,
+      installed: unique(targets.map((target) => target.name)),
+      skipped: plan.skipped,
+      warnings: unique([...plan.warnings, ...migrationWarnings]),
+      receiptPath,
     };
   } catch (error) {
     const evidence: InstallFailureEvidence = {
-      agent, scope,
+      agent,
+      scope,
       targets: targets.map((target, index) => {
         let status: InstallFailureEvidence["targets"][number]["status"] = "not-attempted";
         let inspectionError: string | undefined;
@@ -354,9 +382,12 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
           }
         }
         return {
-          name: target.name, kind: target.kind, target: target.target, status, inspectionError,
-          recoveryPath: directories[index] && recoveryBackupMayExist(directories[index]!)
-            && !completed.some((entry) => entry.target === target) ? directories[index] : undefined,
+          name: target.name,
+          kind: target.kind,
+          target: target.target,
+          status,
+          inspectionError,
+          recoveryPath: directories[index] && recoveryBackupMayExist(directories[index]!) && !completed.some((entry) => entry.target === target) ? directories[index] : undefined,
         };
       }),
       receiptSync: receiptPath ? "synced" : "not-needed",
@@ -375,7 +406,11 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
     for (const directory of directories) {
       // Preserve a failed restoration backup rather than destroying recovery bytes.
       if (recoveryBackupMayExist(directory) && !completed.some((entry) => entry.directory === directory)) continue;
-      try { rmSync(directory, { recursive: true, force: true }); } catch { /* Target/receipt outcome is already reported; staging cleanup is best effort. */ }
+      try {
+        rmSync(directory, { recursive: true, force: true });
+      } catch {
+        /* Target/receipt outcome is already reported; staging cleanup is best effort. */
+      }
     }
   }
 }

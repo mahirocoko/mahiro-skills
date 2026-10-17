@@ -27,6 +27,7 @@ Expected local targets:
 - `.agents/skills/mh-project/...` for Agy's namespaced `/mh-project` alias
 - `.agents/skills/project/...`
 - `.pi/skills/project/...`
+- `.pi/extensions/mahiro-command-project.ts`
 
 ## Verify
 
@@ -37,4 +38,4 @@ bun ./src/cli.ts doctor --agent letta-code --scope local
 bun ./src/cli.ts doctor --agent pi --scope local
 ```
 
-Agy, Pi, and Letta Code do not receive copied command-wrapper artifacts. Agy exposes its transformed full skill copy as `/mh-project`; Pi discovers the installed tree as `/skill:project`. For an isolated global Pi runtime, set `PI_CODING_AGENT_DIR` to that runtime's agent config directory before planning, installing, listing, updating, uninstalling, or running doctor.
+Agy and Letta Code do not receive copied command-wrapper artifacts. Agy exposes its transformed full skill copy as `/mh-project`; Pi discovers the installed tree as `/skill:project` and the generated extension alias as `/project`, forwarding into native skill expansion. For an isolated global Pi runtime, set `PI_CODING_AGENT_DIR` to that runtime's agent config directory before planning, installing, listing, updating, uninstalling, or running doctor.

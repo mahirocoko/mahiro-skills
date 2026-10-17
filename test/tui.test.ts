@@ -129,7 +129,9 @@ describe("step-first skill manager TUI", () => {
         expect(changed.acknowledgements.map((entry) => entry.id)).toEqual(review.acknowledgements.map((entry) => entry.id));
         expect(changed.acknowledgements.every((entry) => !entry.checked)).toBe(true);
         expect(readFileSync(target, "utf8")).toContain(drift === "modified-target" ? "second edit" : "Version one");
-      } finally { temp.cleanup(); }
+      } finally {
+        temp.cleanup();
+      }
     });
   }
 
@@ -285,7 +287,7 @@ describe("step-first skill manager TUI", () => {
     }
   });
 
-  test("shows Pi as a skills-only inspect target without entering Review", async () => {
+  test("shows Pi skill and extension alias detail without entering Review", async () => {
     const temp = makeTempEnv();
     try {
       install("pi", "local", ["project"], false, temp.env);
@@ -293,12 +295,11 @@ describe("step-first skill manager TUI", () => {
       const controller = createTuiController({ terminal, env: temp.env, initialAgents: ["pi"], initialScope: "local" });
       await enterAction(controller, 3);
       const project = controller.getState().inventory.find((item) => item.name === "project");
-      expect(project?.agents[0].commandSupport).toBe("skills-only");
+      expect(project?.agents[0].commandSupport).toBe("full");
       await focusSkill(controller, "project");
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("skills");
       expect(controller.getState().inspectDetail).toBe(true);
-      expect(terminal.writes.join("\n")).toContain("skills only");
       expect(readFileSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project", "SKILL.md"), "utf8")).toContain("name: project");
     } finally {
       temp.cleanup();

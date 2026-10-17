@@ -1,7 +1,7 @@
 import { lstatSync, rmSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
-import { resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
+import { cleanupPiPromptAliases, resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
 import { listInstalled, receiptPath } from "./list";
 import { packagedDependents } from "./skill-dependencies";
 import type { InstallReceipt, InstallScope, InstallUnitKind, ScopedAgent, SkippedItem, UninstalledTarget, UninstallResult, UninstallStatus } from "./types";
@@ -113,9 +113,7 @@ function writeNextReceipt(path: string, receipt: InstallReceipt, removedSkills: 
     ...receipt,
     installedSkills: receipt.installedSkills.filter((item) => !removedSkillSet.has(item)),
     installedCommands: receipt.installedCommands.filter((item) => !removedCommandSet.has(item)),
-    targetStates: receipt.targetStates?.filter((state) => (
-      state.kind === "skill" ? !removedSkillSet.has(state.name) : !removedCommandSet.has(state.name)
-    )),
+    targetStates: receipt.targetStates?.filter((state) => (state.kind === "skill" ? !removedSkillSet.has(state.name) : !removedCommandSet.has(state.name))),
   };
 
   if (nextReceipt.installedSkills.length === 0 && nextReceipt.installedCommands.length === 0) {
@@ -176,10 +174,16 @@ export function uninstall(agent: ScopedAgent, scope: InstallScope, items: string
     };
   }
 
-  const targets = [
-    ...requested.skills.map((item) => removeTarget(root, agent, "skill", item)),
-    ...requested.commands.map((item) => removeTarget(root, agent, "command", item)),
-  ];
+  const retiredTargets: UninstalledTarget[] = [];
+  if (agent === "pi") {
+    const cleanup = cleanupPiPromptAliases(root, receipt, requested.commands);
+    retiredTargets.push(...cleanup.removed.map(({ name, path }) => ({ item: name, kind: "command" as const, target: path, removed: true })));
+    for (const name of cleanup.preserved) {
+      requested.skipped.push({ item: name, kind: "command", reason: "Preserved modified or unverified legacy Pi prompt." });
+    }
+  }
+
+  const targets = [...retiredTargets, ...requested.skills.map((item) => removeTarget(root, agent, "skill", item)), ...requested.commands.map((item) => removeTarget(root, agent, "command", item))];
   const receiptRemoved = targets.length > 0 ? writeNextReceipt(path, receipt, requested.skills, requested.commands) : false;
 
   return {

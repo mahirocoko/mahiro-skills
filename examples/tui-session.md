@@ -45,7 +45,7 @@ Esc     return to Target
 
 ### Skills
 
-Rows are derived across all selected agent snapshots. Coverage and state counts stay visible when agents differ. Install disables names already recorded everywhere and skips receipt-installed agents; Update offers only selected outdated, missing, modified, or legacy catalog names; Uninstall uses the union of receipt-recorded names; Inspect also shows receipt-only names. Agy detail identifies namespaced `/mh-*` skills, while Letta Code and Pi report skills-only behavior.
+Rows are derived across all selected agent snapshots. Coverage and state counts stay visible when agents differ. Install disables names already recorded everywhere and skips receipt-installed agents; Update offers only selected outdated, missing, modified, or legacy catalog names; Uninstall uses the union of receipt-recorded names; Inspect also shows receipt-only names. Agy detail identifies namespaced `/mh-*` skills, while Letta Code reports skills-only behavior and Pi includes native extension aliases into its skill-loading pipeline.
 
 The first row is **Select all eligible**. `Space` toggles every actionable skill currently visible after filtering; disabled/no-op rows are never selected by the batch toggle.
 

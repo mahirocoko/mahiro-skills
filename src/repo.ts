@@ -1,16 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
-import type {
-  InventoryGap,
-  RepoBundle,
-  RepoGapsResult,
-  RepoInventory,
-  RepoManifestResult,
-  RepoSearchResult,
-  SkillCatalogEntry,
-  SkillSearchResult,
-} from "./types";
+import type { InventoryGap, RepoBundle, RepoGapsResult, RepoInventory, RepoManifestResult, RepoSearchResult, SkillCatalogEntry, SkillSearchResult } from "./types";
 
 export function getRepoRoot(): string {
   return process.env.MAHIRO_SKILLS_REPO_ROOT || join(import.meta.dir, "..");
@@ -76,7 +67,7 @@ export function getRepoInventory(repoRoot = getRepoRoot()): RepoInventory {
   };
 }
 
-function parseSkillFrontmatter(content: string): { name?: string; description?: string } {
+export function parseSkillFrontmatter(content: string): { name?: string; description?: string } {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) {
     return {};

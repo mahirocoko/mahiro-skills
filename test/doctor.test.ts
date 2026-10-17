@@ -207,10 +207,7 @@ describe("doctor", () => {
     try {
       install("agy", "local", ["learn"], false, temp.env);
       const skillFile = join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn", "SKILL.md");
-      const content = readFileSync(skillFile, "utf8")
-        .replace("name: mh-learn", "name: learn")
-        .replace("disable-model-invocation: true", "disable-model-invocation: false")
-        .replace("\n---\n", "\ndisable-slash-command: true\n---\n");
+      const content = readFileSync(skillFile, "utf8").replace("name: mh-learn", "name: learn").replace("disable-model-invocation: true", "disable-model-invocation: false").replace("\n---\n", "\ndisable-slash-command: true\n---\n");
       writeFileSync(skillFile, content);
 
       const [result] = doctor("agy", "local", temp.env);
@@ -272,6 +269,11 @@ describe("doctor", () => {
           label: "skill:recap",
           ok: true,
           detail: join(isolatedRoot, "skills", "recap"),
+        },
+        {
+          label: "command:recap",
+          ok: true,
+          detail: join(isolatedRoot, "extensions", "mahiro-command-recap.ts"),
         },
       ]);
     } finally {

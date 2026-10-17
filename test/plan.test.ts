@@ -66,10 +66,7 @@ describe("plan", () => {
       expect(plan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor"));
       expect(plan.skills.map((entry) => entry.name)).toEqual(["project", "recap"]);
       expect(plan.commands.map((entry) => entry.name)).toEqual(["project", "recap"]);
-      expect(plan.commands.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "project.md"),
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "recap.md"),
-      ]);
+      expect(plan.commands.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "project.md"), join(temp.env.MAHIRO_SKILLS_HOME!, ".cursor", "commands", "recap.md")]);
     } finally {
       temp.cleanup();
     }
@@ -83,14 +80,10 @@ describe("plan", () => {
       const defaultPlan = createPlan("agy", "global", [], temp.env);
 
       expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
-      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn"),
-      ]);
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "mh-learn")]);
       expect(localPlan.commands).toEqual([]);
       expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config"));
-      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config", "skills", "mh-direct-cli"),
-      ]);
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".gemini", "config", "skills", "mh-direct-cli")]);
       expect(globalPlan.commands).toEqual([]);
       expect(defaultPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'agy' installs only namespaced /mh-* Agent Skill aliases and does not copy command wrappers.");
       expect(defaultPlan.skills.every((entry) => entry.target.includes(`${join("skills", "mh-")}`))).toBe(true);
@@ -106,21 +99,17 @@ describe("plan", () => {
       const globalPlan = createPlan("letta-code", "global", ["recap"], temp.env);
 
       expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".agents"));
-      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project"),
-      ]);
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".agents", "skills", "project")]);
       expect(localPlan.commands).toEqual([]);
       expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".letta"));
-      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "recap"),
-      ]);
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "skills", "recap")]);
       expect(globalPlan.commands).toEqual([]);
     } finally {
       temp.cleanup();
     }
   });
 
-  test("resolves Pi roots as skills-only Agent Skills output", () => {
+  test("resolves Pi roots with native extension alias output", () => {
     const temp = makeTempEnv();
     try {
       const localPlan = createPlan("pi", "local", ["project"], temp.env);
@@ -147,19 +136,15 @@ describe("plan", () => {
       });
 
       expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
-      expect(localPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project"),
-      ]);
-      expect(localPlan.commands).toEqual([]);
+      expect(localPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project")]);
+      expect(localPlan.commands[0]?.target).toBe(join(localPlan.root, "extensions", "mahiro-command-project.ts"));
       expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent"));
-      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent", "skills", "recap"),
-      ]);
-      expect(globalPlan.commands).toEqual([]);
-      expect(defaultGlobalPlan.description).toBe("Mahiro Skill | Packaged local skills from the current mahiro-skills bundle; 'pi' installs Agent Skills only and does not copy command wrappers.");
+      expect(globalPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent", "skills", "recap")]);
+      expect(globalPlan.commands[0]?.target).toBe(join(globalPlan.root, "extensions", "mahiro-command-recap.ts"));
+      expect(defaultGlobalPlan.description).toContain("plus agent-native command entrypoints");
       expect(isolatedPlan.root).toBe(isolatedRoot);
       expect(isolatedPlan.skills[0]?.target).toBe(join(isolatedRoot, "skills", "mahiro-style"));
-      expect(isolatedPlan.commands).toEqual([]);
+      expect(isolatedPlan.commands[0]?.target).toBe(join(isolatedRoot, "extensions", "mahiro-command-mahiro-style.ts"));
       expect(isolatedPlanWithoutHome.root).toBe(isolatedRoot);
       expect(localPlanWithGlobalOverride.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
       expect(tildePlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi-custom", "agent"));
@@ -176,13 +161,9 @@ describe("plan", () => {
 
       expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".codex"));
       expect(localPlan.skills.map((entry) => entry.name)).toEqual(["project"]);
-      expect(localPlan.commands.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "commands", "project.md"),
-      ]);
+      expect(localPlan.commands.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".codex", "commands", "project.md")]);
       expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".codex"));
-      expect(globalPlan.commands.map((entry) => entry.target)).toEqual([
-        join(temp.env.MAHIRO_SKILLS_HOME!, ".codex", "commands", "recap.md"),
-      ]);
+      expect(globalPlan.commands.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".codex", "commands", "recap.md")]);
     } finally {
       temp.cleanup();
     }

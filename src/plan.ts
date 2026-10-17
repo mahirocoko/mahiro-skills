@@ -20,12 +20,8 @@ function hasNonLinkCollision(target: string): boolean {
 }
 
 function makeTarget(root: string, name: string, kind: "skill" | "command", sourceRoot: string, agent: ScopedAgent): InstallTarget {
-  const source = kind === "skill"
-    ? join(sourceRoot, "skills", name)
-    : join(sourceRoot, resolveCommandArtifact(agent, name).sourceRelativePath);
-  const target = kind === "skill"
-    ? join(root, resolveSkillArtifact(agent, name).targetRelativePath)
-    : join(root, resolveCommandArtifact(agent, name).targetRelativePath);
+  const source = kind === "skill" ? join(sourceRoot, "skills", name) : join(sourceRoot, resolveCommandArtifact(agent, name).sourceRelativePath);
+  const target = kind === "skill" ? join(root, resolveSkillArtifact(agent, name).targetRelativePath) : join(root, resolveCommandArtifact(agent, name).targetRelativePath);
 
   if (!existsSync(source)) {
     throw new Error(`Missing packaged ${kind} source '${source}'.`);
@@ -149,15 +145,7 @@ function resolveRequestedItems(inventory: RepoInventory, items: string[], agent:
   return finishResolved(inventory, agent, resolvedSkills, resolvedCommands, skipped, warnings, description);
 }
 
-function finishResolved(
-  inventory: RepoInventory,
-  agent: ScopedAgent,
-  resolvedSkills: string[],
-  resolvedCommands: string[],
-  skipped: SkippedItem[],
-  warnings: string[],
-  description: string | undefined,
-): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[]; description?: string } {
+function finishResolved(inventory: RepoInventory, agent: ScopedAgent, resolvedSkills: string[], resolvedCommands: string[], skipped: SkippedItem[], warnings: string[], description: string | undefined): { skills: string[]; commands: string[]; skipped: SkippedItem[]; warnings: string[]; description?: string } {
   const skills = expandPackagedSkillDependencies(resolvedSkills, inventory);
   const commands = [...resolvedCommands];
   if (supportsCommands(agent)) {
@@ -168,9 +156,21 @@ function finishResolved(
     }
   }
 
+  const supportedCommands = unique(commands).filter((name) => {
+    if (agent === "pi" && ["resume", "tree", "fork", "model"].includes(name)) {
+      skipped.push({ item: name, kind: "command", reason: `Pi reserves native /${name}.` });
+      return false;
+    }
+    if (agent === "pi" && !skills.includes(name)) {
+      skipped.push({ item: name, kind: "command", reason: `Pi command '${name}' requires its same-name packaged skill.` });
+      return false;
+    }
+    return true;
+  });
+
   return {
     skills,
-    commands: unique(commands),
+    commands: supportedCommands,
     skipped,
     warnings,
     description,
@@ -183,9 +183,7 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
   const resolved = resolveRequestedItems(inventory, items, agent);
 
   if (agent === "agy" && hasRetiredGeminiReceipt(scope, env)) {
-    resolved.warnings.push(
-      `Retired Gemini CLI receipt detected at '${retiredGeminiReceiptPath(scope, env)}'; install removes only unchanged receipt-managed canonical targets so Agy exposes the /mh-* aliases.`,
-    );
+    resolved.warnings.push(`Retired Gemini CLI receipt detected at '${retiredGeminiReceiptPath(scope, env)}'; install removes only unchanged receipt-managed canonical targets so Agy exposes the /mh-* aliases.`);
   }
 
   const skills = resolved.skills.map((name) => makeTarget(root, name, "skill", inventory.repoRoot, agent));

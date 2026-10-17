@@ -113,7 +113,8 @@ Expected:
 
 - local root resolves to `.pi` and plans `.pi/skills/project/`
 - default global root resolves to `~/.pi/agent`; explicit `PI_CODING_AGENT_DIR` wins for isolated configurations
-- no command artifact is planned because Pi discovers Agent Skills and exposes `/skill:<name>` itself
+- paired command metadata generates `extensions/mahiro-command-<name>.ts` aliases forwarding to native `/skill:<name>` expansion
+- isolated fixtures cover five core aliases, raw argument forwarding and public expansion option, installed frontmatter, receipt-backed update/uninstall, and guarded migration from old prompt receipts
 - install receipts live under the selected Pi adapter root and remain usable by list/update/uninstall/doctor
 
 ### Case 3 — Agy namespaced skill alias
@@ -152,7 +153,7 @@ For successful install:
 - the full-screen renderer stays within reported terminal display width for ASCII, Thai, combining characters, emoji, color, and no-color output; safety paths hard-wrap without ellipses
 - the shared stepper is `Target › Action › Skills › Review › Result`; Target covers All/custom exclusivity, every supported agent, one scope radio, empty-selection blocking, and CLI multi-agent preselection
 - Action lists Install, Update, Uninstall, and Inspect with plain descriptions and arrow/Enter navigation
-- Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Agy/Letta Code/Pi skills-only detail
+- Skills derives action-specific mixed-agent inventory, coverage/count summaries, disabled no-ops, receipt-only Inspect/Uninstall rows, unreadable-receipt unknown state, and Agy/Letta Code skills-only detail and Pi skill/extension-alias detail
 - `Space` toggles enabled rows; Enter reaches Review for writes or read-only Inspect detail; Esc clears a query first and then backs out
 - Review is full-screen and scrollable, puts one all-required acknowledgement toggle before compact per-agent effect summaries, keeps exact roots/actions/skips/warnings and collision/overwrite/remove paths behind `D` details, explains sequential execution without whole-batch rollback, and blocks Enter until every required acknowledgement is checked
 - Review replans immediately before execution and stays in Review with an error if the safety shape changed; entering Review itself never writes

@@ -21,10 +21,7 @@ function makeTemplateRepo() {
   const repoRoot = mkdtempSync(join(tmpdir(), "mahiro-skills-cli-new-"));
   mkdirSync(join(repoRoot, "template"), { recursive: true });
   mkdirSync(join(repoRoot, "skills"), { recursive: true });
-  writeFileSync(
-    join(repoRoot, "template", "SKILL.md.template"),
-    `---\nname: template\ndescription: Human-readable skill scaffold.\n---\n\n# /template - Skill Template\n`,
-  );
+  writeFileSync(join(repoRoot, "template", "SKILL.md.template"), `---\nname: template\ndescription: Human-readable skill scaffold.\n---\n\n# /template - Skill Template\n`);
 
   return {
     repoRoot,
@@ -85,7 +82,7 @@ describe("cli", () => {
 
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
-      const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
+      const skillsOnlyAgents = new Set(["agy", "letta-code"]);
       expect(payload.length).toBe(7);
       expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("skill-doctor"))).toBe(true);
@@ -98,7 +95,7 @@ describe("cli", () => {
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("motion-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
-      expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toEqual([]);
+      expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toContain("recap");
       expect(payload.find((entry) => entry.agent === "agy")?.installedCommands).toEqual([]);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
@@ -201,7 +198,7 @@ describe("cli", () => {
     }
   });
 
-  test("supports Pi as a skills-only direct CLI install target", () => {
+  test("supports Pi skills and native extension aliases in direct CLI plans", () => {
     const temp = makeTempEnv();
 
     try {
@@ -212,7 +209,7 @@ describe("cli", () => {
       expect(payload.agent).toBe("pi");
       expect(payload.root.endsWith(".pi")).toBe(true);
       expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
-      expect(payload.commands).toEqual([]);
+      expect(payload.commands.map((entry) => entry.name)).toEqual(["project"]);
     } finally {
       temp.cleanup();
     }
@@ -273,14 +270,17 @@ describe("cli", () => {
     try {
       const transcriptDirectory = join(temp.env.MAHIRO_SKILLS_HOME!, ".letta", "lc-local-backend", "conversations", "sample");
       mkdirSync(transcriptDirectory, { recursive: true });
-      writeFileSync(join(transcriptDirectory, "messages.jsonl"), `${JSON.stringify({
-        type: "message",
-        timestamp: "2026-07-10T12:00:00.000Z",
-        message: {
-          metadata: { agent_id: "agent-a", conversation_id: "conversation-a" },
-          content: [{ type: "toolCall", name: "Skill", arguments: { skill: "recap" } }],
-        },
-      })}\n`);
+      writeFileSync(
+        join(transcriptDirectory, "messages.jsonl"),
+        `${JSON.stringify({
+          type: "message",
+          timestamp: "2026-07-10T12:00:00.000Z",
+          message: {
+            metadata: { agent_id: "agent-a", conversation_id: "conversation-a" },
+            content: [{ type: "toolCall", name: "Skill", arguments: { skill: "recap" } }],
+          },
+        })}\n`,
+      );
 
       const result = runCli(["audit", "--allow-transcript-read", "--transcript-file", join(transcriptDirectory, "messages.jsonl"), "--agent-id", "agent-a", "--json"], temp.env);
 
@@ -297,7 +297,12 @@ describe("cli", () => {
   test("audit rejects installer selectors and missing consent; help never requests transcript IO", () => {
     const temp = makeTempEnv();
     try {
-      for (const args of [["--agent", "letta-code", "--scope", "global"], ["--scope", "local"], ["--data-dir", temp.root], ["--agent-id", "synthetic-agent"]]) {
+      for (const args of [
+        ["--agent", "letta-code", "--scope", "global"],
+        ["--scope", "local"],
+        ["--data-dir", temp.root],
+        ["--agent-id", "synthetic-agent"],
+      ]) {
         const result = runCli(["audit", ...args], temp.env);
         expect(result.exitCode).toBe(1);
         const stderr = new TextDecoder().decode(result.stderr);
@@ -310,7 +315,9 @@ describe("cli", () => {
       expect(new TextDecoder().decode(help.stdout)).toContain("No directory recursion or implicit HOME scope");
       expect(runCli(["list", "--agent", "letta-code", "--scope", "global"], temp.env).exitCode).toBe(0);
       expect(runCli(["plan", "herdr-cli", "--agent", "letta-code", "--scope", "global"], temp.env).exitCode).toBe(0);
-    } finally { temp.cleanup(); }
+    } finally {
+      temp.cleanup();
+    }
   });
 
   test("creates a skill from template without requiring agent or scope", () => {

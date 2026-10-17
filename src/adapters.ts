@@ -1,9 +1,12 @@
 import { join } from "path";
+import { lstatSync, rmSync } from "fs";
+import { hashPath } from "./content-hash";
+import type { InstallReceipt } from "./types";
 
 import { supportedAgents, type InstallScope, type ScopedAgent, type SupportedAgent } from "./types";
 
 export interface CommandArtifact {
-  extension: ".md" | ".toml";
+  extension: ".md" | ".toml" | ".ts";
   sourceRelativePath: string;
   targetRelativePath: string;
 }
@@ -107,8 +110,42 @@ export function resolveRoot(agent: ScopedAgent, scope: InstallScope, env = proce
   throw new Error(`Unable to resolve global root for agent '${agent}'.`);
 }
 
+// Only a v2 receipt's exact installed fingerprint authorizes removal of old Pi prompts.
+export function cleanupPiPromptAliases(root: string, receipt: InstallReceipt | null, names: string[]): { removed: { name: string; path: string }[]; preserved: string[]; warnings: string[] } {
+  const removed: { name: string; path: string }[] = [];
+  const preserved: string[] = [];
+  const warnings: string[] = [];
+  if (receipt?.agent !== "pi" || receipt.root !== root) return { removed, preserved, warnings };
+  for (const name of names) {
+    if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name) || !receipt.installedCommands.includes(name)) continue;
+    const path = join(root, "prompts", `${name}.md`);
+    let stats;
+    try {
+      const parent = lstatSync(join(root, "prompts"));
+      if (!parent.isDirectory() || parent.isSymbolicLink()) {
+        preserved.push(name);
+        warnings.push(`Preserved Pi prompt '${path}': its directory is not an owned regular directory.`);
+        continue;
+      }
+      stats = lstatSync(path);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
+    }
+    const state = receipt.targetStates?.find((state) => state.kind === "command" && state.name === name);
+    if (receipt.schemaVersion === 2 && stats.isFile() && state && hashPath(path) === state.installedHash) {
+      rmSync(path);
+      removed.push({ name, path });
+    } else {
+      preserved.push(name);
+      warnings.push(`Preserved modified or unverified Pi prompt '${path}'.`);
+    }
+  }
+  return { removed, preserved, warnings };
+}
+
 export function supportsCommands(agent: ScopedAgent): boolean {
-  return isImplementedAgent(agent) && agent !== "agy" && agent !== "letta-code" && agent !== "pi";
+  return isImplementedAgent(agent) && agent !== "agy" && agent !== "letta-code";
 }
 
 export function resolveSkillArtifact(agent: ScopedAgent, name: string): SkillArtifact {
@@ -119,8 +156,8 @@ export function resolveSkillArtifact(agent: ScopedAgent, name: string): SkillArt
 
 export function resolveCommandArtifact(agent: ScopedAgent, name: string): CommandArtifact {
   return {
-    extension: ".md",
+    extension: agent === "pi" ? ".ts" : ".md",
     sourceRelativePath: join("commands", `${name}.md`),
-    targetRelativePath: join("commands", `${name}.md`),
+    targetRelativePath: agent === "pi" ? join("extensions", `mahiro-command-${name}.ts`) : join("commands", `${name}.md`),
   };
 }
