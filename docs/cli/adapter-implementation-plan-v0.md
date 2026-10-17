@@ -13,7 +13,7 @@ Support OpenCode, Claude Code, Cursor, Agy, Codex, Letta Code, and Pi without fo
 - `src/plan.ts`, `src/install.ts`, `src/list.ts`, `src/doctor.ts`, and `src/uninstall.ts` share the adapter-dependent lifecycle.
 - Cursor and Codex copy Markdown command wrappers.
 - Agy and Letta Code are skills-only adapters with distinct roots and slash identities.
-- Pi generates thin native extension aliases from canonical command metadata alongside Agent Skills; aliases forward raw arguments into Pi's native skill expansion.
+- Pi installs Agent Skills only, invoked through native `/skill:<name>`, and retires unchanged v2 receipt-owned aliases once without touching modified or unrelated extensions.
 - Guided and full-screen TUI flows consume the same core plans and receipts.
 
 ## Agy namespaced skill support
@@ -40,7 +40,7 @@ Support OpenCode, Claude Code, Cursor, Agy, Codex, Letta Code, and Pi without fo
 
 - OpenCode, Claude Code, Cursor, and Codex keep their documented skill/command roots.
 - Letta Code copies Agent Skills only to `.agents` locally and `~/.letta` globally.
-- Pi copies Agent Skills and generates native `extensions/` aliases to `.pi` locally or `${PI_CODING_AGENT_DIR:-~/.pi/agent}` globally; only installed skill `trigger` frontmatter is omitted.
+- Pi copies Agent Skills only to `.pi` locally or `${PI_CODING_AGENT_DIR:-~/.pi/agent}` globally; only installed skill `trigger` frontmatter is omitted.
 - The standalone packaged `gemini` skill remains an opaque skill tree and is not an install adapter.
 
 ## Deferred items

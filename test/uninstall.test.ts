@@ -79,7 +79,7 @@ describe("uninstall", () => {
     }
   });
 
-  test("removes Pi skills and receipt-managed extension aliases", () => {
+  test("removes selected Pi skills and retains other installed skills", () => {
     const temp = makeTempEnv();
 
     try {
@@ -94,9 +94,8 @@ describe("uninstall", () => {
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "recap"))).toBe(true);
       expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "commands", "project.md"))).toBe(false);
       expect(receipt?.installedSkills).toEqual(["recap"]);
-      expect(receipt?.installedCommands).toEqual(["recap"]);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "extensions", "mahiro-command-project.ts"))).toBe(false);
-      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "extensions", "mahiro-command-recap.ts"))).toBe(true);
+      expect(receipt?.installedCommands).toEqual([]);
+      expect(existsSync(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "extensions"))).toBe(false);
     } finally {
       temp.cleanup();
     }

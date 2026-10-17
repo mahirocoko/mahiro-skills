@@ -4,36 +4,69 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, 
 import { dirname, join } from "path";
 
 import { hashPath } from "../src/content-hash";
-import { cleanupPiPromptAliases } from "../src/adapters";
+import { cleanupPiCommandAliases } from "../src/adapters";
 import { install, InstallFailure, installReviewIdentity } from "../src/install";
 import { createPlan } from "../src/plan";
 import { listInstalled } from "../src/list";
+import { parseSkillFrontmatter } from "../src/repo";
 import { uninstall } from "../src/uninstall";
 import { getSkillManagerSnapshot, installSkillManagerItems } from "../src/skill-manager";
 import { makeTempEnv } from "./helpers";
 
-test("Pi legacy prompt cleanup never follows a symlinked prompt directory", () => {
+for (const directory of ["prompts", "extensions"]) {
+  test(`Pi alias cleanup never follows a symlinked ${directory} directory`, () => {
+    const temp = makeTempEnv();
+    try {
+      const root = join(temp.root, "pi-root");
+      const outside = join(temp.root, "outside-root");
+      mkdirSync(root);
+      mkdirSync(outside);
+      const file = join(outside, directory === "prompts" ? "recap.md" : "mahiro-command-recap.ts");
+      writeFileSync(file, "synthetic legacy prompt\n");
+      symlinkSync(outside, join(root, directory));
+      const receipt = {
+        schemaVersion: 2,
+        agent: "pi",
+        root,
+        installedCommands: ["recap"],
+        targetStates: [{ kind: "command", name: "recap", installedHash: hashPath(file) }],
+      } as NonNullable<Parameters<typeof cleanupPiCommandAliases>[1]>;
+      const result = cleanupPiCommandAliases(root, receipt, ["recap"]);
+      expect(result.removed).toEqual([]);
+      expect(result.preserved).toEqual(["recap"]);
+      expect(result.warnings).toHaveLength(1);
+      expect(readFileSync(file, "utf8")).toBe("synthetic legacy prompt\n");
+    } finally {
+      temp.cleanup();
+    }
+  });
+}
+
+test("Pi uninstall retires only hash-verified v2 aliases and never unrelated extensions", () => {
   const temp = makeTempEnv();
   try {
-    const root = join(temp.root, "pi-root");
-    const outside = join(temp.root, "outside-root");
-    mkdirSync(root);
-    mkdirSync(outside);
-    const file = join(outside, "recap.md");
-    writeFileSync(file, "synthetic legacy prompt\n");
-    symlinkSync(outside, join(root, "prompts"));
-    const receipt = {
-      schemaVersion: 2,
-      agent: "pi",
-      root,
-      installedCommands: ["recap"],
-      targetStates: [{ kind: "command", name: "recap", installedHash: hashPath(file) }],
-    } as NonNullable<Parameters<typeof cleanupPiPromptAliases>[1]>;
-    const result = cleanupPiPromptAliases(root, receipt, ["recap"]);
-    expect(result.removed).toEqual([]);
-    expect(result.preserved).toEqual(["recap"]);
-    expect(result.warnings).toHaveLength(1);
-    expect(readFileSync(file, "utf8")).toBe("synthetic legacy prompt\n");
+    const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME };
+    const plan = createPlan("pi", "local", ["recap", "rrr"], env);
+    const result = install("pi", "local", ["recap", "rrr"], false, env);
+    const old = listInstalled("pi", "local", env)!;
+    mkdirSync(join(plan.root, "extensions"));
+    const owned = join(plan.root, "extensions", "mahiro-command-recap.ts");
+    const modified = join(plan.root, "extensions", "mahiro-command-rrr.ts");
+    const unrelated = join(plan.root, "extensions", "user.ts");
+    writeFileSync(owned, "owned alias");
+    writeFileSync(modified, "old alias");
+    writeFileSync(unrelated, "user extension");
+    old.installedCommands = ["recap", "rrr"];
+    old.targetStates!.push(...old.installedCommands.map((name) => ({ name, kind: "command" as const, sourceHash: "legacy", installedHash: hashPath(name === "recap" ? owned : modified)! })));
+    writeFileSync(modified, "modified alias");
+    writeFileSync(result.receiptPath!, JSON.stringify(old));
+    const removed = uninstall("pi", "local", [], env);
+    expect(existsSync(owned)).toBe(false);
+    expect(readFileSync(modified, "utf8")).toBe("modified alias");
+    expect(readFileSync(unrelated, "utf8")).toBe("user extension");
+    expect(removed.skipped.some((item) => item.reason.includes("Preserved"))).toBe(true);
+    expect(listInstalled("pi", "local", env)).toBeNull();
+    expect(uninstall("pi", "local", [], env).status).toBe("skipped");
   } finally {
     temp.cleanup();
   }
@@ -58,52 +91,7 @@ function makeSafetyFixture() {
 describe("install", () => {
   const piCore = ["recap", "rrr", "forward", "mahiro-style", "working-tasks"];
 
-  test.skipIf(!process.env.PI_TEST_SDK)("Pi public SDK loads and invokes five extension aliases with raw arguments offline", () => {
-    const temp = makeTempEnv();
-    try {
-      const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
-      install("pi", "global", piCore, false, env);
-      const result = Bun.spawnSync(
-        [
-          process.execPath,
-          "--eval",
-          `
-        const { DefaultResourceLoader, SettingsManager } = await import(process.env.PI_TEST_SDK);
-        const loader = new DefaultResourceLoader({
-          cwd: process.env.MAHIRO_SKILLS_CWD, agentDir: process.env.PI_CODING_AGENT_DIR,
-          settingsManager: SettingsManager.inMemory(),
-          noThemes: true, noContextFiles: true,
-        });
-        await loader.reload();
-        const loaded = loader.getExtensions();
-        const calls = [];
-        loaded.runtime.sendUserMessage = (content, options) => calls.push({ content, options });
-        const commands = loaded.extensions.flatMap(extension => [...extension.commands]);
-        for (const [name, command] of commands) {
-          await command.handler('two words "quoted"  $1 $ARGUMENTS', {});
-          await command.handler('', {});
-        }
-        console.log(JSON.stringify({ skills: loader.getSkills(), errors: loaded.errors, names: commands.map(([name]) => name), calls }));
-      `,
-        ],
-        { cwd: env.MAHIRO_SKILLS_CWD, env },
-      );
-      expect(result.exitCode).toBe(0);
-      const loaded = JSON.parse(result.stdout.toString());
-      expect(loaded.skills.skills.map((skill: { name: string }) => skill.name).sort()).toEqual([...piCore].sort());
-      expect(loaded.names.sort()).toEqual([...piCore].sort());
-      expect(loaded.skills.diagnostics).toEqual([]);
-      expect(loaded.errors).toEqual([]);
-      for (const name of piCore) {
-        expect(loaded.calls).toContainEqual({ content: `/skill:${name} two words "quoted"  $1 $ARGUMENTS`, options: { expandPromptTemplates: true } });
-        expect(loaded.calls).toContainEqual({ content: `/skill:${name}`, options: { expandPromptTemplates: true } });
-      }
-    } finally {
-      temp.cleanup();
-    }
-  });
-
-  test("Pi reserves native commands and removes only installed skill trigger metadata", () => {
+  test("Pi skips all command artifacts and removes only installed skill trigger metadata", () => {
     const temp = makeTempEnv();
     try {
       const source = join(temp.root, "source");
@@ -116,8 +104,11 @@ describe("install", () => {
       const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, MAHIRO_SKILLS_REPO_ROOT: source, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
       writeFileSync(join(source, "commands", "standalone.md"), "No corresponding skill");
       const plan = createPlan("pi", "global", [], env);
-      expect(plan.commands.map((target) => target.name)).toEqual(["safe"]);
-      expect(plan.skipped.map((item) => item.item).sort()).toEqual(["fork", "model", "resume", "standalone", "tree"]);
+      expect(plan.commands).toEqual([]);
+      expect(plan.skipped).toEqual([]);
+      const commandOnly = createPlan("pi", "global", ["standalone"], env);
+      expect(commandOnly.commands).toEqual([]);
+      expect(commandOnly.skipped[0]?.reason).toContain("does not support commands");
       install("pi", "global", [], false, env);
       const installed = readFileSync(join(plan.root, "skills", "safe", "SKILL.md"), "utf8");
       expect(installed).not.toContain("trigger: /safe");
@@ -135,21 +126,15 @@ describe("install", () => {
   });
 
   for (const scope of ["local", "global"] as const) {
-    test(`Pi core skill/extension-alias lifecycle stays isolated (${scope})`, () => {
+    test(`Pi skills-only lifecycle and retired alias migration stay isolated (${scope})`, () => {
       const temp = makeTempEnv();
       try {
         const env = { ...temp.env, HOME: temp.env.MAHIRO_SKILLS_HOME, PI_CODING_AGENT_DIR: join(temp.root, "pi-agent") };
         const plan = createPlan("pi", scope, piCore, env);
-        expect(plan.commands.map((target) => target.name)).toEqual(piCore);
+        expect(plan.commands).toEqual([]);
         install("pi", scope, piCore, false, env);
-        for (const target of plan.commands) {
-          const content = readFileSync(target.target, "utf8");
-          expect(content).toContain(`pi.registerCommand(${JSON.stringify(target.name)}`);
-          expect(content).toContain(JSON.stringify(`/skill:${target.name}`));
-          expect(content).toContain("expandPromptTemplates: true");
-          expect(content).toContain("import type { ExtensionAPI }");
-          expect(target.target).toBe(join(plan.root, "extensions", `mahiro-command-${target.name}.ts`));
-        }
+        expect(existsSync(join(plan.root, "extensions"))).toBe(false);
+        expect(existsSync(join(plan.root, "prompts"))).toBe(false);
         for (const target of plan.skills) {
           const expected = readFileSync(join(target.source, "SKILL.md"), "utf8")
             .replace("description: ", "description: Mahiro Skill | ")
@@ -157,10 +142,10 @@ describe("install", () => {
           expect(readFileSync(join(target.target, "SKILL.md"), "utf8")).toBe(expected);
         }
         const receipt = listInstalled("pi", scope, env)!;
-        expect(receipt.installedCommands).toEqual(piCore);
+        expect(receipt.installedCommands).toEqual([]);
         expect(receipt.targetStates?.length).toBe(plan.skills.length + plan.commands.length);
         const hashes = [...plan.skills, ...plan.commands].map((target) => hashPath(target.target));
-        writeFileSync(plan.commands[0]!.target, "modified prompt");
+        writeFileSync(join(plan.skills[0]!.target, "SKILL.md"), "modified skill");
         installSkillManagerItems("pi", scope, piCore, true, env);
         expect([...plan.skills, ...plan.commands].map((target) => hashPath(target.target))).toEqual(hashes);
         expect(
@@ -174,43 +159,42 @@ describe("install", () => {
         expect([...plan.skills, ...plan.commands].every((target) => !existsSync(target.target))).toBe(true);
         expect(listInstalled("pi", scope, env)).toBeNull();
 
-        // A legacy Pi skills-only receipt must gain extension aliases through Update, not a second installer.
         install("pi", scope, piCore, false, env);
         const receiptPath = join(plan.root, ".mahiro-skills", "receipts", `${scope}-pi.json`);
-        const legacy = listInstalled("pi", scope, env)!;
-        for (const target of plan.commands) fs.rmSync(target.target);
-        legacy.installedCommands = [];
-        legacy.targetStates = legacy.targetStates?.filter((state) => state.kind === "skill");
-        writeFileSync(receiptPath, JSON.stringify(legacy));
-        installSkillManagerItems("pi", scope, piCore, true, env);
-        expect(listInstalled("pi", scope, env)?.installedCommands).toEqual(piCore);
-        expect([...plan.skills, ...plan.commands].map((target) => hashPath(target.target))).toEqual(hashes);
-
-        // Recreate the preceding prompt-adapter receipt without touching any real profile.
-        const makeOldPrompts = () => {
+        // Recreate v2 extension and older prompt receipts with installed-byte hashes.
+        for (const directory of ["extensions", "prompts"]) {
           const old = listInstalled("pi", scope, env)!;
-          mkdirSync(join(plan.root, "prompts"), { recursive: true });
-          for (const target of plan.commands) {
-            fs.rmSync(target.target, { force: true });
-            const prompt = join(plan.root, "prompts", `${target.name}.md`);
-            writeFileSync(prompt, readFileSync(target.source, "utf8").replace("description: ", "description: Mahiro Skill | "));
-            old.targetStates!.find((state) => state.kind === "command" && state.name === target.name)!.installedHash = hashPath(prompt)!;
+          old.installedCommands = [...piCore];
+          mkdirSync(join(plan.root, directory), { recursive: true });
+          const aliasPath = (name: string) => join(plan.root, directory, directory === "extensions" ? `mahiro-command-${name}.ts` : `${name}.md`);
+          for (const name of piCore) {
+            const source = join(import.meta.dir, "..", "commands", `${name}.md`);
+            const content = readFileSync(source, "utf8");
+            const description = parseSkillFrontmatter(content).description ?? name;
+            const legacyExtension = `import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";\n\nexport default function (pi: ExtensionAPI) {\n  pi.registerCommand(${JSON.stringify(name)}, {\n    description: ${JSON.stringify(`Mahiro Skill | ${description}`)},\n    handler: async (args) => {\n      pi.sendUserMessage(${JSON.stringify(`/skill:${name}`)} + (args ? " " + args : ""), { expandPromptTemplates: true });\n    },\n  });\n}\n`;
+            writeFileSync(aliasPath(name), directory === "extensions" ? legacyExtension : content.replace("description: ", "description: Mahiro Skill | "));
+            old.targetStates!.push({ kind: "command", name, sourceHash: hashPath(source)!, installedHash: hashPath(aliasPath(name))! });
           }
           writeFileSync(receiptPath, JSON.stringify(old));
-        };
-        makeOldPrompts();
-        writeFileSync(join(plan.root, "prompts", "user-owned.md"), "unrelated");
-        installSkillManagerItems("pi", scope, piCore, true, env);
-        expect(piCore.every((name) => !existsSync(join(plan.root, "prompts", `${name}.md`)))).toBe(true);
-        expect(readFileSync(join(plan.root, "prompts", "user-owned.md"), "utf8")).toBe("unrelated");
-        makeOldPrompts();
-        writeFileSync(join(plan.root, "prompts", "recap.md"), "user modified");
-        const migrated = install("pi", scope, piCore, true, env);
-        expect(migrated.warnings.some((warning) => warning.includes("Preserved modified"))).toBe(true);
-        expect(readFileSync(join(plan.root, "prompts", "recap.md"), "utf8")).toBe("user modified");
-        makeOldPrompts();
+          writeFileSync(aliasPath("recap"), "user modified");
+          fs.rmSync(aliasPath("rrr"));
+          const outside = join(temp.root, `outside-${directory}`);
+          writeFileSync(outside, "external");
+          symlinkSync(outside, aliasPath("rrr"));
+          writeFileSync(aliasPath("unowned"), "unrelated");
+          const migrated = install("pi", scope, ["recap"], true, env);
+          expect(migrated.warnings.some((warning) => warning.includes("Preserved modified"))).toBe(true);
+          expect(readFileSync(aliasPath("recap"), "utf8")).toBe("user modified");
+          expect(lstatSync(aliasPath("rrr")).isSymbolicLink()).toBe(true);
+          expect(readFileSync(aliasPath("unowned"), "utf8")).toBe("unrelated");
+          expect(piCore.slice(2).every((name) => !existsSync(aliasPath(name)))).toBe(true);
+          expect(listInstalled("pi", scope, env)?.installedCommands).toEqual([]);
+          expect(listInstalled("pi", scope, env)?.installedSkills).toEqual(piCore);
+          installSkillManagerItems("pi", scope, piCore, true, env);
+          expect(piCore.slice(2).every((name) => !existsSync(aliasPath(name)))).toBe(true);
+          expect(readFileSync(aliasPath("recap"), "utf8")).toBe("user modified");
+        }
         uninstall("pi", scope, [], env);
-        expect(piCore.every((name) => !existsSync(join(plan.root, "prompts", `${name}.md`)))).toBe(true);
       } finally {
         temp.cleanup();
       }
@@ -820,7 +804,7 @@ describe("install", () => {
     }
   });
 
-  test("installs one skill and native extension alias for Pi", () => {
+  test("installs one skill without command artifacts for Pi", () => {
     const temp = makeTempEnv();
     try {
       const isolatedRoot = join(temp.root, "pi-isolated", ".pi", "agent");
@@ -843,8 +827,8 @@ describe("install", () => {
       expect(receipt.scope).toBe("global");
       expect(receipt.root).toBe(isolatedRoot);
       expect(receipt.installedSkills).toEqual(["project"]);
-      expect(receipt.installedCommands).toEqual(["project"]);
-      expect(readFileSync(join(isolatedRoot, "extensions", "mahiro-command-project.ts"), "utf8")).toContain("/skill:project");
+      expect(receipt.installedCommands).toEqual([]);
+      expect(existsSync(join(isolatedRoot, "extensions"))).toBe(false);
     } finally {
       temp.cleanup();
     }

@@ -156,17 +156,7 @@ function finishResolved(inventory: RepoInventory, agent: ScopedAgent, resolvedSk
     }
   }
 
-  const supportedCommands = unique(commands).filter((name) => {
-    if (agent === "pi" && ["resume", "tree", "fork", "model"].includes(name)) {
-      skipped.push({ item: name, kind: "command", reason: `Pi reserves native /${name}.` });
-      return false;
-    }
-    if (agent === "pi" && !skills.includes(name)) {
-      skipped.push({ item: name, kind: "command", reason: `Pi command '${name}' requires its same-name packaged skill.` });
-      return false;
-    }
-    return true;
-  });
+  const supportedCommands = unique(commands);
 
   return {
     skills,
@@ -181,6 +171,10 @@ export function createPlan(agent: ScopedAgent, scope: InstallScope, items: strin
   const inventory = getRepoInventory(env.MAHIRO_SKILLS_REPO_ROOT);
   const root = resolveRoot(agent, scope, env);
   const resolved = resolveRequestedItems(inventory, items, agent);
+
+  if (agent === "pi") {
+    resolved.warnings.push("Pi installs skills only. Install/update retires any existing receipt-managed command aliases once: only unchanged v2 hash-verified files are removed; modified, unverified, and symlinked files are preserved. The next receipt retains installed skills but clears command membership.");
+  }
 
   if (agent === "agy" && hasRetiredGeminiReceipt(scope, env)) {
     resolved.warnings.push(`Retired Gemini CLI receipt detected at '${retiredGeminiReceiptPath(scope, env)}'; install removes only unchanged receipt-managed canonical targets so Agy exposes the /mh-* aliases.`);

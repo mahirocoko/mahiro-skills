@@ -1,7 +1,7 @@
 import { lstatSync, rmSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
-import { cleanupPiPromptAliases, resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
+import { cleanupPiCommandAliases, resolveCommandArtifact, resolveRoot, resolveSkillArtifact } from "./adapters";
 import { listInstalled, receiptPath } from "./list";
 import { packagedDependents } from "./skill-dependencies";
 import type { InstallReceipt, InstallScope, InstallUnitKind, ScopedAgent, SkippedItem, UninstalledTarget, UninstallResult, UninstallStatus } from "./types";
@@ -176,15 +176,15 @@ export function uninstall(agent: ScopedAgent, scope: InstallScope, items: string
 
   const retiredTargets: UninstalledTarget[] = [];
   if (agent === "pi") {
-    const cleanup = cleanupPiPromptAliases(root, receipt, requested.commands);
+    const cleanup = cleanupPiCommandAliases(root, receipt, requested.commands);
     retiredTargets.push(...cleanup.removed.map(({ name, path }) => ({ item: name, kind: "command" as const, target: path, removed: true })));
     for (const name of cleanup.preserved) {
-      requested.skipped.push({ item: name, kind: "command", reason: "Preserved modified or unverified legacy Pi prompt." });
+      requested.skipped.push({ item: name, kind: "command", reason: cleanup.warnings.join(" ") });
     }
   }
 
-  const targets = [...retiredTargets, ...requested.skills.map((item) => removeTarget(root, agent, "skill", item)), ...requested.commands.map((item) => removeTarget(root, agent, "command", item))];
-  const receiptRemoved = targets.length > 0 ? writeNextReceipt(path, receipt, requested.skills, requested.commands) : false;
+  const targets = [...retiredTargets, ...requested.skills.map((item) => removeTarget(root, agent, "skill", item)), ...(agent === "pi" ? [] : requested.commands.map((item) => removeTarget(root, agent, "command", item)))];
+  const receiptRemoved = targets.length > 0 || (agent === "pi" && requested.commands.length > 0) ? writeNextReceipt(path, receipt, requested.skills, requested.commands) : false;
 
   return {
     status: resolveStatus(targets, requested.skipped),

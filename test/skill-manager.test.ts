@@ -107,7 +107,7 @@ describe("skill manager", () => {
     }
   });
 
-  test("updates a modified Pi skill and extension alias through receipts", () => {
+  test("updates a modified Pi skill through a skills-only receipt", () => {
     const temp = makeTempEnv();
     try {
       install("pi", "local", ["project"], false, temp.env);
@@ -119,17 +119,17 @@ describe("skill manager", () => {
       const project = inventory.find((item) => item.name === "project");
       const plan = getSkillManagerAgentPlan("update", before, ["project"], temp.env);
 
-      expect(project?.agents[0].commandSupport).toBe("full");
+      expect(project?.agents[0].commandSupport).toBe("skills-only");
       expect(project?.selectable).toBe(true);
       expect(plan.active).toEqual(["project"]);
-      expect(plan.installPlan?.commands[0]?.target).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "extensions", "mahiro-command-project.ts"));
+      expect(plan.installPlan?.commands).toEqual([]);
       expect(plan.acknowledgementIds).toContain("modified:pi:project");
 
       installSkillManagerItems("pi", "local", ["project"], true, temp.env);
 
       const after = getSkillManagerSnapshot("pi", "local", temp.env);
       expect(after.skills.find((skill) => skill.name === "project")?.status).toBe("current");
-      expect(after.receipt?.installedCommands).toEqual(["project"]);
+      expect(after.receipt?.installedCommands).toEqual([]);
       expect(readFileSync(projectPath, "utf8")).toContain("name: project");
     } finally {
       temp.cleanup();

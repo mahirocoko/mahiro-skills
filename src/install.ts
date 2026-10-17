@@ -3,11 +3,10 @@ import { createHash } from "crypto";
 import { dirname, join, relative } from "path";
 
 import { hashPath, hashSkillPayload } from "./content-hash";
-import { cleanupPiPromptAliases } from "./adapters";
+import { cleanupPiCommandAliases } from "./adapters";
 import { includeSkillPayload } from "./skill-payload";
 import { createPlan } from "./plan";
 import { listInstalled } from "./list";
-import { parseSkillFrontmatter } from "./repo";
 import { cleanupRetiredGeminiInstall } from "./retired-gemini";
 import type { InstallPlan, InstallReceipt, InstallReceiptTargetState, InstallResult, InstallScope, InstallTarget, PlanStatus, ScopedAgent } from "./types";
 
@@ -149,7 +148,7 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
       agent === "agy" && target.kind === "skill"
         ? rewriteAgySkillFrontmatter(content, target.name)
         : agent === "pi" && target.kind === "skill"
-          ? // Pi exposes /skill:name and prompts separately; trigger is not a skill field.
+          ? // Pi exposes native /skill:name; trigger is not a skill field.
             content.replace(/^---\n([\s\S]*?)\n---/, (frontmatter) => frontmatter.replace(/^trigger:[^\n]*\n/gm, ""))
           : content;
     const nextContent = prefixFrontmatterDescription(adaptedContent);
@@ -162,11 +161,7 @@ function rewriteInstalledTarget(stagingPath: string, agent: ScopedAgent, target:
   }
 
   const content = readFileSync(stagingPath, "utf8");
-  const description = parseSkillFrontmatter(content).description ?? target.name;
-  const nextContent =
-    agent === "pi" && target.kind === "command"
-      ? `import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";\n\nexport default function (pi: ExtensionAPI) {\n  pi.registerCommand(${JSON.stringify(target.name)}, {\n    description: ${JSON.stringify(description.startsWith(installedDescriptionPrefix) ? description : installedDescriptionPrefix + description)},\n    handler: async (args) => {\n      pi.sendUserMessage(${JSON.stringify(`/skill:${target.name}`)} + (args ? " " + args : ""), { expandPromptTemplates: true });\n    },\n  });\n}\n`
-      : prefixFrontmatterDescription(content);
+  const nextContent = prefixFrontmatterDescription(content);
 
   if (nextContent !== content) {
     writeFileSync(stagingPath, nextContent);
@@ -311,6 +306,7 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
   const reviewedReceipt = JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath));
   let attempted = -1;
   let receiptPath: string | undefined;
+  let piAliasesRetired = false;
   const synchronize = (): string => {
     if (JSON.stringify(reviewReceiptIdentity(reviewedReceiptPath)) !== reviewedReceipt) {
       throw new Error("Receipt changed during execution; refusing to overwrite concurrent receipt edits.");
@@ -321,10 +317,12 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
       plan.root,
       description,
       unique([...(existingReceipt?.installedSkills ?? []), ...completed.filter((entry) => entry.target.kind === "skill").map((entry) => entry.target.name)]),
-      unique([...(existingReceipt?.installedCommands ?? []), ...completed.filter((entry) => entry.target.kind === "command").map((entry) => entry.target.name)]),
+      piAliasesRetired ? [] : unique([...(existingReceipt?.installedCommands ?? []), ...completed.filter((entry) => entry.target.kind === "command").map((entry) => entry.target.name)]),
       mergeTargetStates(
         // A failed, uncompensated target must not retain a misleading old baseline.
-        (existingReceipt?.targetStates ?? []).filter((state) => !targets.some((target, index) => index === attempted && hashPath(target.target) !== before[index] && !completed.some((entry) => entry.target === target) && target.name === state.name && target.kind === state.kind)),
+        (existingReceipt?.targetStates ?? [])
+          .filter((state) => !(piAliasesRetired && state.kind === "command"))
+          .filter((state) => !targets.some((target, index) => index === attempted && hashPath(target.target) !== before[index] && !completed.some((entry) => entry.target === target) && target.name === state.name && target.kind === state.kind)),
         completed.map((entry) => ({ name: entry.target.name, kind: entry.target.kind, sourceHash: entry.sourceHash, installedHash: entry.installedHash })),
       ),
       sourceRepoPath,
@@ -344,17 +342,10 @@ export function install(agent: ScopedAgent, scope: InstallScope, items: string[]
       replaceStaged(entry);
       completed.push(entry);
     }
+    const piCleanup = agent === "pi" ? cleanupPiCommandAliases(plan.root, existingReceipt, existingReceipt?.installedCommands ?? []) : null;
+    piAliasesRetired = agent === "pi";
     receiptPath = synchronize();
-    const migrationWarnings =
-      agent === "agy"
-        ? cleanupRetiredGeminiInstall(scope, env).warnings
-        : agent === "pi"
-          ? cleanupPiPromptAliases(
-              plan.root,
-              existingReceipt,
-              plan.commands.map((target) => target.name),
-            ).warnings
-          : [];
+    const migrationWarnings = agent === "agy" ? cleanupRetiredGeminiInstall(scope, env).warnings : (piCleanup?.warnings ?? []);
     return {
       status: resolveStatus(targets.length, plan.skipped.length),
       agent,

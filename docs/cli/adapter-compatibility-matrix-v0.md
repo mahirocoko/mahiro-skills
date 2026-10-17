@@ -12,7 +12,7 @@ This document records the current install surfaces for the supported adapters. T
 | Agy | `.agents` | `~/.gemini/config` | None | Installs only transformed `skills/mh-<name>/` aliases exposed as `/mh-<name>` |
 | Codex | `.codex` | `~/.codex` | Markdown compatibility wrapper | Skills, commands, and receipts |
 | Letta Code | `.agents` | `~/.letta` | None | Agent Skills trees only |
-| Pi | `.pi` | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` | Native alias in `extensions/mahiro-command-<name>.ts` | `/<name>` forwards to the native `/skill:<name>` pipeline; installed skills omit unsupported `trigger` |
+| Pi | `.pi` | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` | None | Agent Skills only via native `/skill:<name>`; installed skills omit unsupported `trigger` |
 
 ## Agy contract
 

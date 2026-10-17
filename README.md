@@ -91,7 +91,7 @@ Use `bun ./src/cli.ts guided` for the prompt-by-prompt compatibility wizard. Exp
 - Otherwise `install.sh` clones the requested repo ref into a temp directory, runs `bun ./src/cli.ts install ...`, then removes the temp clone.
 - Local installs preserve the caller working directory as the install target unless `MAHIRO_SKILLS_CWD` is explicitly set.
 - Pi global installs honor `PI_CODING_AGENT_DIR` as the exact agent config root before falling back to `${MAHIRO_SKILLS_HOME:-$HOME}/.pi/agent`; local Pi installs always target the selected project's `.pi` root.
-- The Pi adapter installs skills and generates thin native aliases in `extensions/mahiro-command-<name>.ts`. Each `/<name>` forwards raw arguments to `/skill:<name>` through Pi's public `sendUserMessage` API with `expandPromptTemplates: true`, so Pi injects the skill body rather than relying on a model to read it. Command-only items without a same-name skill are skipped explicitly. Installed Pi skill frontmatter omits the unsupported `trigger` field. It does not install the `pi` executable, create a PATH launcher, or configure a provider. Running Pi requires a separately working `pi` command or explicit wrapper.
+- The Pi adapter installs Agent Skills only, invoked through native `/skill:<name>`; it generates no commands, extensions, or prompt aliases. Command-only items are skipped explicitly. Install/update retires old receipt-managed aliases only when their v2 installed hashes match; modified, unverified, symlinked, and unrelated files remain untouched with warnings. The next receipt retains all selected skills but no commands, so this cleanup is one-time. Installed Pi skill frontmatter omits unsupported `trigger`. It does not install the `pi` executable, create a PATH launcher, or configure a provider. Running Pi requires a separately working `pi` command or explicit wrapper.
 - The `agy` adapter is the only Google CLI-family install target. It installs self-contained namespaced skills as `/mh-*` under `~/.gemini/config/skills/` globally or `.agents/skills/` locally and never installs an unprefixed skill copy.
 - When an Agy install finds a v2 receipt from the retired Gemini CLI adapter, it removes only unchanged receipt-managed canonical skills and TOML commands. Modified or invalid targets are preserved with a warning; unrelated `~/.gemini/skills` content is never touched.
 - Installed markdown descriptions are prefixed at install time with `Mahiro Skill | ` while source markdown in the repo stays unchanged.
@@ -261,10 +261,10 @@ Install and update require the official CLI: set `SKILLS_CLI_BIN` to an installe
 
 - `skills/<name>/...` — packaged skills and helper resources
 - `skills/llms.txt` — compact skill discovery index for agents and humans
-- `commands/<name>.md` — slash-command wrappers for non-Gemini adapters
+- `commands/<name>.md` — slash-command wrappers for command-capable adapters
 - Agy local installs copy transformed, self-contained skills to `.agents/skills/mh-<name>/`; global installs use `~/.gemini/config/skills/mh-<name>/`. The installed frontmatter name is `mh-<name>`, model invocation is disabled on the alias, and any source `disable-slash-command` flag is removed so Agy registers `/mh-<name>`.
 - Letta Code local installs use `.agents/skills/<name>/`; global installs use `~/.letta/skills/<name>/`
-- Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`. Pi exposes skills as `/skill:<name>` and generates `/<name>` extension aliases in the same root's `extensions/` directory to invoke native skill expansion.
+- Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`. Pi exposes skills through native `/skill:<name>` only; no command aliases are generated.
 - `examples/` — runnable or copyable workflow examples for the CLI/TUI surface
 - `template/SKILL.md.template` — authoring-only starter that `new --copy-template` materializes as `SKILL.md`; the non-canonical filename prevents external Agent Skills discovery from treating the scaffold as installable
 - `.claude-plugin/marketplace.json` — default bundle metadata
@@ -299,6 +299,6 @@ Packaging facts to preserve:
 
 - `skills/` is the source of truth for packaged agent behavior.
 - `commands/` are compatibility wrappers for non-Gemini slash-command entrypoints.
-- CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy and Letta Code do not copy command-wrapper artifacts: Agy registers only namespaced skill aliases as `/mh-<name>`. Pi generates native extension aliases from command metadata and exposes discovered Agent Skills as `/skill:<name>`. Old receipt-managed prompts are removed only when their installed fingerprint still matches; modified or unverified prompts are preserved with warnings.
+- CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts: Agy registers only namespaced skill aliases as `/mh-<name>`; Pi exposes discovered Agent Skills through native `/skill:<name>` only. Old Pi receipt-managed aliases are removed once only when their installed fingerprint still matches; modified or unverified files are preserved with warnings.
 - Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.
 - Prefer the source files in this repository and tagged releases over installed copies. Installed copies are useful evidence when debugging drift, but they are not the canonical authoring surface.

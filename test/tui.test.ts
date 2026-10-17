@@ -287,7 +287,7 @@ describe("step-first skill manager TUI", () => {
     }
   });
 
-  test("shows Pi skill and extension alias detail without entering Review", async () => {
+  test("shows Pi skills-only detail without entering Review", async () => {
     const temp = makeTempEnv();
     try {
       install("pi", "local", ["project"], false, temp.env);
@@ -295,7 +295,7 @@ describe("step-first skill manager TUI", () => {
       const controller = createTuiController({ terminal, env: temp.env, initialAgents: ["pi"], initialScope: "local" });
       await enterAction(controller, 3);
       const project = controller.getState().inventory.find((item) => item.name === "project");
-      expect(project?.agents[0].commandSupport).toBe("full");
+      expect(project?.agents[0].commandSupport).toBe("skills-only");
       await focusSkill(controller, "project");
       await controller.handleInput("\r");
       expect(controller.getState().step).toBe("skills");

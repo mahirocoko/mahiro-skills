@@ -96,7 +96,7 @@ For the current adapter matrix and remaining follow-on planning, see:
 | letta-code | Yes | No | Partial | Partial | Yes |
 | pi | Yes | No | Partial | No | Yes |
 
-The Agy adapter manages only namespaced `/mh-*` skill aliases and receipts. The Pi adapter manages skill files, native extension alias wrappers, and receipts. Installing either adapter does not install its executable or provider configuration.
+The Agy adapter manages only namespaced `/mh-*` skill aliases and receipts. The Pi adapter manages skill files and receipts only. Installing either adapter does not install its executable or provider configuration.
 
 Interpretation rules:
 
@@ -168,7 +168,7 @@ Destination symlinks bind their own link text/mode, not the contents of an unrel
 - **Review:** a full scrollable step, not an overlay. The default surface puts one batch confirmation before compact per-agent effect summaries; `Space` checks or clears all required acknowledgements together because partial acknowledgement cannot produce an eligible partial run. `D` toggles exact roots, actions, skips, warnings, and collision/overwrite/remove paths; paths are hard-wrapped rather than shortened. Enter is the first point that may execute, and any unreadable selected-agent receipt blocks the batch until Target is corrected.
 - **Result:** agents execute sequentially. The first thrown failure stops the batch and later agents are Not attempted. The screen preserves per-agent success, skips, errors, and receipt evidence plus Completed, Completed with skips, Partially completed, Failed, or No changes aggregation.
 - Primary controls are visible `↑/↓`, `Space`, `Enter`, `Esc`, and `Ctrl+C`; the flow does not require mnemonic action keys. Search remains optional and Esc clears its query before backing out.
-- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Agy and Letta Code command omission remains adapter-derived and is shown as skills-only. Pi includes native extension alias command targets.
+- Install skips receipt-installed names rather than rewriting them. Update executes only selected applicable names per agent. Uninstall delegates receipt-driven filtering to the existing core APIs. Agy, Letta Code, and Pi command omission remains adapter-derived and is shown as skills-only.
 - `guided` remains the prompt-by-prompt compatibility workflow: Home offers Install, Uninstall, Update installed, List installed, Receipt detail, and Exit; nested prompts retain Back-to-Home and explicit confirmation behavior.
 - Explicit `tui --mode ...`, small terminals, and `TERM=dumb` route to the guided compatibility path. Non-interactive `tui`/`guided` also use that path and retain their established required-flag rules.
 - Guided item/agent selection, direct repeated/comma-separated `--agent` flags, `--agent all`, and receipt detail remain unchanged and continue to use the shared core APIs.
@@ -357,10 +357,10 @@ Rules:
 
 - Install packaged skills into `<root>/skills/`, which resolves to `.pi/skills/` locally and `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/` globally
 - Honor `PI_CODING_AGENT_DIR` before the default global root so isolated Pi configurations can be targeted without rewriting `HOME`
-- Generate `<root>/extensions/mahiro-command-<name>.ts` from canonical command metadata; `/<name>` forwards raw arguments to `/skill:<name>` using public `sendUserMessage(..., { expandPromptTemplates: true })`, without duplicating skill bodies or relying on a model to read them
-- Skip standalone command items without a same-name packaged skill explicitly
-- When replacing the former prompt adapter, remove only receipt-managed prompt files whose installed fingerprint still matches; preserve modified, unverified, and unrelated prompts with warnings
-- Never install prompt aliases over native `/resume`, `/tree`, `/fork`, or `/model`
+- Install Agent Skills only, invoked through native `/skill:<name>`; generate no command, extension, or prompt aliases
+- Skip command-only items explicitly; other adapters retain their command wrappers
+- On install/update or requested uninstall, retire old `extensions/mahiro-command-<name>.ts` and `prompts/<name>.md` aliases only for names recorded in a matching-root v2 receipt with an exact installed hash. Preserve modified, unverified, symlinked, and unrelated files with warnings; never follow symlinked alias directories
+- Install/update clears old command membership and command hashes from the next receipt while retaining existing installed skills, making migration one-time
 - Omit unsupported `trigger` only in installed Pi skill frontmatter; preserve other fields and bundled resources. Project-local `.pi` resources still require Pi project trust, or an explicit one-run `--approve`
 
 ## Result model

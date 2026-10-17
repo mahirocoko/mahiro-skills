@@ -82,7 +82,7 @@ describe("cli", () => {
 
       expect(listResult.exitCode).toBe(0);
       const payload = parseJson(listResult.stdout) as Array<{ agent: string; installedSkills: string[]; installedCommands: string[] }>;
-      const skillsOnlyAgents = new Set(["agy", "letta-code"]);
+      const skillsOnlyAgents = new Set(["agy", "letta-code", "pi"]);
       expect(payload.length).toBe(7);
       expect(payload.every((entry) => entry.installedSkills.length === 25)).toBe(true);
       expect(payload.every((entry) => entry.installedSkills.includes("skill-doctor"))).toBe(true);
@@ -95,7 +95,7 @@ describe("cli", () => {
       expect(payload.every((entry) => entry.installedSkills.includes("studying-codrops"))).toBe(true);
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("motion-design");
       expect(payload.find((entry) => entry.agent === "letta-code")?.installedCommands).not.toContain("studying-codrops");
-      expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toContain("recap");
+      expect(payload.find((entry) => entry.agent === "pi")?.installedCommands).toEqual([]);
       expect(payload.find((entry) => entry.agent === "agy")?.installedCommands).toEqual([]);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("motion-design"))).toBe(true);
       expect(payload.filter((entry) => !skillsOnlyAgents.has(entry.agent)).every((entry) => entry.installedCommands.includes("studying-codrops"))).toBe(true);
@@ -198,7 +198,7 @@ describe("cli", () => {
     }
   });
 
-  test("supports Pi skills and native extension aliases in direct CLI plans", () => {
+  test("supports Pi skills-only direct CLI plans", () => {
     const temp = makeTempEnv();
 
     try {
@@ -209,7 +209,7 @@ describe("cli", () => {
       expect(payload.agent).toBe("pi");
       expect(payload.root.endsWith(".pi")).toBe(true);
       expect(payload.skills.map((entry) => entry.name)).toEqual(["project"]);
-      expect(payload.commands.map((entry) => entry.name)).toEqual(["project"]);
+      expect(payload.commands).toEqual([]);
     } finally {
       temp.cleanup();
     }

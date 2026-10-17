@@ -270,11 +270,6 @@ describe("doctor", () => {
           ok: true,
           detail: join(isolatedRoot, "skills", "recap"),
         },
-        {
-          label: "command:recap",
-          ok: true,
-          detail: join(isolatedRoot, "extensions", "mahiro-command-recap.ts"),
-        },
       ]);
     } finally {
       temp.cleanup();

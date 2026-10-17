@@ -109,7 +109,7 @@ describe("plan", () => {
     }
   });
 
-  test("resolves Pi roots with native extension alias output", () => {
+  test("resolves Pi roots with skills-only output", () => {
     const temp = makeTempEnv();
     try {
       const localPlan = createPlan("pi", "local", ["project"], temp.env);
@@ -137,14 +137,14 @@ describe("plan", () => {
 
       expect(localPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
       expect(localPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_CWD!, ".pi", "skills", "project")]);
-      expect(localPlan.commands[0]?.target).toBe(join(localPlan.root, "extensions", "mahiro-command-project.ts"));
+      expect(localPlan.commands).toEqual([]);
       expect(globalPlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent"));
       expect(globalPlan.skills.map((entry) => entry.target)).toEqual([join(temp.env.MAHIRO_SKILLS_HOME!, ".pi", "agent", "skills", "recap")]);
-      expect(globalPlan.commands[0]?.target).toBe(join(globalPlan.root, "extensions", "mahiro-command-recap.ts"));
-      expect(defaultGlobalPlan.description).toContain("plus agent-native command entrypoints");
+      expect(globalPlan.commands).toEqual([]);
+      expect(defaultGlobalPlan.description).toContain("Agent Skills only");
       expect(isolatedPlan.root).toBe(isolatedRoot);
       expect(isolatedPlan.skills[0]?.target).toBe(join(isolatedRoot, "skills", "mahiro-style"));
-      expect(isolatedPlan.commands[0]?.target).toBe(join(isolatedRoot, "extensions", "mahiro-command-mahiro-style.ts"));
+      expect(isolatedPlan.commands).toEqual([]);
       expect(isolatedPlanWithoutHome.root).toBe(isolatedRoot);
       expect(localPlanWithGlobalOverride.root).toBe(join(temp.env.MAHIRO_SKILLS_CWD!, ".pi"));
       expect(tildePlan.root).toBe(join(temp.env.MAHIRO_SKILLS_HOME!, ".pi-custom", "agent"));

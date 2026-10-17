@@ -79,7 +79,7 @@ describe("README", () => {
     expect(content).toContain('PI_CODING_AGENT_DIR="$HOME/.9router-free/pi-pilot/home/.pi/agent"');
     expect(content).toContain("Pi local installs use `.pi/skills/<name>/`; global installs use `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills/<name>/`");
     expect(content).toContain("including multi-pane fanout or detached Herdr result collection");
-    expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy and Letta Code do not copy command-wrapper artifacts");
+    expect(content).toContain("CLI v0 targets `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `letta-code`, and `pi` for packaged skill installs. Agy, Letta Code, and Pi do not copy command-wrapper artifacts");
     expect(content).toContain("Gemini extension assets are still copied as packaged subtree content, not modeled as a full extension setup flow.");
     expect(content).toContain("Prefer the source files in this repository and tagged releases over installed copies.");
     expect(content).not.toContain("Home → Plan (dry run)");
