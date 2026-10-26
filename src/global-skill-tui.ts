@@ -6,6 +6,7 @@ type Action = 'install' | 'adopt' | 'recover' | 'link' | 'update' | 'uninstall' 
 type Mode = 'list' | 'detail' | 'source' | 'recover-source' | 'name' | 'search' | 'confirm' | 'result'
 type Tone = 'brand' | 'muted' | 'selected' | 'current' | 'available' | 'unknown' | 'error'
 type Line = { text: string; tone?: Tone }
+type PlannedTarget = { name: string; steps: Action[]; source: string; review: string[]; includeExistingLinks?: boolean }
 
 const toneCode: Record<Tone, string> = {
   brand: '1;36', muted: '2', selected: '7', current: '32',
@@ -34,6 +35,10 @@ export class GlobalSkillTui {
   private mode: Mode = 'list'
   private steps: Action[] = []
   private review: string[] = []
+  private batchTargets: PlannedTarget[] = []
+  private reviewOffset = 0
+  private resultOffset = 0
+  private resultDetails: string[] = []
   private includeExistingLinks = false
   private input = ''
   private source = ''
@@ -93,7 +98,7 @@ export class GlobalSkillTui {
     ]
     if (this.mode === 'list' || this.mode === 'search' || this.mode === 'source' || this.mode === 'name') {
       lines.push(
-        { text: `${this.visible().length}/${this.items.length} skills · ↑↓ move · Enter details · s check all`, tone: 'muted' },
+        { text: `${this.visible().length}/${this.items.length} skills · ↑↓ move · Enter details · s check · u update all`, tone: 'muted' },
         { text: '/ search · i install · l link · x unlink · d remove · q quit', tone: 'muted' },
         { text: '' },
       )
@@ -119,7 +124,7 @@ export class GlobalSkillTui {
       if (!visible.length) lines.push({ text: this.query ? 'No matching skills. Press / to change search.' : 'No global skills found. Press i to install.', tone: 'muted' })
       const checkedCount = this.items.filter((item) => this.inspections.has(item.name) || this.scanErrors.has(item.name)).length
       const updates = this.items.filter((item) => this.listStatus(item) === 'Update available').length
-      lines.push({ text: checkedCount ? `${updates} updates · ${checkedCount}/${this.items.length} checked · s refresh all` : 'Update status not checked · s check all', tone: 'muted' })
+      lines.push({ text: checkedCount ? `${updates} updates · ${checkedCount}/${this.items.length} checked · s refresh · u update all` : 'Update status not checked · s check all', tone: 'muted' })
       if (this.mode === 'search') lines.push({ text: `Search: ${this.input}▌`, tone: 'brand' })
       if (this.mode === 'source') lines.push({ text: `GitHub repo or URL: ${this.input}▌`, tone: 'brand' })
       if (this.mode === 'name') lines.push({ text: `Skill name from ${this.source}: ${this.input}▌`, tone: 'brand' })
@@ -153,11 +158,27 @@ export class GlobalSkillTui {
       }
     } else if (this.mode === 'confirm') {
       lines.push({ text: `Review  /  ${this.name}`, tone: 'brand' }, { text: '' })
-      for (const step of this.review) this.addWrapped(lines, '•', step, width)
-      if (this.source) this.addWrapped(lines, 'Source', this.source, width, 'muted')
+      const reviewLines: Line[] = []
+      for (const step of this.review) this.addWrapped(reviewLines, '•', step, width)
+      if (this.source) this.addWrapped(reviewLines, 'Source', this.source, width, 'muted')
+      const available = Math.max(1, rows - lines.length - 3)
+      const maxOffset = Math.max(0, reviewLines.length - available)
+      this.reviewOffset = Math.max(0, Math.min(this.reviewOffset, maxOffset))
+      lines.push(...reviewLines.slice(this.reviewOffset, this.reviewOffset + available))
+      if (maxOffset) lines.push({ text: `Review lines ${this.reviewOffset + 1}-${Math.min(reviewLines.length, this.reviewOffset + available)}/${reviewLines.length} · ↑↓ scroll`, tone: 'muted' })
+      else lines.push({ text: '', tone: 'muted' })
       lines.push({ text: '', tone: 'muted' }, { text: 'Confirm all steps? y/N  ·  Esc cancel', tone: 'available' })
     } else {
-      lines.push({ text: 'Result', tone: 'brand' }, { text: '' }, { text: this.message }, { text: '' }, { text: 'Enter  Back to skills  ·  q quit', tone: 'muted' })
+      lines.push({ text: 'Result', tone: 'brand' }, { text: '' }, { text: this.message })
+      const detailLines: Line[] = []
+      for (const detail of this.resultDetails) this.addWrapped(detailLines, '•', detail, width)
+      const available = Math.max(1, rows - lines.length - 3)
+      const maxOffset = Math.max(0, detailLines.length - available)
+      this.resultOffset = Math.max(0, Math.min(this.resultOffset, maxOffset))
+      lines.push(...detailLines.slice(this.resultOffset, this.resultOffset + available))
+      if (maxOffset) lines.push({ text: `Result lines ${this.resultOffset + 1}-${Math.min(detailLines.length, this.resultOffset + available)}/${detailLines.length} · ↑↓ scroll`, tone: 'muted' })
+      else lines.push({ text: '' })
+      lines.push({ text: '' }, { text: 'Enter  Back to skills  ·  q quit', tone: 'muted' })
     }
     if (this.mode !== 'result' && this.message) lines.push({ text: `Status: ${this.message}`, tone: this.message.startsWith('Cannot') || this.message.startsWith('Blocked') ? 'error' : 'muted' })
     if (this.busy) lines.push({ text: this.scanning ? 'Checking… Esc stops after this check · q quit' : 'Working… no other keys are accepted.', tone: 'available' })
@@ -256,8 +277,12 @@ export class GlobalSkillTui {
 
   private confirm(steps: Action[], name: string, details: string[], source = '', includeExistingLinks = false): void {
     this.steps = steps
+    this.batchTargets = []
     this.name = name
     this.review = details
+    this.reviewOffset = 0
+    this.resultOffset = 0
+    this.resultDetails = []
     this.source = source
     this.includeExistingLinks = includeExistingLinks
     this.mode = 'confirm'
@@ -265,48 +290,131 @@ export class GlobalSkillTui {
     this.render()
   }
 
-  private preparePrimary(inspection: ISkillInspection): void {
-    if (inspection.primaryAction === 'none') return
-    const steps: Action[] = inspection.primaryAction === 'update' ? ['update']
+  private actionSteps(inspection: ISkillInspection): Action[] {
+    return inspection.primaryAction === 'update' ? ['update']
       : inspection.primaryAction === 'adopt-update' ? ['adopt', 'update']
-        : inspection.primaryAction === 'recover-only' ? ['recover'] : ['recover', 'update']
+        : inspection.primaryAction === 'recover-only' ? ['recover']
+          : inspection.primaryAction === 'recover-update' ? ['recover', 'update'] : []
+  }
+
+  private preparePrimary(inspection: ISkillInspection): void {
+    const steps = this.actionSteps(inspection)
+    if (!steps.length) return
     this.confirm(steps, inspection.name, inspection.plannedWrites, steps.includes('recover') ? this.source : '')
+  }
+
+  private prepareAllUpdates(): void {
+    const targets: PlannedTarget[] = []
+    for (const item of this.items) {
+      const inspection = this.inspections.get(item.name)
+      if (!inspection || this.listStatus(item) !== 'Update available') continue
+      const steps = this.actionSteps(inspection)
+      const source = steps.includes('recover') ? this.sourceUrls.get(item.name) ?? '' : ''
+      if (!steps.includes('update') || (steps.includes('recover') && !source)) continue
+      targets.push({ name: item.name, steps, source, review: inspection.plannedWrites })
+    }
+    if (!targets.length) {
+      const checked = this.items.some((item) => this.inspections.has(item.name) || this.scanErrors.has(item.name))
+      this.message = checked ? 'No checked updates are available.' : 'Press s to check all skills before updating.'
+      this.render()
+      return
+    }
+    this.steps = []
+    this.batchTargets = targets
+    this.name = `${targets.length} skill${targets.length === 1 ? '' : 's'}`
+    this.review = [
+      `Update every checked skill currently marked Update available (${targets.length} total)`,
+      ...targets.flatMap((target) => target.review.map((step) => `${target.name} — ${step}`)),
+      'Skills that are current, blocked, unchecked, or failed inspection are not included',
+    ]
+    this.reviewOffset = 0
+    this.resultOffset = 0
+    this.resultDetails = []
+    this.source = ''
+    this.includeExistingLinks = false
+    this.mode = 'confirm'
+    this.message = ''
+    this.render()
+  }
+
+  private async executeTarget(target: PlannedTarget, completed: Action[]): Promise<{ alreadyCurrent: boolean }> {
+    let alreadyCurrent = false
+    for (const action of target.steps) {
+      const official = action === 'install' || action === 'update' || action === 'uninstall'
+      if (official) this.terminal.leaveAlternateScreen()
+      try {
+        switch (action) {
+          case 'install': this.manager.install(target.source, target.name); break
+          case 'adopt': this.manager.adopt(target.name); break
+          case 'recover': await this.manager.recover(target.name, target.source); break
+          case 'link': this.manager.link(target.name); break
+          case 'update': alreadyCurrent = await this.manager.update(target.name) === 'current'; break
+          case 'uninstall': this.manager.uninstall(target.name, { includeExistingLinks: target.includeExistingLinks }); break
+          case 'unlink': this.manager.unlink(target.name); break
+        }
+        completed.push(action)
+      } finally { if (official) this.terminal.enterAlternateScreen() }
+    }
+    return { alreadyCurrent }
+  }
+
+  private clearInspection(name: string): void {
+    this.inspections.delete(name)
+    this.scanErrors.delete(name)
+    this.sourceUrls.delete(name)
   }
 
   private async execute(): Promise<void> {
     this.busy = true
+    this.resultOffset = 0
+    this.resultDetails = []
     this.render()
     await new Promise<void>((resolve) => setTimeout(resolve, 0))
-    const completed: Action[] = []
-    let alreadyCurrent = false
-    try {
-      for (const action of this.steps) {
-        const official = action === 'install' || action === 'update' || action === 'uninstall'
-        if (official) this.terminal.leaveAlternateScreen()
+    if (this.batchTargets.length) {
+      let updated = 0
+      let current = 0
+      let failed = 0
+      const details: string[] = []
+      for (const target of this.batchTargets) {
+        let completed: Action[] = []
         try {
-          switch (action) {
-            case 'install': this.manager.install(this.source, this.name); break
-            case 'adopt': this.manager.adopt(this.name); break
-            case 'recover': await this.manager.recover(this.name, this.source); break
-            case 'link': this.manager.link(this.name); break
-            case 'update': alreadyCurrent = await this.manager.update(this.name) === 'current'; break
-            case 'uninstall': this.manager.uninstall(this.name, { includeExistingLinks: this.includeExistingLinks }); break
-            case 'unlink': this.manager.unlink(this.name); break
-          }
-          completed.push(action)
-        } finally { if (official) this.terminal.enterAlternateScreen() }
+          const result = await this.executeTarget(target, completed)
+          if (result.alreadyCurrent) current += 1
+          else updated += 1
+        } catch (error) {
+          failed += 1
+          const reason = safe(error instanceof Error ? error.message : String(error))
+          details.push(completed.includes('adopt') || completed.includes('recover')
+            ? `${target.name}: source remembered, but update stopped — ${reason}`
+            : `${target.name}: ${reason}`)
+        } finally {
+          if (completed.length) this.clearInspection(target.name)
+        }
       }
-      this.message = `${this.name}: ${alreadyCurrent ? 'Already up to date' : this.steps.includes('update') ? 'Update completed' : this.steps.includes('install') ? 'Installed' : this.steps.includes('recover') ? 'Source remembered; skill files unchanged' : 'Done'}.`
+      this.refresh()
+      this.busy = false
+      this.batchTargets = []
+      this.message = `Update all finished: ${updated} updated · ${current} already current · ${failed} failed.`
+      this.resultDetails = details
+      this.mode = 'result'
+      this.render()
+      return
+    }
+
+    const target: PlannedTarget = {
+      name: this.name, steps: this.steps, source: this.source, review: this.review,
+      includeExistingLinks: this.includeExistingLinks,
+    }
+    let completed: Action[] = []
+    try {
+      const result = await this.executeTarget(target, completed)
+      this.message = `${this.name}: ${result.alreadyCurrent ? 'Already up to date' : this.steps.includes('update') ? 'Update completed' : this.steps.includes('install') ? 'Installed' : this.steps.includes('recover') ? 'Source remembered; skill files unchanged' : 'Done'}.`
     } catch (error) {
       const reason = safe(error instanceof Error ? error.message : String(error))
       this.message = completed.includes('adopt') || completed.includes('recover')
         ? `${this.name}: Source remembered, but update stopped: ${reason}` : `Blocked: ${reason}`
     } finally {
-      if (completed.length) {
-        this.inspections.delete(this.name)
-        this.scanErrors.delete(this.name)
-        this.sourceUrls.delete(this.name)
-      }
+      if (completed.length) this.clearInspection(this.name)
       this.refresh()
       this.busy = false
       this.mode = 'result'
@@ -356,13 +464,22 @@ export class GlobalSkillTui {
     if (this.busy) return
     if (text.includes('\x03')) { this.stop(); return }
     if (this.mode === 'confirm') {
-      if (text.toLowerCase() === 'y') await this.execute()
-      else { this.mode = this.steps.includes('install') ? 'list' : 'detail'; this.message = 'Cancelled; nothing changed.'; this.render() }
+      if (text === '\x1b[A' || text === 'k') { this.reviewOffset = Math.max(0, this.reviewOffset - 1); this.render() }
+      else if (text === '\x1b[B' || text === 'j') { this.reviewOffset += 1; this.render() }
+      else if (text.toLowerCase() === 'y') await this.execute()
+      else if (text.toLowerCase() === 'n' || text === '\x1b' || text === '\r' || text === '\n') {
+        this.mode = this.batchTargets.length || this.steps.includes('install') ? 'list' : 'detail'
+        this.batchTargets = []
+        this.message = 'Cancelled; nothing changed.'
+        this.render()
+      }
       return
     }
     if (this.mode === 'result') {
       if (text === 'q') this.stop()
-      else if (text === '\r' || text === '\n' || text === '\x1b') { this.mode = 'list'; this.message = ''; this.render() }
+      else if (text === '\x1b[A' || text === 'k') { this.resultOffset = Math.max(0, this.resultOffset - 1); this.render() }
+      else if (text === '\x1b[B' || text === 'j') { this.resultOffset += 1; this.render() }
+      else if (text === '\r' || text === '\n' || text === '\x1b') { this.mode = 'list'; this.message = ''; this.resultDetails = []; this.render() }
       return
     }
     if (this.mode === 'source' || this.mode === 'recover-source' || this.mode === 'name' || this.mode === 'search') {
@@ -421,6 +538,7 @@ export class GlobalSkillTui {
       void this.scanAll().catch((error: unknown) => this.showInputError(error))
       return
     }
+    else if (text === 'u') { this.prepareAllUpdates(); return }
     else if (text === 'i') { this.mode = 'source'; this.input = ''; this.message = 'Enter the GitHub source to install; Esc cancels.' }
     else if (text === 'l' || text === 'x' || text === 'd') {
       await this.offerSecondary(({ l: 'link', x: 'unlink', d: 'uninstall' } as const)[text])

@@ -69,7 +69,7 @@ describe('global skill TUI', () => {
   test('list navigation is local; Enter inspects only the selected skill', async () => {
     const { tui, calls, terminal } = setup()
     tui.render()
-    expect(terminal.frames.at(-1)).toContain('Enter details · s check all')
+    expect(terminal.frames.at(-1)).toContain('Enter details · s check · u update all')
     expect(terminal.frames.at(-1)).toContain('l link · x unlink · d remove · q quit')
     expect(terminal.frames.at(-1)).toContain('alpha                     Installed Letta ✓  Agy ✓  Not checked')
     expect(terminal.frames.at(-1)).toContain('beta                      External  Letta —  Agy —  Not checked')
@@ -101,6 +101,87 @@ describe('global skill TUI', () => {
     expect(terminal.frames.at(-1)).toContain('1 updates · 2/2 checked')
     await tui.handleInput('\r')
     expect(calls).toEqual(['inspect:alpha', 'inspect:beta'])
+  })
+
+  test('update all reviews and updates every checked available skill with one confirmation', async () => {
+    const { tui, calls, terminal } = setup()
+    await tui.handleInput('s')
+    await Bun.sleep(10)
+    await tui.handleInput('u')
+    const review = terminal.frames.at(-1)!
+    expect(review).toContain('Review  /  2 skills')
+    expect(review).toContain('alpha — Install latest through the official CLI')
+    expect(review).toContain('beta — Remember source if needed')
+    expect(review).toContain('Confirm all steps? y/N')
+    expect(calls).toEqual(['inspect:alpha', 'inspect:beta'])
+    await tui.handleInput('y')
+    expect(calls).toEqual(['inspect:alpha', 'inspect:beta', 'update:alpha', 'adopt:beta', 'update:beta'])
+    expect(terminal.left).toBe(2)
+    expect(terminal.entered).toBe(2)
+    expect(terminal.frames.at(-1)).toContain('Update all finished: 2 updated · 0 already current · 0 failed.')
+  })
+
+  test('Enter accepts the advertised default No on update-all confirmation', async () => {
+    const { tui, calls, terminal } = setup()
+    await tui.handleInput('s')
+    await Bun.sleep(10)
+    await tui.handleInput('u')
+    await tui.handleInput('\r')
+    expect(calls).toEqual(['inspect:alpha', 'inspect:beta'])
+    expect(terminal.frames.at(-1)).toContain('Cancelled; nothing changed.')
+    expect(terminal.frames.at(-1)).not.toContain('Confirm all steps')
+  })
+
+  test('update all skips non-available skills and continues after an individual failure', async () => {
+    const { tui, calls, findings, items, manager, terminal } = setup()
+    items.push(item('gamma', true))
+    findings.set('gamma', { ...inspection(items[2]!, 'none'), upstream: 'current', primaryActionLabel: '' })
+    manager.update = async (name) => {
+      calls.push(`update:${name}`)
+      if (name === 'alpha') throw new Error('Canonical skill changed since inspection')
+      return 'updated'
+    }
+    await tui.handleInput('s')
+    await Bun.sleep(10)
+    await tui.handleInput('u')
+    expect(terminal.frames.at(-1)).toContain('Review  /  2 skills')
+    expect(terminal.frames.at(-1)).not.toContain('gamma —')
+    await tui.handleInput('y')
+    expect(calls).toEqual([
+      'inspect:alpha', 'inspect:beta', 'inspect:gamma',
+      'update:alpha', 'adopt:beta', 'update:beta',
+    ])
+    expect(terminal.frames.at(-1)).toContain('Update all finished: 1 updated · 0 already current · 1 failed.')
+    expect(terminal.frames.at(-1)).toContain('alpha: Canonical skill changed since inspection')
+  })
+
+  test('long batch results keep navigation visible and allow scrolling through every failure', async () => {
+    const { tui, items, manager, terminal } = setup()
+    terminal.columns = 72
+    terminal.rows = 18
+    for (let index = 1; index <= 18; index += 1) items.push(item(`extra-${index}`, true))
+    manager.update = async (name) => { throw new Error(`failed update for ${name}`) }
+    await tui.handleInput('s')
+    await Bun.sleep(10)
+    await tui.handleInput('u')
+    await tui.handleInput('y')
+    const first = terminal.frames.at(-1)!
+    expect(first).toContain('Update all finished: 0 updated · 0 already current · 20 failed.')
+    expect(first).toContain('Result lines')
+    expect(first).toContain('Enter  Back to skills  ·  q quit')
+    expect(first).not.toContain('extra-18: failed update for extra-18')
+    await tui.handleInput('j'.repeat(30))
+    const scrolled = terminal.frames.at(-1)!
+    expect(scrolled).toContain('extra-18: failed update for extra-18')
+    expect(scrolled).toContain('Enter  Back to skills  ·  q quit')
+  })
+
+  test('update all asks for a scan when no checked updates exist', async () => {
+    const { tui, calls, terminal } = setup()
+    await tui.handleInput('u')
+    expect(calls).toEqual([])
+    expect(terminal.frames.at(-1)).toContain('Press s to check all skills before updating.')
+    expect(terminal.frames.at(-1)).not.toContain('Confirm all steps')
   })
 
   test('narrow 72×18 terminal keeps all nine rows and scan controls visible', async () => {
@@ -250,7 +331,7 @@ describe('global skill TUI', () => {
     expect(terminal.frames.at(-1)).toContain('Review  /  alpha')
     expect(terminal.frames.at(-1)).toContain('Confirm all steps? y/N')
     expect(calls).toEqual(['inspect:alpha'])
-    await tui.handleInput('n')
+    await tui.handleInput('\r')
     expect(calls).toEqual(['inspect:alpha'])
     await tui.handleInput('\r')
     await tui.handleInput('y')
