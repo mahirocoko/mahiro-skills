@@ -53,6 +53,11 @@ ordered work tracked; do not make a second checklist for internal bookkeeping.
 Read before replacing notes: `edit --notes` replaces the whole body. Preserve the
 human's words and decisions, and verify the resulting task through a JSON read.
 
+Keep consequential original requirements and later human corrections verbatim,
+or link their exact source when long; distinguish them from the agent's interpretation.
+When an approved requirement changes, record what changed and reopen only the
+affected implementation and checks. Unaffected evidence remains valid within its scope.
+
 ## Execute to the result
 
 1. Read the complete task, current human instructions, canonical repo rules and
@@ -65,7 +70,10 @@ human's words and decisions, and verify the resulting task through a JSON read.
 4. Use the repository-native formatter where available and rerun affected checks.
    Distinguish source/runtime proof from human visual/product acceptance. Follow
    the host's independent-QA and resource rules; this skill adds no agent fanout.
-5. Record evidence and unfinished conditions. If blocked, set `blocked`, identify
+5. Record evidence against the approved requirement/change note and the candidate
+   actually checked: revision/hash or explicitly identified uncommitted content.
+   A Git HEAD alone does not identify dirty edits. Later relevant edits invalidate
+   the affected checks, not every earlier result. If blocked, set `blocked`, identify
    the exact question and next owner. Do not report success from command submission.
 6. If implementation and required agent checks are complete, set `review` and say
    what the human must inspect. If required checks failed or were not run, record
@@ -88,10 +96,30 @@ evidence references before handing off. Reference a repository-owned handoff whe
 needed, but do not duplicate the full brief. Receiving agents must be able to name
 the result, boundaries, current progress, checks still needed and next owner.
 
+Give a delegated worker the task ID/source, exact human constraints, owned paths,
+protected contracts, checks and timebox. The worker reads the complete task and
+current owners before writing, rather than working only from a parent summary.
+Main reconciles review findings with the original requirements and candidate:
+require location, evidence and impact; separate introduced defects, pre-existing
+issues and preference-only suggestions. Correct supported in-scope defects within
+the remaining budget; stop on a concrete blocker rather than starting an unbounded
+review/fix sweep. Preserve the host's independent-QA and human-acceptance gates.
+
 Skills carry the procedure, not task data. Another session on the same store can
 read the task; another machine cannot be assumed to have it. For cross-machine work,
 provide an explicitly approved portable handoff without copying the whole store or
 placing live storage in a synced folder. Never include secrets in notes or evidence.
+
+## Check an agreed workflow change
+
+For an explicitly agreed learning experiment, use the task's existing evidence
+notes: name one changed step and its trigger, a permitted baseline/comparator,
+whether it was actually applied, the outcome and observed cost/limits. On later
+comparable work, decide keep, narrow, revise or revert through the existing guidance
+owner. Separate new requirements from repeated agent mistakes. Invocation or a
+prompt-only probe is not proof of better real-work outcomes. Direct human constraints
+remain authoritative; never violate them to construct a control. Do not add a new
+ledger, experiment, reviewer or automatic rule promotion to every ordinary task.
 
 ## Examples
 

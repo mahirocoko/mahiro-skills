@@ -20,9 +20,32 @@ describe("task-backed workflow ownership", () => {
     const goal = readSkill("control-room-goals");
     expect(goal).not.toContain("Execution starts or user confirms the draft");
     expect(goal).not.toContain("unless work starts");
-    expect(goal).toContain("Apply Goal Mode only after\nexplicit Goal approval");
+    expect(goal).toContain(
+      "Apply Goal Mode only after\nexplicit Goal approval",
+    );
     expect(goal).toContain("never automatically marks a task done");
     expect(goal).toContain("Do not clear or migrate an existing Goal");
+  });
+
+  test("handoff retains exact requirements and candidate-bound evidence", () => {
+    const task = readSkill("working-tasks");
+    expect(task).toContain("human corrections verbatim");
+    expect(task).toContain("worker reads the complete task");
+    expect(task).toContain("reopen only the");
+    expect(task).toContain("A Git HEAD alone does not identify dirty edits");
+    expect(task).toContain("pre-existing");
+    expect(task).toContain("unbounded");
+    expect(task).toContain("independent-QA and human-acceptance gates");
+  });
+
+  test("workflow experiments do not weaken constraints or claim efficacy from prompts", () => {
+    const task = readSkill("working-tasks");
+    expect(task).toContain("For an explicitly agreed learning experiment");
+    expect(task).toContain(
+      "prompt-only probe is not proof of better real-work outcomes",
+    );
+    expect(task).toContain("never violate them to construct a control");
+    expect(task).toContain("automatic rule promotion to every ordinary task");
   });
 
   test("recap reads task context without mutating the board", () => {
@@ -39,6 +62,8 @@ describe("task-backed workflow ownership", () => {
     expect(forward).toContain("Do not silently rewrite human decisions");
     expect(forward).toContain("Do not mark done without human acceptance");
     expect(forward).toContain("does not transfer data to another machine");
-    expect(forward).toContain("replace the copied Pending and Next Session lists");
+    expect(forward).toContain(
+      "replace the copied Pending and Next Session lists",
+    );
   });
 });
