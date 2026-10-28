@@ -584,7 +584,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(playbook).toContain("single owner of direct-cli's role-to-model choices");
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-high\" --yolo --approve-mcps --trust");
     expect(playbook).toContain("agent --model \"claude-fable-5-1-thinking-xhigh\" --yolo --approve-mcps --trust");
-    expect(playbook).toContain("agent --model 'grok-4.7[context=500k,effort=high,fast=false]' --yolo --approve-mcps --trust");
+    expect(playbook).toContain('agent --model "grok-4.7-high-fast" --yolo --approve-mcps --trust');
+    expect(playbook).toContain("select 500K with the arrow keys and Enter");
+    expect(playbook).toContain("`500K High Fast`");
+    expect(playbook).not.toContain("agent --model 'grok-4.7[context=500k,effort=high,fast=false]'");
     expect(playbook).toContain("agent --model \"claude-sonnet-5-5-high\" --yolo --approve-mcps --trust");
     expect(playbook).not.toContain("claude-sonnet-5-thinking-high");
     expect(playbook).toContain("agent --model \"claude-opus-5-5-high\" --yolo --approve-mcps --trust");
