@@ -25,7 +25,11 @@ without promoting terminal lifecycle into accepted work.
   schema authoritative for syntax, IDs, lifecycle and readiness. Do not copy a
   version-pinned command catalog into this skill.
 - Route temporary executor work, provider/model/effort selection, launch flags,
-  callbacks, report recovery and lane cleanup to `direct-cli`.
+  callbacks, report recovery and lane cleanup to `direct-cli` when available.
+  The current controller retains ownership; a different Tab does not transfer it.
+  If `direct-cli` is unavailable, do not assume it is installed or invent its
+  callback contract: use the executor's and Herdr's current help for an authorized
+  bounded launch, or report a blocker when the required return contract is unavailable.
 - Keep project commands, native UI/plugin implementation and rendered acceptance
   with their project owners. Metadata capability is not rendered support.
 - Keep browser, artifact and supervised DAG jobs with their established owners.

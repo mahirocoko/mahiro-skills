@@ -33,6 +33,17 @@ describe("herdr-cli source contract (not live execution proof)", () => {
     expect(skill).not.toMatch(/herdr-jobs\.py|model_reasoning_effort|--dangerously/);
   });
 
+  test("cross-references direct-cli without a mandatory sibling dependency", () => {
+    const direct = read("skills", "direct-cli", "SKILL.md");
+    expect(direct).toContain("use `herdr-cli` if available");
+    expect(direct).toContain("temporary executor/model/callback ownership");
+    expect(direct).toContain("do not assume the sibling skill is installed");
+    expect(skill).toContain("lane cleanup to `direct-cli` when available");
+    expect(skill).toContain("If `direct-cli` is unavailable");
+    expect(skill).toContain("do not assume it is installed or invent its");
+    expect(skill).toContain("a different Tab does not transfer it");
+  });
+
   test("guards path, occupant, topology and ambiguous submission contracts", () => {
     for (const contract of [
       "compare pane cwd and foreground cwd, not sidebar labels",

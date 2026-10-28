@@ -19,6 +19,7 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions 
 - Mahiro Code / the main agent stays the conversation owner
 - Cursor CLI, Antigravity CLI, or Codex CLI acts as the direct executor
 - The selected backend's pane output is treated as the nearest source of execution truth
+- For Herdr Space organization, authorized app/server placement, worktree association, full project ownership transfer or cross-Space coordination, use `herdr-cli` if available. This skill retains temporary executor/model/callback ownership; a new Tab alone does not transfer ownership. If `herdr-cli` is unavailable, use the installed Herdr guide and relevant CLI help for authorized Herdr operations, or report a blocker when the ownership decision cannot be established; do not assume the sibling skill is installed.
 - For production-ish asset work, use `asset-designer` as the front-door workflow; it routes Agy/Gemini dicut first and keeps Codex as an explicit fallback/A-B. This skill owns only pane execution, while `codex-asset-production` owns Codex source/imagegen and assigned fallback work.
 
 ## Backend Selection
