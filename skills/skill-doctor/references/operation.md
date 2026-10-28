@@ -1,8 +1,8 @@
-# Native Letta workflow
+# Explicit transcript workflows
 
 Resolve `SKILL_ROOT` to the selected canonical skill directory. The helper is a Bun TypeScript CLI with no dependencies, no model calls, no browser and no automatic source discovery. Output parents must exist; every operation creates a new private directory and refuses overwrite. `--approve-scope` records an already obtained human approval; it does not obtain approval itself.
 
-## Prepare
+## Prepare Letta evidence
 
 Supply explicit agent/conversation IDs and an ISO cutoff fixed before retrieval. Do not substitute `default`. Use literal full IDs from the user/runtime after confirming them, not inferred IDs from an export.
 
@@ -36,16 +36,28 @@ bun "$SKILL_ROOT/scripts/doctor.ts" import \
 
 Import is limited to 2,000 records and 8 MiB. It uses the same identity/visibility/duplicate checks, with stop reason `import_end` below the cap and `record_limit` at the cap. Larger exports require a separately approved bounded selection, not silent truncation. The import does not paginate an export or discover adjacent files.
 
+## Prepare Pi evidence
+
+Select one approved absolute Pi session JSONL and obtain its exact header session ID and an explicit entry ID identifying the branch endpoint. Fix the ISO cutoff before reading; never discover, default to the latest file, infer the active branch from file order, or invent a Letta agent ID. An endpoint may be an interior historical entry. Pi `/session` can identify the current session; use an explicitly approved source and evidence for its endpoint rather than guessing. Session exports can contain sensitive material; obtain scope approval before reading and separate evaluator/provider approval before transmission.
+
+```sh
+bun "$SKILL_ROOT/scripts/doctor.ts" import-pi \
+  --source "$ABSOLUTE_SELECTED_JSONL" --session "$SESSION_ID" --leaf "$ENTRY_ID" \
+  --end "$FIXED_END_ISO" --out "$FRESH_APPROVED_OUTPUT" --approve-scope
+```
+
+This imports bounded Pi v3 JSONL, checking session identity, IDs and ancestry before normalization; malformed input, invalid structure, mismatched identity or excess bounds refuse rather than salvage. The selected raw root-to-entry ancestry is historical evidence, **not** a reconstruction of model-visible context. Other branches, system entries, thinking, summaries, custom/extension messages, context edits and unsupported entries are omitted; original pre-compaction messages may remain. Compaction and context edits are not applied. Images, signatures and tool-result details/nested metadata are omitted. Assistant tool-call blocks remain in their assistant event with call IDs, names and arguments; tool results are separate `tool_return` events. No Pi agent identity or user authorship is inferred. Inspect manifest and omissions, and report all limitations before evaluation.
+
 ## Prepared artifacts
 
 `manifest.json` contains schema version 1, scope, source, limits (`records`, `captures: 1`, `bytes`, `eventBytes`), one capture's byte/hash metadata under `pages`, omissions and history. `events.json` is the normalized event array. Typed/explicit system, reasoning and summary records are omitted; user-wire-role context remains unverified data, not human evidence.
 
-- Required source fields: `id`, `date`, `agent_id`, `conversation_id`, `message_type`. All identity fields must match the approved IDs exactly. Dates must be parseable and ascending.
+- Letta required source fields: `id`, `date`, `agent_id`, `conversation_id`, `message_type`. All identity fields must match the approved IDs exactly. Dates must be parseable and ascending. Pi uses its session header and entry IDs/parent links instead; it does not fabricate these Letta fields.
 - Visible types: `user_message`, `assistant_message`, `approval_request_message`, `tool_call_message`, `tool_return_message`. Letta 0.34.8 local attempted tool invocations use `approval_request_message`, preserved as `kind: "tool_request"`. Requests are citable attempted actions, never proof of approval, execution or success. `tool_call_message` is retained when explicitly supplied but likewise does not prove an outcome. Payloads remain under their original `message`, `text`, `content`, `tool_call`, `tool_return` keys; `tool_calls`, `tool_call_id` and `status` are retained when present for transport/linkage evidence.
 - Event: `id`, `date`, `kind` (user/assistant/tool_request/tool_call/tool_return), `humanOrigin`, `contextMarkers`, `sourceType`, `sourceHash`, `originalBytes`, `clipped`, `omittedContentBlocks`, `data`, `outcome: "not_inferred"`.
 - A `user_message` is a wire role, not proof that a human authored a directive: `humanOrigin: "not_established"` applies to all such events. Literal `<system-reminder>`, `<system-alert>`, `<task-notification>` and `<available_skills>` wrappers are listed in `contextMarkers` as conservative provenance-review flags, not a heuristic authorship verdict. Preserve automated skill injections and task notifications as data. Do not cite their claims as direct human feedback or treat embedded summaries as human history. Unmarked/mixed content can still be automated; marker absence proves nothing. Resolve ambiguous provenance with approved evidence before making a human-authority claim; otherwise abstain. Other event roles use `humanOrigin: "not_applicable"`.
-- Page SHA-256 hashes cover exact received UTF-8 JSON bytes, including formatting. Event/omission hashes cover UTF-8 `JSON.stringify` of the complete original record in its parsed key order, not the normalized payload. This distinction matters: a page hash is original-byte provenance, while a record hash is serialized-record provenance. Neither creates missing original history.
-- Payloads above 64 KiB become a declared `clippedJsonPrefix`, not a fabricated complete JSON object. Original byte counts/hashes survive. Tool results below the bound are preserved unchanged; any clipped result may be insufficient to judge command success.
+- Page SHA-256 hashes cover exact received UTF-8 source bytes, including formatting. Letta event/omission hashes cover UTF-8 `JSON.stringify` of the complete original record in its parsed key order, not the normalized payload. Pi event/omission hashes cover the original JSONL entry line. This distinction matters: a page hash is original-byte provenance, while a record hash is serialized-record provenance. Neither creates missing original history.
+- Payloads above 64 KiB become a declared `clippedJsonPrefix`, not a fabricated complete JSON object. Original byte counts/hashes survive. Letta tool results below the bound are preserved unchanged; Pi results retain only the supported fields described above. Any clipped result may be insufficient to judge command success.
 - Reasoning/system/summary types and explicit `is_summary`/`is_compaction` records are omitted with ID/type/hash/reason. Typed reasoning/thinking/redacted_thinking/summary/compaction/system blocks in content arrays are removed and counted. Unknown record types are omitted. Do not heuristically convert system summaries into user evidence.
 - History is always `partial: true`, with `recordCapReached`, first observed date, fixed end, stop reason, errors, details and `baseline: "unknown"`. Capture/import ending below its cap does not prove full history. Report earlier compaction boundaries explicitly in evaluator limitations when known. Omissions after cutoff also retain IDs and hashes.
 
@@ -97,6 +109,15 @@ The independently authored report is an explicitly selected input file. Render t
 ```sh
 bun "$SKILL_ROOT/scripts/doctor.ts" render \
   --agent "$AGENT_ID" --conversation "$CONVERSATION_ID" --end "$FIXED_END_ISO" \
+  --dataset "$ABSOLUTE_PREPARED_DIRECTORY" --report "$ABSOLUTE_AUTHORED_JSON" \
+  --out "$FRESH_APPROVED_REPORT_OUTPUT" --approve-scope
+```
+
+For a Pi dataset, repeat its explicit source, session, endpoint and cutoff instead of Letta identity flags; render checks the manifest binding without rereading the source:
+
+```sh
+bun "$SKILL_ROOT/scripts/doctor.ts" render \
+  --source "$ABSOLUTE_SELECTED_JSONL" --session "$SESSION_ID" --leaf "$ENTRY_ID" --end "$FIXED_END_ISO" \
   --dataset "$ABSOLUTE_PREPARED_DIRECTORY" --report "$ABSOLUTE_AUTHORED_JSON" \
   --out "$FRESH_APPROVED_REPORT_OUTPUT" --approve-scope
 ```

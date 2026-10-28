@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { MAX_BYTES, MAX_EVENT_BYTES, MAX_RECORDS, collectRaw, main, prepare, renderReport, rubrics, validateReport, writeArtifacts, type Dataset, type Report, type Scope, type SourceRecord } from "../skills/skill-doctor/scripts/doctor";
+import { MAX_BYTES, MAX_EVENT_BYTES, MAX_IMPORT_RECORDS, MAX_RECORDS, preparePi, type PiScope, collectRaw, main, prepare, renderReport, rubrics, validateReport, writeArtifacts, type Dataset, type Report, type Scope, type SourceRecord } from "../skills/skill-doctor/scripts/doctor";
 
 const directories: string[] = [];
 function sandbox() { const path = mkdtempSync(join(realpathSync(tmpdir()), "skill-doctor-test-")); directories.push(path); return path; }
@@ -226,6 +226,119 @@ test("native CLI import and Markdown/JSON rendering smoke without live history",
   expect(readFileSync(join(rendered, "report.md"), "utf8")).toContain("No instruction gap");
   const refused = Bun.spawnSync(["bun", script, "render", ...common, "--dataset", selected.out, "--report", authored, "--out", rendered]);
   expect(refused.exitCode).not.toBe(0);
+});
+
+function piScope(): PiScope { const out = join(sandbox(), "output"); return { session: "fixture-pi-session", leaf: "m2", source: join(resolve(out, ".."), "session.jsonl"), end: "2026-10-09T13:00:00.000Z", out, approved: true }; }
+function piEntry(id: string, parentId: string | null, message: Record<string, unknown> = { role: "user", content: "Fixture only" }, extra: Record<string, unknown> = {}) {
+  return { type: "message", id, parentId, timestamp: "2026-10-09T12:00:00.000Z", message: { timestamp: Date.parse("2026-10-09T12:00:00.000Z"), ...message }, ...extra };
+}
+function piRaw(entries: Record<string, unknown>[] = [piEntry("m1", null), piEntry("m2", "m1", { role: "assistant", content: [{ type: "text", text: "Visible response" }] })], header: Record<string, unknown> = {}) {
+  return [{ type: "session", version: 3, id: "fixture-pi-session", timestamp: "2026-10-09T11:00:00Z", cwd: "/synthetic", ...header }, ...entries].map(value => JSON.stringify(value)).join("\n") + "\n";
+}
+describe("explicit bounded Pi JSONL import", () => {
+  test("approval, exact IDs, absolute source, cutoff and fresh output gate before source callback", async () => {
+    let reads = 0;
+    for (const invalid of [{ approved: false }, { session: "" }, { session: "all" }, { leaf: "" }, { leaf: "*" }, { source: "relative" }, { end: "now" }, { out: "relative" }]) {
+      await expect(preparePi({ ...piScope(), ...invalid }, async () => { reads++; return piRaw(); })).rejects.toThrow();
+    }
+    const selected = piScope(); writeArtifacts(selected.out, { "events.json": "[]" });
+    await expect(preparePi(selected, async () => { reads++; return piRaw(); })).rejects.toThrow("overwrite");
+    expect(reads).toBe(0);
+    await expect(main(["import-pi", "--source", "/definitely-not-read", "--session", "fixture-pi-session", "--leaf", "m2", "--end", selected.end, "--out", join(sandbox(), "new")])).rejects.toThrow("approved");
+  });
+  test("explicit ancestry, multiple roots, hidden blocks, calls/results and exact hashes", async () => {
+    const entries = [
+      piEntry("system", null, { role: "system", content: "SYSTEM_SECRET", sections: { secret: "SECTION_SECRET" } }),
+      piEntry("m1", "system", { role: "user", content: "<system-alert>Visible wrapper</system-alert>" }),
+      piEntry("abandoned", "m1", { role: "assistant", content: [{ type: "text", text: "OTHER_BRANCH_SECRET" }] }),
+      piEntry("root2", null, { role: "user", content: "OTHER_ROOT_SECRET" }),
+      piEntry("compact", "m1", {}, { type: "compaction", summary: "COMPACTION_SECRET" }),
+      piEntry("summary", "compact", {}, { type: "branch_summary", summary: "BRANCH_SUMMARY_SECRET" }),
+      piEntry("custom", "summary", {}, { type: "custom_message", content: "CUSTOM_SECRET", display: false }),
+      piEntry("m2", "custom", { role: "assistant", content: [
+        { type: "thinking", thinking: "THINKING_SECRET", thinkingSignature: "SIGNATURE_SECRET" },
+        { type: "thinking", redacted: true, thinkingSignature: "REDACTED_SECRET" },
+        { type: "text", text: "Visible", textSignature: "TEXT_SIGNATURE_SECRET" },
+        { type: "toolCall", id: "call1", name: "bash", arguments: { command: "false" }, thoughtSignature: "THOUGHT_SIGNATURE_SECRET", namespace: "tools" },
+      ] }),
+      piEntry("result", "m2", { role: "toolResult", toolCallId: "call1", toolName: "bash", isError: false, details: { secret: "DETAILS_SECRET" }, content: [{ type: "text", text: "Tests failed; exit 1" }, { type: "image", data: "IMAGE_SECRET", mimeType: "image/png" }] }),
+      piEntry("edit", "result", {}, { type: "context_edit", targetId: "m1", replacement: "EDIT_SECRET" }),
+    ];
+    const selected = { ...piScope(), leaf: "edit" }; const raw = piRaw(entries);
+    const data = await preparePi(selected, async () => raw);
+    expect(data.events.map(event => event.id)).toEqual(["m1", "m2", "result"]);
+    expect(data.scope).not.toHaveProperty("agent"); expect(data.scope).not.toHaveProperty("conversation");
+    expect(data.pages[0].sha256).toBe(createHash("sha256").update(raw).digest("hex"));
+    expect(data.events[1].sourceHash).toBe(createHash("sha256").update(JSON.stringify(entries[7])).digest("hex"));
+    expect(data.events[1].originalBytes).toBe(Buffer.byteLength(JSON.stringify(entries[7])));
+    expect(data.events[1].omittedContentBlocks).toBe(2);
+    expect(data.events[1].data).toEqual({ content: [{ type: "text", text: "Visible" }, { type: "toolCall", id: "call1", name: "bash", arguments: { command: "false" }, namespace: "tools" }] });
+    expect(data.events[2].data).toEqual({ content: [{ type: "text", text: "Tests failed; exit 1" }], tool_call_id: "call1", tool_name: "bash", isError: false });
+    expect(data.events[2].outcome).toBe("not_inferred"); expect(data.events[0].humanOrigin).toBe("not_established");
+    expect(data.events[0].contextMarkers).toEqual(["system-alert"]);
+    expect(JSON.stringify(data)).not.toContain("SECRET");
+    expect(data.omissions).toHaveLength(entries.length - 3);
+    expect(data.history.details).toContain("not applied");
+    expect(validateReport(report(), data)).toEqual(report());
+    expect(renderReport(report(), data)).toContain("Pi session fixture-pi-session / leaf edit");
+    expect(renderReport(report(), data)).toContain("NOT reconstructed model context");
+    const invalid = report(); invalid.axes.efficiency.evidence = ["abandoned"];
+    expect(() => validateReport(invalid, data)).toThrow("citation");
+  });
+  test("explicit interior leaf is allowed; no implicit latest, nested and entry cutoff are both enforced", async () => {
+    const entries = [piEntry("m1", null), piEntry("m2", "m1"), piEntry("entry-future", "m2", undefined, { timestamp: "2026-10-09T14:00:00Z" }), piEntry("nested-future", "m2", { role: "user", content: "FUTURE_SECRET", timestamp: Date.parse("2026-10-09T14:00:00Z") })];
+    const data = await preparePi({ ...piScope(), leaf: "nested-future" }, async () => piRaw(entries));
+    expect(data.events.map(event => event.id)).toEqual(["m1", "m2"]); expect(data.history.stop).toBe("fixed_end_reached");
+    expect(JSON.stringify(data)).not.toContain("FUTURE_SECRET");
+    const interior = await preparePi({ ...piScope(), leaf: "m1" }, async () => piRaw(entries)); expect(interior.events).toHaveLength(1);
+    const entryCutoff = await preparePi({ ...piScope(), leaf: "entry-future" }, async () => piRaw(entries)); expect(entryCutoff.events).toHaveLength(2);
+    const exact = await preparePi(piScope(), async () => piRaw([piEntry("m1", null), piEntry("m2", "m1", { role: "user", content: "at cutoff", timestamp: Date.parse("2026-10-09T13:00:00Z") }, { timestamp: "2026-10-09T13:00:00Z" })])); expect(exact.events).toHaveLength(2);
+  });
+  test("malformed, duplicate, orphaned, cyclic, foreign headers and invalid hidden/after-cutoff records fail closed", async () => {
+    for (const raw of ["", "{broken", piRaw() + "\n", piRaw().slice(0, -3), piRaw([], { id: "foreign" }), piRaw([], { version: 2 }), piRaw([], { timestamp: "bad" }), piRaw([piEntry("m1", null)]), piRaw([piEntry("m1", null), piEntry("m2", "missing")]), piRaw([piEntry("m1", "m2"), piEntry("m2", "m1")]), piRaw([piEntry("m1", null), piEntry("m1", null)]), piRaw([piEntry("m1", null), piEntry("m2", "m1"), piEntry("bad-hidden", "missing", { role: "system", content: "hidden" }, { timestamp: "2027-01-01T00:00:00Z" })]), piRaw([piEntry("m1", null), piEntry("m2", "m1", { role: "assistant", content: [{ type: "toolCall", id: "call", name: "bash", arguments: [] }] })]), piRaw([piEntry("m1", null), piEntry("m2", "m1", { role: "toolResult", content: [], toolCallId: "call" })]), piRaw([piEntry("m1", null), piEntry("m2", "m1", { role: "system", timestamp: "bad" })])]) {
+      const selected = piScope(); await expect(preparePi(selected, async () => raw)).rejects.toThrow(); expect(existsSync(selected.out)).toBe(false);
+    }
+  });
+  test("native fork permits copied entries and labels older than their new header or parent", async () => {
+    const entries = [piEntry("m1", null), piEntry("m2", "m1"), { type: "label", id: "label1", parentId: "m2", timestamp: "2026-10-08T10:00:00Z", targetId: "m1" }];
+    const data = await preparePi(piScope(), async () => piRaw(entries, { timestamp: "2026-10-09T12:30:00Z", parentSession: "/not-read.jsonl" }));
+    expect(data.events.map(event => event.id)).toEqual(["m1", "m2"]);
+    expect(data.omissions.map(omission => omission.id)).toContain("label1");
+  });
+  test("byte/entry caps, hidden-only omission, clipping and unsupported blocks", async () => {
+    await expect(preparePi(piScope(), async () => " ".repeat(MAX_BYTES + 1))).rejects.toThrow("byte budget");
+    const entries = Array.from({ length: MAX_IMPORT_RECORDS }, (_, i) => piEntry(`entry${i}`, i ? `entry${i - 1}` : null));
+    const capped = await preparePi({ ...piScope(), leaf: `entry${MAX_IMPORT_RECORDS - 1}` }, async () => piRaw(entries));
+    expect(capped.history.recordCapReached).toBe(true); expect(capped.history.stop).toBe("record_limit");
+    expect(capped.pages[0].records).toBe(MAX_IMPORT_RECORDS + 1);
+    await expect(preparePi(piScope(), async () => piRaw([...entries, piEntry("excess", null)]))).rejects.toThrow("record budget");
+    const data = await preparePi(piScope(), async () => piRaw([piEntry("m1", null, { role: "assistant", content: [{ type: "thinking", thinking: "hidden" }, { type: "futureBlock", text: "unknown hidden" }] }), piEntry("m2", "m1", { role: "user", content: "x".repeat(MAX_EVENT_BYTES + 1) })]));
+    expect(data.omissions[0].id).toBe("m1"); expect(data.events[0].clipped).toBe(true); expect(data.events[0].data).toHaveProperty("clippedJsonPrefix");
+  });
+  test("real fixture file CLI import/render preserves privacy and rejects symlinks/invalid UTF8", async () => {
+    const selected = piScope(); writeFileSync(selected.source, piRaw());
+    const common = ["--session", selected.session, "--leaf", selected.leaf, "--source", selected.source, "--end", selected.end, "--approve-scope"];
+    await main(["import-pi", ...common, "--out", selected.out]);
+    expect(statSync(selected.out).mode & 0o777).toBe(0o700);
+    expect(statSync(join(selected.out, "events.json")).mode & 0o777).toBe(0o600);
+    const manifest = JSON.parse(readFileSync(join(selected.out, "manifest.json"), "utf8")); expect(manifest.source).toBe("pi-jsonl-import"); expect(manifest.scope.agent).toBeUndefined();
+    const authored = join(resolve(selected.out, ".."), "authored.json"); writeFileSync(authored, JSON.stringify(report()));
+    const rendered = join(resolve(selected.out, ".."), "rendered");
+    // Render reads only selected artifacts, not the original session again.
+    rmSync(selected.source);
+    await main(["render", ...common, "--dataset", selected.out, "--report", authored, "--out", rendered]);
+    expect(readFileSync(join(rendered, "report.md"), "utf8")).toContain("Pi session");
+    await expect(main(["render", ...common.map(value => value === selected.leaf ? "wrong-leaf" : value), "--dataset", selected.out, "--report", authored, "--out", join(sandbox(), "new")])).rejects.toThrow("scope mismatch");
+    const linked = piScope(); symlinkSync(authored, linked.source);
+    await expect(preparePi(linked)).rejects.toThrow("Symlink");
+    const invalid = piScope(); writeFileSync(invalid.source, Buffer.from([0xff])); await expect(preparePi(invalid)).rejects.toThrow();
+    expect(existsSync(invalid.out)).toBe(false);
+    const oversized = piScope(); writeFileSync(oversized.source, "x".repeat(MAX_BYTES + 1));
+    await expect(preparePi(oversized)).rejects.toThrow("byte budget");
+    const directory = piScope(); await expect(preparePi({ ...directory, source: resolve(directory.out, "..") })).rejects.toThrow("regular file");
+    const fork = piScope(); writeFileSync(fork.source, piRaw(undefined, { parentSession: "/never-read-parent-session.jsonl" }));
+    expect((await preparePi(fork)).events).toHaveLength(2);
+  });
 });
 
 test("all four rubric files and MIT notice preserved byte-for-byte at pinned upstream", () => {
