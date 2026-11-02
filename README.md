@@ -4,7 +4,7 @@ Mahiro's packaged agent skills for OpenCode, Claude Code, Cursor, Antigravity CL
 
 `mahiro-skills` is a repo-managed skill bundle plus a private Bun CLI/TUI for previewing, installing, uninstalling, listing, and checking agent integrations. It installs from this repository's contents; it is not an npm-published binary package.
 
-Use it when you want the same Mahiro workflows available across agents: project tracking, repo learning, session recap, retrospectives, direct Cursor/Antigravity/Codex lanes, docs bootstrapping, research, video learning, character/IP creation and adaptation, motion design, and web asset workflows.
+The bundle makes the same workflows available across supported agents: project tracking, repo learning, session recap, retrospectives, direct CLI lanes, docs bootstrapping, research, video learning, character/IP creation and adaptation, motion design, and web asset workflows.
 
 ## Contents
 
@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.146 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.147 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.146 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.147 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -76,7 +76,7 @@ npx skills add mahirocoko/mahiro-skills --skill recap --agent universal --copy -
 bun ./src/cli.ts
 ```
 
-The default command opens a persistent full-screen Skill Manager when the terminal is interactive and at least `72x18`. Its guided flow is `Target → Action → Skills → Review → Result`: choose All agents or a custom multi-agent set, choose one scope, choose Install/Update/Uninstall/Inspect, then review the exact per-agent plan before any write. Scope defaults to `global`; an explicit `--scope local` remains authoritative. Inspect stays read-only from Skills detail.
+In an interactive terminal at least `72x18`, the default command opens the persistent full-screen Skill Manager. Its flow is `Target → Action → Skills → Review → Result`. Choose All agents or a custom multi-agent set, one scope, and Install/Update/Uninstall/Inspect, then review the exact per-agent plan before any write. Scope defaults to `global`; an explicit `--scope local` remains authoritative. Inspect stays read-only from Skills detail.
 
 Primary keys are visible on every screen: `↑/↓` focus, `Space` select or acknowledge, `Enter` continue, `Esc` back (or clear a query first), and `Ctrl+C` exit. Skills starts with a visible **Select all eligible** row that toggles every actionable item in the current filter. No mnemonic action key is required. Review defaults to a compact per-agent summary with confirmations at the top; one `Space` explicitly confirms every required acknowledgement in the selected batch, while `D` reveals exact paths, skips, and adapter warnings. Review remains non-destructive until Enter and explains sequential execution without whole-batch rollback. Result keeps per-agent receipt evidence and marks later agents Not attempted after the first thrown failure.
 
@@ -105,11 +105,18 @@ Supported v0 adapters: `opencode`, `claude-code`, `cursor`, `agy`, `codex`, `let
 
 Current workflow highlights:
 
-- **Step-first full-screen Skill Manager plus guided compatibility flow** — open with `bun ./src/cli.ts` for `Target → Action → Skills → Review → Result`, compact batch review, optional exact safety details, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
+- **Step-first full-screen Skill Manager plus guided compatibility flow** — `bun ./src/cli.ts` runs `Target → Action → Skills → Review → Result` with compact batch review, optional exact safety details, per-agent mixed-state detail, and sequential result evidence. `guided` and explicit `--mode` calls preserve the prompt-based and non-interactive automation contracts.
 - **Context-contract audits** — `/auditing-context-contracts` maps current, generated, historical, and transient text owners; checks material claims against source/runtime evidence; locates explicitly retired claims with a read-only deterministic scanner; and keeps keyword coverage distinct from semantic, browser, rendered, and human proof.
 - **Fable orchestration** — `/fable` escalates hard, ambiguous, cross-system, or repeatedly failing work into an evidence-driven mission with falsifiable hypotheses, adaptive specialist lanes, bounded retries, checkpoints, and fresh verification. It is a workflow mode, not Cursor Fable model selection.
-- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex watchable and terminal-first through a validated HC terminal first, then a healthy compatible legacy Herdr pane, then an exact live Orca caller terminal plus tracked current path, with tmux as the portable fallback. A requested visible HC Tab uses an explicit Space, else a unique exact target-checkout Space, else the caller-terminal Space—never whichever Space the app currently focuses. Single-lane work remains the default for narrow implementation or recovery; long named-agent legacy Herdr jobs use callback-primary routing after exact parent-pane receipt proof, while supervised Orca DAG/ask/reply work routes to Orca's separate orchestration skill.
-- **Herdr workspace ownership** — `/herdr-cli` organizes Spaces/Tabs/Panes, runs authorized apps/dev servers in visible foreground terminals rather than hidden background shells, associates explicitly authorized Git worktrees, transfers full project ownership and coordinates visible prerequisites without duplicating direct-cli callbacks or treating native attention as accepted output. Reuse matching running services; group related services in Panes only within requested topology. New app Spaces/Tabs may show immediately; do not promise no-focus creation. A new Tab targets an explicit Space, else a unique exact project/checkout Space, else the caller-terminal Space from `herdr-app ls`; `herdr-app status.space` is only focus state unless the human explicitly requests the focused Space. A displayed name/folder mismatch or HC label change does not prove a new Space or moved pane—verify occupants, foreground cwd and `herdr-app ls`. herdr-app owns visible topology; hc owns terminal execution/read/wait/send/cleanup. No native app Git-worktree create/open API is proven: the Git/executor owner supplies an authorized existing checkout path for folder association, never duplicate creation. Opening a Space does not move the current agent process. Load installed herdr-app/hc guides; legacy herdr is a separate fallback, never mixed IDs.
+- **Direct CLI lanes** — `/direct-cli` keeps Cursor, Antigravity, and Codex watchable and terminal-first. It tries a validated HC caller, a healthy compatible legacy Herdr pane, an exact live Orca caller plus tracked current path, then tmux.
+  - A visible HC Tab uses an explicit Space; otherwise, a unique exact target-checkout Space; otherwise, the caller-terminal Space—never the app's current focus.
+  - Single-lane work remains the default for narrow implementation or recovery. Long named-agent legacy Herdr jobs require exact parent-pane receipt proof and callback-primary routing; supervised Orca DAG/ask/reply work stays with Orca's orchestration skill.
+- **Herdr workspace ownership** — `/herdr-cli` organizes Spaces/Tabs/Panes, runs authorized apps and dev servers in visible foreground terminals rather than hidden background shells, associates explicitly authorized Git worktrees, transfers full project ownership, and coordinates visible prerequisites. It does not duplicate direct-cli callbacks or treat native attention as accepted output.
+  - Reuse matching running services; group related services in Panes only within the requested topology. New app Spaces or Tabs may show immediately, so do not promise no-focus creation.
+  - A new Tab targets an explicit Space; otherwise, a unique exact project/checkout Space; otherwise, the caller-terminal Space from `herdr-app ls`; `herdr-app status.space` is only focus state unless the human explicitly requests that Space.
+  - Names, folders, and HC labels do not prove placement. Verify occupants, foreground cwd, and `herdr-app ls`.
+  - `herdr-app` owns visible topology; `hc` owns terminal execution and lifecycle. The Git/executor owner supplies the exact path of an explicitly authorized existing checkout for folder association. No native app Git-worktree create/open API is proven; never create a duplicate checkout to repair missing Space association. Opening a Space does not move the current agent process.
+  - Load the installed `herdr-app` and `hc` guides. Legacy `herdr` remains a separate fallback; never mix its IDs with current-generation IDs.
 - **Multi-lane direct jobs** — one job can use named HC child terminals, one receipt-bound Orca tab, one legacy Herdr tab, or one tmux session with a lane registry, explicit write policy, role fanout, or backend-specific same-prompt fanout.
 - **Character/IP creation and adaptation** — `/creating-character-ip` creates simple independent character directions when no identity exists, or preserves one human-selected character through direct reference edits of composition, crop, scale, posture, or target-surface fit. Explore and Adapt remain separated by a human visual lock.
 - **Repo-local doctrine tooling** — docs/rules skills preserve repo-local evidence first, then layer Mahiro-style guidance only as fallback or preferred direction.
@@ -187,7 +194,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |
 | `mahiro-guidance-refine` | `/mahiro-guidance-refine` | You need to turn session feedback into approved docs, rules, or style guidance updates. |
 | `mahiro-style` | `/mahiro-style` | You need Mahiro's cross-repo code style doctrine. |
-| `mahiro-unslop` | `/mahiro-unslop` | Draft personal-use unslop/anti-slop audit and cleanup for generic AI UI/design, prose, interface copy, or code; preserves brand, content and behavior, not ordinary implementation. |
+| `mahiro-unslop` | `/mahiro-unslop` | Draft personal-use unslop/anti-slop audit and cleanup for generic AI UI/design, prose, interface copy, or code; preserves product character, meaning and behavior. Not for ordinary implementation. |
 | `motion-design` | `/motion-design` | You explicitly need a UI/product motion brief, motion personality or tokens, timing/easing/spring/stagger decisions, choreography, interaction-state motion, reduced-motion planning, or rendered motion audit—not ordinary frontend work or game VFX. |
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
