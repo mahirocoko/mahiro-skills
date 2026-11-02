@@ -139,6 +139,7 @@ valid = (
     and type(holder["pid"]) is int and holder["pid"] > 0
     and any(item.get("current") is True
             and item.get("instance") == holder["instance"]
+            and type(item.get("pid")) is int
             and item.get("pid") == holder["pid"] for item in status["holders"])
     and terminal["address"] == sys.argv[3]
     and terminal["state"] == "live"

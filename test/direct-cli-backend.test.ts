@@ -196,6 +196,8 @@ describe("direct-cli backend selector", () => {
     ["mismatched address", { FAKE_HC_TERMINAL: '{"address":"t-other","state":"live","finished_ms":null,"rm":false}' }],
     ["stale holder", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":false,"instance":"holder-test","pid":42},"holders":[]}' }],
     ["mismatched holder", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[{"current":true,"instance":"other","pid":42}]}' }],
+    ["boolean holder-list PID", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":true,"instance":"holder-test","pid":1},"holders":[{"current":true,"instance":"holder-test","pid":true}]}' }],
+    ["float holder-list PID", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[{"current":true,"instance":"holder-test","pid":42.0}]}' }],
     ["missing core", { FAKE_HC_STATUS: '{"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[]}' }],
     ["malformed status", { FAKE_HC_STATUS: "not-json" }],
     ["malformed get", { FAKE_HC_TERMINAL: "null" }],
