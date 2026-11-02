@@ -26,7 +26,11 @@ holder/core with `server status --json` and exact live caller using
 `get "$HC_TERMINAL_ID" --json`. Set target cwd separately to `pwd -P`; caller cwd
 may differ. Launch unique named interactive children with `run --bg --name ... --cwd ...`,
 parse exact address/parent receipt, use hc wait/read for readiness then send once.
-Check `first_message.sent` before any inline-task retry. No sleeps/polling. Codex
+If a visible Tab is requested, use an explicit Space, else a unique exact target-checkout
+Space from `herdr-app ls`, else the Space containing the exact caller `HC_TERMINAL_ID`;
+never use `status.space`. Use `herdr.space=<id>` / exact `herdr.tab=<id>` labels or explicit `tab.new --space <id>`
+when current help supports them, then verify placement. Check `first_message.sent`
+before any inline-task retry. No sleeps/polling. Codex
 requires `--no-daemon` in HC, retaining model/autonomy policy. Revalidate exact
 address/state/parent/current caller/name/cwd/foreground before cleanup; clean only
 job-created terminals after accepted work or explicit cleanup. HC has no legacy

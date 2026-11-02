@@ -31,9 +31,12 @@ describe("herdr-cli source contract (not live execution proof)", () => {
       "Use app commands only for visible topology",
       "Use hc for terminal execution, read/wait/send",
       "there is no assumed app `--no-focus` flag",
-      "If the human says “this/current Space”",
-      "`space` from `herdr-app status`",
-      "caller labels or the caller's own pane do not define it",
+      "An explicit destination Space wins",
+      "unique Space already associated with the approved target project/checkout",
+      "exact validated `HC_TERMINAL_ID` from `herdr-app ls`",
+      "do not default to `herdr-app status.space`",
+      "human explicitly asks for the currently focused Space",
+      "neither project nor caller resolves one Space",
       "displayed Space name or folder mismatch alone is not evidence",
     ]) expect(normalized.toLowerCase()).toContain(contract.toLowerCase());
     expect(skill).not.toMatch(/herdr-app (?:run|send|wait|read|kill)\b/);
@@ -73,7 +76,10 @@ describe("herdr-cli source contract (not live execution proof)", () => {
       "explicit folder/name/argv", "returned terminal ID", "foreground of that terminal",
       "`&`, `nohup`, `disown`", "hc wait <address> --output <ready-marker>", "`hc read`",
       "never sleep/poll", "Revalidate the exact process owner", "report the blocker",
-      "use the `herdr-app status` Space", "Do not create a duplicate Space", "foreground cwd",
+      "unique Space associated with the exact approved project/checkout",
+      "if none exists, use the Space containing this conversation's validated caller terminal",
+      "Never use the Space the person merely focuses", "Pass the Space ID explicitly",
+      "do not duplicate it", "foreground cwd",
     ]) expect(recipe).toContain(contract);
     for (const text of [skill, read("commands", "herdr-cli.md"), read("README.md"), read("skills", "llms.txt")]) {
       expect(text).toContain("app/dev-server startup");
@@ -82,25 +88,35 @@ describe("herdr-cli source contract (not live execution proof)", () => {
 
   test("does not confuse HC labels or pending placement with a completed pane move", () => {
     for (const contract of [
-      "Changing an existing terminal's HC labels does not prove its app pane moved",
+      "explicit `tab.new --space <id>`",
+      "`herdr.space=<id>`", "`herdr.tab=<id>`",
+      "Changing labels after launch does not prove a pane moved",
       "confirm actual placement with `herdr-app ls`",
       "Use app-owned park/keep rather than relabeling",
       "If `herdr-app ls` shows it already has a pane",
       "do not park a pane-less child",
-      "select the authorized destination by exact ID",
-      "immediately re-read `herdr-app status` before keep",
+      "select the caller-owned or explicitly authorized destination by exact ID",
+      "immediately re-read `herdr-app status`, then keep",
       "Treat placement as focus-changing",
       "treat a `pending` response as admission only",
       "exact HC address/process/cwd afterward",
       "also recheck port and health",
     ]) expect(normalized).toContain(contract);
     const wrapper = read("commands", "herdr-cli.md").replace(/\s+/g, " ");
+    expect(wrapper).toContain("unique exact project/checkout Space");
+    expect(wrapper).toContain("Space containing its exact `HC_TERMINAL_ID`");
+    expect(wrapper).toContain("rather than `herdr-app status.space`");
+    expect(wrapper).toContain("Pass explicit `space` to `tab.new`");
     expect(wrapper).toContain("HC label changes do not prove pane movement");
     expect(wrapper).toContain("park only an exact terminal that currently has a pane");
-    expect(wrapper).toContain("select and revalidate the exact destination Space immediately before keep");
+    expect(wrapper).toContain("caller-owned or explicitly named Space immediately before keep");
     expect(wrapper).toContain("pending reply is not completion");
-    expect(read("README.md")).toContain("HC label change does not prove a new Space or moved pane");
-    expect(read("skills", "llms.txt")).toContain("HC label changes do not prove new/moved topology");
+    expect(read("README.md")).toContain("unique exact project/checkout Space");
+    expect(read("README.md")).toContain("caller-terminal Space from `herdr-app ls`");
+    expect(read("README.md")).toContain("`herdr-app status.space` is only focus state");
+    expect(read("skills", "llms.txt")).toContain("unique exact project/checkout Space");
+    expect(read("skills", "llms.txt")).toContain("caller-terminal Space from app ls");
+    expect(read("skills", "llms.txt")).toContain("app status is only focus state");
   });
 
   test("worktree creation stays with Git/executor owner, app associates exact existing path", () => {

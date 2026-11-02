@@ -99,7 +99,7 @@ The caller and target are separate receipts. The main agent may start in Orca wo
 
 ### HC lane lifecycle
 
-This is a separate backend, not a command substitution for legacy Herdr. Keep the callback/fanout scripts below unchanged and legacy-Herdr-specific. Initial HC support is interactive named terminal lanes only; reject `--detach` for `hc` and `herdr-core`. `--focus` is not a Core flag: route visible placement/layout to `herdr-cli` if available or verified `herdr-app` capability. Default HC workers are watchable persistent terminals without guaranteed visible placement, workspace/tab/pane receipts or callback registry.
+This is a separate backend, not a command substitution for legacy Herdr. Keep the callback/fanout scripts below unchanged and legacy-Herdr-specific. Initial HC support is interactive named terminal lanes only; reject `--detach` for `hc` and `herdr-core`. `--focus` is not a Core flag: route visible placement/layout to `herdr-cli` if available or verified `herdr-app` capability. Default HC workers are watchable persistent terminals without guaranteed visible placement, workspace/tab/pane receipts or callback registry. For a visible Tab, use an explicit Space, else a unique exact `TARGET_CWD` checkout Space from `herdr-app ls`, else the Space containing the exact caller `HC_TERMINAL_ID`. Never use `herdr-app status.space` as the default destination; it is only the person's current focus.
 
 Resolve the executable consistently with the selector and load its installed contract:
 
@@ -117,7 +117,7 @@ HC_BIN="$(command -v hc || command -v herdr-core)" || exit 1
 TARGET_CWD="$(pwd -P)" || exit 1
 ```
 
-Caller terminal cwd may differ from `TARGET_CWD`; never substitute the caller path. Record the current core/holder and exact live caller address. Choose a unique job/lane name (installed `run` help owns constraints), then launch interactively with the existing curated model/autonomy policy. For example, with catalog-verified model/effort:
+Caller terminal cwd may differ from `TARGET_CWD`; never substitute the caller path. Record the current core/holder and exact live caller address. Choose a unique job/lane name (installed `run` help owns constraints), then launch interactively with the existing curated model/autonomy policy. For a requested visible lane, resolve `DEST_SPACE_ID` from an explicit destination, a unique exact target-checkout match, or the exact caller terminal's containing Space, in that order; append `--label "herdr.space=$DEST_SPACE_ID"` and `herdr.tab=<id>` only for an exact authorized Tab. If neither project nor caller resolves one Space, stop instead of inheriting app focus. For example, with catalog-verified model/effort:
 
 ```bash
 "$HC_BIN" run --bg --name "$LANE_NAME" --cwd "$TARGET_CWD" --json \
@@ -660,7 +660,7 @@ The existing tmux launch, fanout, capture, recovery, and cleanup commands below 
 
 Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Opus for critique, or Cursor for alternatives.
 
-For HC, group unique named child terminals by job with exact addresses and explicit target cwd; Core does not create tabs/splits. For layout backends the goal is one job, one receipt-bound Orca tab, legacy Herdr tab, or tmux session with many panes — not scattered containers that lose shared context.
+For HC, group unique named child terminals by job with exact addresses and explicit target cwd; Core does not create tabs/splits. Requested visible HC Tabs use an explicit Space, a unique target-checkout Space, or the exact caller-owned Space—never the app's currently focused Space. For layout backends the goal is one job, one receipt-bound Orca tab, legacy Herdr tab, or tmux session with many panes — not scattered containers that lose shared context.
 
 ### When to use
 

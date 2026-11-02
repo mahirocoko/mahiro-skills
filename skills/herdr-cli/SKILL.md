@@ -55,11 +55,15 @@ Binary presence alone does not authorize controlling the person's focused sessio
 
 Use read-only `herdr-app ls`, `herdr-app status`, `herdr-app commands` for discovery.
 Never run bare `herdr-app`: it opens/raises the window. Do not stop/restart the
-person's app/core. If the human says “this/current Space”, bind the exact
-`space` from `herdr-app status`; caller labels or the caller's own pane do not define it.
-If no current-generation tools are available, use only the separate legacy fallback
-below; a failed selected runtime is not permission to silently change backends after
-resource creation.
+person's app/core. An explicit destination Space wins. Otherwise bind a new Tab to a
+unique Space already associated with the approved target project/checkout; if none exists,
+use the Space containing the exact validated `HC_TERMINAL_ID` from `herdr-app ls`. Prove
+the project match from exact path/occupants, not labels. Do not default to
+`herdr-app status.space`, which reports app focus and may belong to another conversation.
+Use `status.space` only when the human explicitly asks for the currently focused Space.
+If neither project nor caller resolves one Space, stop and ask rather than guessing. If no current-generation tools
+are available, use only the separate legacy fallback below; a failed selected runtime
+is not permission to silently change backends after resource creation.
 
 Resolve the approved canonical project path separately from caller terminal cwd;
 they may differ. Discover layout and compare pane cwd and foreground cwd, not sidebar labels.
@@ -104,18 +108,21 @@ over an editor, server, approval dialog or unknown agent; inspect readiness firs
 Use app commands only for visible topology. Installed `commands` owns shapes for
 `space.new`, `tab.new`, `pane.split`, `terminal.open`, `terminal.keep`/`terminal.park`
 and pane/Space/Tab focus/select. Use hc for terminal execution, read/wait/send,
-interrupt/kill/rm, not app layout as a substitute lifecycle API. Changing an existing
-terminal's HC labels does not prove its app pane moved; labels are metadata, so confirm
-actual placement with `herdr-app ls`. A request to reveal an HC child can use verified
-`terminal.keep` or focus capability; do not confuse watchable terminals with guaranteed
-visible placement.
+interrupt/kill/rm, not app layout as a substitute lifecycle API. When current help
+supports it, create a new Tab with explicit `tab.new --space <id>`; an omitted `space`
+follows app selection and is not ownership evidence. An HC terminal intended to appear
+there may be launched with `herdr.space=<id>` and optional exact `herdr.tab=<id>` labels.
+Changing labels after launch does not prove a pane moved, so confirm actual placement with
+`herdr-app ls`. A request to reveal an HC child can use verified `terminal.keep` or focus
+capability; do not confuse watchable terminals with guaranteed visible placement.
 
 Relocate an existing process only when that topology change is authorized. If
 `herdr-app ls` shows it already has a pane, park that exact terminal first; do not park
 a pane-less child. Installed `terminal.keep` may expose no destination argument and
-follow the selected Space, so select the authorized destination by exact ID and
-immediately re-read `herdr-app status` before keep. If current help exposes an explicit
-destination, use that instead. Use app-owned park/keep rather than relabeling. Treat
+follow the selected Space. Never inherit whatever Space was already focused: select the
+caller-owned or explicitly authorized destination by exact ID, immediately re-read
+`herdr-app status`, then keep. If current help exposes an explicit destination, use that
+instead. Use app-owned park/keep rather than relabeling. Treat
 placement as focus-changing unless current runtime evidence proves otherwise, and treat
 a `pending` response as admission only. Re-read `herdr-app ls` and exact HC
 address/process/cwd afterward; for a service, also recheck port and health.
@@ -126,11 +133,14 @@ For authorized app/dev-server startup, keep the actual process in a visible term
 not a hidden agent background shell. This does not require direct-cli or orchestration.
 - Check project service records/listening ports plus exact process cwd first.
   Reuse a matching running service rather than launching a duplicate for verification.
-- If the request targets the current Space, use the `herdr-app status` Space even when
-  its displayed name/folder looks stale; inspect occupants and foreground cwd before
-  deciding it is wrong. Do not create a duplicate Space to make labels look consistent.
-- Choose a clearly named Tab in the matching Space; split related services into Panes
-  when useful. Verify target Space/Pane immediately before commands whose defaults follow focus.
+- By default, place a new service Tab in the unique Space associated with the exact
+  approved project/checkout; if none exists, use the Space containing this conversation's
+  validated caller terminal. Never use the Space the person merely focuses. Inspect
+  occupants and foreground cwd before deciding the match is wrong; do not duplicate it
+  to repair labels.
+- Choose a clearly named Tab in that exact Space; split related services into Panes when
+  useful. Pass the Space ID explicitly where supported and verify it immediately before
+  any command whose omitted destination follows focus.
 - Use verified app `terminal.open` or `tab.new` with explicit folder/name/argv for
   requested visible placement. Parse the returned terminal ID, bind with hc `get`,
   and use hc for subsequent execution, readiness, output and lifecycle. A topology

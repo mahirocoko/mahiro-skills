@@ -20,12 +20,15 @@ Execute the `herdr-cli` skill with args: `$ARGUMENTS`
 Load `herdr-app --skill`, `hc --skill`, relevant help and `herdr-app commands`.
 Use read-only `herdr-app ls`/`status`/`commands`, never bare `herdr-app` for discovery.
 App owns visible topology; hc owns execution/read/wait/send/cleanup. Validate the HC
-caller and keep HC terminal addresses separate from app Space/Tab/Pane IDs. For “this
-Space”, use `herdr-app status`; name/folder mismatch alone does not justify a new Space.
-HC label changes do not prove pane movement—verify `herdr-app ls`. For authorized
-existing-process relocation, park only an exact terminal that currently has a pane;
-when keep has no destination argument, select and revalidate the exact destination
-Space immediately before keep. Placement may change focus, and a pending reply is not
+caller and keep HC terminal addresses separate from app Space/Tab/Pane IDs. A new Tab
+uses an explicit Space, else a unique exact project/checkout Space, else the Space
+containing its exact `HC_TERMINAL_ID`, all resolved through `herdr-app ls` rather than
+`herdr-app status.space`; the latter is focus state and is used only when the human
+explicitly requests the focused Space. Pass explicit `space`
+to `tab.new` where supported. HC label changes do not prove pane movement—verify
+`herdr-app ls`. For authorized existing-process relocation, park only an exact terminal
+that currently has a pane; when keep has no destination argument, select and revalidate
+the caller-owned or explicitly named Space immediately before keep. Placement may change focus, and a pending reply is not
 completion; recheck exact process placement, port and health.
 Current HC operation does not require legacy HERDR_ENV. Use legacy `herdr --skill`
 only as a separate fallback when current tools are unavailable, with HERDR_ENV=1
