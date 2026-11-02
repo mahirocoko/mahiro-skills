@@ -883,18 +883,18 @@ describe("install", () => {
       expect(statSync(installedFanoutPath).mode & 0o111).not.toBe(0);
       expect(existsSync(installedJobsPath)).toBe(true);
       expect(statSync(installedJobsPath).mode & 0o111).not.toBe(0);
-      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified Orca or Herdr managed terminals with a tmux fallback");
+      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
       expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified Orca or Herdr managed terminals with a tmux fallback");
+      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
       expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified Orca or Herdr managed terminals with a tmux fallback");
-      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified Orca or Herdr managed terminals with a tmux fallback");
+      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
+      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
       expect(readFileSync(installedPlaybookPath, "utf8")).not.toContain("## Gemini CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Codex CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).not.toContain("## Pi direct playbook");
-      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh backend container, narrow scope, pane-first truth**");
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("**fresh backend container, narrow scope, exact terminal-first truth**");
       expect(result.installed).toEqual(["direct-cli"]);
     } finally {
       temp.cleanup();

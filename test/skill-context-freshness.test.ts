@@ -175,6 +175,16 @@ describe("packaged skill context freshness", () => {
     expect(allDirectDocs).not.toMatch(/Current Freshness Notes|Current freshness checkpoints/);
     expect(allDirectDocs).not.toMatch(/2026\.07\.23-e383d2b|agy 1\.1\.6|0\.144\.6|0\.145\.0|Pi `0\.83\.0`|global `pi` was not on `PATH`/);
     expect(skill).toContain("lane's cleanup receipt");
+    for (const surface of [skill, readme, playbook, command]) {
+      expect(surface).toContain("first_message.sent");
+      expect(surface).toContain("--no-daemon");
+      expect(surface).toContain("HC_TERMINAL_ID");
+      expect(surface).toContain("herdr-core");
+    }
+    expect(skill).toContain("`hc` is canonical");
+    expect(readme).not.toContain("Auto mode first requires Orca");
+    expect(readme).toContain("Next legacy Herdr");
+    expect(playbook).toContain("### Herdr lane lifecycle (legacy backend only)");
     expect(skill).toContain("Never use global `pgrep`, `pkill`");
     expect(playbook).toContain("verify_herdr_pane_receipt");
     expect(playbook).toContain("verify_herdr_agent_receipt");

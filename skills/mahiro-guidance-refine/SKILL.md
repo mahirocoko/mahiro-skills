@@ -82,7 +82,7 @@ When a correction comes from work across multiple Mahiro repos, classify the sco
 
 - **Repo-local rule** — belongs in the target repo's `AGENTS.md`, docs, or project memory. Use when the evidence depends on that repo's package manager, framework, source locale, primitive library, service pattern, or folder layout.
 - **Global Mahiro-style doctrine** — belongs in `mahiro-style` only when the user explicitly asks for cross-repo behavior or multiple repos show the same underlying preference despite different implementations.
-- **Skill-specific procedure** — belongs in the owning skill when the lesson is about how to run the skill, not how to code the target repo. Example: `direct-cli` pane-first doctrine belongs in `direct-cli`, not a global style rule.
+- **Skill-specific procedure** — belongs in the owning skill when the lesson is about how to run the skill, not how to code the target repo. Example: `direct-cli` watchable terminal-first doctrine belongs in `direct-cli`, not a global style rule.
 - **Session-only note** — belongs in `/rrr` or `/forward` when the fact helps continuity but should not become a rule.
 
 Preserve the distinction between the **underlying preference** and the **repo-specific mechanism**. For example: "respect repo-local i18n source-locale" can be global; "use Lingui `msg` descriptors" is repo-local unless the target repo proves Lingui.

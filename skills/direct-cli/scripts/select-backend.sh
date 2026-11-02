@@ -4,10 +4,10 @@ set -u
 
 usage() {
   cat <<'EOF'
-Usage: select-backend.sh [--backend auto|orca|herdr|tmux]
+Usage: select-backend.sh [--backend auto|hc|herdr-core|orca|herdr|tmux]
 
 Prints two machine-readable lines on success:
-  backend=<orca|herdr|tmux>
+  backend=<hc|orca|herdr|tmux>
   reason=<selection evidence>
 EOF
 }
@@ -18,7 +18,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --backend)
       [ "$#" -ge 2 ] || {
-        echo "direct-cli: --backend requires auto, orca, herdr, or tmux" >&2
+        echo "direct-cli: --backend requires auto, hc, herdr-core, orca, herdr, or tmux" >&2
         exit 2
       }
       requested_backend="$2"
@@ -40,14 +40,16 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$requested_backend" in
-  auto|orca|herdr|tmux) ;;
+  auto|hc|herdr-core|orca|herdr|tmux) ;;
   *)
-    echo "direct-cli: expected --backend auto|orca|herdr|tmux" >&2
+    echo "direct-cli: expected --backend auto|hc|herdr-core|orca|herdr|tmux" >&2
     exit 2
     ;;
 esac
 
 python_bin="$(command -v python3 2>/dev/null || true)"
+hc_failure="HC is unavailable"
+hc_bin="$(command -v hc 2>/dev/null || command -v herdr-core 2>/dev/null || true)"
 orca_failure="Orca is unavailable"
 herdr_failure="Herdr is unavailable"
 
@@ -55,6 +57,7 @@ run_bounded() {
   timeout_variable="$1"
   shift
   "$python_bin" - "$timeout_variable" "$@" <<'PY'
+import math
 import os
 import subprocess
 import sys
@@ -62,7 +65,7 @@ import sys
 timeout_variable = sys.argv[1]
 try:
     timeout = float(os.environ.get(timeout_variable, "5"))
-    if timeout <= 0:
+    if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError
 except ValueError:
     print(f"direct-cli: {timeout_variable} must be positive", file=sys.stderr)
@@ -100,6 +103,53 @@ elif isinstance(value, bool):
 else:
     print(value)
 ' "$1"
+}
+
+hc_ready() {
+  if [ -z "$hc_bin" ]; then
+    hc_failure="hc and herdr-core are not on PATH"
+    return 1
+  fi
+  if [ -z "${HC_TERMINAL_ID:-}" ]; then
+    hc_failure="HC_TERMINAL_ID is required to validate the caller"
+    return 1
+  fi
+  if [ -z "$python_bin" ]; then
+    hc_failure="python3 is required to validate HC JSON"
+    return 1
+  fi
+  hc_status="$(run_bounded DIRECT_CLI_HC_TIMEOUT_SECONDS "$hc_bin" server status --json 2>/dev/null)" || {
+    hc_failure="HC server status failed or timed out"
+    return 1
+  }
+  hc_terminal="$(run_bounded DIRECT_CLI_HC_TIMEOUT_SECONDS "$hc_bin" get "$HC_TERMINAL_ID" --json 2>/dev/null)" || {
+    hc_failure="HC caller get failed or timed out"
+    return 1
+  }
+  if ! "$python_bin" -c '
+import json
+import sys
+
+status, terminal = (json.loads(value) for value in sys.argv[1:3])
+holder = status["holder"]
+valid = (
+    isinstance(status["core"]["id"], str) and bool(status["core"]["id"])
+    and holder["current"] is True
+    and isinstance(holder["instance"], str) and bool(holder["instance"])
+    and type(holder["pid"]) is int and holder["pid"] > 0
+    and any(item.get("current") is True
+            and item.get("instance") == holder["instance"]
+            and item.get("pid") == holder["pid"] for item in status["holders"])
+    and terminal["address"] == sys.argv[3]
+    and terminal["state"] == "live"
+    and terminal["finished_ms"] is None
+)
+raise SystemExit(0 if valid else 1)
+' "$hc_status" "$hc_terminal" "$HC_TERMINAL_ID" 2>/dev/null; then
+    hc_failure="HC current holder/core or exact live caller receipt is malformed, stale, or mismatched"
+    return 1
+  fi
+  return 0
 }
 
 orca_ready() {
@@ -244,7 +294,10 @@ selection_reason=""
 
 case "$requested_backend" in
   auto)
-    if herdr_ready; then
+    if hc_ready; then
+      selected_backend="hc"
+      selection_reason="validated HC current holder/core and exact live caller via $hc_bin"
+    elif herdr_ready; then
       selected_backend="herdr"
       selection_reason="validated live compatible Herdr pane"
     elif orca_ready; then
@@ -252,11 +305,19 @@ case "$requested_backend" in
       selection_reason="validated live Orca caller identity and separately tracked current target"
     elif tmux_ready; then
       selected_backend="tmux"
-      selection_reason="Orca and Herdr preflights failed; tmux is available"
+      selection_reason="HC, Herdr, and Orca preflights failed; tmux is available"
     else
-      echo "direct-cli: no usable backend (Orca: $orca_failure; Herdr: $herdr_failure; tmux is not on PATH)" >&2
+      echo "direct-cli: no usable backend (HC: $hc_failure; Orca: $orca_failure; Herdr: $herdr_failure; tmux is not on PATH)" >&2
       exit 1
     fi
+    ;;
+  hc|herdr-core)
+    if ! hc_ready; then
+      echo "direct-cli: HC backend unavailable: $hc_failure" >&2
+      exit 1
+    fi
+    selected_backend="hc"
+    selection_reason="explicit HC request validated current holder/core and exact live caller via $hc_bin"
     ;;
   orca)
     if ! orca_ready; then

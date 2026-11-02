@@ -403,7 +403,7 @@ describe("skill pattern adaptation phase a", () => {
 
     expect(skill).toContain("## Multi-pane Job Sessions");
     expect(skill).toContain("## Backend Selection");
-    expect(skill).toContain("`--backend auto|orca|herdr|tmux`");
+    expect(skill).toContain("`--backend auto|hc|herdr-core|orca|herdr|tmux`");
     expect(skill).toContain("`ORCA_TERMINAL_HANDLE`");
     expect(skill).toContain("`ORCA_WORKTREE_ID`");
     expect(skill).toContain("`ORCA_TAB_ID`");
@@ -444,6 +444,13 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).toContain("accepted delivery is not receipt or proof");
     expect(skill).toContain("report_ready");
     expect(skill).toContain("reject `--backend orca --detach`");
+    expect(skill).toContain("`--backend hc --detach`");
+    expect(skill).toContain("`--backend herdr-core --detach`");
+    expect(skill).toContain("Codex in HC requires `--no-daemon`");
+    expect(skill).toContain("HC same-prompt fanout needs exact prompt hashing");
+    expect(playbook).toContain("### HC lane lifecycle");
+    expect(playbook).toContain("Codex **must use `--no-daemon`** under HC");
+    expect(selector).toContain("DIRECT_CLI_HC_TIMEOUT_SECONDS");
     expect(skill).toContain("`--backend tmux --detach`");
     expect(skill).toContain("does not inject a new message into the current Letta conversation");
     expect(skill).toContain("herdr-jobs.py\" receive \"$JOB_ID\"");
@@ -638,10 +645,10 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).not.toContain("/direct-cli gemini");
 
     for (const wrapper of [command]) {
-      expect(wrapper).toContain("`--backend auto|orca|herdr|tmux`");
+      expect(wrapper).toContain("`--backend auto|hc|herdr-core|orca|herdr|tmux`");
       expect(wrapper).toContain("`--workspace ID`");
       expect(wrapper).toContain("`--detach`");
-      expect(wrapper).toContain("Reject Orca and tmux detach");
+      expect(wrapper).toContain("Reject HC (including herdr-core alias), Orca and tmux detach");
       expect(wrapper).toContain("never silently switch after creating state");
       expect(wrapper).toContain("current curated role/model choices");
       expect(wrapper).toContain("live CLI catalog");
@@ -660,8 +667,8 @@ describe("skill pattern adaptation phase a", () => {
     expect(rootReadme).toContain("one atomic metadata-only `pane.run`");
     expect(rootReadme).toContain("there is no tmux fallback");
     expect(rootReadme).toContain("foreground-verified stable `--model` slugs");
-    expect(rootReadme).toContain("auto-selected Orca/Herdr/tmux backends");
-    expect(rootReadme).toContain("Auto uses Herdr only from a healthy compatible managed pane first");
+    expect(rootReadme).toContain("auto-selected HC/legacy Herdr/Orca/tmux backends");
+    expect(rootReadme).toContain("Auto validates HC current holder/core and exact live caller first");
     expect(rootReadme).toContain("then Orca only from an exact live caller-terminal receipt plus a tracked current path");
     expect(rootReadme).toContain("reject fallback warnings/model mismatches");
     expect(rootReadme).toContain("does not install the `pi` executable");

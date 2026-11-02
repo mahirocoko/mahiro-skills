@@ -15,7 +15,7 @@ const selector = join(
 const tempDirs: string[] = [];
 
 function makeBinDir(
-  options: { orca?: boolean; herdr?: boolean; tmux?: boolean } = {},
+  options: { hc?: boolean; herdrCore?: boolean; orca?: boolean; herdr?: boolean; tmux?: boolean } = {},
 ) {
   const dir = mkdtempSync(join(tmpdir(), "direct-cli-backend-"));
   tempDirs.push(dir);
@@ -27,6 +27,34 @@ function makeBinDir(
   }
   symlinkSync(bash, join(dir, "bash"));
   symlinkSync(python, join(dir, "python3"));
+
+  for (const executable of ["hc", "herdr-core"]) {
+    if (!(executable === "hc" ? options.hc : options.herdrCore)) continue;
+    const path = join(dir, executable);
+    writeFileSync(path, `#!/bin/sh
+if [ "$1" = "server" ] && [ "$2" = "status" ] && [ "$3" = "--json" ]; then
+  [ "\${FAKE_HC_HANG:-false}" != "true" ] || /bin/sleep 1
+  [ "\${FAKE_HC_STATUS_FAIL:-false}" != "true" ] || exit 1
+  if [ -n "\${FAKE_HC_STATUS:-}" ]; then
+    printf '%s\\n' "$FAKE_HC_STATUS"
+  else
+    printf '%s\\n' '{"core":{"id":"core-test"},"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[{"current":true,"instance":"holder-test","pid":42}]}'
+  fi
+  exit 0
+fi
+if [ "$1" = "get" ] && [ "$3" = "--json" ]; then
+  [ "\${FAKE_HC_GET_HANG:-false}" != "true" ] || /bin/sleep 1
+  if [ -n "\${FAKE_HC_TERMINAL:-}" ]; then
+    printf '%s\\n' "$FAKE_HC_TERMINAL"
+  else
+    printf '%s\\n' '{"address":"t-caller","state":"live","finished_ms":null,"rm":false,"cwd":"/caller-not-target"}'
+  fi
+  exit 0
+fi
+exit 2
+`);
+    chmodSync(path, 0o755);
+  }
 
   if (options.orca) {
     const orca = join(dir, "orca");
@@ -122,6 +150,82 @@ afterEach(() => {
 });
 
 describe("direct-cli backend selector", () => {
+  const hcCaller = { HC_TERMINAL_ID: "t-caller" };
+  const coexistence = {
+    ...hcCaller,
+    HERDR_ENV: "1", HERDR_PANE_ID: "w1:p2",
+    ORCA_TERMINAL_HANDLE: "term_current", ORCA_WORKTREE_ID: "repo::/caller",
+    ORCA_TAB_ID: "tab_current", ORCA_PANE_KEY: "tab_current:leaf_current",
+  };
+
+  test("healthy HC wins coexistence and prefers canonical executable", () => {
+    const result = runSelector(makeBinDir({ hc: true, herdrCore: true, herdr: true, orca: true, tmux: true }), [], coexistence);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.split("\n")).toHaveLength(3);
+    expect(result.stdout).toStartWith("backend=hc\nreason=");
+    expect(result.stdout.trim()).toEndWith("/hc");
+  });
+
+  test("compatibility executable and explicit alias normalize to hc", () => {
+    for (const args of [[], ["--backend", "hc"], ["--backend=herdr-core"]]) {
+      const result = runSelector(makeBinDir({ herdrCore: true }), args, hcCaller);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toStartWith("backend=hc\n");
+      expect(result.stdout.trim()).toEndWith("/herdr-core");
+    }
+  });
+
+  test("binary-only HC is insufficient and legacy Herdr stays next", () => {
+    const result = runSelector(makeBinDir({ hc: true, herdr: true, orca: true, tmux: true }), [], { ...coexistence, HC_TERMINAL_ID: "" });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toStartWith("backend=herdr\n");
+    expect(runSelector(makeBinDir({ hc: true, tmux: true })).stdout).toStartWith("backend=tmux\n");
+  });
+
+  test("a live current HC caller remains valid when it is configured for removal after exit", () => {
+    const result = runSelector(makeBinDir({ hc: true, tmux: true }), [], {
+      ...hcCaller,
+      FAKE_HC_TERMINAL: '{"address":"t-caller","state":"live","finished_ms":null,"rm":true,"cwd":"/caller-not-target"}',
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toStartWith("backend=hc\n");
+  });
+
+  for (const [condition, failedEnv] of [
+    ["finished", { FAKE_HC_TERMINAL: '{"address":"t-caller","state":"finished","finished_ms":1,"rm":false}' }],
+    ["mismatched address", { FAKE_HC_TERMINAL: '{"address":"t-other","state":"live","finished_ms":null,"rm":false}' }],
+    ["stale holder", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":false,"instance":"holder-test","pid":42},"holders":[]}' }],
+    ["mismatched holder", { FAKE_HC_STATUS: '{"core":{"id":"core-test"},"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[{"current":true,"instance":"other","pid":42}]}' }],
+    ["missing core", { FAKE_HC_STATUS: '{"holder":{"current":true,"instance":"holder-test","pid":42},"holders":[]}' }],
+    ["malformed status", { FAKE_HC_STATUS: "not-json" }],
+    ["malformed get", { FAKE_HC_TERMINAL: "null" }],
+    ["status timeout", { FAKE_HC_HANG: "true", DIRECT_CLI_HC_TIMEOUT_SECONDS: "0.1" }],
+    ["get timeout", { FAKE_HC_GET_HANG: "true", DIRECT_CLI_HC_TIMEOUT_SECONDS: "0.1" }],
+    ["invalid timeout", { DIRECT_CLI_HC_TIMEOUT_SECONDS: "nan" }],
+  ] as const) {
+    test(`HC rejects ${condition}; auto falls back, explicit fails closed`, () => {
+      const bin = makeBinDir({ hc: true, herdrCore: true, herdr: true, orca: true, tmux: true });
+      const env = { ...coexistence, ...failedEnv };
+      expect(runSelector(bin, [], env).stdout).toStartWith("backend=herdr\n");
+      for (const backend of ["hc", "herdr-core"]) {
+        const result = runSelector(bin, ["--backend", backend], env);
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toBe("");
+        expect(result.stderr).toContain("HC backend unavailable");
+      }
+    });
+  }
+
+  test("failed HC falls through legacy, Orca, then tmux in order", () => {
+    const bin = makeBinDir({ hc: true, herdr: true, orca: true, tmux: true });
+    const env = { ...coexistence, FAKE_HC_STATUS_FAIL: "true", FAKE_HERDR_COMPATIBLE: "false" };
+    expect(runSelector(bin, [], env).stdout).toStartWith("backend=orca\n");
+    expect(runSelector(bin, [], { ...env, FAKE_ORCA_TERMINAL_VALID: "false" }).stdout).toStartWith("backend=tmux\n");
+    const missing = runSelector(makeBinDir({ tmux: true }), ["--backend", "hc"], hcCaller);
+    expect(missing.exitCode).toBe(1);
+    expect(missing.stdout).toBe("");
+  });
+
   test("auto prefers healthy Herdr when both backend identities are valid", () => {
     const binDir = makeBinDir({ orca: true, herdr: true, tmux: true });
     const result = runSelector(binDir, [], {
@@ -240,7 +344,7 @@ describe("direct-cli backend selector", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("backend=tmux");
     expect(result.stdout).toContain(
-      "reason=Orca and Herdr preflights failed; tmux is available",
+      "reason=HC, Herdr, and Orca preflights failed; tmux is available",
     );
   });
 
@@ -287,7 +391,7 @@ describe("direct-cli backend selector", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("backend=tmux");
     expect(result.stdout).toContain(
-      "reason=Orca and Herdr preflights failed; tmux is available",
+      "reason=HC, Herdr, and Orca preflights failed; tmux is available",
     );
   });
 
@@ -388,6 +492,6 @@ describe("direct-cli backend selector", () => {
     ]);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("expected --backend auto|orca|herdr|tmux");
+    expect(result.stderr).toContain("expected --backend auto|hc|herdr-core|orca|herdr|tmux");
   });
 });
