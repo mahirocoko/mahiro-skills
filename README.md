@@ -187,6 +187,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `mahiro-docs-rules-init` | `/mahiro-docs-rules-init` | A repo needs AGENTS.md and Mahiro-style docs bootstrapping. |
 | `mahiro-guidance-refine` | `/mahiro-guidance-refine` | You need to turn session feedback into approved docs, rules, or style guidance updates. |
 | `mahiro-style` | `/mahiro-style` | You need Mahiro's cross-repo code style doctrine. |
+| `mahiro-unslop` | `/mahiro-unslop` | Draft personal-use unslop/anti-slop audit and cleanup for generic AI UI/design, prose, interface copy, or code; preserves brand, content and behavior, not ordinary implementation. |
 | `motion-design` | `/motion-design` | You explicitly need a UI/product motion brief, motion personality or tokens, timing/easing/spring/stagger decisions, choreography, interaction-state motion, reduced-motion planning, or rendered motion audit—not ordinary frontend work or game VFX. |
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |

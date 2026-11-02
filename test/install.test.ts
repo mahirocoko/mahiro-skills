@@ -499,6 +499,7 @@ describe("install", () => {
         "mahiro-docs-rules-init",
         "mahiro-guidance-refine",
         "mahiro-style",
+        "mahiro-unslop",
         "motion-design",
         "project",
         "recap",
