@@ -214,10 +214,36 @@ export function writeBatchInstallSummary(io: PromptIO, results: InstallResult[])
   io.note(lines.join("\n"), "Batch install summary");
 }
 
+function uninstallItemCount(count: number): string {
+  return `${count} receipt item${count === 1 ? "" : "s"} removed`;
+}
+
+function uninstallResultDetails(result: UninstallResult, indent = ""): string[] {
+  return [
+    ...(result.receiptRemoved ? [`${indent}install receipt removed`] : []),
+    ...result.skipped.map((entry) => `${indent}skipped: ${entry.reason}`),
+  ];
+}
+
+export function writeUninstallResult(io: PromptIO, result: UninstallResult): void {
+  const lines = [
+    `agent: ${result.agent}`,
+    `scope: ${result.scope}`,
+    `status: ${result.status}`,
+    `receipt items removed: ${result.uninstalled.length > 0 ? result.uninstalled.join(", ") : "none"}`,
+    ...uninstallResultDetails(result),
+  ];
+
+  io.note(lines.join("\n"), "Uninstall result");
+}
+
 export function writeBatchUninstallSummary(io: PromptIO, results: UninstallResult[]): void {
   const lines = [
     `agents: ${results.length}`,
-    ...results.map((result) => `${result.agent}: ${result.status} (${result.uninstalled.length} uninstalled)`),
+    ...results.flatMap((result) => [
+      `${result.agent}: ${result.status} (${uninstallItemCount(result.uninstalled.length)})`,
+      ...uninstallResultDetails(result, "  "),
+    ]),
   ];
 
   io.note(lines.join("\n"), "Batch uninstall summary");

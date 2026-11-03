@@ -257,7 +257,51 @@ describe("guided", () => {
       expect(prompt.writes).toContain("Uninstall items");
       expect(prompt.writes).toContain("Choose installed items");
       expect(prompt.writes).toContain("Proceed with uninstall for cursor (local)?");
-      expect(prompt.writes.some((entry) => entry.includes("[note:Uninstall preview]"))).toBe(true);
+      const preview = prompt.writes.find((entry) => entry.includes("[note:Uninstall preview]"));
+      expect(preview).toContain("requested items: project");
+      expect(preview).toContain("An item name can match both receipt-recorded skill and command targets.");
+      expect(preview).toContain("Local changes to removed files or inside removed directories are not preserved; target symlinks are unlinked.");
+      const resultNote = prompt.writes.find((entry) => entry.includes("[note:Uninstall result]"));
+      expect(resultNote).toContain("receipt items removed: project");
+      expect(resultNote).not.toContain("install receipt removed");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("labels explicit absent uninstall names as requests and shows the skip reason", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["cursor"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    const prompt = makePromptIo([], [], [true]);
+
+    try {
+      const result = expectUninstallResult(await runGuided(makeOptions({ mode: "uninstall", agents: ["cursor"], scope: "local", items: ["recap"] }), temp.env, prompt.io));
+
+      expect(result.status).toBe("skipped");
+      expect(prompt.writes.find((entry) => entry.includes("[note:Uninstall preview]"))).toContain("requested items: recap");
+      const resultNote = prompt.writes.find((entry) => entry.includes("[note:Uninstall result]"));
+      expect(resultNote).toContain("receipt items removed: none");
+      expect(resultNote).toContain("skipped: Item 'recap' is not recorded in the cursor (local) install receipt.");
+      expect(resultNote).not.toContain("install receipt removed");
+    } finally {
+      temp.cleanup();
+    }
+  });
+
+  test("shows partial uninstall reasons and positive receipt removal", async () => {
+    const temp = makeTempEnv();
+    await runGuided(makeOptions({ mode: "install", agents: ["letta-code"], scope: "local", items: ["project"], yes: true }), temp.env, makePromptIo([], [], [], false).io);
+    const prompt = makePromptIo([], [], [true]);
+
+    try {
+      const result = expectUninstallResult(await runGuided(makeOptions({ mode: "uninstall", agents: ["letta-code"], scope: "local", items: ["project", "recap"] }), temp.env, prompt.io));
+
+      expect(result.status).toBe("partially-uninstalled");
+      expect(result.receiptRemoved).toBe(true);
+      const resultNote = prompt.writes.find((entry) => entry.includes("[note:Uninstall result]"));
+      expect(resultNote).toContain("receipt items removed: project");
+      expect(resultNote).toContain("install receipt removed");
+      expect(resultNote).toContain("skipped: Item 'recap' is not recorded in the letta-code (local) install receipt.");
     } finally {
       temp.cleanup();
     }
@@ -278,7 +322,12 @@ describe("guided", () => {
       expect(result.find((entry) => entry.agent === "cursor")?.receiptRemoved).toBe(true);
       expect(result.find((entry) => entry.agent === "agy")?.receiptRemoved).toBe(true);
       expect(prompt.writes.filter((entry) => entry.startsWith("Proceed with uninstall"))).toEqual(["Proceed with uninstall for 7 agents (local)?"]);
-      expect(prompt.writes.some((entry) => entry.includes("[note:Batch uninstall summary]"))).toBe(true);
+      const summary = prompt.writes.find((entry) => entry.includes("[note:Batch uninstall summary]"));
+      expect(summary).toContain("cursor: uninstalled (1 receipt item removed)");
+      expect(summary).toContain("agy: uninstalled (1 receipt item removed)");
+      expect(summary).toContain("install receipt removed");
+      expect(summary).toContain("opencode: skipped (0 receipt items removed)");
+      expect(summary).toContain("skipped: No install receipt found for opencode (local).");
     } finally {
       temp.cleanup();
     }

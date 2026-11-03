@@ -16,6 +16,7 @@ import {
   writeInstallReview,
   writeListSummary,
   writePlanSummary,
+  writeUninstallResult,
   type AgentPickMode,
   type GuidedMode,
   type HomeAction,
@@ -459,7 +460,9 @@ function writeUninstallPreview(io: PromptIO, env: NodeJS.ProcessEnv, agent: Scop
   io.note([
     `agent: ${agent}`,
     `scope: ${scope}`,
-    `items: ${plannedItems.join(", ")}`,
+    `${items.length > 0 ? "requested items" : "items"}: ${plannedItems.join(", ")}`,
+    "An item name can match both receipt-recorded skill and command targets.",
+    "Local changes to removed files or inside removed directories are not preserved; target symlinks are unlinked.",
   ].join("\n"), "Uninstall preview");
 }
 
@@ -486,7 +489,9 @@ async function runSingleUninstall(
     }
   }
 
-  return uninstall(agent, scope, items, env);
+  const result = uninstall(agent, scope, items, env);
+  writeUninstallResult(io, result);
+  return result;
 }
 
 function assertRequiredGuidedOptions(options: CliOptions): asserts options is CliOptions & { mode: GuidedMode | "update" } {

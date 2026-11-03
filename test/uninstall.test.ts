@@ -35,6 +35,23 @@ describe("uninstall", () => {
     }
   });
 
+  test("removes local additions inside a receipt-recorded skill directory", () => {
+    const temp = makeTempEnv();
+
+    try {
+      install("opencode", "local", ["project"], false, temp.env);
+      const installed = join(temp.env.MAHIRO_SKILLS_CWD!, ".opencode", "skills", "project");
+      writeFileSync(join(installed, "LOCAL.txt"), "local change\n");
+
+      const result = uninstall("opencode", "local", ["project"], temp.env);
+
+      expect(result.status).toBe("uninstalled");
+      expect(existsSync(installed)).toBe(false);
+    } finally {
+      temp.cleanup();
+    }
+  });
+
   test("removes all Agy receipt-recorded aliases and deletes empty receipt", () => {
     const temp = makeTempEnv();
 
