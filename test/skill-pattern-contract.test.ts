@@ -803,7 +803,7 @@ describe("skill pattern adaptation phase a", () => {
     expect(skill).not.toContain("/cr");
     expect(skill).not.toContain("control_room_");
     expect(command).toContain("explicitly requested Goal Mode objectives");
-    expect(command).toContain("Ordinary task execution, DoD and tsk status do not authorize Goal creation");
+    expect(command).toContain("Ordinary task execution, DoD and Herdr Tasks status do not authorize Goal creation");
     expect(index).toContain("Explicitly requested structured Goal objective/DoD/evidence gates");
     expect(index).toContain("optional Execution Run and Code Evidence boundaries");
     expect(index).toContain("Task execution alone does not authorize Goal creation");

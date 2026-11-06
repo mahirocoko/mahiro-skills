@@ -1,42 +1,38 @@
 ---
 name: working-tasks
-description: Executes and hands off agreed tasks through a tsk-first workflow, with outcome, scope, completion evidence and human acceptance. Use when asked to work a tsk task, manage agreed work on the board, or resume task-backed work across agents or sessions. Do not capture casual discussion or create structured Goals automatically.
+description: Executes and hands off agreed work through an explicitly selected Herdr Tasks board, with outcome, scope, evidence and human acceptance. Use when asked to work a Herdr task, manage agreed work on that board, or resume task-backed work. Do not capture casual discussion or create structured Goals automatically.
 ---
 
 # Working tasks
 
 Let the human talk naturally; maintain the board for them. A task is the shared
 brief and current stopping point, not permission to do everything its notes mention.
-Use this procedure when the human adopts a tsk-first workflow. Keep repository
+Use this procedure when the human adopts a Herdr Tasks workflow. Keep repository
 instructions and the newest human decisions above old task notes.
 
 ## Owners
 
-- **tsk task:** outcome, scope, done conditions, progress/evidence, next action and
-  blocker. Keep one authoritative brief rather than copying it into another plan.
-- **This skill:** how to execute and resume that brief, not a command reference.
-- **Installed tsk CLI:** syntax and storage behavior. Read `tsk --help`, relevant
-  `tsk help <command>` and `tsk guide`; use an installed `tsk-cli` skill if available.
-  Sibling skills are optional; do not install them merely to follow this procedure.
+- **Herdr Tasks issue:** title, project label, Description, status, archive state and revision. Put outcome, scope, done conditions, evidence, next action and blocker in the Description; the board has no separate step, comment, assignee or acceptance model. Imported tsk steps/provenance are read-only source evidence, not editable native steps.
+- **This skill:** execution and resumption, not a second task ledger.
+- **Installed Herdr Tasks owner:** `bin/herdr-task.py` inside the installed complete Tasks mod, with a separately verified absolute SQLite `--store` filename. Read its `--help` and the host's Tasks documentation before writes. A repo checkout of the mod is source evidence, not proof of the installed helper or live database.
 - **Structured Goal:** optional, explicitly approved verification gates. If used,
   keep its criteria/evidence there and reference them from the task, not two copies.
 - **Memory:** preferences and lessons, not an alternative task ledger.
 
-Check `tsk --version`. If absent, report the missing tool and retain a visible
-brief; do not install, use another store or claim the board was updated.
+## Resolve the board before access
+
+Discover the installed Tasks helper through the active Herdr host's verified `appHome()` configuration (`${appHome()}/mods/tasks/bin/herdr-task.py`). Resolve the **actual selected store** separately: the default is `${appHome()}/data/tasks/tasks.sqlite3`, but a Tasks mod `props.store` absolute filename overrides it. Inspect the active mod configuration or get the exact path from the human; never infer the selected store from cwd, HOME, project label, source checkout, or the default when an override may apply. Check Python 3 and the helper's help without a store. **Before any helper invocation with `--store`**, verify that the exact selected absolute path already exists as a regular file (for example, `test -f "$STORE"` after confirming it is absolute). If missing, not a regular file, ambiguous, or unverifiable, stop and ask; do not let even `list` or `show` silently create an unintended new board. Explicit creation of a new board requires separate human approval and the host's setup procedure, not this routine workflow. Preserve the same verified store across reads and writes. In a non-Herdr environment without verified paths, report task evidence unavailable; do not install, use another store or claim the board was updated. Opening the CLI on an existing database can upgrade it: before first access, require the deployment/backup gate in the host Tasks documentation. Do not inspect a real store merely to discover its schema.
+
+The CLI takes `python3 "$HELPER" --store "$STORE" <command>`; successful output is JSON, errors may be JSON stderr or argparse text with nonzero exit. `list --archived` reads the full inventory; `show T1` reads one record (UUID or T-number alias). The `number`/T alias is readable; UUID is canonical. An ambiguous alias refuses; `show UUID --identity=uuid` and `update UUID --identity=uuid` select exact UUID. Native writes are `create --title=… --project=… --description=…` and `update ID --expect REVISION --description=… [--status review]` (or `--archived true|false`). Read the latest revision with `show` before each update; on conflict reread and reconcile, never blindly retry or overwrite a human edit. Use equals syntax for text beginning with `-`; pass arguments as arguments, not interpolated shell content. `--description` preserves existing plain/Markdown format on update; do not use the deprecated `--notes` alias to replace a Description. Verify saved content via `show`. Do not invoke import/export as routine task editing. The CLI has no step mutation, task delete, automatic acceptance, sync or tsk bridge.
 
 ## Capture agreed work
 
-Read the relevant board as JSON and check for existing work before creating a task.
-Use the canonical project root for project-owned work; use the desk for cross-project
-work. Do not infer scope from the controller's current directory alone.
+Read the selected store's full inventory as JSON (`list --archived`) and check for existing work before creating an issue. Project is an exact metadata label, not a repository identity: use a human-agreed label (the CLI defaults to `desk`), not an inferred root or current directory.
 
 Create tasks only for work the human agreed to capture. An adopted agent-maintained
 board workflow may authorize routine capture of agreed work; without that agreement,
 propose the brief first. Do not convert questions or tentative ideas into tasks.
-Do not rewrite human-authored notes silently. Upstream's refine workflow remains a
-shaping pass: propose its rewrite and obtain approval before writing. Execution
-conditions below belong to the approved execution brief, not a redefinition of refine.
+Do not rewrite human-authored Description text silently. Propose material Description rewrites for approval before writing; the native owner has no refine command. Execution conditions below belong to the approved brief.
 
 Use only the headings the job needs:
 
@@ -48,10 +44,8 @@ Progress / Evidence: observed changes and exact checks; unverified claims labell
 Next / Blocker: one concrete action, remaining work and its owner
 ```
 
-A small config task may fit in five lines. Add steps only when the human wants
-ordered work tracked; do not make a second checklist for internal bookkeeping.
-Read before replacing notes: `edit --notes` replaces the whole body. Preserve the
-human's words and decisions, and verify the resulting task through a JSON read.
+A small config task may fit in five lines. Include ordered items in the Description only when the human wants them tracked; the native CLI cannot edit imported steps. Do not make a second checklist for internal bookkeeping.
+Read the latest issue before replacing its Description: `update --description` replaces the entire body. Preserve the human's words and decisions, use its observed revision for CAS, and verify the saved issue through `show`.
 
 Keep consequential original requirements and later human corrections verbatim,
 or link their exact source when long; distinguish them from the agent's interpretation.
@@ -88,7 +82,7 @@ approved. Do not clear or migrate an existing Goal merely to adopt this workflow
 ## Resume and hand off
 
 Read the task again before acting. Recheck the checkout, current files and load-bearing
-evidence: notes and `started` describe a recorded state, not live process ownership.
+evidence: Description and `started` describe a recorded state, not live process ownership.
 If another writer may own the checkout, establish ownership before resuming.
 
 Update the task's progress, remaining conditions, next action, permissions and
@@ -105,15 +99,13 @@ issues and preference-only suggestions. Correct supported in-scope defects withi
 the remaining budget; stop on a concrete blocker rather than starting an unbounded
 review/fix sweep. Preserve the host's independent-QA and human-acceptance gates.
 
-Skills carry the procedure, not task data. Another session on the same store can
-read the task; another machine cannot be assumed to have it. For cross-machine work,
+Skills carry the procedure, not task data. Another session with access to the same verified local store can read the task; another machine cannot be assumed to have it. For cross-machine work,
 provide an explicitly approved portable handoff without copying the whole store or
-placing live storage in a synced folder. Never include secrets in notes or evidence.
+placing live storage in a synced folder. Never include secrets in Description or evidence.
 
 ## Check an agreed workflow change
 
-For an explicitly agreed learning experiment, use the task's existing evidence
-notes: name one changed step and its trigger, a permitted baseline/comparator,
+For an explicitly agreed learning experiment, use the issue's Description evidence: name one changed step and its trigger, a permitted baseline/comparator,
 whether it was actually applied, the outcome and observed cost/limits. On later
 comparable work, decide keep, narrow, revise or revert through the existing guidance
 owner. Separate new requirements from repeated agent mistakes. Invocation or a

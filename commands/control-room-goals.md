@@ -1,5 +1,5 @@
 ---
-description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and tsk status do not authorize Goal creation.
+description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and Herdr Tasks status do not authorize Goal creation.
 allowed-tools:
   - Bash
   - Read

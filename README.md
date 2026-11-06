@@ -44,13 +44,13 @@ The canonical catalog is default-or-absent: every packaged skill and paired comm
 ### Tagged install without keeping a clone
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.149 -- --agent opencode --scope global
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.150 -- --agent opencode --scope global
 ```
 
 Selected skill through the same path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.149 -- project --agent opencode --scope local
+curl -fsSL https://raw.githubusercontent.com/mahirocoko/mahiro-skills/main/install.sh | bash -s -- --version v0.1.150 -- project --agent opencode --scope local
 ```
 
 ### Standard Agent Skills compatibility
@@ -198,7 +198,7 @@ Runtime inventory is defined by [`.claude-plugin/marketplace.json`](./.claude-pl
 | `motion-design` | `/motion-design` | You explicitly need a UI/product motion brief, motion personality or tokens, timing/easing/spring/stagger decisions, choreography, interaction-state motion, reduced-motion planning, or rendered motion audit—not ordinary frontend work or game VFX. |
 | `project` | `/project` | You need to learn, incubate, find, or list tracked repos. |
 | `recap` | `/recap` | You need session orientation, current focus, or status. |
-| `working-tasks` | `/working-tasks` | You work or resume agreed tsk-backed tasks, maintain the board for the human, and verify completion without automatically creating a Goal. |
+| `working-tasks` | `/working-tasks` | You work or resume agreed Herdr Tasks issues on a verified local store, maintain the board for the human, and verify completion without automatically creating a Goal. |
 | `review-comment` | `/review-comment` | You need concise Mahiro-voice PR review comments; simulation stays read-only, pending review creation needs an explicit request, and submission needs separate approval. |
 | `rrr` | `/rrr` | You need a retrospective, with an optional gated non-canonical reference learning when a transferable decision exists. |
 | `skill-doctor` | `/skill-doctor` | You want independent evidence-backed diagnosis of an explicitly selected conversation using four preserved Warp rubrics; Letta-first scoped collection, no automatic edits or all-history scan. |

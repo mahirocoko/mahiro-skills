@@ -21,14 +21,7 @@ trigger: /recap
 
 ## Retrieval Order
 
-For explicitly task-backed work, read the selected tsk task as JSON first when
-the CLI is available. Recover outcome, scope, completion conditions, progress,
-evidence and next/blocker, then reconcile them with newer human decisions and
-current repo/runtime truth. Task status is not proof of a live writer. Do not
-create a task, install tooling or change status during orientation. If no task
-was selected, inspect the relevant board before claiming there is no pending work;
-if tsk is absent, say that task evidence was unavailable. In `--quick`, report any
-intentionally skipped task read instead of making a whole-board claim.
+For explicitly Herdr Tasks-backed work, resolve the verified installed helper and actual selected absolute store using `working-tasks` (when installed) and the active host's Tasks documentation: check whether the active Tasks mod has a `props.store` override instead of assuming the `appHome()` default. Before any helper invocation with `--store`, verify that exact path exists as a regular file; if missing, ambiguous or unverifiable, stop without opening a new board. Read the selected issue as JSON with `python3 "$HELPER" --store "$STORE" show ID` (or `show UUID --identity=uuid` for an ambiguous alias); if no issue was selected, use `list --archived` before claiming the board has no pending work. The project label is not a store locator. A CLI read can upgrade an existing store: honor the host backup/deployment gate before first access. Recover the agreed brief from Description, then reconcile it with newer human decisions and current repo/runtime truth. Imported steps are read-only provenance, not current execution status. Task status is not proof of a live writer. Do not create, install or change status during orientation. If verified helper/store access is unavailable, including in a non-Herdr environment, say task evidence was unavailable rather than falling back to tsk. In `--quick`, report any intentionally skipped task read instead of making a whole-board claim.
 
 Use this evidence order every time:
 

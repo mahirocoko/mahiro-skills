@@ -12,8 +12,8 @@ describe("task-backed workflow ownership", () => {
     expect(task).toContain("Set `done` only after explicit human acceptance");
     expect(task).toContain("actual viewer behavior");
     expect(task).toContain("do not install, use another store");
-    expect(task).toContain("not a redefinition of refine");
-    expect(task).toContain("Another session on the same store");
+    expect(task).toContain("native owner has no refine command");
+    expect(task).toContain("Another session with access to the same verified local store");
   });
 
   test("rejects execution-only Goal creation and task auto-completion", () => {
@@ -50,10 +50,49 @@ describe("task-backed workflow ownership", () => {
 
   test("recap reads task context without mutating the board", () => {
     const recap = readSkill("recap");
-    expect(recap).toContain("read the selected tsk task as JSON first");
+    expect(recap).toContain("show ID");
+    expect(recap).toContain("list --archived");
     expect(recap).toContain("current repo/runtime truth");
     expect(recap).toContain("change status during orientation");
     expect(recap).toContain("intentionally skipped task read");
+  });
+
+  test("native Tasks contract requires verified store, CAS, and no invented bridge", () => {
+    const task = readSkill("working-tasks");
+    for (const part of [
+      "absolute SQLite `--store`",
+      "appHome()",
+      "list --archived",
+      "show T1",
+      "--identity=uuid",
+      "update ID --expect REVISION",
+      "revision for CAS",
+      "read-only source evidence",
+      "non-Herdr environment",
+      "backup gate",
+      "no step mutation",
+    ]) expect(task).toContain(part);
+    expect(task).not.toContain("tsk --version");
+    expect(task).not.toContain("tsk guide");
+    expect(readSkill("recap")).toContain("rather than falling back to tsk");
+    expect(readSkill("forward")).toContain("do not fall back to tsk");
+  });
+
+  test("all task entrypoints refuse a missing store before the helper can create one", () => {
+    const task = readSkill("working-tasks");
+    expect(task).toContain("`props.store` absolute filename overrides it");
+    expect(task).toContain("Before any helper invocation with `--store`");
+    expect(task).toContain('test -f "$STORE"');
+    expect(task).toContain("already exists as a regular file");
+    expect(task).toContain("do not let even `list` or `show` silently create");
+    expect(task).toContain("Explicit creation of a new board requires separate human approval");
+    for (const name of ["recap", "forward"]) {
+      const entrypoint = readSkill(name);
+      expect(entrypoint).toContain("`props.store` override");
+      expect(entrypoint).toContain("Before any helper invocation with `--store`");
+      expect(entrypoint).toContain("exists as a regular file");
+      expect(entrypoint).toContain("stop");
+    }
   });
 
   test("handoff preserves the task brief and human acceptance boundary", () => {

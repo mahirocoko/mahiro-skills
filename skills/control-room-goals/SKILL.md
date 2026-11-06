@@ -1,6 +1,6 @@
 ---
 name: control-room-goals
-description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and tsk status do not authorize Goal creation.
+description: Drafts, applies, or refines explicitly requested Goal Mode objectives, DoD, next actions and verification gates. Use for /goal, goal mode, creating or revising a structured Goal, Goal evidence, or Goal handoff/reset. Ordinary task execution, DoD and Herdr Tasks status do not authorize Goal creation.
 ---
 
 # Goal Mode
@@ -11,8 +11,7 @@ move the same mission to another empty conversation owned by the same agent.
 
 ## Task-backed work
 
-When the human adopts a tsk-first workflow, the task owns the execution brief and
-ordinary completion conditions. Do not create a structured Goal merely because
+When the human adopts a Herdr Tasks workflow, the selected issue's Description owns the agreed execution brief and ordinary completion conditions. Imported tsk steps are read-only provenance, not native execution controls. Do not create a structured Goal merely because
 work starts, has multiple steps, or includes a DoD. Apply Goal Mode only after
 explicit Goal approval; keep structured criteria and evidence here and reference
 them from the task rather than maintaining duplicate briefs. A Goal claim or

@@ -1,5 +1,5 @@
 ---
-description: Executes and resumes agreed tsk-backed tasks with scope, completion evidence and human acceptance; keeps structured Goal use optional.
+description: Executes and resumes agreed Herdr Tasks issues with scope, completion evidence and human acceptance; keeps structured Goal use optional.
 ---
 
 # /working-tasks

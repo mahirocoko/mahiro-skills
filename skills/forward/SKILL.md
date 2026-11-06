@@ -9,13 +9,11 @@ Create context for next session, then enter the current agent's planning flow to
 
 ## Task-backed handoff
 
-When the human adopts a tsk-first workflow and selects a task, read it as JSON
-and preserve its agreed brief. Update progress/evidence, remaining completion
-conditions, next action, blocker and permissions; verify the saved task. Keep
+When the human adopts a Herdr Tasks workflow and selects an issue, use `working-tasks` (when installed) to resolve the installed helper and actual selected absolute store: check for a Tasks mod `props.store` override instead of assuming the `appHome()` default. Before any helper invocation with `--store`, verify the exact selected path already exists as a regular file; if missing, ambiguous or unverifiable, stop rather than create a new board. The host CLI is `python3 "$HELPER" --store "$STORE" show ID`; opening an existing store can upgrade it, so honor the host backup/deployment gate. Read JSON and preserve the agreed Description. Update progress/evidence, remaining completion conditions, next action, blocker and permissions with `update ID --expect REVISION --description=…`, using the revision just read; verify with `show`. On conflict, reread and reconcile rather than overwrite. Keep
 the task authoritative and reference it from any handoff rather than copying
-the whole brief into another checklist. Do not silently rewrite human decisions.
+the whole brief into another checklist. Imported steps cannot be edited via the native CLI. Do not silently rewrite human decisions.
 Do not mark done without human acceptance or an explicit instruction to close.
-If the CLI is absent, report that the board was not updated. A task ID alone
+If verified helper/store access is unavailable, including outside Herdr, report that the board was not updated; do not fall back to tsk. A task ID alone
 does not transfer data to another machine: include approved context needed there.
 The normal artifact and commit/push gates below still apply; handoff does not
 grant execution, installation, publication or automatic Goal creation.
