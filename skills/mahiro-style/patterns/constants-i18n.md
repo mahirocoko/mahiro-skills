@@ -25,7 +25,7 @@ The component that renders UI text owns the final translation call.
 - Components and render boundaries call `i18n._(...)`, `t(...)`, or render `<Trans>` at the point where text becomes UI.
 - Do not move user-facing copy into constants just to make a component shorter.
 - Keep component-local copy in React when it is tightly coupled to JSX structure, interaction flow, conditional rendering, or nearby event intent.
-- Use `msg` for extracted descriptors and shared config. Use `t` or `i18n._` inside render owners that already own a live translation context. Use `<Trans>` when the rendered output needs JSX composition, inline markup, or rich text.
+- In Lingui projects, use `msg` for extracted descriptors and shared config. Prefer `t` from `useLingui` for plain text, including text inside an element; use `<Trans>` when the translated message contains JSX elements or inline markup. Render descriptors through the active translation context.
 - When a component already owns the UI text directly, prefer `const { t } = useLingui()` as the default posture before reaching for a broader extracted-config shape.
 
 ## Current Reality vs Preferred Direction
@@ -133,7 +133,7 @@ const EmptyState = ({ isFiltered }: { isFiltered: boolean }) => {
   return (
     <p>
       <Trans>
-        Start by creating your first item. You can add more details later.
+        Start by creating your <strong>first item</strong>. You can add more details later.
       </Trans>
     </p>
   )
