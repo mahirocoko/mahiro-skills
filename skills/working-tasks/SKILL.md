@@ -27,7 +27,9 @@ The CLI takes `python3 "$HELPER" --store "$STORE" <command>`; successful output 
 
 ## Capture agreed work
 
-Read the selected store's full inventory as JSON (`list --archived`) and check for existing work before creating an issue. Project is an exact metadata label, not a repository identity: use a human-agreed label (the CLI defaults to `desk`), not an inferred root or current directory.
+Read the selected store's full inventory as JSON (`list --archived`) and check for existing work before creating an issue. Project is an exact stored metadata value, not a name to reconstruct from cwd. For work in an existing project, reuse its exact `project` value from the selected issue or inventory unchanged, including a stored full path; do not replace it with a basename or a new short label. Resolve the intended group from the human's target and existing records, not display-name equality alone. If the match is missing or ambiguous, ask before creating the issue; introduce a new project value only with explicit human agreement (the CLI defaults to `desk`).
+
+Tasks may display different exact project values with the same short name as `[1] name`, `[2] name`. These prefixes are temporary display disambiguators, not project IDs or values to send to the CLI. Inspect the exact stored values; never merge projects just because their short names match. For an approved project correction, update only `--project=<exact-existing-value>` using the issue UUID and latest revision CAS, then read back; preserve Description, status and all other unrelated fields.
 
 Create tasks only for work the human agreed to capture. An adopted agent-maintained
 board workflow may authorize routine capture of agreed work; without that agreement,

@@ -78,6 +78,21 @@ describe("task-backed workflow ownership", () => {
     expect(readSkill("forward")).toContain("do not fall back to tsk");
   });
 
+  test("task creation reuses exact project values rather than duplicate short labels", () => {
+    const task = readSkill("working-tasks");
+    for (const part of [
+      "reuse its exact `project` value",
+      "including a stored full path",
+      "do not replace it with a basename or a new short label",
+      "If the match is missing or ambiguous, ask before creating",
+      "new project value only with explicit human agreement",
+      "temporary display disambiguators, not project IDs",
+      "never merge projects just because their short names match",
+      "update only `--project=<exact-existing-value>`",
+      "preserve Description, status and all other unrelated fields",
+    ]) expect(task).toContain(part);
+  });
+
   test("all task entrypoints refuse a missing store before the helper can create one", () => {
     const task = readSkill("working-tasks");
     expect(task).toContain("`props.store` absolute filename overrides it");
