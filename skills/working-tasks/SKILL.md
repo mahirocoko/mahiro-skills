@@ -1,6 +1,6 @@
 ---
 name: working-tasks
-description: Executes and hands off agreed work through an explicitly selected Herdr Tasks board, with outcome, scope, evidence and human acceptance. Use when asked to work a Herdr task, manage agreed work on that board, or resume task-backed work. Do not capture casual discussion or create structured Goals automatically.
+description: Executes and hands off agreed work through an explicitly selected Herdr Tasks board, with outcome, scope, evidence and human acceptance. Use when asked to work, inspect status, close or resume tasks in an adopted Herdr Tasks workflow. Do not capture casual discussion or create structured Goals automatically.
 ---
 
 # Working tasks
@@ -15,9 +15,17 @@ instructions and the newest human decisions above old task notes.
 - **Herdr Tasks issue:** title, project label, Description, status, archive state and revision. Put outcome, scope, done conditions, evidence, next action and blocker in the Description; the board has no separate step, comment, assignee or acceptance model. Imported tsk steps/provenance are read-only source evidence, not editable native steps.
 - **This skill:** execution and resumption, not a second task ledger.
 - **Installed Herdr Tasks owner:** `bin/herdr-task.py` inside the installed complete Tasks mod, with a separately verified absolute SQLite `--store` filename. Read its `--help` and the host's Tasks documentation before writes. A repo checkout of the mod is source evidence, not proof of the installed helper or live database.
-- **Structured Goal:** optional, explicitly approved verification gates. If used,
-  keep its criteria/evidence there and reference them from the task, not two copies.
+- **Pi Todos / session steps:** the agent's execution plan under the selected issue, not another copy of the work item or its acceptance status. Reference the issue UUID and readable T number in available metadata or the description; use concrete steps instead of repeating the whole task brief. Completing Todos does not close the issue.
+- **Goal / DoD:** keep ordinary objectives, completion conditions and evidence in the issue Description. A separate structured Goal is not the default; reserve it for an explicitly requested broader objective spanning tasks or another explicit Goal Mode request. If one is approved, reference its structured criteria/evidence rather than duplicating them. Existing Goals are not cleared or migrated automatically.
 - **Memory:** preferences and lessons, not an alternative task ledger.
+
+## Status and closure
+
+In an adopted Herdr Tasks workflow, interpret unqualified task-status and task-closure requests against the selected board and exact project, not Pi Todos. Inspect and report board state before claiming that work is closed. Use session steps only when the human explicitly asks about Todos or the session plan. If board access is unavailable, say that task status is unverified; a completed local checklist is not a substitute.
+
+Report agent execution and task acceptance separately: completed Todos can support Review after the required checks, while Done still requires human acceptance or an explicit closure instruction. A request to close all tasks stays within the agreed project; do not close other projects or infer closure from terminal idle/done metadata.
+
+This is a workflow convention, not automatic linking, status synchronization or a shared database. Outside a verified board workflow, Pi can use standalone Todos without creating a board or a duplicate Goal.
 
 ## Resolve the board before access
 

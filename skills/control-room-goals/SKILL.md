@@ -11,12 +11,11 @@ move the same mission to another empty conversation owned by the same agent.
 
 ## Task-backed work
 
-When the human adopts a Herdr Tasks workflow, the selected issue's Description owns the agreed execution brief and ordinary completion conditions. Imported tsk steps are read-only provenance, not native execution controls. Do not create a structured Goal merely because
-work starts, has multiple steps, or includes a DoD. Apply Goal Mode only after
-explicit Goal approval; keep structured criteria and evidence here and reference
-them from the task rather than maintaining duplicate briefs. A Goal claim or
-completion audit never automatically marks a task done or verifies a human gate.
-Do not clear or migrate an existing Goal as an incidental workflow change.
+Use the adopted Herdr Tasks issue as the ordinary work item: its Description owns the objective, scope, completion conditions and evidence. Pi Todos are the agent's execution steps under that issue, not a second work item or acceptance record. Imported tsk steps remain read-only provenance, not native execution controls.
+
+Do not introduce a separate Goal for ordinary task execution or planning merely because the work has several steps or a DoD. Prefer a separate Goal for an explicitly approved broader objective spanning tasks, or honor another explicit Goal Mode request. Related task references do not create native parent/child relationships or automatic synchronization. If structured Goal criteria/evidence are approved, keep them here and reference them from the tasks instead of maintaining duplicate briefs.
+
+For unqualified task-status or closure requests in a board workflow, follow `working-tasks` and inspect the selected Herdr board. Neither Goal completion nor completed Todos automatically closes a task or verifies a human gate. Do not clear or migrate an existing Goal as an incidental workflow change.
 
 ## Model
 
@@ -250,7 +249,7 @@ Do not add safety ceremony for pure discussion, small low-risk edits, or simple 
 ## Agent behavior
 
 - Pure discussion/recommendation: do not create or replace a goal.
-- Draft Goal Mode packets before applying them during exploratory discussion.
+- Draft Goal Mode packets only when the discussion concerns explicitly requested Goal Mode. Ordinary task planning stays in the task brief and execution Todos, without a parallel Goal packet.
 - After the user explicitly requests Goal Mode or confirms its draft, the agent must set/apply the goal
   itself with the preferred available tool, then use `UpdatePlan` for step
   progress. Terse approval such as `โอเค`, `ต่อ`, `ทำเลย`, or `continue` counts
