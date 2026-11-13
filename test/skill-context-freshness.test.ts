@@ -21,6 +21,17 @@ function read(...parts: string[]): string {
 }
 
 describe("packaged skill context freshness", () => {
+  test("versioned install examples match the package release version", () => {
+    const { version } = JSON.parse(read("package.json"));
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+    for (const file of ["README.md", "install.sh"]) {
+      const tags = [...read(file).matchAll(/--version\s+(v\d+\.\d+\.\d+)/g)]
+        .map((match) => match[1]);
+      expect(tags.length).toBeGreaterThan(0);
+      expect([...new Set(tags)]).toEqual([`v${version}`]);
+    }
+  });
+
   test("all packaged relative Markdown links resolve", () => {
     const markdownFiles = filesUnder(join(repoRoot, "skills"), ".md");
     const missing: string[] = [];
@@ -204,6 +215,205 @@ describe("packaged skill context freshness", () => {
     );
     expect(playbook.match(/herdr tab close \"\$TAB_ID\"/g)).toHaveLength(1);
     expect(read("README.md")).toContain("does not install the `pi` executable");
+  });
+
+  test("direct-cli gates first prompts on initialization rather than startup idle", () => {
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    for (const surface of [
+      read("skills", "direct-cli", "SKILL.md"),
+      read("skills", "direct-cli", "README.md"),
+      read("commands", "direct-cli.md"),
+    ]) {
+      expect(surface).toContain("First-prompt admission");
+      expect(surface).toContain("startup idle/banner alone");
+      expect(surface).toContain("stop without sending");
+      expect(surface).toContain("ambiguous send");
+      expect(surface).toContain("broken credentials");
+    }
+    const admission = playbook.split("## First-prompt admission")[1]?.split("## Backend contract")[0];
+    expect(admission).toContain("requested model/effort and parent");
+    expect(admission).toContain("Do not invent a universal ready event");
+    expect(admission).toContain("60 seconds is a budget, not a required delay or proof");
+    expect(admission).toContain("not an agent-readiness predicate");
+    expect(admission).toContain("stop without sending");
+    expect(admission).toContain("non-forced delivery");
+    expect(admission).toContain("first_message.sent");
+    expect(admission).toContain("not a guarantee that every CLI subsystem is initialized");
+    expect(admission).toContain("do not use it to bypass this gate");
+    expect(admission).toContain("Do not recommend logout, switch accounts, change auth/permissions or replay an ambiguous send");
+    expect(admission).toContain("No runtime fix is established by this guidance alone");
+    const hc = playbook.split("### HC lane lifecycle")[1]?.split("### Orca lane lifecycle")[0];
+    expect(hc).toContain('wait "$LANE_ADDRESS" --timeout 60 --json');
+    expect(hc).toContain('read "$LANE_ADDRESS" --lines 0 --json');
+    expect(hc).toContain("Stop here unless the admission gate is satisfied");
+    expect(hc).toContain('send --if idle "$LANE_ADDRESS" "$TASK" --json');
+    const agy = playbook.split("## Antigravity CLI direct playbook")[1]?.split("### Model selection")[0];
+    expect(agy).toContain("Complete **First-prompt admission** before running the separate task-delivery command");
+    expect(agy).not.toMatch(/capture-pane[^\n]*\ntmux send-keys/);
+    for (const block of playbook.matchAll(/```bash\n([\s\S]*?)\n```/g)) {
+      // Launch/inspection and first task delivery must not be one runnable block.
+      expect(block[1]).not.toMatch(/capture-pane[^\n]*\ntmux send-keys[^\n]*'Continue from/);
+      expect(block[1]).not.toMatch(/herdr agent read[^\n]*\nherdr agent prompt/);
+      expect(block[1]).not.toContain('--prompt-interactive "$(cat');
+    }
+    const multiline = playbook.split("### Antigravity multiline prompt caveat")[1]?.split("### Sandbox verification")[0];
+    expect(multiline).toContain("otherwise stop without sending the inline task");
+    expect(multiline).toContain("Post-launch `pane read` or a matching banner cannot retroactively admit it");
+    expect(multiline).toContain("prompt referring to the scoped prompt file");
+    expect(playbook).not.toContain("verified interactive initial-prompt exception");
+    expect(playbook).toContain("require the multiline section's documented and proven pre-delivery admission");
+    expect(playbook).toContain("an observed transition of a startup/loading indicator to normal task input");
+  });
+
+  test("direct-cli keeps model choices and selected route defaults explicit", () => {
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    const policy = playbook.split("### Model selection rule")[1]
+      ?.split("## Launch examples")[0] ?? "";
+    const preferred = playbook.split("### Preferred roles")[1]
+      ?.split("### Model selection rule")[0] ?? "";
+
+    for (const model of ["claude-fable-5-2-high", "claude-fable-5-2-xhigh"]) {
+      expect(policy).toContain(`\`${model}\` — opt-in`);
+      expect(preferred).not.toContain(model);
+    }
+    expect(policy).not.toContain("claude-fable-5-2-thinking");
+    expect(policy).toContain("do not silently replace an explicit 5.1 request with 5.2");
+    expect(policy).toContain("NO ZDR");
+    expect(policy).toContain("if the task requires zero data retention, stop");
+    for (const family of ["carbon", "hydrogen"]) {
+      for (const effort of ["low", "medium", "high"]) {
+        expect(policy).toContain(`\`gemini-4-${family}-${effort}\``);
+      }
+    }
+    expect(policy).toContain("`gemini-4-hydrogen-xhigh`");
+    expect(policy).not.toContain("gemini-4-carbon-xhigh");
+    for (const model of [
+      "gemini-pro-orchestrator", "gemini-pro-orchestrator-argon",
+      "gpt-oss-120b-medium", "gpt-6.1-terra", "gpt-6-sol",
+    ]) {
+      expect(policy).toContain(`\`${model}\``);
+      expect(preferred).not.toContain(`\`${model}\``);
+    }
+    const codexExtras = policy.split("- Additional explicit Codex choices are")[1]
+      ?.split("\n- If Astra")[0] ?? "";
+    expect(codexExtras).toContain("`gpt-6.1-terra` and `gpt-6-sol`");
+    expect(codexExtras).toContain("low/medium/high/xhigh/max/ultra");
+    expect(codexExtras).toContain("catalog defaults low and medium respectively");
+    expect(codexExtras).toContain("When either is requested without effort, ask for a supported model/effort pair");
+    expect(policy).toContain("Do not assume orchestration behavior");
+    for (const surface of [
+      read("skills", "direct-cli", "SKILL.md"),
+      read("skills", "direct-cli", "README.md"),
+      read("commands", "direct-cli.md"),
+    ]) {
+      expect(surface).toContain("effort already encoded");
+      expect(surface).toContain("When effort is neither encoded nor otherwise specified");
+      expect(surface).toContain("If no role default is defined, ask for a supported effort rather than inheriting the catalog default");
+    }
+    for (const route of [
+      "Cursor ordinary implementation / cleanup model: `composer-2.5`",
+      "Cursor long-horizon agentic model: Grok 4.7 with `context=500k`, `effort=high`, and non-Fast by default",
+      "Cursor balanced Anthropic reasoning model: `claude-sonnet-5-5-high`",
+      "Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`",
+      "Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`",
+      "Cursor heavy Opus review model: `claude-opus-5-5-high`",
+      "Antigravity primary model for implementation / research / review: `gemini-4-hydrogen-high`",
+      "Antigravity bounded easy-work model: `gemini-4-hydrogen-medium`",
+      "Antigravity extra-reasoning model: `gemini-4-hydrogen-xhigh`",
+      "Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high`",
+      "Antigravity budget model: `gemini-3.8-flash-high`",
+      "Codex flagship model/effort: `gpt-6-astra` + `high`",
+      "Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`",
+      "Codex deep/value escalation model/effort: `gpt-6.1-sol` + `max`",
+      "Codex fast/cost-efficient model/effort: `gpt-6-luna` + `medium`",
+      "Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra`",
+      "Codex fallback model/effort: `gpt-6.1-sol` + `high`",
+    ]) {
+      expect(preferred).toContain(route);
+    }
+  });
+
+  test("Agy stays Gemini-first with Anthropic alternatives only on request", () => {
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    const picker = playbook.split("- If `/direct-cli agy ...` has no explicit model")[1]
+      ?.split("- Keep Agy Gemini-first.")[0] ?? "";
+    expect(picker).toContain("`gemini-4-hydrogen-high` — recommended primary");
+    expect(picker).toContain("`gemini-4-hydrogen-medium` — bounded easy-work");
+    expect(picker).toContain("`gemini-4-hydrogen-xhigh` — extra-reasoning");
+    expect(picker).toContain("`gemini-4-carbon-high` — hard blockers");
+    expect(picker).toContain("`gemini-3.8-flash-high`");
+    expect(picker).not.toContain("claude-");
+    expect(playbook).toContain("never silently fall back from Gemini to Anthropic");
+    expect(playbook).toContain("ask before changing model family");
+    expect(playbook).toContain("not evidence that Hydrogen outperforms Carbon");
+    expect(playbook).not.toContain("Antigravity heavy review model: `claude-opus-5-5-high`");
+    expect(playbook).not.toContain("Antigravity balanced model: `claude-sonnet-5-5-medium`");
+    expect(playbook).toContain("tmux send-keys -t agy-task 'agy --model gemini-4-hydrogen-high");
+    expect(playbook).toContain("If Mahiro explicitly requests an Anthropic alternative");
+    expect(playbook).toContain("Use the curated Gemini-first Agy roles below");
+    expect(playbook).toContain("Antigravity with Gemini for critique");
+    expect(read("skills", "direct-cli", "SKILL.md")).not.toContain("agy-opus-review");
+    for (const file of ["SKILL.md", "README.md"]) {
+      expect(read("skills", "direct-cli", file)).toContain("Gemini-first");
+    }
+  });
+
+  test("Agy benchmark-informed roles preserve deliberate model and effort selection", () => {
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    const rationale = playbook.split("### Agy routing rationale")[1]
+      ?.split("### Model selection rule")[0] ?? "";
+    const availability = playbook.split("### Additional availability-only choices")[1]
+      ?.split("## Launch examples")[0] ?? "";
+    const agyRows = availability.split("\n").filter((line) => line.startsWith("| Agy"));
+
+    expect(rationale).toContain("artificialanalysis.ai/models/gemini-4-hydrogen-high");
+    expect(rationale).toContain("artificialanalysis.ai/models/gemini-4-carbon");
+    expect(rationale).toContain("AA index-task estimates are not local Agy latency or subscription charges");
+    expect(rationale).toContain("differ in harness or benchmark version");
+    expect(rationale).toContain("Treat Flash as a budget option, not a measured speed winner");
+    expect(rationale).toContain("Keep Argon optional");
+    expect(rationale).toContain("do not change native CLI defaults");
+    expect(playbook).toContain("do not lower effort for difficult reasoning by default");
+    expect(playbook).toContain("not a mandatory sequential ladder or automatic retries");
+    expect(playbook).toContain("Honor an explicitly pinned model/effort; never silently lower effort");
+    expect(playbook).toContain("after High fails and the user approves lower effort");
+    expect(playbook).not.toContain("Antigravity fast model:");
+    expect(playbook).not.toContain("— faster scoped lane");
+    expect(playbook).not.toContain("Offer `gemini-4-hydrogen-xhigh` only when extra effort is requested");
+    expect(agyRows.join("\n")).not.toContain("`gemini-4-carbon-high`");
+    expect(agyRows.join("\n")).not.toContain("`gemini-4-hydrogen-xhigh`");
+    const agySelectionExample = playbook.split("## Antigravity CLI direct playbook")[1]
+      ?.split("### Prompt template")[0] ?? "";
+    expect(agySelectionExample).toContain("tmux send-keys -t agy-opus '/model' Enter");
+    expect(agySelectionExample).not.toContain("tmux send-keys -t agy-task '/model'");
+    expect(agySelectionExample).toContain("Reselect only the originally requested catalog-verified model/effort");
+    expect(agySelectionExample).toContain("stop and report rather than choosing another curated role");
+    for (const file of ["SKILL.md", "README.md"]) {
+      expect(read("skills", "direct-cli", file)).toContain("benchmark-informed task roles");
+    }
+  });
+
+  test("direct-cli maintenance updates installed executors before refreshing guidance", () => {
+    const skill = read("skills", "direct-cli", "SKILL.md");
+    const readme = read("skills", "direct-cli", "README.md");
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    const maintenance = playbook.split("### Explicit CLI maintenance")[1]
+      ?.split("### Safe discovery examples")[0] ?? "";
+
+    for (const surface of [skill, readme, maintenance]) {
+      expect(surface).toContain("For every human-requested direct-cli skill update");
+      expect(surface).toContain("all three installed executor CLIs");
+      expect(surface).toContain("before refreshing skill guidance");
+      expect(surface).toContain("do not authorize or require explicit updaters");
+      expect(surface).toContain("self-updat");
+    }
+    expect(maintenance).toContain("this document is not standing permission");
+    expect(maintenance).toContain("`agent update`, then `agy update`, then `codex update`, serially");
+    expect(maintenance).toContain("rather than installing missing CLIs or changing install ownership");
+    expect(maintenance).toContain("Never interrupt running user sessions");
+    expect(maintenance).toContain("Recheck each binary path/version/help and catalog");
+    expect(maintenance).toContain("updater succeeded with unchanged version");
+    expect(maintenance).toContain("Report incomplete maintenance explicitly");
   });
 
   test("installed skill commands resolve through their skill roots", () => {

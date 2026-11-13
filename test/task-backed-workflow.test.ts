@@ -20,10 +20,9 @@ describe("task-backed workflow ownership", () => {
     const goal = readSkill("control-room-goals");
     expect(goal).not.toContain("Execution starts or user confirms the draft");
     expect(goal).not.toContain("unless work starts");
-    expect(goal).toContain(
-      "Apply Goal Mode only after\nexplicit Goal approval",
-    );
-    expect(goal).toContain("never automatically marks a task done");
+    expect(goal).toContain("Only apply after explicit confirmation");
+    expect(goal).toContain("Do not introduce a separate Goal for ordinary task execution or planning merely because the work has several steps or a DoD");
+    expect(goal).toContain("Neither Goal completion nor completed Todos automatically closes a task or verifies a human gate");
     expect(goal).toContain("Do not clear or migrate an existing Goal");
   });
 

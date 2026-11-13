@@ -25,7 +25,11 @@ For HC load installed `$HC_BIN --skill` and relevant command help. Validate curr
 holder/core with `server status --json` and exact live caller using
 `get "$HC_TERMINAL_ID" --json`. Set target cwd separately to `pwd -P`; caller cwd
 may differ. Launch unique named interactive children with `run --bg --name ... --cwd ...`,
-parse exact address/parent receipt, use hc wait/read for readiness then send once.
+parse exact address/parent receipt, then apply **First-prompt admission** from the playbook.
+Require initialization completion, not startup idle/banner alone; use bounded waits and
+stop without sending if the evidence is missing. Never treat a fixed delay as proof,
+infer broken credentials from a startup warning, or replay an ambiguous send.
+Revalidate the exact target/model/cwd before sending once without force.
 If a visible Tab is requested, use an explicit Space, else a unique exact target-checkout
 Space from `herdr-app ls`, else the Space containing the exact caller `HC_TERMINAL_ID`;
 never use `status.space`. Use `herdr.space=<id>` / exact `herdr.tab=<id>` labels or explicit `tab.new --space <id>`
@@ -47,6 +51,6 @@ Treat `--detach` as a skill-level legacy-Herdr-only mode after agents are visibl
 
 If `$ARGUMENTS` names a lane (`cursor`, `agy`, or `codex`) but does not explicitly name a model, read the current curated role/model choices from the installed `direct-cli/playbook.md`, intersect them with the live CLI catalog, and ask the user which available choice to use. For Codex, ask for a model/effort pair. Do not copy a catalog snapshot into this wrapper or show the full live catalog unless requested or troubleshooting.
 
-Treat skill argument `--effort <level>` as lane-aware. For Agy, pass native `--effort` only when the chosen model supports it and reject any fallback warning or visible model mismatch. For Codex, translate effort to CLI config `-c model_reasoning_effort=<level>`; do not pass `--effort` to Codex. For Cursor, use an exact effort-bearing model ID or supported parameterized model expression. If a model is explicit but effort is omitted, read the current role default from the installed `direct-cli/playbook.md` after catalog verification. Never infer ultra.
+Treat skill argument `--effort <level>` as lane-aware. For Agy, pass native `--effort` only when the chosen model supports it and reject any fallback warning or visible model mismatch. For Codex, translate effort to CLI config `-c model_reasoning_effort=<level>`; do not pass `--effort` to Codex. For Cursor, use an exact effort-bearing model ID or supported parameterized model expression. If a model is explicit, honor effort already encoded in its catalog-verified ID. When effort is neither encoded nor otherwise specified, read the current role default from the installed `direct-cli/playbook.md` after catalog verification. If no role default is defined, ask for a supported effort rather than inheriting the catalog default. Never infer ultra.
 
 If model availability is uncertain, validate with `agent models`, `agy models`, or `codex debug models`; use each CLI's help/doctor commands for flag, feature, or health checks before launching the direct lane.

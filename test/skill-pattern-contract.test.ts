@@ -588,13 +588,14 @@ describe("skill pattern adaptation phase a", () => {
     expect(readme).toContain("Multi-pane output collection is receipt-bound rather than recency-based");
     expect(playbook).toContain("Antigravity multiline prompt caveat");
     expect(playbook).toContain("agy --model claude-opus-5-5-high --dangerously-skip-permissions");
-    expect(playbook).toContain("Antigravity balanced model: `claude-sonnet-5-5-medium`");
+    expect(playbook).toContain("Antigravity explicit Anthropic alternatives:");
+    expect(playbook).toContain("never silently fall back from Gemini to Anthropic");
     expect(playbook).toContain("catalog-confirmed, not foreground-launch-verified");
     expect(playbook).not.toContain("claude-opus-4-6-thinking");
     expect(playbook).not.toContain("claude-sonnet-4-6");
     expect(playbook).toContain("`gemini-3.8-flash-high`");
     expect(playbook).toContain("`gemini-3.8-flash-medium`");
-    expect(playbook).toContain("`gemini-3.8-flash-low` fallback");
+    expect(playbook).toContain("only after High fails and the user approves lower effort");
     expect(playbook).not.toContain("gemini-3.7-flash");
     expect(playbook).toContain("`codex debug models`");
     expect(playbook).toContain("Cursor Fable 5.1 reasoning model");

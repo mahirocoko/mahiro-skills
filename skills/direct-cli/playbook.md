@@ -49,13 +49,26 @@ On return, collect the exact report promptly and ask whether its evidence answer
 - If the invocation is `/direct-cli cursor ...`, `/direct-cli agy ...`, or `/direct-cli codex ...` and the user did not specify a model, ask which skill-defined model to use before launching the lane.
 - Do not dump the full CLI model list as the model picker. Use this playbook's curated model set; run CLI model listing only when the user asks, the named model fails, or availability is uncertain.
 - Launch Cursor, Antigravity, and Codex in the selected backend without the task prompt inline.
-- Confirm readiness through HC `wait` plus `read`, Orca `terminal wait --for tui-idle`, Herdr `agent start` plus pane/agent reads, or `tmux capture-pane` before sending the real task prompt.
+- Require the **First-prompt admission** gate below after backend wait/read and before sending the real task prompt; startup `idle` or a model banner alone is not initialization completion.
 - Cursor's default `--trust` should bypass its separate workspace trust prompt for the intended repo. If another CLI still presents a trust gate, accept it only for that intended worktree before sending the task prompt.
 - Use **very narrow prompts** with explicit file scope.
 - Tell the executor to **continue from the current worktree only**.
 - Tell it to **not restart from scratch**.
 - Verify that the prompt was actually submitted by checking the exact terminal or pane output.
 - Trust the selected backend's exact terminal or pane more than a high-level assumption.
+
+## First-prompt admission
+
+Apply this gate to newly opened or restarted agents before dispatch, including fanout lanes. Launch identity and application readiness are separate checks:
+
+1. Bind the exact target receipt, cwd, foreground agent, requested model/effort and parent before waiting. Keep the first task unsent while inspecting startup; do not send a test prompt to probe readiness.
+2. Read the installed backend/CLI contract and identify its actual initialization-completion evidence. Require startup activity to have finished and the task input to be available, with no pending trust, sign-in, permission, extension/MCP loading or model-selection gate. Evidence can be a documented completion indication or an observed transition of a startup/loading indicator to normal task input, when the installed CLI actually exposes it. A process, banner, initial `idle`, successful wait exit or quiet screen alone is not sufficient. Do not invent a universal ready event or assume the CLI exposes one.
+3. Use a bounded startup deadline (60 seconds is a budget, not a required delay or proof of readiness) and the backend's supported wait/read surfaces. HC `wait` can stop immediately on startup idle without a launch task; inspect its reason and the exact screen. HC `--output` is documented for programs, not an agent-readiness predicate. Do not loop on unchanged idle, sleep/poll HC, or restart the deadline on each check-in. If the installed surfaces cannot distinguish initialization completion from startup idle, stop without sending and report the missing evidence rather than guessing that enough time has elapsed.
+4. Revalidate the same receipt/model/cwd and inspect fresh output immediately before non-forced delivery. Send the first task once only after admission; a blocked/unknown state is not permission to force input. Inspect the send result and exact output for actual receipt/activity before waiting for the result.
+
+A supported launch-with-task path is not an escape hatch: require its documented startup admission and inspect `first_message.sent` where available. HC documents bounded template startup-settle retries, not a guarantee that every CLI subsystem is initialized. Agy's `--prompt-interactive` multiline exception below proves an input shape, not initialization/auth readiness; do not use it to bypass this gate.
+
+If a startup sign-in/permission warning appears, retain the exact output and distinguish a task that was never sent from one already received/working. A warning alone does not establish broken credentials or isolate a timing-only cause. Do not recommend logout, switch accounts, change auth/permissions or replay an ambiguous send. If the task was received, preserve that work and coordinate the observed blocker without duplicate dispatch. No runtime fix is established by this guidance alone.
 
 ## Backend contract
 
@@ -127,18 +140,23 @@ Caller terminal cwd may differ from `TARGET_CWD`; never substitute the caller pa
 
 Codex **must use `--no-daemon`** under HC, including templates, so commands do not escape HC. Cursor/Agy retain their verified interactive argv and scope-limited autonomy defaults; no headless lane. Parse the launch receipt's exact returned address rather than predicting it or later selecting by a reused name. Bind parent to the exact current caller, intended name, target cwd, argv and foreground identity through `get`. If parent/address/cwd identity cannot be proven, stop before task dispatch.
 
-After binding `LANE_ADDRESS` to that receipt:
+After binding `LANE_ADDRESS` to that receipt, collect startup evidence within the **First-prompt admission** deadline:
 
 ```bash
-"$HC_BIN" wait "$LANE_ADDRESS" --json
-"$HC_BIN" read "$LANE_ADDRESS" --lines 100
-# Only after interactive readiness and visible model/trust verification:
-"$HC_BIN" send "$LANE_ADDRESS" "$TASK" --json
+"$HC_BIN" wait "$LANE_ADDRESS" --timeout 60 --json
+"$HC_BIN" get "$LANE_ADDRESS" --json
+"$HC_BIN" read "$LANE_ADDRESS" --lines 0 --json
+```
+
+Stop here unless the admission gate is satisfied; these commands do not themselves prove initialization completion. Only after confirming startup settlement and revalidating the exact identity/model/cwd, send once with the current non-forced idle condition:
+
+```bash
+"$HC_BIN" send --if idle "$LANE_ADDRESS" "$TASK" --json
 "$HC_BIN" wait "$LANE_ADDRESS" --json
 "$HC_BIN" read "$LANE_ADDRESS" --lines 100
 ```
 
-Use `hc wait`, never sleeps or polling. Re-enter wait on a timeout check-in or unrelated message as needed; neither means completion. If an inline initial task is intentionally used, inspect `first_message.sent` and output before any retry; never blindly resend. A send error may still have delivered: inspect exact output/activity before deciding. Agy multiline delivery through HC is unproven; retain one-line follow-ups or the verified interactive initial-prompt exception rather than claiming losslessness.
+Use `hc wait`, never sleeps or polling. Re-enter wait on a timeout check-in or unrelated message as needed; neither means completion. If an inline initial task is intentionally used, inspect `first_message.sent` and output before any retry; never blindly resend. A send error may still have delivered: inspect exact output/activity before deciding. Agy multiline delivery through HC is unproven; retain one-line follow-ups and use the conditional multiline guidance below, never an inline task that bypasses First-prompt admission.
 
 Keep a parent/child receipt with exact report destination and ask for done/stuck reports via non-forced `hc send` to that parent. Reports and status are lifecycle evidence, not accepted-work proof. Read the actual report/result and audit it. Never use `--force` to bypass blocked permission or human decisions. No byte-identical HC fanout claim without exact prompt hashing and every send receipt; do not run `prompt-fanout.py` against HC.
 
@@ -220,7 +238,7 @@ raise SystemExit(0 if valid else 1)
 }
 ```
 
-Wait for actual TUI readiness before sending. A wait command can return successfully with `satisfied: false`, so inspect the result rather than treating output or exit zero as readiness. Stop without sending if readiness remains unsatisfied:
+Wait for actual TUI readiness before sending, then apply **First-prompt admission**; `tui-idle` alone is not initialization completion. A wait command can return successfully with `satisfied: false`, so inspect the result rather than treating output or exit zero as readiness. Stop without sending if readiness remains unsatisfied:
 
 ```bash
 ready_json="$(orca terminal wait \
@@ -589,7 +607,7 @@ elif [ "$collision_status" -ne 0 ]; then
 fi
 ```
 
-Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Immediately before each start, prove the receipt-bound pane is still unclaimed:
+Use `agent start` for ordinary Cursor/Agy/Codex launches because it names the lane and waits for interactive readiness. Its return does not replace **First-prompt admission** before task delivery. Immediately before each start, prove the receipt-bound pane is still unclaimed:
 
 ```bash
 verify_herdr_unclaimed_pane_receipt "$CURSOR_PANE" || exit 1
@@ -607,7 +625,7 @@ herdr agent start "$CODEX_AGENT" --kind codex --pane "$ROOT_PANE" -- \
 
 verify_herdr_unclaimed_pane_receipt "$REVIEW_PANE" || exit 1
 herdr agent start "$AGY_AGENT" --kind agy --pane "$REVIEW_PANE" -- \
-  --model claude-opus-5-5-high \
+  --model gemini-4-hydrogen-high \
   --dangerously-skip-permissions
 
 CODEX_SESSION_ID="$(capture_herdr_agent_session "$ROOT_PANE" codex "$CODEX_AGENT")" || exit 1
@@ -618,6 +636,12 @@ Then use agent names as stable lane targets:
 
 ```bash
 herdr agent read "$CODEX_AGENT" --source recent-unwrapped --lines 120
+```
+
+Complete **First-prompt admission** and revalidate the same receipt before delivery; otherwise stop without sending:
+
+```bash
+verify_herdr_agent_receipt "$ROOT_PANE" codex "$CODEX_AGENT" "$CODEX_SESSION_ID" || exit 1
 herdr agent prompt "$CODEX_AGENT" 'Continue from the current worktree only. <TASK>'
 # Foreground use is only for a brief synchronous gate. For ordinary task
 # completion, pass this bounded wait/status check to the controller's background
@@ -636,7 +660,7 @@ The shell-readiness gate above is required even though `tab create` and `pane sp
 
 If `agent start` still reports `agent_name_taken` because another process won the race after the preflight, run `close_herdr_job_tab_if_owned` for every receipt-bound pane, then retry with fresh pane-derived names in Herdr. Do not switch backends or close an unverified tab.
 
-For a fresh exact multiline Agy prompt, preserve the existing `agy --prompt-interactive "$(cat prompt.txt)"` path through `herdr pane run`; Herdr multiline prompt behavior is not yet foreground-proven. Ordinary Agy follow-ups should remain one line.
+For a fresh exact multiline Agy prompt, require the multiline section's documented and proven pre-delivery admission before any `--prompt-interactive` route through `herdr pane run`. Without that mechanism, stop without sending the inline task; launch without the task, complete **First-prompt admission**, then send a one-line prompt-file reference instead. Herdr multiline prompt behavior is not yet foreground-proven. Ordinary Agy follow-ups should remain one line.
 
 Cleanup is explicit and destructive to the executor process:
 
@@ -658,7 +682,7 @@ The existing tmux launch, fanout, capture, recovery, and cleanup commands below 
 
 ## Multi-pane job sessions
 
-Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Opus for critique, or Cursor for alternatives.
+Use a multi-pane job session when one job benefits from several direct lanes at once, such as Codex for image generation, Agy/Gemini for assigned semantic dicut, Antigravity with Gemini for critique, or Cursor for alternatives.
 
 For HC, group unique named child terminals by job with exact addresses and explicit target cwd; Core does not create tabs/splits. Requested visible HC Tabs use an explicit Space, a unique target-checkout Space, or the exact caller-owned Space—never the app's currently focused Space. For layout backends the goal is one job, one receipt-bound Orca tab, legacy Herdr tab, or tmux session with many panes — not scattered containers that lose shared context.
 
@@ -888,9 +912,9 @@ For several Agy models in one job:
 1. Open one Agy pane per model.
 2. Launch `agy --model "<stable-slug>" --dangerously-skip-permissions` in each pane; add `--effort <level>` only when that model supports the requested effort.
 3. Verify the visible model and effort, or switch through `/model` and `/effort` if automated flag selection is brittle.
-4. Only then send either the role-specific prompt or the same shared prompt.
+4. Apply **First-prompt admission** in every pane; a matching banner alone is insufficient. Only then send either the role-specific prompt or the same shared prompt.
 
-Use the curated Agy roles below after a fresh `agy models` check. The Opus and Sonnet 5.5 choices are catalog-confirmed, not foreground-launch-verified; require the exact visible model before sending work. Their catalog IDs encode Low, Medium, or High effort; use the exact ID for the requested tier rather than assuming a separate thinking slug or an additional effort override is needed. Other catalog entries remain outside the curated picker; catalog presence alone does not establish foreground availability. Agy 1.3.4 and later accept a base model name without `--effort` and choose the server default, otherwise Medium, otherwise the lowest available tier. Keep exact tier IDs for deterministic routing rather than inheriting that selection.
+Use the curated Gemini-first Agy roles below after a fresh `agy models` check. Use Hydrogen High for ordinary work, Medium for bounded easy work, XHigh for extra reasoning, Carbon High for hard blockers, and Flash High for budget-constrained work; Opus and Sonnet remain explicit alternatives only. These routes are catalog-confirmed, not foreground-launch-verified in this refresh; require the exact visible model before sending work. Prefer exact effort-bearing IDs rather than assuming a separate thinking slug or an additional effort override is needed. Catalog entries outside the curated picker do not become defaults merely because they are available; catalog presence alone does not establish foreground availability. Agy 1.3.4 and later accept a base model name without `--effort` and choose the server default, otherwise Medium, otherwise the lowest available tier. Keep exact tier IDs for deterministic routing rather than inheriting that selection.
 
 ### Antigravity multiline prompt caveat
 
@@ -906,12 +930,9 @@ tmux send-keys -t "$JOB:0.$pane" Enter
 
 # Herdr ordinary follow-up: still keep Agy input on one line
 herdr agent prompt agy-review "$prompt"
-
-# fresh lane needing exact multiline initial prompt: interactive, not print/headless
-agy --model claude-opus-5-5-high --dangerously-skip-permissions --prompt-interactive "$(cat /tmp/direct-job.prompt.txt)"
 ```
 
-For Herdr, run the exact multiline initial command through `herdr pane run <pane-id> <command>...`, then inspect with `pane read`; this shell-shaped exception does not get `agent start` readiness, so detection and visible model verification remain mandatory. Do not use `agy --print` / `agy -p` as the default workaround; that leaves the pane-first contract.
+For a fresh exact multiline initial prompt, Agy's `--prompt-interactive` keeps the session interactive, but the installed help does not establish pre-delivery initialization admission. Use that path only when the selected CLI/backend documents and proves such a mechanism; otherwise stop without sending the inline task. Post-launch `pane read` or a matching banner cannot retroactively admit it. When inline admission is unavailable, launch without the task, complete **First-prompt admission**, then send one compact prompt referring to the scoped prompt file. Preserve that file's bytes for the agent to read rather than pasting raw multiline input. Do not use `agy --print` / `agy -p` as the workaround; that leaves the pane-first contract.
 
 ### Sandbox verification
 
@@ -933,11 +954,11 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 
 ### Current catalog evidence
 
-Checked **2026-10-14** with `agent models`, `agy models`, and refreshed `codex debug models` (not `--bundled`). This is non-authoritative availability evidence; repeat the target CLI's catalog check before reuse. The curated preferences below are unchanged.
+Checked **2026-11-13**, before and after the supported CLI updaters, with `agent models`, `agy models`, and refreshed `codex debug models` (not `--bundled`). This is non-authoritative availability evidence; repeat the target CLI's catalog check before reuse. Cursor and Codex recommended routes remain unchanged; Fable 5.2 is an added opt-in Cursor choice. Agy follows the human-approved Gemini-first, benchmark-informed roles below, not a universal model ranking. Catalog visibility does not prove inference, quality, release dates, or account-wide entitlement.
 
-- **Gemini 4 Argon:** Cursor and Agy both list `gemini-4-argon-low`, `gemini-4-argon-medium`, and `gemini-4-argon-high`. These are newly documented here, not new because of a binary upgrade: they were present in the first catalog capture and remained unchanged afterward. They are availability-only choices, outside the default picker. No foreground launch, inference, quality comparison, or account-wide entitlement was verified.
-- **Release versus route:** [Google's Gemini API release notes](https://ai.google.dev/gemini-api/docs/changelog) date Argon's general availability to **2026-10-13**. [Google's model reference](https://ai.google.dev/gemini-api/docs/models) lists the API endpoint `gemini-4-argon` as stable. That API name is not a substitute for either CLI's exact effort-bearing IDs, nor proof of identical provider behavior or context limits.
-- **Codex:** `gpt-6.1-sol` and `gpt-6-astra` advertise `low`, `medium`, `high`, `xhigh`, `max`, and `ultra`; `gpt-6-luna` advertises the same levels except `ultra`. Their catalog defaults are Low, Medium, and Medium respectively. Existing role defaults below deliberately remain explicit. The pre/post check found no model-ID, effort, default, or visibility changes in Codex, and no ID/display-name changes in Cursor or Agy.
+- **Cursor:** the post-update catalog contains 280 IDs including Auto and effort/Fast variants. Fable 5.2 offers `claude-fable-5-2-high` / `claude-fable-5-2-xhigh` (no `thinking` segment; labeled NO ZDR) as opt-in picker choices, not replacements for Fable 5.1. Availability-only choices outside the curated picker include Gemini 4 Carbon/Hydrogen, Muse Wonder/Spark, Haiku 5.5, Kimi, GLM, and DeepSeek families. Verify exact IDs rather than constructing them from display names.
+- **Antigravity:** the post-update catalog contains 22 IDs, including Gemini 4 Carbon and Argon at low/medium/high, Hydrogen additionally at xhigh, `gemini-pro-orchestrator`, `gemini-pro-orchestrator-argon`, and `gpt-oss-120b-medium`. Hydrogen High/Medium/XHigh and Carbon High have curated roles below; Carbon Low/Medium, Argon, orchestrators, and GPT-OSS remain availability-only choices outside the curated picker. Do not infer effort support from the CLI-wide `--effort` flag or another executor's catalog.
+- **Codex:** the post-update catalog contains eight listed and two hidden entries. `gpt-6.1-sol`, `gpt-6.1-terra`, `gpt-6-astra`, and `gpt-6-sol` advertise `low`, `medium`, `high`, `xhigh`, `max`, and `ultra`; their catalog defaults are low, low, medium, and medium respectively. `gpt-6-luna` defaults to medium and supports those levels except ultra. Existing role defaults below remain explicit; Terra and GPT-6 Sol are availability-only, not new preferred routes. Keep hidden entries out of the picker.
 
 ### Preferred roles
 
@@ -947,9 +968,12 @@ Checked **2026-10-14** with `agent models`, `agy models`, and refreshed `codex d
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-5-high`
-- Antigravity heavy review model: `claude-opus-5-5-high`
-- Antigravity balanced model: `claude-sonnet-5-5-medium`
-- Antigravity fast model: `gemini-3.8-flash-high` (`gemini-3.8-flash-medium`, then `gemini-3.8-flash-low` fallback)
+- Antigravity primary model for implementation / research / review: `gemini-4-hydrogen-high`
+- Antigravity bounded easy-work model: `gemini-4-hydrogen-medium` for narrow, well-defined changes with cheap verification; do not lower effort for difficult reasoning by default
+- Antigravity extra-reasoning model: `gemini-4-hydrogen-xhigh` when High misses important cases or the task justifies additional reasoning, not for every task
+- Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high`
+- Antigravity budget model: `gemini-3.8-flash-high`; offer `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only after High fails and the user approves lower effort; budget preference does not prove fastest task completion
+- Antigravity explicit Anthropic alternatives: `claude-opus-5-5-high` for heavy review or `claude-sonnet-5-5-medium` for balanced work, only when requested; never silently fall back from Gemini to Anthropic
 - Codex flagship model/effort: `gpt-6-astra` + `high`
 - Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`
 - Codex deep/value escalation model/effort: `gpt-6.1-sol` + `max` before Astra when the task benefits from more reasoning
@@ -959,6 +983,12 @@ Checked **2026-10-14** with `agent models`, `agy models`, and refreshed `codex d
 - Cursor launch style: interactive selected-backend lane with `--yolo --approve-mcps --trust`, then send the prompt after readiness
 - Antigravity launch style: interactive selected-backend lane with `--dangerously-skip-permissions` and an exact stable `--model` slug; verify the visible model and reject fallback warnings before sending the prompt
 - Codex launch style: interactive selected-backend lane with `--dangerously-bypass-approvals-and-sandbox`, then send the prompt after readiness
+
+### Agy routing rationale
+
+The human approved these roles after benchmark research on **2026-11-13**. [Artificial Analysis](https://artificialanalysis.ai/models/gemini-4-hydrogen-high) separates Hydrogen High from [XHigh](https://artificialanalysis.ai/models/gemini-4-hydrogen): High favors shorter estimated index-task time and lower cost, while XHigh improves the aggregate score at additional time/cost. [Carbon High](https://artificialanalysis.ai/models/gemini-4-carbon) leads those configurations on the aggregate index, supporting a deliberate hard-task route rather than replacing the ordinary lane. Keep Argon optional; do not infer a meaningful quality win from a small aggregate-score gap.
+
+This is not evidence that Hydrogen outperforms Carbon on every task. Recheck source versions, effort, and methodology before reusing benchmark claims. AA index-task estimates are not local Agy latency or subscription charges. Google's [Hydrogen](https://deepmind.google/models/evals-methodology/gemini-4-hydrogen/) and [Carbon](https://deepmind.google/models/evals-methodology/gemini-4-carbon/) evaluations differ in harness or benchmark version on some coding tasks; do not rank models by mixing those scores. Published results do not establish local Agy review accuracy, Thai quality, entitlement, or end-to-end speed. Treat Flash as a budget option, not a measured speed winner; verify current pricing before cost-sensitive work. These skill roles do not change native CLI defaults.
 
 ### Model selection rule
 
@@ -971,13 +1001,19 @@ Model availability and effort semantics are executor-specific. Do not infer a di
   4. `claude-fable-5-1-thinking-high` — Fable 5.1 reasoning lane; use this when Mahiro says “Fable 5.1” unless he asks for another Fable variant.
   5. `claude-fable-5-1-thinking-xhigh` — Fable 5.1 extra-high lane for heavier review.
   6. `claude-opus-5-5-high` — Opus heavy review / deep reasoning lane.
+  7. `claude-fable-5-2-high` — opt-in Fable 5.2 High; catalog-labeled NO ZDR, with no inference or quality comparison verified here.
+  8. `claude-fable-5-2-xhigh` — opt-in Fable 5.2 Extra High under the same evidence and NO ZDR limits.
+- Keep Fable 5.1 available; do not silently replace an explicit 5.1 request with 5.2. If Mahiro requests Fable 5.2 without an effort, use its High choice after catalog verification. Do not insert a `thinking` segment into either Fable 5.2 ID. Surface the catalog's NO ZDR label when offering it; if the task requires zero data retention, stop rather than treating catalog visibility as an acceptable data-handling route.
 - Do not offer a Fast-tier Cursor model in the default picker. Use a live-catalog-verified Fast model only when Mahiro explicitly requests Fast or delegates a speed-over-cost choice.
 - For a Grok 4.7 direct lane, launch the catalog-verified `grok-4.7-high` (or `grok-4.7-high-fast` when Fast is explicitly requested). Before sending work, open `/model`, highlight Grok 4.7, press Tab to edit parameters, select 500K with the arrow keys and Enter, then Esc back and Enter to select the model. Check the final banner for 500K, the requested effort and Fast state; stop on mismatch rather than falling back to 256K. Context selection enables Max mode, which may affect cost. Model parameters may persist, so verify all dimensions on every launch. On Cursor CLI `2026.10.22-27dcf5f`, the Fast slug launched at 256K and completed a minimal inference smoke; this menu produced a `500K High Fast` banner, but inference at 500K was not tested. Both `grok-4.7[context=500k,effort=high,fast=true]` and `grok-4.7[effort=high,fast=true]` were rejected. These are version-specific observations, not a universal CLI contract.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5.1” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
-  1. `claude-opus-5-5-high` — heavy reasoning/review lane; High is encoded in the catalog ID.
-  2. `claude-sonnet-5-5-medium` — balanced reasoning lane; Medium is encoded in the catalog ID.
-  3. `gemini-3.8-flash-high` — faster scoped lane; fall back to `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only if High fails.
+  1. `gemini-4-hydrogen-high` — recommended primary Agy lane for implementation, research, and review; High is encoded in the catalog ID.
+  2. `gemini-4-hydrogen-medium` — bounded easy-work lane with well-defined scope and cheap verification, not a default for difficult reasoning.
+  3. `gemini-4-hydrogen-xhigh` — extra-reasoning lane when High misses important cases or additional reasoning is justified.
+  4. `gemini-4-carbon-high` — hard blockers, architecture, difficult debugging, or a deliberate alternative reasoning pass.
+  5. `gemini-3.8-flash-high` — budget-constrained scoped work; lower effort requires approval as described in Preferred roles, not an automatic fallback.
+- Keep Agy Gemini-first. When model/effort choice is delegated, select an appropriate role with a concrete task reason; XHigh and Carbon are deliberate choices, not a mandatory sequential ladder or automatic retries. Otherwise offer escalation and ask before changing the selected model or effort. Honor an explicitly pinned model/effort; never silently lower effort. Opus/Sonnet remain explicit alternatives, not the default picker or automatic fallback. If a selected Gemini route is unavailable or fails, report it and ask before changing model family. These are benchmark-informed routing preferences, not proof of a universal winner.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
   1. `gpt-6-astra` + `high` — recommended flagship direct lane for complex coding, research, and polished deliverables.
@@ -985,6 +1021,7 @@ Model availability and effort semantics are executor-specific. Do not infer a di
   3. `gpt-6.1-sol` + `max` — deeper value escalation for difficult coding/research before Astra.
   4. `gpt-6-luna` + `medium` — fast/cost-efficient scoped work.
   5. `gpt-6-astra` + `ultra` — automatic task delegation for large jobs with real parallel workstreams.
+- Additional explicit Codex choices are `gpt-6.1-terra` and `gpt-6-sol`; keep them outside the default role picker until a role is agreed. Both advertise low/medium/high/xhigh/max/ultra, with catalog defaults low and medium respectively. When either is requested without effort, ask for a supported model/effort pair rather than inventing a role default or inheriting a catalog default. Do not replace Astra or the everyday Sol route merely because these IDs are available.
 - If Astra is absent from the live catalog, offer `gpt-6.1-sol` + `high` as the flagship fallback instead of silently choosing it.
 - Codex's live catalog default for `gpt-6.1-sol` is `low`. Launch the everyday and fallback roles at `high` with an explicit effort setting; do not inherit that catalog default.
 - Keep the model slug and reasoning effort separate. Launch with `--model "<slug>" -c 'model_reasoning_effort="<effort>"'`; do not invent effort-suffixed model IDs.
@@ -994,6 +1031,21 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - Antigravity effort support is model-specific. Prefer an exact slug from the current `agy models` output, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Model catalogs can change independently of binary versions. Use `agent models`, `agy models`, and `codex debug models` before changing model names or when a preferred launch fails.
+
+### Additional availability-only choices
+
+Use these only when explicitly selected after a fresh target-CLI catalog check; they are not additions to the default role picker or proven quality/speed rankings.
+
+| Executor | Exact catalog IDs | Advertised effort choices |
+| --- | --- | --- |
+| Cursor | `gemini-4-carbon-low`, `gemini-4-carbon-medium`, `gemini-4-carbon-high` | low, medium, high |
+| Agy, outside curated roles | `gemini-4-carbon-low`, `gemini-4-carbon-medium` | low, medium |
+| Cursor | `gemini-4-hydrogen-low`, `gemini-4-hydrogen-medium`, `gemini-4-hydrogen-high`, `gemini-4-hydrogen-xhigh` | low, medium, high, xhigh |
+| Agy, outside curated roles | `gemini-4-hydrogen-low` | low |
+| Agy only in this check | `gemini-pro-orchestrator`, `gemini-pro-orchestrator-argon` | Not encoded in these IDs; verify selected-model support before adding `--effort` |
+| Agy only in this check | `gpt-oss-120b-medium` | medium |
+
+For Cursor, pass the selected exact effort-bearing ID. For Agy, prefer the same exact IDs and verify the visible model/effort with no fallback warning. Do not assume orchestration behavior from the Orchestrator display name; its catalog entry alone does not establish delegation or a direct-lane return contract. Keep the other catalog families named in Current catalog evidence outside the picker; inspect their exact live IDs only when requested instead of embedding a full catalog here.
 
 ## Launch examples
 
@@ -1005,6 +1057,11 @@ These examples instantiate the current routing policy. Model availability change
 tmux new-session -d -s "cursor-task"
 tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CURSOR_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "cursor-task" -S -120
 ```
@@ -1015,20 +1072,27 @@ tmux capture-pane -p -t "cursor-task" -S -120
 tmux new-session -d -s "codex-task"
 tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t "codex-task" -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Scope: no files. Task: reply with exactly CODEX_DIRECT_CLI_OK and then wait.' Enter
 tmux capture-pane -p -t "codex-task" -S -120
 ```
 
 ### Explicit CLI maintenance
 
-CLI maintenance is separate from executor dispatch. Routine version, help, and catalog commands need no agent pane and send no task prompt. An upgrade still requires explicit install/update permission; it never authorizes a model/default change, login, integration install, or creative task.
+For every human-requested direct-cli skill update, include updating all three installed executor CLIs (Cursor, Antigravity, and Codex) before refreshing skill guidance. Announce that maintenance scope and carry it through when authorized; do not substitute catalog inspection for running the updaters. Obtain explicit install/update permission if the current request does not already authorize that scope; this document is not standing permission. Ordinary executor launches and read-only version/catalog/list requests do not authorize or require explicit updaters. CLI discovery may self-update; do not promise strictly read-only execution of a self-updating CLI.
+
+CLI maintenance is separate from executor dispatch. Routine version, help, and catalog commands need no agent pane and send no task prompt. An upgrade never authorizes a model/default change, login, integration install, or creative task.
 
 1. Record `command -v`, symlink/install ownership, `--version`, help, and the live catalog before mutation. Some CLIs can self-update while routine discovery runs, so verify the version again rather than attributing every change to the explicit updater.
 2. Inspect `agent update --help`, `agy help update`, and `codex update --help`. Use the supported updater serially, only after confirming it targets the intended installation. Codex's updater selects its package manager from installation ownership; inspect the announced command and do not substitute another package manager or update an imagegen fork.
-3. Run only the authorized item's updater: `agent update`, `agy update`, or `codex update`. Stop that item if it requires sudo, unknown installer changes, login, or foreground approval; continue other safe items. Never interrupt running user sessions to finish an upgrade.
-4. Recheck each binary path/version/help and catalog. Distinguish newly documented IDs, actual dated releases, and this account's catalog visibility. An unchanged catalog is a valid outcome; availability alone does not adopt a route or prove a successful foreground launch.
+3. For authorized skill maintenance, run `agent update`, then `agy update`, then `codex update`, serially. For a narrower binary-only request, run only its authorized updater. Record unavailable installations or blockers rather than installing missing CLIs or changing install ownership. Stop that item if it requires sudo, unknown installer changes, login, or foreground approval; continue other safe items. Never interrupt running user sessions to finish an upgrade.
+4. Recheck each binary path/version/help and catalog before revising model guidance. Report each updater's result separately: upgraded, already current, updater succeeded with unchanged version, unavailable, or blocked. Distinguish newly documented IDs, actual dated releases, and this account's catalog visibility. An unchanged catalog is a valid outcome; availability alone does not adopt a route or prove a successful foreground launch. Report incomplete maintenance explicitly rather than claiming all three are updated.
 
-Non-authoritative maintenance evidence checked **2026-10-14**: Cursor's updater reports `2026.10.12-d47ca18`; Agy reports `1.3.5` and already current; official Codex reports `0.162.1` after its updater selects `bun install -g @openai/codex`. [Codex's official release](https://github.com/openai/codex/releases/tag/rust-v0.162.1) was published **2026-10-09**. `agy changelog` confirms base-model default selection in 1.3.4 and opt-in `--mode auto` in 1.3.5; neither replaces this playbook's exact-ID or autonomous launch preferences. Agy's autonomy flag skips tool permission prompts, not plan/artifact review. Do not change saved Artifact Review settings to bypass that gate.
+Non-authoritative maintenance evidence checked **2026-11-13**: Cursor's updater changed `2026.10.22-27dcf5f` to `2026.11.11-b912975`; Agy's updater reported `1.5.7` already latest; Codex's updater selected `bun install -g @openai/codex` and succeeded with the installed version remaining `0.167.2`. Fresh invocations confirmed those versions and the launch flags used by this skill. No running sessions were restarted and no model inference was tested. `agy changelog` returned notes starting at 1.3.5 despite the 1.5.7 binary, so it does not establish the newer version's feature delta. Agy's autonomy flag skips tool permission prompts, not plan/artifact review; do not change saved Artifact Review settings to bypass that gate.
 
 ### Safe discovery examples
 
@@ -1065,6 +1129,11 @@ Use the known-good Cursor defaults first. If the model or flags are in doubt on 
 tmux new-session -d -s "cursor-task"
 tmux send-keys -t cursor-task 'agent --model "composer-2.5" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1082,6 +1151,11 @@ For a balanced Anthropic reasoning pass:
 ```bash
 tmux send-keys -t cursor-task 'agent --model "claude-sonnet-5-5-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1090,6 +1164,11 @@ For a Fable 5.1 reasoning pass (use this when Mahiro says “Fable 5.1”):
 ```bash
 tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1098,6 +1177,11 @@ For a heavier Fable 5.1 pass:
 ```bash
 tmux send-keys -t cursor-task 'agent --model "claude-fable-5-1-thinking-xhigh" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1106,6 +1190,11 @@ For an Opus heavy review / deep reasoning pass:
 ```bash
 tmux send-keys -t cursor-task 'agent --model "claude-opus-5-5-high" --yolo --approve-mcps --trust' Enter
 tmux capture-pane -p -t cursor-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t cursor-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1152,14 +1241,19 @@ Use the curated Antigravity choices after live catalog preflight. Prefer exact s
 
 ```bash
 tmux new-session -d -s "agy-task"
-tmux send-keys -t agy-task 'agy --model claude-opus-5-5-high --dangerously-skip-permissions' Enter
+tmux send-keys -t agy-task 'agy --model gemini-4-hydrogen-high --dangerously-skip-permissions' Enter
 tmux capture-pane -p -t agy-task -S -120
+```
+
+Complete **First-prompt admission** before running the separate task-delivery command; a capture of the initial banner/input alone is not sufficient:
+
+```bash
 tmux send-keys -t agy-task 'Continue from the current worktree only. Do not restart from scratch. Do not use local wrappers such as rtk; use raw repo commands only. <YOUR TASK HERE>' Enter
 ```
 
 ### Model selection
 
-If a non-current Antigravity model is required, launch with its exact stable slug first and add effort only when supported:
+Use the Gemini-first primary, bounded easy-work, extra-reasoning, hard-blocker, and budget roles above. If Mahiro explicitly requests an Anthropic alternative, launch its exact catalog-verified slug first and add effort only when supported; this is not an automatic fallback:
 
 ```bash
 tmux new-session -d -s "agy-opus"
@@ -1167,14 +1261,14 @@ tmux send-keys -t agy-opus 'agy --model claude-opus-5-5-high --dangerously-skip-
 tmux capture-pane -p -t agy-opus -S -120
 ```
 
-If the flag fails or the visible label is wrong, switch inside the pane before sending the task prompt:
+If the flag fails or the visible label is wrong, recover only in this example's same `agy-opus` pane before sending the task prompt:
 
 ```bash
-tmux send-keys -t agy-task '/model' Enter
-tmux capture-pane -p -t agy-task -S -120
+tmux send-keys -t agy-opus '/model' Enter
+tmux capture-pane -p -t agy-opus -S -120
 ```
 
-Then choose the model/effort from the curated routing policy above in the TUI and recheck the visible selection before sending work.
+Reselect only the originally requested catalog-verified model/effort (`claude-opus-5-5-high` in this example), then recheck the visible selection and absence of fallback warnings before sending work. If that exact choice is unavailable, stop and report rather than choosing another curated role or changing another pane.
 
 ### Prompt template
 
@@ -1221,6 +1315,11 @@ Use Codex interactively by default. Do not launch `codex exec` unless the user e
 tmux new-session -d -s "codex-task"
 tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1229,6 +1328,11 @@ For a balanced everyday pass:
 ```bash
 tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1237,6 +1341,11 @@ For a fast/cost-efficient pass:
 ```bash
 tmux send-keys -t codex-task 'codex --model "gpt-6-luna" -c model_reasoning_effort=medium --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1245,6 +1354,11 @@ For a deeper GPT-6.1 Sol pass before Astra:
 ```bash
 tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=max --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1253,6 +1367,11 @@ If Astra is unavailable, use the flagship fallback:
 ```bash
 tmux send-keys -t codex-task 'codex --model "gpt-6.1-sol" -c model_reasoning_effort=high --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. <YOUR TASK HERE>' Enter
 ```
 
@@ -1261,6 +1380,11 @@ For a large parallelizable job with automatic task delegation:
 ```bash
 tmux send-keys -t codex-task 'codex --model "gpt-6-astra" -c model_reasoning_effort=ultra --dangerously-bypass-approvals-and-sandbox' Enter
 tmux capture-pane -p -t codex-task -S -120
+```
+
+Complete **First-prompt admission**; otherwise stop without sending. Then deliver the task once:
+
+```bash
 tmux send-keys -t codex-task 'Continue from the current worktree only. Do not restart from scratch. Split independent workstreams when useful, then synthesize and verify the result. <YOUR TASK HERE>' Enter
 ```
 
@@ -1530,7 +1654,7 @@ Before launching Codex:
 2. Am I launching `codex`, not `codex exec`?
 3. Is `--dangerously-bypass-approvals-and-sandbox` present unless Mahiro explicitly requested a safer sandboxed lane?
 4. If this is an explicit safe lane, is `--sandbox workspace-write --ask-for-approval never` present instead?
-5. Will I verify readiness with HC `wait` plus `read`, Orca `terminal wait --for tui-idle`, Herdr `agent start` plus `agent read`, or `tmux capture-pane` before prompting?
+5. Will I complete **First-prompt admission** using HC `wait` plus `read`, Orca `terminal wait --for tui-idle`, Herdr `agent start` plus `agent read`, or `tmux capture-pane` before prompting, without mistaking startup idle/banner for initialization completion?
 
 If any answer is no, do not launch Codex yet.
 
