@@ -12,17 +12,19 @@ This page is blueprint-allowed. It should preserve the house coding posture stro
 
 ### Type Exports
 
-Always export types alongside implementations:
+Export contracts only when they are public API, reused by another owner, or required by local policy. Keep implementation-local interfaces private. Follow local, generated, and framework conventions first.
 
 ```tsx
-// Correct
+// Public props contract
 export { ProfileCard, type IProfileCardProps }
 
-// Incorrect
+// Private props contract: export only the component
 export { ProfileCard }
 ```
 
-If the repo follows Mahiro-style interface naming, keep the `I` prefix in examples instead of flattening the type posture away.
+When the repo is silent, ordinary components and service classes are declared locally with bottom grouped public value/type exports. In `types/` and `utils/`, export public declarations inline with whitespace between them; constants and hooks may also export inline. Route named framework exports stay inline; a default page export goes at the bottom only where the framework permits.
+
+Use `I`-prefixed interfaces and unprefixed type aliases only as fallback naming, not a conversion mandate.
 
 ### Avoid `any`
 
@@ -76,9 +78,17 @@ interface ICardSlotProps {
   children: ComponentProps<'div'>['children']
 }
 
-const Card = ({ children }: ICardSlotProps) => <div>{children}</div>
-const CardHeader = ({ children }: ICardSlotProps) => <header>{children}</header>
-const CardFooter = ({ children }: ICardSlotProps) => <footer>{children}</footer>
+const Card = ({ children }: ICardSlotProps) => {
+  return <div>{children}</div>
+}
+
+const CardHeader = ({ children }: ICardSlotProps) => {
+  return <header>{children}</header>
+}
+
+const CardFooter = ({ children }: ICardSlotProps) => {
+  return <footer>{children}</footer>
+}
 ```
 
 Keep examples aligned with the repo's intended component typing posture, including `I`-prefixed interface props when that is part of the house style.
@@ -103,7 +113,9 @@ const handleSubmit = async () => {
 
 // Prefer the repo's query or mutation pattern
 const mutation = useMutation({
-  mutationFn: (payload) => ProfileService.update(id, payload),
+  mutationFn: (payload) => {
+    return ProfileService.update(id, payload)
+  },
 })
 ```
 
@@ -111,7 +123,9 @@ For Supabase-direct or backend-SDK repos, keep the same rule but make the hook t
 
 ```tsx
 const mutation = useMutation({
-  mutationFn: (payload) => supabase.from('profiles').update(payload),
+  mutationFn: (payload) => {
+    return supabase.from('profiles').update(payload)
+  },
 })
 ```
 
@@ -165,15 +179,9 @@ If the repo does not have a server-state or client-state layer yet, say so direc
 
 ## Common Pitfalls to Avoid
 
-### Forgetting to Export Types
+### Exposing Private Contracts
 
-```tsx
-// Type not exported
-export { ProfileCard }
-
-// Type exported
-export { ProfileCard, type IProfileCardProps }
-```
+Do not export every local props or payload interface automatically. Export a contract when it has a public consumer or local policy requires it; otherwise keep it beside its implementation and private.
 
 ## Summary Checklist
 
@@ -181,7 +189,7 @@ Before committing:
 
 - [ ] Ran the repo's verification commands
 - [ ] Ran i18n extraction if the repo has that workflow and copy changed
-- [ ] Exported types alongside implementations
+- [ ] Exported only public/reused contracts or types required by local policy; kept private interfaces private
 - [ ] Used the repo's class-merging utility when needed
 - [ ] Used selectors for client-state stores if that layer exists
 

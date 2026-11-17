@@ -22,7 +22,13 @@ Load Mahiro's code, review, and implementation doctrine before implementing, ref
 
 `mahiro-style` answers: "How should Mahiro-shaped code be implemented or reviewed when the repo has not already decided?"
 
-It does not answer: "What is this repo's current rule set?" For that, inspect the repo or use `/mahiro-docs-rules-init` to create repo-local docs. This skill can supply `Preferred Direction`, `Not Established Yet`, and `Adoption Triggers`, but it must not label Mahiro preference as `Current Reality` unless the target repo proves it.
+It does not answer: "What is this repo's current rule set?" Inspect the repo for that. Docs generation belongs to `/mahiro-docs-rules-init`; do not mutate repo docs automatically. This skill can supply `Preferred Direction`, `Not Established Yet`, and `Adoption Triggers`, but it must not label Mahiro preference as `Current Reality` unless the target repo proves it.
+
+Choose the project context before applying guidance:
+
+- **New project:** use `PROJECT-GUIDE.md` to propose a concrete small runtime, tooling, tree, and first working flow. Label unapproved choices `Preferred Direction`; a proposal is not permission to install or scaffold.
+- **Existing repo:** local docs, framework requirements, tooling, and repeated current patterns win.
+- **Explicitly requested reference:** transfer ownership and code conventions adapted to the target's actual SPA/SSR requirements. Style guidance alone does not authorize copying reference infrastructure; explicit human scope and target framework requirements retain authority.
 
 ## Priority Order
 
@@ -49,9 +55,10 @@ point thin: select existing doctrine rather than duplicating it here.
    alternatives and a recommendation. Ask about the outcome, not which guidance
    filename or subcommand to load. When context already makes the job clear,
    proceed without a questionnaire or confirmation gate.
-3. **Select the smallest useful guidance.** Start with one primary lens from
-   the retrieval map and read its canonical page. Add supporting pages only
-   when the task crosses their boundaries. Honor an explicit lens while still
+3. **Select the smallest useful guidance.** Before implementation or refactoring,
+   read `foundations/code-style.md` plus the canonical guidance for each affected
+   ownership boundary. For review, start with the primary lens from the retrieval
+   map and add supporting pages for concrete findings. Honor an explicit lens while
    respecting the target repo and requested scope; do not load the entire hub.
    For a UI implementation or review, select the relevant pain probes in
    `patterns/shared-ui-boundaries.md` and `foundations/review-checklist.md`
@@ -70,8 +77,9 @@ point thin: select existing doctrine rather than duplicating it here.
    than inventing another checklist here.
 5. **Stay within the authorized action.** Review does not authorize fixes;
    fixing paint does not reopen geometry or product direction. Routing chooses
-   guidance, not permission. End with findings or changes, checked evidence, and
-   unresolved decisions appropriate to the requested job.
+   guidance, not permission. Inspect the touched diff against the selected owners
+   before handoff. End with findings or changes, checked evidence, and unresolved
+   decisions appropriate to the requested job.
 
 ### Goal-driven routing examples
 

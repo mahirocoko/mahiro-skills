@@ -20,7 +20,7 @@ If the repo follows Mahiro-style component structure, keep that posture visible 
    - return JSX
 6. Public exports, at the bottom when using the Mahiro-style fallback for components
 
-Record the observed local order separately from this preferred blueprint. Preserve established local or framework-required export syntax; utilities, constants, and hooks may use inline exports. Small components do not need section comments merely to fill this outline.
+Record the observed local order separately from this preferred blueprint. Preserve established local, generated, or framework-required export syntax. The fallback for `types/` and `utils/` is inline public declarations with whitespace between them; constants and hooks may also export inline. Route named framework exports stay inline; default page exports go at the bottom only where the framework permits. Small components do not need section comments merely to fill this outline.
 
 ### Section Comments
 
@@ -32,13 +32,16 @@ Record the observed local order separately from this preferred blueprint. Preser
 | `// _Mutation` | mutation hooks or write actions |
 | `// _Memo` | derived/computed values; use `useMemo` only when memoization has a clear purpose |
 | `// _Callback` | `useCallback` for memoized functions |
-| `// _Form` | form schemas and form instances |
+| `// _Schema` | form validation schemas and inferred form types, before `_Form` |
+| `// _Form` | `useForm` instances and controller wiring, not schema definitions |
 | `// _Event` | event handler functions |
 | `// _Effect` | `useEffect` hooks |
 
 ### Example
 
-`// _Memo` can group simple local derivations. Do not add `useMemo` by habit; reserve it for measurable performance, stable values for memoized children, or effect-dependency control.
+Use only populated sections. `_Schema` comes before `_Form` when those labels help. Keep translated form schemas with the component's active locale/form owner only where the target i18n system supports that pattern; preserve the target's real schema and locale lifecycle. Do not introduce a validator to fill this outline.
+
+`// _Memo` can group simple local derivations. Do not add `useMemo` or `useCallback` by habit; reserve memoization for a concrete performance or identity need.
 
 ```tsx
 [repo-faithful example using the repo's real data, i18n, and state libraries]
@@ -68,15 +71,16 @@ const ProfileCard = ({ name, description }: IProfileCardProps) => {
 export { ProfileCard }
 ```
 
-Export the props interface only when it is part of the public API or local convention requires it. This small example intentionally has no section comments or memoization.
+Export the props interface only when it is part of the public API, reused by another owner, or local convention requires it; otherwise keep it private. This small example intentionally has no section comments or memoization.
 
 ## Route Components
 
-- Keep route files thin when the target repo assigns them orchestration and composition. Preserve framework-required loaders/actions and locally proven ownership; do not force a new section or service layer from this template.
+- Routes may keep readable page composition, page-local state, query/mutation orchestration, and simple forms when they are the real owner. Preserve framework-required loaders/actions and locally proven ownership; do not force a new section or service layer from this template.
+- Extract substantive form or table partials when they clarify ownership, reuse, or scanning. Do not hide readable composition behind empty screen wrappers just to shorten a route.
 
 ## Domain or Module Partials
 
-When a page grows beyond a single clean file, extract partials into an owner-local domain or module folder.
+Extract partials only when the boundary is useful. Keep domain-specific partials owner-local. Place meaningful shared layouts or domain-neutral components in the repo's established shared owner; a `layouts/`, `components/`, or `components/modules/` shape is a conditional blueprint, not a reason to create phantom folders. Preserve the target's real structure and avoid empty wrapper churn.
 
 ## Owner-Local Data
 

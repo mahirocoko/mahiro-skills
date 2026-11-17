@@ -21,6 +21,8 @@ For the full shared failure-flow doctrine, see `error-handling.md`.
 
 For REST/API apps, services are the preferred transport boundary. They are the home for endpoint calls, request shaping, response mapping decisions, and shared transport mechanics. Hooks, queries, route loaders, and mutations orchestrate services; they should not rebuild endpoint details themselves.
 
+For a new API app, propose one explicit domain service with lean typed transport and query/mutation orchestration hooks. Reuse an existing `BaseService` if present; do not introduce unearned base classes, clients, registries, or mirrored server-domain services for every endpoint. One domain method plus a required trusted server boundary is sufficient when it expresses the operation; simplifying layers must not remove authorization, input validation, or server-only boundaries.
+
 ## Current Reality vs Preferred Direction
 
 Service guidance is contextual, but the Mahiro default is clear: REST/API transport should be service-owned.
@@ -70,7 +72,9 @@ This exception is still bounded: routes and presentational components should not
 - For Supabase-direct apps, keep Supabase calls inside fetcher/mutation hooks only while they remain module-local; promote repeated domain operations to a service/repository.
 - Reuse the repo's existing service base pattern when one exists, instead of inventing a new fetch style next to it.
 - Keep service APIs explicit enough that callers know the domain action they are invoking.
-- Keep service request and response surfaces typed enough that callers can read the contract without opening the transport helper.
+- Use handwritten types/interfaces for documented API request/response contracts so callers can read them without opening the transport helper. Preserve generated contracts where the repo owns them.
+- Do not add a parallel runtime schema for every API response without a concrete requirement, such as an untrusted external payload needing runtime validation. Type annotations do not validate runtime data.
+- Use Zod or the target's schema validator where runtime inputs need validation, including forms and server inputs. Preserve authorization, validation, and server-only boundaries regardless of transport simplification.
 - Keep one-owner service request and response interfaces near the service; promote them to the repo's domain type owner only when several owners import the same contract.
 - Keep hooks focused on orchestration around services: query keys, enabled conditions, cache invalidation, loading/error state, and UI-facing composition.
 - Normalize shared transport failures close to the service boundary when the repo already uses stable app-owned error codes or failure signals plus a shared resolver.
@@ -99,6 +103,8 @@ This exception is still bounded: routes and presentational components should not
 
 ## Examples
 
+These are illustrative transport slices, not executable universal helpers. Bind `postJSON`, request config, imported domain types, and failure normalization to the target's declared existing client seams; introduce no helper merely to match a snippet.
+
 - A service method wraps the approval queue endpoint and returns shaped data, while a hook or route uses React Query around that method.
 
 ```ts
@@ -112,11 +118,13 @@ interface IApprovalQueueResponse {
   total: number
 }
 
-export class ApprovalService {
+class ApprovalService {
   static listQueue(input: IApprovalQueueInput, config?: IRequestConfig) {
     return postJSON<IApprovalQueueResponse>('/approval.listQueue', input, config)
   }
 }
+
+export { ApprovalService }
 ```
 
 - A typed request and response contract keeps transport details explicit without leaking them into the caller. It can stay beside the service while it has one owner.
@@ -131,11 +139,13 @@ interface IInviteEmployeeResponse {
   inviteId: string
 }
 
-export class EmployeeService {
+class EmployeeService {
   static invite(input: IInviteEmployeeInput) {
     return postJSON<IInviteEmployeeResponse>('/employee.invite', input)
   }
 }
+
+export { EmployeeService }
 ```
 
 - A service can map raw transport failures into a stable app-owned code without deciding the final user-facing copy.
@@ -152,7 +162,7 @@ interface IInviteEmployeeFailure {
   detail?: string
 }
 
-export class EmployeeService {
+class EmployeeService {
   static async invite(input: IInviteEmployeeInput) {
     try {
       return await postJSON<IInviteEmployeeResponse>('/employee.invite', input)
@@ -161,6 +171,8 @@ export class EmployeeService {
     }
   }
 }
+
+export { EmployeeService }
 ```
 
 - A query or route loader consumes the domain service instead of rebuilding transport details inline.
@@ -168,7 +180,9 @@ export class EmployeeService {
 ```tsx
 const approvalQueueQuery = useQuery({
   queryKey: ['approval-queue', status, page],
-  queryFn: ({ signal }) => ApprovalService.listQueue({ status, page }, { signal }),
+  queryFn: ({ signal }) => {
+    return ApprovalService.listQueue({ status, page }, { signal })
+  },
 })
 ```
 
@@ -180,11 +194,13 @@ const approvalQueueQuery = useQuery({
 // services/invoice-service.ts
 import type { IListInvoicesInput, IListInvoicesResponse } from '@/types/invoice'
 
-export class InvoiceService {
+class InvoiceService {
   static list(input: IListInvoicesInput, config?: IRequestConfig) {
     return postJSON<IListInvoicesResponse>('/invoice.list', input, config)
   }
 }
+
+export { InvoiceService }
 ```
 
 ```ts

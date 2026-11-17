@@ -135,28 +135,47 @@ const Page = () => {
 
 - A component needs remote data. Keep transport in a service, let a hook own query wiring, and keep the component focused on rendering.
 
-```tsx
-// service owns transport
-export class GoalService {
+These are separate illustrative file slices; bind transport, domain types, and UI primitives to the target's existing owners.
+
+Service owner (`services/goal.ts`):
+
+```ts
+class GoalService {
   static getSummary() {
     return getJSON<IGoalSummary>('/goals.summary')
   }
 }
 
-// hook owns query wiring
-const useGoalSummary = () => {
+export { GoalService }
+```
+
+Fetcher owner (`hooks/fetchers/use-goal-summary.ts`):
+
+```ts
+import { useQuery } from '@tanstack/react-query'
+
+import { GoalService } from '@/services/goal'
+
+export const useGoalSummary = () => {
   return useQuery({
     queryKey: ['goal-summary'],
     queryFn: GoalService.getSummary,
   })
 }
+```
 
-// component owns rendering
+Component owner (`components/modules/goals/goal-summary-card.tsx`):
+
+```tsx
+import { useGoalSummary } from '@/hooks/fetchers/use-goal-summary'
+
 const GoalSummaryCard = () => {
   const { data, isLoading } = useGoalSummary()
   if (isLoading) return <Skeleton />
   return <Card title={data.title} progress={data.progress} />
 }
+
+export { GoalSummaryCard }
 ```
 
 - A shared primitive starts speaking domain vocabulary. Wrap it with a domain component instead of polluting the primitive.

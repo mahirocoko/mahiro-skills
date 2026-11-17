@@ -9,7 +9,9 @@ These rules control how the skill writes each page.
 - Keep current state separate from preferred direction.
 - If a pattern is weak or incomplete, soften the wording.
 - If a page would mostly be speculation, skip it.
-- Commands must come from the repo, not from habit.
+- Commands and tooling claims must come from locally verified scripts/config, not from habit. A command being available is not evidence that the check was executed.
+- Existing package-manager, formatter, task-runner, framework, generated-code, and source owners win. Do not automatically migrate to pnpm, Oxc, or Turbo or invent folders/packages, validators, or services through docs.
+- Docs generation authority is not product mutation or install authority. Stay local-inspection-only: no browsers, servers, network lookups, or nested subagents at initializer runtime.
 - Prefer repo-local doctrine over imported taste.
 - Never transplant mechanics from another Mahiro repo into `Current Reality`; verify the same rule in the target repo or label it as `Preferred Direction` / `Adoption Triggers`.
 - Never promote Mahiro-style preference into `Current Reality` unless the target repo proves it.
@@ -72,7 +74,8 @@ Rules:
 - do not present blueprint guidance as if it is already enforced or fully established
 - label observed behavior separately from suggested or preferred shape when both appear
 - if the target repo is clearly aligned to a house style, preserve that guiding posture instead of flattening the page into pure observation
-- if the target repo is silent or partial, use Mahiro-style as preferred direction, not as present-tense repo fact
+- if the target repo is silent or partial, use current Mahiro-style as clearly labeled `Preferred Direction`, not as present-tense `Current Reality`
+- use `mahiro-style/foundations/code-style.md` as the canonical fallback owner for function shape, public-only exports by file kind, and schema-before-form ordering; use its `patterns/components.md`, `patterns/route-boundaries.md`, and `patterns/services.md` for ownership boundaries. Adapt relevant template examples without creating another full doctrine catalog or overriding local/generated/framework conventions
 - keep `AGENTS.md` reality-first, but allow clearly labeled practical guidance such as shortcuts, section comments, section dividers, boundary maps, and adoption triggers when those help the repo
 - if the repo uses Lingui or a similar message-descriptor flow, encode the ownership doctrine explicitly: render-bound copy stays local, extracted user-facing config uses translation-safe messages such as `msg`, and translation happens at the render boundary
 - do not recommend shared UI, variant helpers, or extracted styling layers from repetition alone; require repeated cross-owner need plus a clearly domain-neutral boundary
@@ -96,7 +99,7 @@ Rules:
 - `docs/commit-guide.md` must not invent enforced conventions from thin air. If there is no `.git` history, no commitlint, and no hook config, keep the guide explicitly conservative and say it reflects a suggested local baseline rather than observed enforced policy.
 - `docs/development-commands.md` should mirror the reference grammar closely: prefer `Quick Start`, `Building`, `Linting & Formatting`, `Type Checking`, `Internationalization`, `Dependency Management`, and `Verification Cadence` when they fit the repo.
 - `docs/i18n-guidelines.md` must not encourage extracting user-facing copy into plain-string constants. For Lingui-style repos, it should distinguish message descriptors such as `msg` from translation at render via `t(...)`, `i18n._(...)`, or `<Trans>`.
-- `docs/patterns/services-pattern.md` should keep the service-doc shape when a service layer exists or the repo is REST/API service-forward; for Supabase-direct or hook-owned data repos, keep the page small or skip it instead of inventing services.
+- `docs/patterns/services-pattern.md` should keep the service-doc shape when a service layer exists or the repo is REST/API service-forward; for Supabase-direct or hook-owned data repos, keep the page small or skip it instead of inventing services. Reuse existing clients and generated contracts; default to plain documented request/response types, not response schema registries for typing alone. Preserve runtime validation requirements and authorization/server-only/private transport boundaries.
 - `docs/patterns/hooks-pattern.md` should make hook-owned data access explicit when the repo is React Router Framework or Supabase-direct, and should not imply services are mandatory there.
 - `docs/best-practices.md` must stay conservative about shared abstractions. Repetition by itself is not enough; prefer owner-local composition until a cross-owner, domain-neutral boundary is visible.
 - `docs/code-style/formatting.md` may intentionally establish a stronger formatting blueprint for the repo or house style, but any actual commands or enforced config still need to be verified locally.

@@ -29,9 +29,22 @@ Use these labels when describing a rule:
 
 Do not phrase Mahiro preference as current repo fact unless the repo proves it.
 
-## 2. App-local Source Shape
+## 2. Start Small, Then Grow App-local Owners
 
-For a responsibility-first app, start from app-local ownership rather than a copied feature-folder template.
+For a new web project, use this decision sequence before creating files:
+
+1. Establish runtime and deployment requirements, including SPA versus SSR, server-only work, and the first user flow.
+2. Propose a minimal framework, tooling, source tree, and first working flow. Separate **create now** from **later when earned**; label unapproved choices `Preferred Direction`.
+3. Resolve consequential ambiguity before scaffolding; do not ask about choices already settled by requirements or local evidence.
+4. Implement the first working flow within the user's authority, then grow owners from real use. Do not install or scaffold without user authorization.
+
+For a new web baseline, prefer pnpm and Oxfmt/Oxlint when the target has not chosen tooling. Verify versions and compatibility freshly at use time against official sources; this is not a pinned-version or latest catalog. Choose framework and rendering from actual requirements, not a reference repo. Existing target tooling remains locally owned.
+
+A single app does not imply a monorepo. Propose Turborepo only for a justified multi-app/package/task graph. Create shared packages only for actual consumers or a required boundary, not empty folders or speculative shared contracts/clients. Match team editor settings and extension recommendations to the selected stack; recommending an extension does not install it.
+
+Check that formatter/lint commands cover actual apps **and packages** in a workspace, including package-root overrides where relevant. Do not assume root configuration covers every owner.
+
+For a responsibility-first app, use the following as an ownership map, not a scaffold template.
 
 ```text
 src/
@@ -110,7 +123,9 @@ Routes should not own:
 - global provider setup
 - persisted store hydration
 - huge config maps or mock data arrays
-- full table/form implementation
+- bulky table/form implementations that have a meaningful separate responsibility
+
+A small one-off form can stay in the route while its composition and state remain clear. Extract form or table owners when complexity, responsibility, or reuse warrants it, not merely because the code renders a form.
 
 ```text
 ┌─────────────────────────────┐
@@ -171,11 +186,16 @@ interface IListOrdersResponse {
   total: number
 }
 
-export class OrderService {
+// Illustrative transport seam; bind to the target's existing client/BaseService.
+declare const postJSON: <T>(path: string, input: unknown, config?: IRequestConfig) => Promise<T>
+
+class OrderService {
   static list(input: IListOrdersInput, config?: IRequestConfig) {
     return postJSON<IListOrdersResponse>('/order.list', input, config)
   }
 }
+
+export { OrderService }
 ```
 
 Fetcher hook:
@@ -184,10 +204,14 @@ Fetcher hook:
 const useFetchOrders = (input: IListOrdersInput) => {
   return useQuery({
     queryKey: ['orders', input],
-    queryFn: ({ signal }) => OrderService.list(input, { signal }),
+    queryFn: ({ signal }) => {
+      return OrderService.list(input, { signal })
+    },
   })
 }
 ```
+
+Use handwritten types/interfaces for documented API contracts; add runtime schemas only for a concrete validation requirement. Keep forms/server inputs validated and authorization and private code at trusted server boundaries. `patterns/services.md` owns the detailed transport and validation rules.
 
 Avoid embedding transport in routes or presentational components:
 
@@ -490,8 +514,9 @@ useData
 api.ts
 utils.ts
 list.tsx
-config.ts
 ```
+
+Names are contextual: `constants/config.ts` can own meaningful shared configuration and `constants/env.ts` can own environment access. Keep private environment values server-only; do not create passthrough aliases, unearned registries, or duplicate values just to populate them.
 
 Folder context can shorten filenames, but exported names should remain searchable.
 

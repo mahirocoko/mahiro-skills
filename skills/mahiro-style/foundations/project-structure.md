@@ -25,7 +25,8 @@ At project level, Mahiro-style prefers explicit homes for app routes, components
 
 - Keep repo, app, and domain/module layout aligned with the local repo's documented structure first.
 - Give each folder a clear ownership boundary, such as app routes, components, hooks, services, stores, providers, constants, types, i18n, styles, libs, or utils.
-- Extract growing route or screen work into domain-owned files when the route stops being a clear entry point.
+- Keep routes as readable composition with page-only state. Extract meaningful forms, tables, and sections when they earn an owner; do not move the entire page into a wrapper merely to shorten the route.
+- Create shared packages only for actual consumers or a required boundary. Do not preemptively create shared contract/client packages before consumers exist.
 - Keep project-structure doctrine focused on repo, app, and module ownership, not on detailed route-boundary or shared-ui doctrine.
 - Do not create folders from a template just because they exist in another Mahiro repo. If the target repo has not earned the owner, label it as preferred direction or not established yet.
 - Avoid catch-all folders that hide domain intent.
@@ -35,7 +36,7 @@ At project level, Mahiro-style prefers explicit homes for app routes, components
 - Prefer app-local folders and domain/module subfolders that reveal the business area quickly.
 - Prefer colocating related domain modules when they change together often.
 - Prefer top-level app folders that match recurring responsibilities seen across Mahiro repos, such as `app` or router root, `components`, `hooks`, `services`, `stores`, `constants`, `enums`, `providers`, `types`, `utils`, `i18n`, `locales`, `styles`, and `libs`.
-- Prefer concrete ownership homes inside those top-level areas when the repo is large enough to support them, such as `components/modules`, `components/layouts`, `components/providers`, `components/sections`, `components/ui`, `hooks/fetchers`, `hooks/mutations`, and `hooks/stores`.
+- Where the target permits, use `components/layouts` for shared app shell and `components/modules/<domain>` for domain UI. Other homes such as `components/providers`, `components/sections`, `components/ui`, `hooks/fetchers`, `hooks/mutations`, and `hooks/stores` are options only when earned.
 - Prefer extraction that makes future ownership clearer, not just smaller files.
 - Prefer owner-local data and config inside the owning component or module when that data is not reused across siblings.
 - Prefer module data, section config, and mock payload shape to stay with the screen, hook, or section that owns the behavior until another real owner appears.
@@ -142,6 +143,7 @@ src/providers/page-provider.tsx
 src/providers/popup-provider.tsx
 ```
 
+- `components/layouts` owns shared shell, not domain workflows.
 - `components/modules` is for domain UI, not transport ownership.
 - `components/providers` is acceptable when the repo already groups provider components under `components`.
 - root `providers` is acceptable when the repo treats providers as a top-level app owner.
@@ -158,6 +160,7 @@ src/types/order.ts           # shared order request/response/record contracts
 ```
 
 - Constants that belong to one domain stay with that domain or module ownership, while app-wide constants live in `constants/`.
+- `constants/config.ts` for meaningful shared configuration and `constants/env.ts` for environment ownership are acceptable names. Keep private environment access server-only. Avoid passthrough aliases, unearned registries, and duplicate values; a new filename is not a new responsibility.
 - Layout child data that is only used by one child can stay inside that child instead of being lifted into a parent compose file or a generic constants page.
 - A module folder can keep local mock rows, labels, filters, or small config maps inside the owning module while the route compose file stays focused on page structure.
 - A small module-local config helper is justified when several sibling module files share the same runtime maps or contract, but it should stay module-local until another domain truly needs the same contract.

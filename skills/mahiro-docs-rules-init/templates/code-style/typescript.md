@@ -19,19 +19,16 @@ Use local config as the source of truth for compiler behavior, but allow the nam
 - **Prefix**: `I` for interfaces when the repo follows Mahiro-style TypeScript.
 - **PascalCase**: Rest of the name
 
-Treat `I`-prefixed interface naming as the preferred Mahiro-style posture for new or still-forming repos. Only soften this when the target repo already shows a strong repeated non-`I` pattern.
+Treat `I`-prefixed interfaces and unprefixed aliases as `Preferred Direction` when the repo is silent. Local and generated naming wins; do not force conversions of existing non-`I` contracts.
 
 ```ts
-// Correct
+// Repo-silent fallback
 interface IButtonProps extends ComponentProps<'button'> {
   variant?: 'primary' | 'secondary'
 }
-
-// Avoid unless the repo explicitly rejects Mahiro-style interface naming
-interface ButtonProps {}
 ```
 
-If the target repo already has a stable non-`I` posture, document that explicitly instead of silently forcing the prefix. Otherwise, keep `I`-prefixed interfaces visible throughout the page.
+If the target repo has a non-`I` posture, document and preserve it instead of forcing the fallback prefix.
 
 ### Types
 
@@ -57,11 +54,19 @@ type IButtonVariant = 'primary' | 'secondary'
 
 Follow established local type-export conventions. Otherwise, export a props or payload contract only when it is part of the public API or another owner needs it; do not export every local type automatically.
 
-If the repo follows Mahiro-style export posture, keep exported interface names explicit:
+Local, generated, and framework conventions win. When the repo is silent:
+
+- Ordinary components and service classes: declare locally, then bottom grouped public value/type exports.
+- `types/` and `utils/`: export public declarations inline with whitespace between declarations.
+- Constants and hooks may export inline.
+- Routes: named framework exports stay inline; default page exports go at the bottom only where the framework permits.
 
 ```tsx
+// Only when the props contract is public/reused or local policy requires it
 export { Button, type IButtonProps }
 ```
+
+Keep private interfaces and implementation helpers unexported.
 
 ### Barrels (`index.ts`)
 
@@ -100,7 +105,11 @@ const Button = ({ variant = 'primary', ...props }: IButtonProps) => {
 export { Button }
 ```
 
-This is the repo-silent fallback: declare the component locally and export its public surface at the bottom. Preserve established inline exports, framework requirements, and generated code when they are the local winner. Utilities, constants, and hooks may use inline exports.
+This is the repo-silent fallback: declare the component locally and export its public surface at the bottom, leaving its private props interface unexported. Preserve established inline exports, framework requirements, and generated code when they are the local winner.
+
+### Function Shape
+
+When the repo is silent, prefer arrow functions with explicit block bodies and returns for app-owned components, hooks, helpers, and callbacks. Void callbacks use block bodies without inventing return values. Local function conventions, generated code, and framework-required syntax win; do not rewrite unrelated functions.
 
 ### Store State / Service Response / Domain Payload
 
@@ -136,5 +145,5 @@ Use TypeScript utility types.
 ## Preferred Direction
 
 - Keep the page's naming guidance strong enough that a new repo inherits the intended interface/type posture from day one.
-- Preserve `I`-prefixed interface naming as the default Mahiro-style convention unless the target repo clearly establishes an alternative.
+- Use `I`-prefixed interfaces and unprefixed aliases as fallback only; preserve existing local and generated contracts without forced conversion.
 - Do not rewrite clearly established local TypeScript doctrine, but do not erase the house-style blueprint just because the repo is still young.

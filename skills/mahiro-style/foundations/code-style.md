@@ -128,7 +128,7 @@ The promotion question is: who would be surprised if this type changed? Keep the
 
 ## Function Shape
 
-When the repo is silent, prefer arrow functions for app-owned React components, hooks, and helpers. Give components explicit props interfaces when they have a stable object contract. Framework-required syntax, generated code, and established local function conventions win first; do not rewrite unrelated functions during a focused change.
+When the repo is silent, prefer arrow functions with explicit block bodies and returns for app-owned React components, hooks, and helpers. Void helpers use a block body without inventing a return value. Give components explicit props interfaces when they have a stable object contract. Framework-required syntax, generated code, and established local function conventions win first; do not rewrite unrelated functions during a focused change.
 
 ## Export Posture
 
@@ -145,7 +145,9 @@ Exports should reveal which symbols are stable public surface and which ones are
 When the repo is silent, Mahiro-style prefers:
 
 - Named exports for reusable components, hooks, services, stores, constants, and utilities.
-- Declare React components locally, then export the public component surface at the bottom of the file. Utilities, constants, and hooks may use inline exports; framework-required exports keep their required shape.
+- Ordinary components and service classes: declare locally, then use bottom grouped value/type exports for public contracts only, such as `export { UserCard, type IUserCardProps }`.
+- `types/` and `utils/` files: export declarations inline, with whitespace between declarations so contracts and helpers remain scannable. Utilities, constants, and hooks may use inline exports; do not force a bottom group on those file kinds.
+- Route files: keep named framework contracts inline; put a default page export at the bottom only where the framework permits. Framework-required exports keep their required shape.
 - Exporting component prop interfaces/types beside the component when they are part of its public API or reused by another owner, such as `export { UserCard, type IUserCardProps }`; keep implementation-local contracts private unless local convention requires otherwise.
 - Keeping route entrypoint exports aligned with the router/framework even if shared building blocks prefer named exports.
 - Keeping owner-local helpers, maps, schemas, and small event utilities unexported until another owner needs them.
@@ -178,13 +180,13 @@ When the repo is silent, Mahiro-style prefers this rough order for complex React
 1. refs
 2. local state
 3. context/store/query/mutation reads
-4. derived memoized values
-5. callbacks and event handlers
-6. schemas/forms
-7. effects
-8. render helpers, early returns, and final JSX
+4. derived values (memoized only for an actual need)
+5. callbacks
+6. schemas, then forms (`_Schema` before `_Form` when labels help)
+7. event handlers and effects
+8. early returns and final JSX
 
-Use visible section comments only when they improve scanning. The point is reviewability, not decoration.
+Use visible section comments only for populated sections when they improve scanning. Keep a translated form schema with its translation/form owner so it can use the active locale. Do not invent memoization or a `_Render` section to fill a template. The point is reviewability, not decoration.
 
 ### Not Established Yet
 
@@ -282,8 +284,9 @@ const ApprovalQueueSection = () => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [searchValue, setSearchValue] = useState('')
   const approvalQueueQuery = useQuery({ ... })
-  const filteredItems = useMemo(() => [], [])
-  const handleSearchChange = (value: string) => setSearchValue(value)
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value)
+  }
   useEffect(() => {}, [])
 
   return <section ref={containerRef} />
@@ -312,11 +315,16 @@ interface IListInvoicesResponse {
   total: number
 }
 
-export class InvoiceService {
+// Illustrative seam; use the target's existing transport implementation.
+declare const postJSON: <T>(path: string, input: unknown) => Promise<T>
+
+class InvoiceService {
   static list(input: IListInvoicesInput) {
     return postJSON<IListInvoicesResponse>('/invoice.list', input)
   }
 }
+
+export { InvoiceService }
 ```
 
 - Once a contract is used by a service, fetcher hook, route loader, and render section, promote it to the repo's domain type owner instead of duplicating local shapes.
@@ -328,10 +336,6 @@ const TeamSwitcher = () => {
 
   // _State
   const [activeTeamName, setActiveTeamName] = useState<string | null>(null)
-
-  // _Memo
-  const teams = []
-  const activeTeam = teams.find((team) => team.name === activeTeamName) ?? teams[0]
 
   // _Event
   const handleSelectTeam = (teamName: string) => {

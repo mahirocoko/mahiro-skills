@@ -13,7 +13,7 @@ For Next App Router plus REST/API repos, services are often the preferred home f
 
 ## BaseService
 
-If the repo uses a shared transport wrapper, document the real one here. If it does not, replace this section with a short explicit note such as "No shared BaseService is established yet; calls currently live in route-owned or hook-owned files."
+If the repo uses a shared transport wrapper, document and reuse the existing BaseService/client rather than adding a parallel transport path. If it does not, replace this section with a short explicit note such as "No shared BaseService is established yet; calls currently live in route-owned or hook-owned files." Do not introduce a base class, mirrored server-domain classes, registries, or extra packages merely to match this blueprint.
 
 ### BaseService Methods
 
@@ -76,7 +76,7 @@ Promote owner-local transport into a shared service layer only when the repo sta
 
 ### 1. Stable Export Pattern
 
-Keep the export posture aligned with the repo. If the repo uses named object exports, do not rewrite the example as a class. If the repo uses classes, keep the class shape.
+Keep the export posture aligned with local, generated, and framework conventions. If the repo uses named object exports, do not rewrite the example as a class. For repo-silent service classes, declare locally and use bottom grouped public value/type exports; keep private contracts private. Public contracts in `types/` use inline declarations with whitespace between them.
 
 ```ts
 [repo-faithful service export pattern example]
@@ -84,7 +84,9 @@ Keep the export posture aligned with the repo. If the repo uses named object exp
 
 ### 2. Type Safety
 
-Always specify request and response types when the repo has shared service data. If the repo is still lightweight, at least type the payload and the resolved data at the service boundary.
+Use plain documented request/response interfaces or types by default, preserving generated contracts rather than copying them. Type the payload and resolved data at the service boundary. Type annotations do not validate runtime data; do not add a response Zod schema registry just for TypeScript typing.
+
+Retain runtime validation for forms, server inputs, and concrete untrusted payload requirements, using the target's existing validator where available. Never weaken authorization, server-only/private transport boundaries, or input validation to simplify layers. Documentation generation does not authorize adding validators or changing product code.
 
 ```ts
 [repo-faithful typed service example]
@@ -92,7 +94,7 @@ Always specify request and response types when the repo has shared service data.
 
 ### 3. Payload Interfaces
 
-Define payload interfaces in the repo's shared or owner-local type layer. Keep the type next to the owner when only one module needs it; extract it only after real reuse appears.
+Keep request/response interfaces or types next to the service when it is their only owner; promote related contracts together into the repo's domain type owner after real reuse appears. Export only public/reused contracts or those required by local policy, not every private payload interface.
 
 ```ts
 [repo-faithful payload typing example]

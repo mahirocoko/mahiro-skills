@@ -235,6 +235,10 @@ describe("skill pattern adaptation phase a", () => {
       const initializer = declaration?.initializer;
       expect(initializer && ts.isArrowFunction(initializer)).toBe(true);
       if (!initializer || !ts.isArrowFunction(initializer)) throw new Error(`Expected arrow: ${example.name}`);
+      expect(ts.isBlock(initializer.body)).toBe(true);
+      if (ts.isBlock(initializer.body)) {
+        expect(initializer.body.statements.some((node) => ts.isReturnStatement(node))).toBe(true);
+      }
       const propsType = initializer.parameters[0]?.type;
       expect(propsType && ts.isTypeReferenceNode(propsType)).toBe(true);
       if (!propsType || !ts.isTypeReferenceNode(propsType)) throw new Error(`Missing props contract: ${example.name}`);
@@ -278,6 +282,101 @@ describe("skill pattern adaptation phase a", () => {
     expect(typescriptTemplate).toContain("do not export every local type automatically");
     expect(componentTemplate).not.toContain("export const ProfileCard =");
     expect(typescriptTemplate).not.toContain("export const Button =");
+  });
+
+  test("project routing proposes a small baseline without transplanting or scaffolding", () => {
+    const hub = readRepoFile("skills", "mahiro-style", "SKILL.md");
+    const guide = readRepoFile("skills", "mahiro-style", "PROJECT-GUIDE.md");
+    const structure = readRepoFile("skills", "mahiro-style", "foundations", "project-structure.md");
+
+    expect(hub).toContain("**New project:**");
+    expect(hub).toContain("**Existing repo:**");
+    expect(hub).toContain("**Explicitly requested reference:**");
+    expect(hub).toContain("Style guidance alone does not authorize copying reference infrastructure");
+    expect(hub).toContain("explicit human scope and target framework requirements retain authority");
+    expect(hub).toContain("read `foundations/code-style.md` plus the canonical guidance");
+    expect(hub).toContain("Inspect the touched diff");
+    expect(hub).toContain("do not mutate repo docs automatically");
+    expect(guide).toContain("prefer pnpm and Oxfmt/Oxlint");
+    expect(guide).toContain("Verify versions and compatibility freshly at use time");
+    expect(guide).toContain("**create now** from **later when earned**");
+    expect(guide).toContain("Do not install or scaffold without user authorization");
+    expect(guide).toContain("A single app does not imply a monorepo");
+    expect(guide).toContain("recommending an extension does not install it");
+    expect(structure).toContain("do not move the entire page into a wrapper merely to shorten the route");
+    expect(structure).toContain("actual consumers or a required boundary");
+    for (const owner of [guide, structure]) {
+      expect(owner).toContain("`constants/config.ts`");
+      expect(owner).toContain("`constants/env.ts`");
+      expect(owner).toContain("server-only");
+    }
+    const badNames = guide.split("## 15. Naming")[1].split("Folder context")[0];
+    expect(badNames).not.toMatch(/\nconfig\.ts\n/);
+  });
+
+  test("file-kind exports and service examples preserve lean typed boundaries", () => {
+    const code = readRepoFile("skills", "mahiro-style", "foundations", "code-style.md");
+    const services = readRepoFile("skills", "mahiro-style", "patterns", "services.md");
+    const guide = readRepoFile("skills", "mahiro-style", "PROJECT-GUIDE.md");
+    const review = readRepoFile("skills", "mahiro-style", "foundations", "review-checklist.md");
+
+    expect(code).toContain("explicit block bodies and returns");
+    expect(code).toContain("`types/` and `utils/` files: export declarations inline");
+    expect(code).toContain("keep named framework contracts inline");
+    expect(code).toContain("only where the framework permits");
+    expect(code).toContain("`_Schema` before `_Form`");
+    expect(code).toContain("Keep a translated form schema with its translation/form owner");
+    expect(code).toContain("Do not invent memoization or a `_Render` section");
+    expect(services).toContain("Use handwritten types/interfaces");
+    expect(services).toContain("Do not add a parallel runtime schema for every API response");
+    expect(services).toContain("forms and server inputs");
+    expect(services).toContain("must not remove authorization, input validation, or server-only boundaries");
+    expect(services).toContain("Reuse an existing `BaseService` if present");
+    expect(services).toContain("not executable universal helpers");
+    const errorHandling = readRepoFile("skills", "mahiro-style", "patterns", "error-handling.md");
+    const bestPractices = readRepoFile("skills", "mahiro-style", "patterns", "best-practices.md");
+    let serviceCount = 0;
+    for (const owner of [code, services, guide, errorHandling, bestPractices]) {
+      const examples = owner.split("## Anti-Examples")[0];
+      for (const match of examples.matchAll(/```tsx?\n([\s\S]*?)\n```/g)) {
+        const source = ts.createSourceFile("service.tsx", match[1], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        for (const node of source.statements.filter(ts.isClassDeclaration)) {
+          if (!node.name?.text.endsWith("Service")) continue;
+          serviceCount++;
+          expect(node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false).toBe(false);
+          const name = node.name.text;
+          expect(source.statements.some((statement) =>
+            ts.isExportDeclaration(statement) && statement.pos > node.pos &&
+            !!statement.exportClause && ts.isNamedExports(statement.exportClause) &&
+            statement.exportClause.elements.some((element) => element.name.text === name))).toBe(true);
+        }
+      }
+    }
+    expect(serviceCount).toBeGreaterThanOrEqual(8);
+    const exampleOwners = ["GoalService", "useGoalSummary", "GoalSummaryCard"];
+    const ownerBlocks = [...bestPractices.matchAll(/```tsx?\n([\s\S]*?)\n```/g)].map((match) => {
+      const source = ts.createSourceFile("owner.tsx", match[1], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      return source.statements.flatMap((node) => {
+        if (ts.isClassDeclaration(node) && node.name) return [node.name.text];
+        if (ts.isVariableStatement(node)) {
+          return node.declarationList.declarations.flatMap((declaration) =>
+            ts.isIdentifier(declaration.name) ? [declaration.name.text] : []);
+        }
+        return [];
+      }).filter((name) => exampleOwners.includes(name));
+    }).filter((names) => names.length > 0);
+    expect(ownerBlocks).toHaveLength(3);
+    expect(ownerBlocks.every((names) => names.length === 1)).toBe(true);
+    expect(ownerBlocks.flat().sort()).toEqual([...exampleOwners].sort());
+    expect(guide).toContain("A small one-off form can stay in the route");
+    expect(guide).not.toContain("- full table/form implementation");
+    for (const owner of [guide, review]) {
+      expect(owner).toContain("actual apps **and packages**");
+      expect(owner).toContain("package-root overrides");
+    }
+    expect(review).toContain("style/format, type, runtime, and human acceptance");
+    expect(review).toContain("not every UI edit needs a browser");
+    expect(review).toContain("not a global no-testing rule");
   });
 
   test("goal-driven style routing selects owner-local pain probes without adding permission", () => {
@@ -809,5 +908,76 @@ describe("skill pattern adaptation phase a", () => {
     expect(index).toContain("optional Execution Run and Code Evidence boundaries");
     expect(index).toContain("Task execution alone does not authorize Goal creation");
     expect(index).not.toContain("legacy skill name");
+  });
+});
+
+describe("docs-init current fallback contracts", () => {
+  const root = ["skills", "mahiro-docs-rules-init"];
+  const best = readRepoFile(...root, "templates", "best-practices.md");
+  const component = readRepoFile(...root, "templates", "patterns", "component-conventions.md");
+  const typescript = readRepoFile(...root, "templates", "code-style", "typescript.md");
+  const services = readRepoFile(...root, "templates", "patterns", "services-pattern.md");
+  const generation = readRepoFile(...root, "resources", "generation-rules.md");
+
+  test("component and callback examples use block bodies while props stay private", () => {
+    let arrows = 0;
+    for (const owner of [best, component, typescript, services, generation]) {
+      for (const match of owner.matchAll(/```tsx?\n([\s\S]*?)\n```/g)) {
+        const source = ts.createSourceFile("example.tsx", match[1], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        const visit = (node: ts.Node) => {
+          if (ts.isArrowFunction(node)) {
+            arrows++;
+            expect(ts.isBlock(node.body)).toBe(true);
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(source);
+      }
+    }
+    expect(arrows).toBeGreaterThanOrEqual(9);
+    for (const [owner, name, props] of [
+      [component, "ProfileCard", "IProfileCardProps"],
+      [typescript, "Button", "IButtonProps"],
+    ]) {
+      const block = [...owner.matchAll(/```tsx\n([\s\S]*?)\n```/g)]
+        .find((match) => match[1].includes(`const ${name} =`))?.[1];
+      if (!block) throw new Error(`Missing component example: ${name}`);
+      const source = ts.createSourceFile("component.tsx", block, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const contract = source.statements.find((node) => ts.isInterfaceDeclaration(node) && node.name.text === props);
+      expect(contract).toBeDefined();
+      if (!contract || !ts.isInterfaceDeclaration(contract)) throw new Error(`Missing props: ${props}`);
+      expect(contract.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false).toBe(false);
+      expect(source.statements.filter(ts.isExportDeclaration).map((node) => node.exportClause?.getText(source)))
+        .toEqual([`{ ${name} }`]);
+    }
+  });
+
+  test("templates preserve file-kind, local precedence, and public-only contracts", () => {
+    for (const owner of [best, component, typescript]) {
+      expect(owner).toContain("`types/` and `utils/`");
+      expect(owner).toContain("whitespace");
+      expect(owner).toContain("framework permits");
+      expect(owner).toContain("private");
+    }
+    expect(best).not.toContain("Always export types alongside implementations");
+    expect(best).not.toContain("Forgetting to Export Types");
+    expect(best).not.toContain("[ ] Exported types alongside implementations");
+    expect(typescript).toContain("do not force conversions");
+    expect(component.indexOf("| `// _Schema`")).toBeLessThan(component.indexOf("| `// _Form`"));
+    expect(component).toContain("Use only populated sections");
+    expect(component).toContain("simple forms");
+    expect(component).toContain("empty wrapper churn");
+  });
+
+  test("generation keeps lean services and preferred tooling behind local evidence", () => {
+    expect(services).toContain("preserving generated contracts");
+    expect(services).toContain("do not add a response Zod schema registry just for TypeScript typing");
+    expect(services).toContain("server-only/private transport boundaries");
+    expect(services).toContain("Supabase-direct hook ownership");
+    expect(generation).toContain("mahiro-style/foundations/code-style.md");
+    expect(generation).toContain("not product mutation or install authority");
+    expect(generation).toContain("no browsers, servers, network lookups, or nested subagents");
+    expect(generation).toContain("Do not automatically migrate to pnpm, Oxc, or Turbo");
+    expect(generation).toContain("not evidence that the check was executed");
   });
 });

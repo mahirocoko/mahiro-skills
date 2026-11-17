@@ -122,7 +122,8 @@ Keep proportional handling when:
 - A service normalizes a repeated failure into a stable code, while the caller stays free to decide the final UI.
 
 ```ts
-export enum ErrorCode {
+// Illustrative transport/failure seams; bind to the target's existing owners.
+enum ErrorCode {
   PRIVATE_ACCESS_REQUIRED = 'private-access-required',
   NETWORK_UNAVAILABLE = 'network-unavailable',
   UNKNOWN = 'unknown-error',
@@ -133,7 +134,7 @@ interface IPrivatePageFailure {
   detail?: string
 }
 
-export class PrivatePageService {
+class PrivatePageService {
   static async load() {
     try {
       return await getJSON<IPrivatePageResponse>('/private.page')
@@ -142,6 +143,8 @@ export class PrivatePageService {
     }
   }
 }
+
+export { ErrorCode, PrivatePageService }
 ```
 
 - A hook surfaces the failure state, but does not decide the final fallback message.

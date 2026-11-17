@@ -126,8 +126,10 @@ Preferred loop for implementation tasks:
 1. Start from the most concrete anchor available: a file, symbol, failing behavior, failing command, test, or nearby implementation surface.
 2. Gather only enough nearby context to state one falsifiable local hypothesis and one cheap check that could disconfirm it.
 3. Make the smallest grounded edit or reversible probe that tests the hypothesis.
-4. Run the narrowest useful validation after the first substantive edit: failing check, targeted test, focused typecheck/lint/build, or diff-only review only when commands are unavailable.
-5. Expand exploration only when the cheap check fails, the task is inherently broad, or repo-local risk justifies more discovery.
+4. Inspect the touched diff for owner placement and file-kind function/export shapes against `code-style.md`: block-body app arrows, grouped public component/service exports, inline type/utility declarations, and framework route contracts where permitted. Check route composition/page-only state and extract meaningful owners, not whole-page wrappers for line count. New shared packages need actual consumers or a required boundary.
+5. Run the narrowest useful validation after the first substantive edit: failing check, targeted test, focused typecheck/lint/build, or diff-only review only when commands are unavailable. Use local formatter/lint owners and check actual apps **and packages** coverage, including relevant package-root overrides. Do not infer workspace coverage from a root command alone.
+6. Separate style/format, type, runtime, and human acceptance evidence in handoff. Choose focused risk-based verification: not every UI edit needs a browser, and this is not a global no-testing rule. A style or type pass cannot prove runtime behavior or human acceptance.
+7. Expand exploration only when the cheap check fails, the task is inherently broad, or repo-local risk justifies more discovery.
 
 Review for this drift:
 
