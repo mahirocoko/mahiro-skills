@@ -166,13 +166,13 @@ describe("packaged skill context freshness", () => {
     expect(playbook).toContain("Cursor balanced Anthropic reasoning model: `claude-sonnet-5-5-high`");
     expect(playbook).toContain("Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`");
     expect(playbook).toContain("Cursor heavy Opus review model: `claude-opus-5-5-high`");
-    expect(playbook).toContain("Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`");
-    expect(playbook).toContain("Codex deep/value escalation model/effort: `gpt-6.1-sol` + `max`");
+    expect(playbook).toContain("Codex balanced everyday model/effort: `gpt-6.2-sol` + `high`");
+    expect(playbook).toContain("Codex deep/value escalation model/effort: `gpt-6.2-sol` + `max`");
     expect(playbook).toContain("Codex fast/cost-efficient model/effort: `gpt-6-luna` + `medium`");
     expect(playbook).not.toContain("Cursor heavy Opus review model: `claude-opus-5-thinking-high`");
     expect(playbook).not.toContain("Codex balanced everyday model/effort: `gpt-6-astra` + `medium`");
     expect(playbook).not.toContain("Codex balanced everyday model/effort: `gpt-6-sol` + `high`");
-    expect(playbook).not.toContain("Codex balanced everyday model/effort: `gpt-6.1-sol` + `medium`");
+    expect(playbook).not.toContain("Codex balanced everyday model/effort: `gpt-6.2-sol` + `medium`");
     expect(playbook).not.toContain("claude-sonnet-5-thinking-high");
     expect(skill).toContain("Do not infer direct CLI model availability, effort semantics, or defaults");
     expect(playbook).not.toContain("Codex fast/cost-efficient model/effort: `gpt-5.6-luna` + `medium`");
@@ -294,9 +294,11 @@ describe("packaged skill context freshness", () => {
       expect(policy).toContain(`\`${model}\``);
       expect(preferred).not.toContain(`\`${model}\``);
     }
-    const codexExtras = policy.split("- Additional explicit Codex choices are")[1]
+    const codexExtras = policy.split("- Additional explicit Codex choices include")[1]
       ?.split("\n- If Astra")[0] ?? "";
-    expect(codexExtras).toContain("`gpt-6.1-terra` and `gpt-6-sol`");
+    for (const model of ["gpt-6.1-terra", "gpt-6-sol"]) {
+      expect(codexExtras).toContain(`\`${model}\``);
+    }
     expect(codexExtras).toContain("low/medium/high/xhigh/max/ultra");
     expect(codexExtras).toContain("catalog defaults low and medium respectively");
     expect(codexExtras).toContain("When either is requested without effort, ask for a supported model/effort pair");
@@ -322,12 +324,12 @@ describe("packaged skill context freshness", () => {
       "Antigravity extra-reasoning model: `gemini-4-hydrogen-xhigh`",
       "Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high`",
       "Antigravity budget model: `gemini-3.8-flash-high`",
-      "Codex flagship model/effort: `gpt-6-astra` + `high`",
-      "Codex balanced everyday model/effort: `gpt-6.1-sol` + `high`",
-      "Codex deep/value escalation model/effort: `gpt-6.1-sol` + `max`",
+      "Codex flagship model/effort: `gpt-6.2-astra` + `high`",
+      "Codex balanced everyday model/effort: `gpt-6.2-sol` + `high`",
+      "Codex deep/value escalation model/effort: `gpt-6.2-sol` + `max`",
       "Codex fast/cost-efficient model/effort: `gpt-6-luna` + `medium`",
-      "Codex automatic-delegation model/effort: `gpt-6-astra` + `ultra`",
-      "Codex fallback model/effort: `gpt-6.1-sol` + `high`",
+      "Codex automatic-delegation model/effort: `gpt-6.2-astra` + `ultra`",
+      "Codex fallback model/effort: `gpt-6.2-sol` + `high`",
     ]) {
       expect(preferred).toContain(route);
     }
