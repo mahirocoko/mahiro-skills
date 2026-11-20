@@ -954,10 +954,10 @@ This is the single owner of direct-cli's role-to-model choices. Replace supersed
 
 ### Current catalog evidence
 
-Checked **2026-11-18** after the supported CLI updaters with `agent models`, `agy models`, and refreshed `codex debug models` (not `--bundled`). This is non-authoritative availability evidence; repeat the target CLI's catalog check before reuse. Codex 6.2 routes below follow the human's selection; catalog presence does not establish comparative quality. Agy follows the human-approved Gemini-first, benchmark-informed roles below, not a universal model ranking. Catalog visibility does not prove inference, quality, release dates, or account-wide entitlement.
+Checked **2026-11-20** after the supported CLI updaters with `agent models`, `agy models`, and refreshed `codex debug models` (not `--bundled`). Repeat the target CLI's catalog check before reuse. Catalog visibility does not prove inference, comparative quality, release dates, or account-wide entitlement.
 
-- **Cursor:** the post-update catalog contains 280 IDs including Auto and effort/Fast variants. Fable 5.2 offers `claude-fable-5-2-high` / `claude-fable-5-2-xhigh` (no `thinking` segment; labeled NO ZDR) as opt-in picker choices, not replacements for Fable 5.1. Availability-only choices outside the curated picker include Gemini 4 Carbon/Hydrogen, Muse Wonder/Spark, Haiku 5.5, Kimi, GLM, and DeepSeek families. Verify exact IDs rather than constructing them from display names.
-- **Antigravity:** the post-update catalog contains 22 IDs, including Gemini 4 Carbon and Argon at low/medium/high, Hydrogen additionally at xhigh, `gemini-pro-orchestrator`, `gemini-pro-orchestrator-argon`, and `gpt-oss-120b-medium`. Hydrogen High/Medium/XHigh and Carbon High have curated roles below; Carbon Low/Medium, Argon, orchestrators, and GPT-OSS remain availability-only choices outside the curated picker. Do not infer effort support from the CLI-wide `--effort` flag or another executor's catalog.
+- **Cursor:** Fable 5.2 offers `claude-fable-5-2-high` / `claude-fable-5-2-xhigh` (no `thinking` segment; labeled NO ZDR) as opt-in picker choices, not replacements for Fable 5.1. Verify exact IDs rather than constructing them from display names.
+- **Antigravity:** the live catalog includes Neon and Hydrogen at low/medium/high/xhigh, Carbon and Argon at low/medium/high, and three fixed-configuration Orchestrator choices. Do not infer effort support from the CLI-wide `--effort` flag or another executor's catalog.
 - **Codex:** the post-update catalog contains ten listed and two hidden entries. `gpt-6.2-sol`, `gpt-6.2-astra`, `gpt-6.1-sol`, `gpt-6.1-terra`, `gpt-6-astra`, and `gpt-6-sol` advertise `low`, `medium`, `high`, `xhigh`, `max`, and `ultra`; their catalog defaults are low for the 6.2 and 6.1 models and medium for the 6 models. `gpt-6-luna` defaults to medium and supports those levels except ultra. The 6.2 models own the selected roles below; Terra and GPT-6 Sol remain availability-only. Keep hidden entries out of the picker.
 
 ### Preferred roles
@@ -968,10 +968,12 @@ Checked **2026-11-18** after the supported CLI updaters with `agent models`, `ag
 - Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`
 - Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`
 - Cursor heavy Opus review model: `claude-opus-5-5-high`
-- Antigravity primary model for implementation / research / review: `gemini-4-hydrogen-high`
+- Antigravity primary model for scoped implementation: `gemini-4-hydrogen-high` for agreed plans, clear requirements, or UI implementation from an approved reference
+- Antigravity standalone model for investigation / planning / review: `gemini-4-neon-high` when reasoning must stay with the same model or findings must be reviewed before edits
+- Antigravity opt-in plan-and-implement route: `gemini-pro-orchestrator-neon` when the scope is bounded and the user authorizes planning, edits, and verification in one lane
 - Antigravity bounded easy-work model: `gemini-4-hydrogen-medium` for narrow, well-defined changes with cheap verification; do not lower effort for difficult reasoning by default
-- Antigravity extra-reasoning model: `gemini-4-hydrogen-xhigh` when High misses important cases or the task justifies additional reasoning, not for every task
-- Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high`
+- Antigravity extra-reasoning model: `gemini-4-neon-xhigh` or `gemini-4-hydrogen-xhigh` when High misses important cases and the selected role still fits, not for every task
+- Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high` for deep reasoning throughout a task; offer Orchestrator (Carbon) explicitly when deep planning is needed but implementation can be handed off
 - Antigravity budget model: `gemini-3.8-flash-high`; offer `gemini-3.8-flash-medium`, then `gemini-3.8-flash-low`, only after High fails and the user approves lower effort; budget preference does not prove fastest task completion
 - Antigravity explicit Anthropic alternatives: `claude-opus-5-5-high` for heavy review or `claude-sonnet-5-5-medium` for balanced work, only when requested; never silently fall back from Gemini to Anthropic
 - Codex flagship model/effort: `gpt-6.2-astra` + `high`
@@ -986,9 +988,9 @@ Checked **2026-11-18** after the supported CLI updaters with `agent models`, `ag
 
 ### Agy routing rationale
 
-The human approved these roles after benchmark research on **2026-11-13**. [Artificial Analysis](https://artificialanalysis.ai/models/gemini-4-hydrogen-high) separates Hydrogen High from [XHigh](https://artificialanalysis.ai/models/gemini-4-hydrogen): High favors shorter estimated index-task time and lower cost, while XHigh improves the aggregate score at additional time/cost. [Carbon High](https://artificialanalysis.ai/models/gemini-4-carbon) leads those configurations on the aggregate index, supporting a deliberate hard-task route rather than replacing the ordinary lane. Keep Argon optional; do not infer a meaningful quality win from a small aggregate-score gap.
+Use [Google's Antigravity model guide](https://antigravity.google/docs/models) and [Neon launch notes](https://antigravity.google/blog/gemini-4-neon-in-google-antigravity) for product behavior. In one Orchestrator conversation, the named model plans, replans, and reviews; Hydrogen implements and runs checks. This handoff is not parallel agents or independent verification. If the user must approve the plan before writes, use a standalone read-only planning lane and wait for approval before assigning a writer. When independent verification is needed, assign a separate read-only reviewer after the candidate is ready. Never infer edit authorization from selecting Orchestrator.
 
-This is not evidence that Hydrogen outperforms Carbon on every task. Recheck source versions, effort, and methodology before reusing benchmark claims. AA index-task estimates are not local Agy latency or subscription charges. Google's [Hydrogen](https://deepmind.google/models/evals-methodology/gemini-4-hydrogen/) and [Carbon](https://deepmind.google/models/evals-methodology/gemini-4-carbon/) evaluations differ in harness or benchmark version on some coding tasks; do not rank models by mixing those scores. Published results do not establish local Agy review accuracy, Thai quality, entitlement, or end-to-end speed. Treat Flash as a budget option, not a measured speed winner; verify current pricing before cost-sensitive work. These skill roles do not change native CLI defaults.
+Keep Argon optional as an alternative standalone reasoning/review model. [Artificial Analysis Hydrogen High](https://artificialanalysis.ai/models/gemini-4-hydrogen-high) and [Carbon](https://artificialanalysis.ai/models/gemini-4-carbon) inform tradeoffs, not a universal ranking. AA index-task estimates are not local Agy latency or subscription charges. Google evaluations differ in harness or benchmark version on some coding tasks; do not mix those scores or infer local review quality. Treat Flash as a budget option, not a measured speed winner. These skill roles do not change native CLI defaults.
 
 ### Model selection rule
 
@@ -1008,11 +1010,13 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - For a Grok 4.7 direct lane, launch the catalog-verified `grok-4.7-high` (or `grok-4.7-high-fast` when Fast is explicitly requested). Before sending work, open `/model`, highlight Grok 4.7, press Tab to edit parameters, select 500K with the arrow keys and Enter, then Esc back and Enter to select the model. Check the final banner for 500K, the requested effort and Fast state; stop on mismatch rather than falling back to 256K. Context selection enables Max mode, which may affect cost. Model parameters may persist, so verify all dimensions on every launch. On Cursor CLI `2026.10.22-27dcf5f`, the Fast slug launched at 256K and completed a minimal inference smoke; this menu produced a `500K High Fast` banner, but inference at 500K was not tested. Both `grok-4.7[context=500k,effort=high,fast=true]` and `grok-4.7[effort=high,fast=true]` were rejected. These are version-specific observations, not a universal CLI contract.
 - Do not offer every model returned by Cursor CLI as the default picker; the picker is intentionally skill-defined. Display names like “Fable 5.1” are not safe `--model` values; launch with the exact model ID.
 - If `/direct-cli agy ...` has no explicit model, ask the user to choose from this curated set:
-  1. `gemini-4-hydrogen-high` — recommended primary Agy lane for implementation, research, and review; High is encoded in the catalog ID.
-  2. `gemini-4-hydrogen-medium` — bounded easy-work lane with well-defined scope and cheap verification, not a default for difficult reasoning.
-  3. `gemini-4-hydrogen-xhigh` — extra-reasoning lane when High misses important cases or additional reasoning is justified.
-  4. `gemini-4-carbon-high` — hard blockers, architecture, difficult debugging, or a deliberate alternative reasoning pass.
-  5. `gemini-3.8-flash-high` — budget-constrained scoped work; lower effort requires approval as described in Preferred roles, not an automatic fallback.
+  1. `gemini-4-hydrogen-high` — recommended primary Agy lane for scoped implementation.
+  2. `gemini-4-neon-high` — standalone reasoning for investigation, planning, or review.
+  3. `gemini-pro-orchestrator-neon` — opt-in, bounded plan-and-implement work with Neon planning and Hydrogen execution; fixed effort.
+  4. `gemini-4-carbon-high` — hard blockers, architecture, or deep reasoning throughout a task.
+  5. `gemini-4-hydrogen-medium` — bounded easy-work lane with cheap verification.
+  6. `gemini-4-neon-xhigh` / `gemini-4-hydrogen-xhigh` — extra-reasoning options only when the corresponding High route needs more depth.
+  7. `gemini-3.8-flash-high` — budget-constrained scoped work; lower effort requires approval as described in Preferred roles.
 - Keep Agy Gemini-first. When model/effort choice is delegated, select an appropriate role with a concrete task reason; XHigh and Carbon are deliberate choices, not a mandatory sequential ladder or automatic retries. Otherwise offer escalation and ask before changing the selected model or effort. Honor an explicitly pinned model/effort; never silently lower effort. Opus/Sonnet remain explicit alternatives, not the default picker or automatic fallback. If a selected Gemini route is unavailable or fails, report it and ask before changing model family. These are benchmark-informed routing preferences, not proof of a universal winner.
 - Do not offer every model returned by Antigravity `/model` as the default picker; the picker is intentionally skill-defined.
 - If `/direct-cli codex ...` has no explicit model, ask the user to choose from this curated set:
@@ -1028,7 +1032,7 @@ Model availability and effort semantics are executor-specific. Do not infer a di
 - Verify supported effort levels from the current Codex catalog before launch. Never infer that a model supports `ultra` from an older catalog snapshot.
 - `/direct-cli --effort <level>` is a lane-aware routing argument. Pass it through as native `agy --effort <level>` only when the selected Agy model supports it; otherwise stop instead of accepting a silent default-model fallback. Translate it to Codex `-c model_reasoning_effort=<level>` because Codex has no native `--effort`; for Cursor, choose an exact effort-bearing ID or supported parameterized model expression. When `gpt-6.2-astra` or `gpt-6-luna` is explicit but effort is omitted, use `medium`; when `gpt-6.2-sol` is explicit, use `high`; for an explicitly selected GPT-5.6 model, use Sol high, Terra medium, or Luna medium. Never infer ultra without an explicit request or delegated judgment for a truly parallelizable job.
 - Do not offer every model returned by Codex as the default picker; validate availability with `codex debug models`, `codex --help`, or `codex doctor` if a model fails.
-- Antigravity effort support is model-specific. Prefer an exact slug from the current `agy models` output, then verify the visible pane model/effort and reject fallback warnings. Use `/model` or `/effort` only as fallback if flag selection fails.
+- Antigravity effort support is model-specific. For all Orchestrator variants, use the exact catalog ID without `--effort`; do not ask for a default or try `/effort`. If the caller explicitly requests an effort with Orchestrator, stop before launch and offer the fixed route or the standalone planner at the supported effort. For standalone models, prefer an exact slug from `agy models`. Verify the visible selection (and effort where adjustable); reject fallback warnings. Use `/model` or `/effort` for standalone recovery only when flag selection fails.
 - If the user already specified a model explicitly, respect it after sanity-checking it against the task and known availability.
 - Model catalogs can change independently of binary versions. Use `agent models`, `agy models`, and `codex debug models` before changing model names or when a preferred launch fails.
 
@@ -1042,10 +1046,11 @@ Use these only when explicitly selected after a fresh target-CLI catalog check; 
 | Agy, outside curated roles | `gemini-4-carbon-low`, `gemini-4-carbon-medium` | low, medium |
 | Cursor | `gemini-4-hydrogen-low`, `gemini-4-hydrogen-medium`, `gemini-4-hydrogen-high`, `gemini-4-hydrogen-xhigh` | low, medium, high, xhigh |
 | Agy, outside curated roles | `gemini-4-hydrogen-low` | low |
-| Agy only in this check | `gemini-pro-orchestrator`, `gemini-pro-orchestrator-argon` | Not encoded in these IDs; verify selected-model support before adding `--effort` |
-| Agy only in this check | `gpt-oss-120b-medium` | medium |
+| Agy, outside curated roles | `gemini-4-argon-high` | high; alternative standalone reasoning/review |
+| Agy, outside curated roles | `gemini-pro-orchestrator` (Carbon), `gemini-pro-orchestrator-argon` | Fixed; omit `--effort` |
+| Agy, outside curated roles | `gpt-oss-120b-medium` | medium |
 
-For Cursor, pass the selected exact effort-bearing ID. For Agy, prefer the same exact IDs and verify the visible model/effort with no fallback warning. Do not assume orchestration behavior from the Orchestrator display name; its catalog entry alone does not establish delegation or a direct-lane return contract. Keep the other catalog families named in Current catalog evidence outside the picker; inspect their exact live IDs only when requested instead of embedding a full catalog here.
+For Cursor, pass the selected exact effort-bearing ID. For Agy, verify the visible selection and reject any fallback warning. A catalog entry alone does not establish successful inference or a direct-lane return contract. Look up other exact catalog IDs on request rather than embedding a full catalog here.
 
 ## Launch examples
 
@@ -1092,7 +1097,7 @@ CLI maintenance is separate from executor dispatch. Routine version, help, and c
 3. For authorized skill maintenance, run `agent update`, then `agy update`, then `codex update`, serially. For a narrower binary-only request, run only its authorized updater. Record unavailable installations or blockers rather than installing missing CLIs or changing install ownership. Stop that item if it requires sudo, unknown installer changes, login, or foreground approval; continue other safe items. Never interrupt running user sessions to finish an upgrade.
 4. Recheck each binary path/version/help and catalog before revising model guidance. Report each updater's result separately: upgraded, already current, updater succeeded with unchanged version, unavailable, or blocked. Distinguish newly documented IDs, actual dated releases, and this account's catalog visibility. An unchanged catalog is a valid outcome; availability alone does not adopt a route or prove a successful foreground launch. Report incomplete maintenance explicitly rather than claiming all three are updated.
 
-Non-authoritative maintenance evidence checked **2026-11-18**: Cursor's updater changed `2026.11.11-b912975` to `2026.11.17-f532c45`; Agy's updater reported `1.5.10` already latest; Codex's updater selected `bun install -g @openai/codex` and changed `0.167.2` to `0.170.0`. Fresh invocations confirmed those versions and the launch flags used by this skill. No running sessions were restarted and no model inference was tested. Agy's autonomy flag skips tool permission prompts, not plan/artifact review; do not change saved Artifact Review settings to bypass that gate.
+Non-authoritative maintenance evidence checked **2026-11-20**: Cursor updated from `2026.11.17-f532c45` to `2026.11.19-f005e9d`; Agy reported `1.5.13` already current; Codex's updater succeeded via `bun install -g @openai/codex` and stayed at `0.171.0`. Fresh invocations verified paths, versions, help, and catalogs. No running sessions were restarted and no model inference was tested. Agy's autonomy flag skips tool permission prompts, not plan/artifact review; do not change saved Artifact Review settings to bypass that gate.
 
 ### Safe discovery examples
 
@@ -1237,7 +1242,7 @@ tmux capture-pane -p -t "cursor-task" -S -120
 
 ### Fresh session
 
-Use the curated Antigravity choices after live catalog preflight. Prefer exact stable `--model` slugs and add native `--effort` only for models that support it, then verify the visible model/effort and reject fallback warnings. Catalog confirmation is not a successful foreground launch. Use `/model` or `/effort` TUI switching only as a fallback.
+Use the curated Antigravity choices after live catalog preflight. Prefer exact stable `--model` slugs and add native `--effort` only for standalone models that support it. When Orchestrator (Neon) is selected, use `agy --model gemini-pro-orchestrator-neon` without an effort flag. Verify the visible selection and reject fallback warnings before sending work; catalog confirmation is not a successful foreground launch.
 
 ```bash
 tmux new-session -d -s "agy-task"
@@ -1253,7 +1258,7 @@ tmux send-keys -t agy-task 'Continue from the current worktree only. Do not rest
 
 ### Model selection
 
-Use the Gemini-first primary, bounded easy-work, extra-reasoning, hard-blocker, and budget roles above. If Mahiro explicitly requests an Anthropic alternative, launch its exact catalog-verified slug first and add effort only when supported; this is not an automatic fallback:
+Use the Gemini-first roles above, including a standalone reasoning lane when edits must wait and Orchestrator only when planning and writing are both in scope. If Mahiro explicitly requests an Anthropic alternative, launch its exact catalog-verified slug first and add effort only when supported; this is not an automatic fallback:
 
 ```bash
 tmux new-session -d -s "agy-opus"

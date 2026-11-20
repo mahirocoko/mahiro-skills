@@ -302,12 +302,14 @@ describe("packaged skill context freshness", () => {
     expect(codexExtras).toContain("low/medium/high/xhigh/max/ultra");
     expect(codexExtras).toContain("catalog defaults low and medium respectively");
     expect(codexExtras).toContain("When either is requested without effort, ask for a supported model/effort pair");
-    expect(policy).toContain("Do not assume orchestration behavior");
+    expect(policy).toContain("For all Orchestrator variants, use the exact catalog ID without `--effort`");
+    expect(policy).toContain("If the caller explicitly requests an effort with Orchestrator, stop before launch");
     for (const surface of [
       read("skills", "direct-cli", "SKILL.md"),
       read("skills", "direct-cli", "README.md"),
       read("commands", "direct-cli.md"),
     ]) {
+      expect(surface).toContain("For fixed-effort Agy Orchestrator choices, omit the effort flag");
       expect(surface).toContain("effort already encoded");
       expect(surface).toContain("When effort is neither encoded nor otherwise specified");
       expect(surface).toContain("If no role default is defined, ask for a supported effort rather than inheriting the catalog default");
@@ -319,9 +321,11 @@ describe("packaged skill context freshness", () => {
       "Cursor Fable 5.1 reasoning model: `claude-fable-5-1-thinking-high`",
       "Cursor Fable 5.1 extra-high reasoning model: `claude-fable-5-1-thinking-xhigh`",
       "Cursor heavy Opus review model: `claude-opus-5-5-high`",
-      "Antigravity primary model for implementation / research / review: `gemini-4-hydrogen-high`",
+      "Antigravity primary model for scoped implementation: `gemini-4-hydrogen-high`",
+      "Antigravity standalone model for investigation / planning / review: `gemini-4-neon-high`",
+      "Antigravity opt-in plan-and-implement route: `gemini-pro-orchestrator-neon`",
       "Antigravity bounded easy-work model: `gemini-4-hydrogen-medium`",
-      "Antigravity extra-reasoning model: `gemini-4-hydrogen-xhigh`",
+      "Antigravity extra-reasoning model: `gemini-4-neon-xhigh` or `gemini-4-hydrogen-xhigh`",
       "Antigravity hard-blocker / architecture / difficult-debugging model: `gemini-4-carbon-high`",
       "Antigravity budget model: `gemini-3.8-flash-high`",
       "Codex flagship model/effort: `gpt-6.2-astra` + `high`",
@@ -341,13 +345,17 @@ describe("packaged skill context freshness", () => {
       ?.split("- Keep Agy Gemini-first.")[0] ?? "";
     expect(picker).toContain("`gemini-4-hydrogen-high` — recommended primary");
     expect(picker).toContain("`gemini-4-hydrogen-medium` — bounded easy-work");
-    expect(picker).toContain("`gemini-4-hydrogen-xhigh` — extra-reasoning");
+    expect(picker).toContain("`gemini-4-neon-high` — standalone reasoning");
+    expect(picker).toContain("`gemini-pro-orchestrator-neon` — opt-in");
+    expect(picker).toContain("`gemini-4-neon-xhigh` / `gemini-4-hydrogen-xhigh` — extra-reasoning");
+    expect(picker).not.toContain("`gemini-pro-orchestrator`");
+    expect(picker).not.toContain("`gemini-pro-orchestrator-argon`");
     expect(picker).toContain("`gemini-4-carbon-high` — hard blockers");
     expect(picker).toContain("`gemini-3.8-flash-high`");
     expect(picker).not.toContain("claude-");
     expect(playbook).toContain("never silently fall back from Gemini to Anthropic");
     expect(playbook).toContain("ask before changing model family");
-    expect(playbook).toContain("not evidence that Hydrogen outperforms Carbon");
+    expect(playbook).toContain("tradeoffs, not a universal ranking");
     expect(playbook).not.toContain("Antigravity heavy review model: `claude-opus-5-5-high`");
     expect(playbook).not.toContain("Antigravity balanced model: `claude-sonnet-5-5-medium`");
     expect(playbook).toContain("tmux send-keys -t agy-task 'agy --model gemini-4-hydrogen-high");
@@ -374,6 +382,10 @@ describe("packaged skill context freshness", () => {
     expect(rationale).toContain("differ in harness or benchmark version");
     expect(rationale).toContain("Treat Flash as a budget option, not a measured speed winner");
     expect(rationale).toContain("Keep Argon optional");
+    expect(rationale).toContain("not parallel agents or independent verification");
+    expect(rationale).toContain("standalone read-only planning lane and wait for approval");
+    expect(rationale).toContain("Never infer edit authorization from selecting Orchestrator");
+    expect(playbook).toContain("`agy --model gemini-pro-orchestrator-neon` without an effort flag");
     expect(rationale).toContain("do not change native CLI defaults");
     expect(playbook).toContain("do not lower effort for difficult reasoning by default");
     expect(playbook).toContain("not a mandatory sequential ladder or automatic retries");
