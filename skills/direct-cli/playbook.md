@@ -18,6 +18,26 @@ Use this path when you want:
 - direct pane visibility into prompts, thinking, approval blocking, and errors
 - narrow follow-up work on the current worktree
 
+## T3 thread handoff
+
+Use this path for feedback, a review brief, or a separate task that Mahiro explicitly wants in a T3 project or thread. Reading a destination or drafting a brief does not authorize starting or messaging a thread. Do not create a top-level thread for a requested child delegation or use this as a terminal backend.
+
+1. **Resolve the destination.** Verify the running T3 environment and registered project ID against its workspace root. For an existing thread, read the exact thread ID and confirm its project and activity before sending. Do not use current focus, title, or recency as identity. If the destination is ambiguous, ask rather than guessing.
+2. **Choose the interface.** In T3, prefer the native project/thread tools. For an explicitly requested new top-level thread, use its project ID and honor the workspace strategy; a plain handoff does not need a new worktree. For an existing thread, queue the brief without interrupting its current turn unless explicitly instructed otherwise. When native thread tools are unavailable, check installed CLI help and verify that the CLI can read the intended server and project before using it. Do not change login, server settings, or worktree to bypass a mismatch.
+3. **Send only the handoff.** Include outcome, source commit or shareable link, minimal evidence, allowed changes, and what to return. A feedback-only brief authorizes review and a reply, not edits in the receiving repository. Do not copy private transcripts, credentials, local runtime logs, or unrelated workspace data.
+4. **Verify the receipt.** Capture the returned thread or message identity; read the exact thread to confirm its project and delivery state. Retain the request key where supported. On an ambiguous send or start, inspect current state before any retry; do not silently launch through another interface. Report the returned thread link if available and distinguish queued, running, and completed. Delivery is not acceptance.
+
+CLI shapes from local help (confirm against the installed version before use):
+
+```bash
+t3 thread list --project "$PROJECT_ID" --json
+t3 thread show --messages 1 --json "$THREAD_ID"
+t3 thread start --json --title "$TITLE" "$PROJECT_ID" - < "$BRIEF_FILE"
+t3 thread send --json "$THREAD_ID" - < "$BRIEF_FILE"
+```
+
+Use only the selected read, start, or send action; these examples are not a sequence to execute in full. A busy thread receives a CLI send as its next turn. A successful read preflight does not prove start/send or that another environment is reachable. No terminal selector, Computer Use, or model override is needed for a routine handoff.
+
 ## Task packet and return decision
 
 Write one compact packet before dispatch. Keep it in the existing prompt file, not a second coordination system:

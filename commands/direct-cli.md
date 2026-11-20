@@ -1,5 +1,5 @@
 ---
-description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback. Use when you want a watchable interactive terminal lane, need narrow current-worktree follow-up, or need fresh-session recovery.
+description: Runs watchable Cursor, Antigravity, and Codex lanes through HC, legacy Herdr, Orca, or tmux, and routes explicit cross-project T3 Code thread handoffs without Computer Use. Use for interactive execution, narrow current-worktree follow-up, fresh-session recovery, or sending a scoped brief to another T3 project or thread.
 allowed-tools:
   - Bash
   - Read
@@ -19,7 +19,9 @@ Execute the `direct-cli` skill with args: `$ARGUMENTS`
 
 **Otherwise**: Resolve the installed `direct-cli/SKILL.md` under the current agent's configured skills root, then follow ALL instructions in it. Do not assume a source-checkout-relative `skills/...` path.
 
-Parse `--backend auto|hc|herdr-core|orca|herdr|tmux` before creating any lane; omission means `auto`. Parse an optional Herdr `--workspace ID` into the playbook's workspace target instead of guessing by label. Auto first selects a validated HC caller (resolve hc first, otherwise herdr-core; normalize backend=hc), then legacy Herdr only inside a healthy compatible managed pane, then Orca only from an exact live caller-terminal receipt plus a tracked current `pwd -P`, then tmux. Browser inspection has a separate owner; do not select an executor backend merely to use an embedded browser. Announce the backend, never silently switch after creating state, then use the matching known-good launch/read/prompt commands from the skill playbook. For Orca, load the installed version's `orca-cli` guide first and use direct terminal commands against the explicit current path; route DAGs, ask/reply, and durable worker reports to Orca's separate `orchestration` skill.
+For an explicitly requested T3 Code project or thread handoff, follow the installed playbook's **T3 thread handoff** section before selecting a terminal backend; the handoff does not create a pane or a delegated child.
+
+For interactive lanes, parse `--backend auto|hc|herdr-core|orca|herdr|tmux` before creating any lane; omission means `auto`. Parse an optional Herdr `--workspace ID` into the playbook's workspace target instead of guessing by label. Auto first selects a validated HC caller (resolve hc first, otherwise herdr-core; normalize backend=hc), then legacy Herdr only inside a healthy compatible managed pane, then Orca only from an exact live caller-terminal receipt plus a tracked current `pwd -P`, then tmux. Browser inspection has a separate owner; do not select an executor backend merely to use an embedded browser. Announce the backend, never silently switch after creating state, then use the matching known-good launch/read/prompt commands from the skill playbook. For Orca, load the installed version's `orca-cli` guide first and use direct terminal commands against the explicit current path; route DAGs, ask/reply, and durable worker reports to Orca's separate `orchestration` skill.
 
 For HC load installed `$HC_BIN --skill` and relevant command help. Validate current
 holder/core with `server status --json` and exact live caller using

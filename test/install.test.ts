@@ -883,12 +883,17 @@ describe("install", () => {
       expect(statSync(installedFanoutPath).mode & 0o111).not.toBe(0);
       expect(existsSync(installedJobsPath)).toBe(true);
       expect(statSync(installedJobsPath).mode & 0o111).not.toBe(0);
-      expect(readFileSync(sourceSkillPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
-      expect(readFileSync(sourceSkillPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(sourceCommandPath, "utf8")).toContain("description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
-      expect(readFileSync(sourceCommandPath, "utf8")).not.toContain("description: Mahiro Skill |");
-      expect(readFileSync(installedSkillPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
-      expect(readFileSync(installedCommandPath, "utf8")).toContain("description: Mahiro Skill | Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback");
+      for (const [source, installed] of [
+        [sourceSkillPath, installedSkillPath],
+        [sourceCommandPath, installedCommandPath],
+      ] as const) {
+        const description = readFileSync(source, "utf8").match(/^description: (.+)$/m)?.[1];
+        expect(description).toContain("watchable Cursor, Antigravity, and Codex lanes");
+        expect(description).toContain("explicit cross-project T3 Code thread handoffs");
+        expect(description).not.toContain("Mahiro Skill |");
+        expect(readFileSync(installed, "utf8")).toContain(`description: Mahiro Skill | ${description}`);
+      }
+      expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## T3 thread handoff");
       expect(readFileSync(installedPlaybookPath, "utf8")).not.toContain("## Gemini CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Cursor CLI direct playbook");
       expect(readFileSync(installedPlaybookPath, "utf8")).toContain("## Antigravity CLI direct playbook");

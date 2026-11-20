@@ -1,6 +1,6 @@
 ---
 name: direct-cli
-description: Direct executor playbook for using Cursor CLI, Antigravity CLI, and Codex CLI through verified HC, legacy Herdr, or Orca managed terminals with a tmux fallback. Use when you want a watchable interactive terminal lane, need narrow current-worktree follow-up, or need fresh-session recovery.
+description: Runs watchable Cursor, Antigravity, and Codex lanes through HC, legacy Herdr, Orca, or tmux, and routes explicit cross-project T3 Code thread handoffs without Computer Use. Use for interactive execution, narrow current-worktree follow-up, fresh-session recovery, or sending a scoped brief to another T3 project or thread.
 ---
 
 # /direct-cli - Direct CLI Playbook
@@ -21,6 +21,11 @@ Use direct Cursor CLI, Antigravity CLI (`agy`), or Codex CLI (`codex`) sessions 
 - The selected backend's exact terminal or pane output is treated as the nearest source of execution truth
 - For Herdr Space organization, authorized app/server placement, worktree association, full project ownership transfer or cross-Space coordination, use `herdr-cli` if available. This skill retains temporary executor/model/callback ownership; a new Tab alone does not transfer ownership. If `herdr-cli` is unavailable, use the installed Herdr guide and relevant CLI help for authorized Herdr operations, or report a blocker when the ownership decision cannot be established; do not assume the sibling skill is installed.
 - For production-ish asset work, use `asset-designer` as the front-door workflow; it routes Agy/Gemini dicut first and keeps Codex as an explicit fallback/A-B. This skill owns only pane execution, while `codex-asset-production` owns Codex source/imagegen and assigned fallback work.
+
+## Choose the destination before the backend
+
+- For an explicitly requested handoff to a T3 Code project or thread, use [T3 thread handoff](playbook.md#t3-thread-handoff). Prefer native T3 thread tools in T3; use the installed `t3` CLI from a shell when the thread tools are unavailable and the intended server and project can be verified. T3 threads are not terminal backends, and a top-level handoff is not a delegated child task.
+- For a watchable interactive executor, select a terminal backend below. Do not divert a requested delegation into a new top-level thread or route a T3 handoff through a pane or Computer Use.
 
 ## Backend Selection
 

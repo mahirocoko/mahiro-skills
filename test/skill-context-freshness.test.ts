@@ -217,6 +217,23 @@ describe("packaged skill context freshness", () => {
     expect(read("README.md")).toContain("does not install the `pi` executable");
   });
 
+  test("direct-cli routes requested T3 handoffs before terminal selection", () => {
+    const skill = read("skills", "direct-cli", "SKILL.md");
+    const playbook = read("skills", "direct-cli", "playbook.md");
+    const command = read("commands", "direct-cli.md");
+    const handoff = playbook.split("## T3 thread handoff")[1]?.split("## Task packet and return decision")[0];
+
+    expect(skill.indexOf("## Choose the destination before the backend")).toBeLessThan(
+      skill.indexOf("## Backend Selection"),
+    );
+    expect(skill).toContain("T3 threads are not terminal backends");
+    expect(command.indexOf("T3 thread handoff")).toBeLessThan(command.indexOf("For interactive lanes"));
+    expect(handoff).toContain("prefer the native project/thread tools");
+    expect(handoff).toContain("Reading a destination or drafting a brief does not authorize");
+    expect(handoff).toContain("On an ambiguous send or start, inspect current state before any retry");
+    expect(handoff).toContain('t3 thread list --project "$PROJECT_ID" --json');
+  });
+
   test("direct-cli gates first prompts on initialization rather than startup idle", () => {
     const playbook = read("skills", "direct-cli", "playbook.md");
     for (const surface of [
